@@ -11,9 +11,9 @@
 *.userprefs
 
 # Build results
-#Build/
-#Intermediate/
-#Dependencies/
+/#Dependencies
+/*/#Build
+/*/#Intermediate
 
 # Visual Studio 2015 cache/options directory
 .vs/
