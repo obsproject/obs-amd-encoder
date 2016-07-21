@@ -25,38 +25,36 @@ SOFTWARE.
 #pragma once
 #include "win-amf.h"
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
-	// Perform actions based on the reason for calling.
-	switch (fdwReason) {
-		case DLL_PROCESS_ATTACH:
-			// Initialize once for each new process.
-			// Return FALSE to fail DLL load.
-			break;
+OBS_DECLARE_MODULE();
+OBS_MODULE_AUTHOR("Michael Fabian Dirks");
 
-		case DLL_THREAD_ATTACH:
-			// Do thread-specific initialization.
-			break;
-
-		case DLL_THREAD_DETACH:
-			// Do thread-specific cleanup.
-			break;
-
-		case DLL_PROCESS_DETACH:
-			// Perform any necessary cleanup.
-			break;
-	}
-	return TRUE;  // Successful DLL_PROCESS_ATTACH.
-}
-
-// Module Code
-extern "C" bool obs_module_load(void) {
+/**
+* Required: Called when the module is loaded.  Use this function to load all
+* the sources/encoders/outputs/services for your module, or anything else that
+* may need loading.
+*
+* @return           Return true to continue loading the module, otherwise
+*                   false to indcate failure and unload the module
+*/
+MODULE_EXPORT bool obs_module_load(void) {
+	AMF_Encoder::h264::encoder_register();
 
 	return true;
 }
 
-extern "C" bool obs_module_unload(void) {
+/** Optional: Called when the module is unloaded.  */
+MODULE_EXPORT void obs_module_unload(void) {
 
 }
 
-OBS_DECLARE_MODULE()
-OBS_MODULE_USE_DEFAULT_LOCALE("win-amf", "en-GB")
+OBS_MODULE_USE_DEFAULT_LOCALE("win-amf", "en-US");
+
+/** Optional: Returns the full name of the module */
+MODULE_EXPORT const char *obs_module_name() {
+	return "Windows AMF Encoder";
+}
+
+/** Optional: Returns a description of the module */
+MODULE_EXPORT const char *obs_module_description() {
+	return "AMF Encoder Plugin for OBS Studio";
+}

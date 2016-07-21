@@ -24,8 +24,9 @@
 
 #pragma once
 #include "windows.h"
-
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved);
-
-// Module Code
 #include "libobs/obs-module.h"
+#include "amf-h264.h"
+
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
+	return TRUE;
+}
