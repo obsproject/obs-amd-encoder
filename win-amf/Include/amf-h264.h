@@ -30,17 +30,17 @@ SOFTWARE.
 #include <string> // std::string
 #include <sstream> // std::stringstream
 
-#include "libobs/obs-module.h"
-#include "libobs/obs-encoder.h"
+#include "OBS-Studio/libobs/obs-module.h"
+#include "OBS-Studio/libobs/obs-encoder.h"
 
 // AMF
-#include "ErrorCodes.h"
-#include "CapabilityManager.h"
-#include "Component.h"
-#include "ComponentCaps.h"
-#include "VideoEncoderCaps.h"
-#include "VideoEncoderVCE.h"
-#include "VideoEncoderVCECaps.h"
+#include "AMD-Media-SDK/1.1/inc/ErrorCodes.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/CapabilityManager.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/Component.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/ComponentCaps.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderCaps.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderVCE.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderVCECaps.h"
 
 #define AMF_TEXT(x) ("AMF.h264." ## x)
 #define AMF_TEXT_T(x) obs_module_text(AMF_TEXT(x))

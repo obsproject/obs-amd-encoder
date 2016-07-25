@@ -219,7 +219,7 @@ bool AMF_Encoder::h264::encode(struct encoder_frame * frame, struct encoder_pack
 	/// Output Handling
 	res = amf_encoder->Drain();
 	if (res == AMF_OK) {
-		amf::AMFData** ppData;
+		amf::AMFData** ppData = nullptr;
 		res = amf_encoder->QueryOutput(ppData);
 
 	}
