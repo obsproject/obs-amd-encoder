@@ -27,63 +27,30 @@ SOFTWARE.
 
 // h264 Profiles
 const char* AMF_Encoder::h264::PROFILE_NAMES[AMF_Encoder::h264::PROFILES::PROFILE_COUNT_MAX] = {
-	AMF_TEXT("PROFILE.AVC.BP"),
-	AMF_TEXT("PROFILE.AVC.XP"),
-	AMF_TEXT("PROFILE.AVC.MP"),
-	AMF_TEXT("PROFILE.AVC.HiP"),
-	AMF_TEXT("PROFILE.AVC.Hi10P"),
-	AMF_TEXT("PROFILE.AVC.Hi422P"),
-	AMF_TEXT("PROFILE.AVC.Hi444P"),
-	AMF_TEXT("PROFILE.SVC.BP"),
-	AMF_TEXT("PROFILE.SVC.HiP")
+	AMF_TEXT("PROFILE.AVC.BP"), AMF_TEXT("PROFILE.AVC.XP"), AMF_TEXT("PROFILE.AVC.MP"),
+	AMF_TEXT("PROFILE.AVC.HiP"), AMF_TEXT("PROFILE.AVC.Hi10P"), AMF_TEXT("PROFILE.AVC.Hi422P"), AMF_TEXT("PROFILE.AVC.Hi444P"),
+	AMF_TEXT("PROFILE.SVC.BP"), AMF_TEXT("PROFILE.SVC.HiP")
 };
 const unsigned char AMF_Encoder::h264::PROFILE_VALUES[AMF_Encoder::h264::PROFILES::PROFILE_COUNT_MAX] = {
-	66,
-	88,
-	77,
-	100,
-	110,
-	122,
-	244,
-	83,
-	86
+	66, 88, 77,
+	100, 110, 122, 244,
+	83, 86
 };
 
 // h264 Levels
 const char* AMF_Encoder::h264::LEVEL_NAMES[AMF_Encoder::h264::LEVELS::LEVEL_COUNT_MAX] = {
-	AMF_TEXT("LEVEL.10"),
-	AMF_TEXT("LEVEL.11"),
-	AMF_TEXT("LEVEL.12"),
-	AMF_TEXT("LEVEL.13"),
-	AMF_TEXT("LEVEL.20"),
-	AMF_TEXT("LEVEL.21"),
-	AMF_TEXT("LEVEL.22"),
-	AMF_TEXT("LEVEL.30"),
-	AMF_TEXT("LEVEL.31"),
-	AMF_TEXT("LEVEL.40"),
-	AMF_TEXT("LEVEL.41"),
-	AMF_TEXT("LEVEL.42"),
-	AMF_TEXT("LEVEL.50"),
-	AMF_TEXT("LEVEL.51"),
-	AMF_TEXT("LEVEL.52")
+	AMF_TEXT("LEVEL.10"), AMF_TEXT("LEVEL.11"), AMF_TEXT("LEVEL.12"), AMF_TEXT("LEVEL.13"),
+	AMF_TEXT("LEVEL.20"), AMF_TEXT("LEVEL.21"), AMF_TEXT("LEVEL.22"),
+	AMF_TEXT("LEVEL.30"), AMF_TEXT("LEVEL.31"), AMF_TEXT("LEVEL.32"),
+	AMF_TEXT("LEVEL.40"), AMF_TEXT("LEVEL.41"), AMF_TEXT("LEVEL.42"),
+	AMF_TEXT("LEVEL.50"), AMF_TEXT("LEVEL.51"), AMF_TEXT("LEVEL.52")
 };
 const unsigned char AMF_Encoder::h264::LEVEL_VALUES[LEVELS::LEVEL_COUNT_MAX] = {
-	10,
-	11,
-	12,
-	13,
-	20,
-	21,
-	22,
-	30,
-	31,
-	32,
-	40,
-	41,
-	42,
-	50,
-	51,
-	52,
+	10, 11, 12, 13,
+	20, 21, 22,
+	30, 31, 32,
+	40, 41, 42,
+	50, 51, 52,
 };
 
 void AMF_Encoder::h264::encoder_register() {
@@ -122,29 +89,46 @@ void* AMF_Encoder::h264::create(obs_data_t* settings, obs_encoder_t* encoder) {
 AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
 	AMF_LOG_INFO("Create: Initialization Request...");
 
+	// OBS Settings
+	video_t *video = obs_encoder_video(encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+
+	s_Width = obs_encoder_get_width(encoder);
+	s_Height = obs_encoder_get_height(encoder);
+	s_FPS_num = voi->fps_num; s_FPS_den = voi->fps_den;
+	switch (voi->format) {
+		case VIDEO_FORMAT_RGBA:
+			s_surfaceFormat = amf::AMF_SURFACE_RGBA;
+			break;
+		case VIDEO_FORMAT_NV12:
+		default:
+			s_surfaceFormat = amf::AMF_SURFACE_NV12;
+			break;
+	}
+
+
 	// Select Memory Type
 	s_memoryType = amf::AMF_MEMORY_HOST; // Host for now.
-	s_surfaceFormat = amf::AMF_SURFACE_RGBA; // RGBA
 
 	AMF_RESULT res = AMFCreateContext(&amf_context);
 	if (res != AMF_OK) {
 		AMF_LOG_ERROR("Create: Failed to create AMF context, error code %d: %s.", res, amf::AMFGetResultText(res));
 	}
 
-	switch (s_memoryType) {
-		case amf::AMF_MEMORY_DX11:
-			res = amf_context->InitDX11(NULL);
-			break;
-		case amf::AMF_MEMORY_OPENGL:
-			res = amf_context->InitOpenGL(NULL, NULL, NULL);
-			break;
-		default: // Default initializes to nothing.
-			res = amf_context->InitDX11(NULL);
-			break;
-	}
-	if (res != AMF_OK) {
-		AMF_LOG_ERROR("Create: Failed to initialize AMF context, error code %d: %s.", res, amf::AMFGetResultText(res));
-	}
+	//switch (s_memoryType) {
+	//	/*case amf::AMF_MEMORY_DX11:
+	//		res = amf_context->InitDX11(NULL);
+	//		break;
+	//	case amf::AMF_MEMORY_OPENGL:
+	//		res = amf_context->InitOpenGL(NULL, NULL, NULL);
+	//		break;*/
+	//	default: // Default initializes to nothing.
+	//		//res = amf_context->InitDX11(NULL);
+	//		break;
+	//}
+	//if (res != AMF_OK) {
+	//	AMF_LOG_ERROR("Create: Failed to initialize AMF context, error code %d: %s.", res, amf::AMFGetResultText(res));
+	//}
 
 	// Component Encoder
 	//ToDo: Switch Profile (AVC, SVC)
@@ -154,13 +138,6 @@ AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
 		AMF_LOG_ERROR("Create: Failed to create AMF context, error code %d: %s.", res, amf::AMFGetResultText(res));
 	}
 
-	// OBS Settings
-	video_t *video = obs_encoder_video(encoder);
-	const struct video_output_info *voi = video_output_get_info(video);
-	
-	s_Width = obs_encoder_get_width(encoder);
-	s_Height = obs_encoder_get_height(encoder);
-	s_FPS_num = voi->fps_num; s_FPS_den = voi->fps_den;
 
 	// Pre Initialization
 	///Framesize & Framerate
@@ -225,6 +202,8 @@ void AMF_Encoder::h264::destroy(void* data) {
 
 AMF_Encoder::h264::~h264() {
 	AMF_LOG_INFO("h264::~h264");
+	amf_encoder->Terminate();
+	amf_context->Terminate();
 }
 
 bool AMF_Encoder::h264::encode(void *data, struct encoder_frame *frame, struct encoder_packet *packet, bool *received_packet) {
@@ -232,42 +211,33 @@ bool AMF_Encoder::h264::encode(void *data, struct encoder_frame *frame, struct e
 }
 
 bool AMF_Encoder::h264::encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
+	return true;
 	AMF_RESULT res;
-	amf::AMFSurfacePtr surfaceIn;
 
-	AMF_LOG_INFO("Encode: Processing Request...");
-	// Default to false.
-	*received_packet = false;
-
-	/// Input Handling
+	// Input Handling
+#pragma region Input Handling
 	if (frame != nullptr) {
-		AMF_LOG_INFO("Encode: Input available, attempting to submit...");
+		amf::AMFSurfacePtr surfaceIn;
 
-		// Submit all Planes
-		switch (s_surfaceFormat) {
-			case amf::AMF_SURFACE_RGBA:
-				// RGBA, Single Plane
-				switch (s_memoryType) {
-					case amf::AMF_MEMORY_DX11: // Not yet Implemented in OBS
-						break;
-					case amf::AMF_MEMORY_OPENGL: // Not yet Implemented in OBS
-						break;
-					default: // Host: RAM.
-						res = amf_context->CreateSurfaceFromHostNative(s_surfaceFormat, s_Width, s_Height, frame->linesize[0], 0, frame->data[0], &surfaceIn, &amf_surfaceObserver);
-				}
-				break;
-			case amf::AMF_SURFACE_NV12:
-				// Y:U+V, Two Plane
-				switch (s_memoryType) {
-					case amf::AMF_MEMORY_DX11: // Not yet Implemented in OBS
-						break;
-					case amf::AMF_MEMORY_OPENGL: // Not yet Implemented in OBS
-						break;
-					default: // Host: RAM.
-						res = amf_context->CreateSurfaceFromHostNative(s_surfaceFormat, s_Width, s_Height, frame->linesize[0], 2, frame->data[0], &surfaceIn, &amf_surfaceObserver);
-				}
+		if (s_memoryType == amf::AMF_MEMORY_HOST) {
+			// Host: RAM.
+			switch (s_surfaceFormat) {
+				case amf::AMF_SURFACE_RGBA:
+					// RGBA, Single Plane
+					res = amf_context->CreateSurfaceFromHostNative(s_surfaceFormat, s_Width, s_Height, s_Width, s_Height, frame->data[0], &surfaceIn, NULL);
+					break;
+				case amf::AMF_SURFACE_NV12:
+					// Y:U+V, Two Plane
+					res = amf_context->AllocSurface(s_memoryType, s_surfaceFormat, s_Width, s_Height, &surfaceIn);
+					size_t iMax = surfaceIn->GetPlanesCount();
+					for (uint8_t i = 0; i < iMax; i++) {
+						amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
+						void* plane_nat = plane->GetNative();
+						std::memcpy(plane_nat, frame->data[i], frame->linesize[i]);
+					}
+					break;
+			}
 		}
-
 		if (res != AMF_OK) {
 			const wchar_t* errormsg = amf::AMFGetResultText(res);
 			char* outbuf = new char[1024];
@@ -276,20 +246,11 @@ bool AMF_Encoder::h264::encode(struct encoder_frame * frame, struct encoder_pack
 			delete outbuf;
 			return false;
 		}
-		AMF_LOG_INFO("Encode: Input copied to AMF Surface.");
 
+		surfaceIn->AddObserver(&amf_surfaceObserver);
 		surfaceIn->SetPts(frame->pts);
-
-		AMF_LOG_INFO("Encode: Submitting Surface to Encoder...");
-		try {
-			res = amf_encoder->SubmitInput(surfaceIn);
-		} catch (...) {
-			AMF_LOG_ERROR("Encode: Unknown Exception occured.");
-		}
-		if (res == AMF_OK) {
-			AMF_LOG_INFO("Encode: Successfully sent to Encoder.");
-			surfaceIn = NULL; // Automatically deletes surface?
-		} else {
+		res = amf_encoder->SubmitInput(surfaceIn);
+		if (res != AMF_OK) {
 			const wchar_t* errormsg = amf::AMFGetResultText(res);
 			char* outbuf = new char[1024];
 			wcstombs(outbuf, errormsg, 1024);
@@ -297,15 +258,37 @@ bool AMF_Encoder::h264::encode(struct encoder_frame * frame, struct encoder_pack
 			delete outbuf;
 			return false;
 		}
-		//ToDo: Queue incoming frames if queue is full (should never happen anyway).
+	} else {
+		// Drain Input Queue when there are no more input frames.
+		AMF_LOG_ERROR("Encode: No Input Frame, draining Encoder...");
+		res = amf_encoder->Drain();
+		if (res == AMF_INPUT_FULL) {
+			//ToDo: Queue incoming frames if queue is full (should never happen anyway).
+		}
 	}
+#pragma endregion Input Handling
 
-	/// Output Handling
+	// Output Handling
+#pragma region Output Handling
 	amf::AMFDataPtr pData;
 	res = amf_encoder->QueryOutput(&pData);
-	if (res == AMF_REPEAT) {
+	if (res == AMF_OK) {
+		// Query Buffer
+		amf::AMFBufferPtr pBuffer(pData);
+		packet->size = pBuffer->GetSize();
+		packet->data = new uint8_t[pBuffer->GetSize()];
+		std::memcpy(packet->data, pBuffer->GetNative(), packet->size);
+		packet->type = OBS_ENCODER_VIDEO;
+
+		packet->pts = pData->GetPts();
+		packet->dts = 0;
+		AMF_LOG_INFO("Encode: Queried output, sending to OBS... %d, %d", packet->pts, packet->size);
+
+		*received_packet = true;
+	} else if (res == AMF_REPEAT) {
+		AMF_LOG_ERROR("Encode: Encoder asked for repeat?");
 		return true;
-	} else if (res != AMF_OK) {
+	} else {
 		const wchar_t* errormsg = amf::AMFGetResultText(res);
 		char* outbuf = new char[1024];
 		wcstombs(outbuf, errormsg, 1024);
@@ -313,20 +296,11 @@ bool AMF_Encoder::h264::encode(struct encoder_frame * frame, struct encoder_pack
 		delete outbuf;
 		return false;
 	}
-	AMF_LOG_INFO("Encode: Queried output, sending to OBS...");
+	
+#pragma endregion Output Handling
 
-	// Query Buffer
-	amf::AMFBufferPtr pBuffer(pData);
-	packet->data = new uint8_t[pBuffer->GetSize()];
-	packet->size = pBuffer->GetSize();
-	void* pNative = pBuffer->GetNative();
-	std::memcpy(packet->data, pNative, packet->size);
-	packet->pts = pData->GetPts();
-
-	*received_packet = true;
-
-	AMF_LOG_INFO("Encode: Request processed.");
-	return true;
+	//AMF_LOG_INFO("Encode: Request processed.");
+	return false;
 }
 
 void AMF_Encoder::h264::get_defaults(obs_data_t *settings) {
@@ -428,7 +402,6 @@ obs_properties_t* AMF_Encoder::h264::get_properties() {
 
 	obs_properties* props = obs_properties_create();
 	obs_property_t *list;
-	obs_property_t *p;
 
 	// Quality Preset & Usage
 	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_QUALITY_PRESET", AMF_TEXT_T("PRESET"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);

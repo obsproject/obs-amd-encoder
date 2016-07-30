@@ -44,7 +44,7 @@ SOFTWARE.
 
 #define AMF_TEXT(x) ("AMF.h264." ## x)
 #define AMF_TEXT_T(x) obs_module_text(AMF_TEXT(x))
-#define AMF_PROPERTY(x) ("amf_h264_" ## x)
+//#define AMF_PROPERTY(x) ("amf_h264_" ## x)
 
 #define AMF_LOG(level, format, ...) \
     blog(level, "[AMF_Encoder::h264] " format, ##__VA_ARGS__)
@@ -64,17 +64,12 @@ namespace AMF_Encoder {
 
 	class h264 {
 		public:
-			// h264 Profiles
+
+		// h264 Profiles
 		enum PROFILES {
-			PROFILE_AVC_BP,
-			PROFILE_AVC_XP,
-			PROFILE_AVC_MP,
-			PROFILE_AVC_HiP,
-			PROFILE_AVC_Hi10P,
-			PROFILE_AVC_Hi422P,
-			PROFILE_AVC_Hi444P,
-			PROFILE_SVC_BP,
-			PROFILE_SVC_HiP,
+			PROFILE_AVC_BP, PROFILE_AVC_XP, PROFILE_AVC_MP,
+			PROFILE_AVC_HiP, PROFILE_AVC_Hi10P, PROFILE_AVC_Hi422P, PROFILE_AVC_Hi444P,
+			PROFILE_SVC_BP, PROFILE_SVC_HiP,
 			PROFILE_COUNT_MAX
 		};
 		static const char* PROFILE_NAMES[PROFILES::PROFILE_COUNT_MAX];
@@ -82,22 +77,11 @@ namespace AMF_Encoder {
 
 		// h264 Levels
 		enum LEVELS {
-			LEVEL_1,
-			LEVEL_1_1,
-			LEVEL_1_2,
-			LEVEL_1_3,
-			LEVEL_2,
-			LEVEL_2_1,
-			LEVEL_2_2,
-			LEVEL_3,
-			LEVEL_3_1,
-			LEVEL_3_2,
-			LEVEL_4,
-			LEVEL_4_1,
-			LEVEL_4_2,
-			LEVEL_5,
-			LEVEL_5_1,
-			LEVEL_5_2,
+			LEVEL_1, LEVEL_1_1, LEVEL_1_2, LEVEL_1_3,
+			LEVEL_2, LEVEL_2_1, LEVEL_2_2,
+			LEVEL_3, LEVEL_3_1, LEVEL_3_2,
+			LEVEL_4, LEVEL_4_1, LEVEL_4_2,
+			LEVEL_5, LEVEL_5_1, LEVEL_5_2,
 			LEVEL_COUNT_MAX
 		};
 		static const char* LEVEL_NAMES[LEVELS::LEVEL_COUNT_MAX];
@@ -169,7 +153,7 @@ namespace AMF_Encoder {
 
 		/**
 		* Updates the settings for this encoder (usually used for things like
-		* changeing birate while active)
+		* changeing bitrate while active)
 		*
 		* @param  data      Data associated with this encoder context
 		* @param  settings  New settings for this encoder
@@ -219,7 +203,7 @@ namespace AMF_Encoder {
 
 		//void *type_data;
 		//void(*free_type_data)(void *type_data);
-		
+
 		private:
 		// OBS Data
 		obs_encoder_t* encoder;
@@ -231,12 +215,9 @@ namespace AMF_Encoder {
 		int s_Width, s_Height;
 		int s_FPS_num, s_FPS_den;
 
-
 		// Internal
-		byte* frame_buf;
 		amf::AMFContextPtr amf_context;
 		amf::AMFComponentPtr amf_encoder;
 		h264_SurfaceObserver amf_surfaceObserver;
 	};
-
 }
