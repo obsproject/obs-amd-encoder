@@ -29,6 +29,7 @@ SOFTWARE.
 #include <chrono>
 #include <string> // std::string
 #include <sstream> // std::stringstream
+#include <queue>
 
 #include "OBS-Studio/libobs/obs-module.h"
 #include "OBS-Studio/libobs/obs-encoder.h"
@@ -55,6 +56,7 @@ SOFTWARE.
 
 
 namespace AMF_Encoder {
+
 	class h264_SurfaceObserver : public amf::AMFSurfaceObserver {
 
 		public:
@@ -62,7 +64,18 @@ namespace AMF_Encoder {
 
 	};
 
+	struct h264_input_frame {
+		amf::AMFSurfacePtr surface;
+	};
+
+	struct h264_output_frame {
+		amf::AMFDataPtr data;
+	};
+
 	class h264 {
+		public:
+		static obs_encoder_info* encoder_info;
+
 		public:
 
 		// h264 Profiles
@@ -132,6 +145,13 @@ namespace AMF_Encoder {
 		*/
 		static bool encode(void *data, struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet);
 		bool encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet);
+
+		// Push a new input frame onto the stack for encoding.
+		void queue_frame(encoder_frame* frame);
+		// Update Queues
+		void update_queues();
+		// Pull an encoded frame from the stack for writing.
+		void dequeue_frame(encoder_packet* packet, bool* received_packet);
 
 		/* ----------------------------------------------------------------- */
 		/* Optional implementation */
@@ -205,10 +225,6 @@ namespace AMF_Encoder {
 		//void(*free_type_data)(void *type_data);
 
 		private:
-		// OBS Data
-		obs_encoder_t* encoder;
-		obs_data_t* settings;
-
 		// Settings
 		amf::AMF_MEMORY_TYPE s_memoryType;
 		amf::AMF_SURFACE_FORMAT s_surfaceFormat;
@@ -219,5 +235,11 @@ namespace AMF_Encoder {
 		amf::AMFContextPtr amf_context;
 		amf::AMFComponentPtr amf_encoder;
 		h264_SurfaceObserver amf_surfaceObserver;
+		uint8_t* largeBuffer;
+		size_t largeBufferSize;
+
+		// Queues
+		std::queue<h264_input_frame*> inputQueue;
+		std::queue<h264_output_frame*> outputQueue;
 	};
 }

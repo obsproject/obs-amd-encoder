@@ -53,24 +53,28 @@ const unsigned char AMF_Encoder::h264::LEVEL_VALUES[LEVELS::LEVEL_COUNT_MAX] = {
 	50, 51, 52,
 };
 
+obs_encoder_info* AMF_Encoder::h264::encoder_info;
 void AMF_Encoder::h264::encoder_register() {
 	AMF_LOG_INFO("h264::encoder_register");
-	obs_encoder_info encoderInfo = { 0 };
+	//AMF_Encoder::h264::encoder_info = { 0 };
 
-	encoderInfo.id = "amf_h264_encoder";
-	encoderInfo.type = obs_encoder_type::OBS_ENCODER_VIDEO;
-	encoderInfo.codec = "h264";
+	if (!AMF_Encoder::h264::encoder_info) {
+		AMF_Encoder::h264::encoder_info = new obs_encoder_info();
+		AMF_Encoder::h264::encoder_info->id = "amf_h264_encoder";
+		AMF_Encoder::h264::encoder_info->type = obs_encoder_type::OBS_ENCODER_VIDEO;
+		AMF_Encoder::h264::encoder_info->codec = "h264";
 
-	// Functions
-	encoderInfo.get_name = &AMF_Encoder::h264::get_name;
-	encoderInfo.create = &AMF_Encoder::h264::create;
-	encoderInfo.destroy = &AMF_Encoder::h264::destroy;
-	encoderInfo.encode = &AMF_Encoder::h264::encode;
-	encoderInfo.get_defaults = &AMF_Encoder::h264::get_defaults;
-	encoderInfo.get_properties = &AMF_Encoder::h264::get_properties;
-	encoderInfo.update = &AMF_Encoder::h264::update;
+		// Functions
+		AMF_Encoder::h264::encoder_info->get_name = &AMF_Encoder::h264::get_name;
+		AMF_Encoder::h264::encoder_info->create = &AMF_Encoder::h264::create;
+		AMF_Encoder::h264::encoder_info->destroy = &AMF_Encoder::h264::destroy;
+		AMF_Encoder::h264::encoder_info->encode = &AMF_Encoder::h264::encode;
+		AMF_Encoder::h264::encoder_info->get_defaults = &AMF_Encoder::h264::get_defaults;
+		AMF_Encoder::h264::encoder_info->get_properties = &AMF_Encoder::h264::get_properties;
+		//AMF_Encoder::h264::encoder_info->update = &AMF_Encoder::h264::update;
 
-	obs_register_encoder(&encoderInfo);
+		obs_register_encoder(AMF_Encoder::h264::encoder_info);
+	}
 }
 
 const char* AMF_Encoder::h264::get_name(void* type_data) {
@@ -80,10 +84,8 @@ const char* AMF_Encoder::h264::get_name(void* type_data) {
 
 void* AMF_Encoder::h264::create(obs_data_t* settings, obs_encoder_t* encoder) {
 	AMF_LOG_INFO("h264::create");
-	std::unique_ptr<AMF_Encoder::h264> enc(new AMF_Encoder::h264(settings, encoder));
-	enc->encoder = encoder;
-	enc->settings = settings;
-	return enc.release();
+	AMF_Encoder::h264* enc = new AMF_Encoder::h264(settings, encoder);
+	return enc;
 }
 
 AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
@@ -106,7 +108,6 @@ AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
 			break;
 	}
 
-
 	// Select Memory Type
 	s_memoryType = amf::AMF_MEMORY_HOST; // Host for now.
 
@@ -115,29 +116,17 @@ AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
 		AMF_LOG_ERROR("Create: Failed to create AMF context, error code %d: %s.", res, amf::AMFGetResultText(res));
 	}
 
-	//switch (s_memoryType) {
-	//	/*case amf::AMF_MEMORY_DX11:
-	//		res = amf_context->InitDX11(NULL);
-	//		break;
-	//	case amf::AMF_MEMORY_OPENGL:
-	//		res = amf_context->InitOpenGL(NULL, NULL, NULL);
-	//		break;*/
-	//	default: // Default initializes to nothing.
-	//		//res = amf_context->InitDX11(NULL);
-	//		break;
-	//}
-	//if (res != AMF_OK) {
-	//	AMF_LOG_ERROR("Create: Failed to initialize AMF context, error code %d: %s.", res, amf::AMFGetResultText(res));
-	//}
-
-	// Component Encoder
-	//ToDo: Switch Profile (AVC, SVC)
-
-	res = AMFCreateComponent(amf_context, AMFVideoEncoderVCE_AVC, &this->amf_encoder);
+	// Encoder Component
+	switch (obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PROFILE_ENUM")) {
+		case h264::PROFILES::PROFILE_SVC_BP:
+		case h264::PROFILES::PROFILE_SVC_HiP:
+			res = AMFCreateComponent(amf_context, AMFVideoEncoderVCE_SVC, &this->amf_encoder);
+		default:
+			res = AMFCreateComponent(amf_context, AMFVideoEncoderVCE_AVC, &this->amf_encoder);
+	}
 	if (res != AMF_OK) {
 		AMF_LOG_ERROR("Create: Failed to create AMF context, error code %d: %s.", res, amf::AMFGetResultText(res));
 	}
-
 
 	// Pre Initialization
 	///Framesize & Framerate
@@ -151,219 +140,306 @@ AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
 
 	///Quality Preset & Usage
 	res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET"));
-	AMF_LOG_INFO("Create: AMF_VIDEO_ENCODER_QUALITY_PRESET = %d", obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET"));
-	if (res != AMF_OK) AMF_LOG_ERROR("Create: AMF_VIDEO_ENCODER_QUALITY_PRESET, error code %d: %s.", res, amf::AMFGetResultText(res));
-
 	res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, obs_data_get_int(settings, "AMF_VIDEO_ENCODER_USAGE_ENUM"));
-	AMF_LOG_INFO("Create: AMF_VIDEO_ENCODER_USAGE = %d", obs_data_get_int(settings, "AMF_VIDEO_ENCODER_USAGE_ENUM"));
-	if (res != AMF_OK) AMF_LOG_ERROR("Create: AMF_VIDEO_ENCODER_USAGE, error code %d: %s.", res, amf::AMFGetResultText(res));
 
 	///Profile & Profile Level
 	int64_t t_profile = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PROFILE_ENUM");
-	if (t_profile != -1) {
+	if (t_profile != -1)
 		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMF_Encoder::h264::PROFILE_VALUES[t_profile]);
-		AMF_LOG_INFO("Create: AMF_VIDEO_ENCODER_PROFILE = %d:%d (%s)", t_profile, AMF_Encoder::h264::PROFILE_VALUES[t_profile], AMF_Encoder::h264::PROFILE_NAMES[t_profile]);
-		if (res != AMF_OK) AMF_LOG_ERROR("Create: AMF_VIDEO_ENCODER_PROFILE, error code %d: %s.", res, amf::AMFGetResultText(res));
-	}
 	int64_t t_profileLevel = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PROFILE_LEVEL");
-	if (t_profileLevel != -1) {
+	if (t_profileLevel != -1)
 		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, AMF_Encoder::h264::LEVEL_VALUES[t_profileLevel]);
-		AMF_LOG_INFO("Create: AMF_VIDEO_ENCODER_PROFILE_LEVEL = %d:%d (%s)", t_profileLevel, AMF_Encoder::h264::LEVEL_VALUES[t_profileLevel], AMF_Encoder::h264::LEVEL_NAMES[t_profileLevel]);
-		if (res != AMF_OK) AMF_LOG_ERROR("Create: AMF_VIDEO_ENCODER_PROFILE_LEVEL, error code %d: %s.", res, amf::AMFGetResultText(res));
-	}
+
+	/// Rate Control
+	int64_t t_rateControl = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD");
+	if (t_rateControl != -1)
+		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, t_rateControl);
+	int64_t t_skipFrameEnable = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE");
+	if (t_skipFrameEnable != -1)
+		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, t_skipFrameEnable == 1);
+
+	/// CBR, VBR
+	int64_t t_bitrateTarget = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_TARGET_BITRATE");
+	if (t_bitrateTarget != -1)
+		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, t_bitrateTarget);
+	int64_t t_bitratePeak = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PEAK_BITRATE");
+	if (t_bitratePeak != -1)
+		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, t_bitratePeak);
+	int64_t t_vbvBufferSize = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE");
+	if (t_vbvBufferSize != -1)
+		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, t_vbvBufferSize);
+
+	/// Constrained QP
+	int64_t t_qpMin = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_MIN_QP");
+	if (t_qpMin != -1)
+		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_MIN_QP, t_qpMin);
+	int64_t t_qpMax = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_MAX_QP");
+	if (t_qpMax != -1)
+		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_MAX_QP, t_qpMax);
+	int64_t t_qpI = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QP_I");
+	if (t_qpI != -1)
+		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_QP_I, t_qpI);
+	int64_t t_qpP = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QP_P");
+	if (t_qpP != -1)
+		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_QP_P, t_qpP);
+	int64_t t_qpB = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QP_B");
+	if (t_qpB != -1)
+		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_QP_B, t_qpB);
+
+	// Other
+	res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE,
+		obs_data_get_bool(settings, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE"));
+	int64_t t_gopSize = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_GOP_SIZE");
+	if (t_gopSize != -1)
+		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_GOP_SIZE, t_gopSize);
 
 	// During Runtime (only set it here anyway)
-	//res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, true);
-	//res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_GOP_SIZE, 60 / 2);
-	//res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, 8000);
-
-	//res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, 8000);
-	res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, 2000);
-	res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, 2);
+	//res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, 2);
 
 	res = amf_encoder->Init(s_surfaceFormat, s_Width, s_Height);
 	if (res != AMF_OK) {
 		AMF_LOG_ERROR("Failed to create AMF context, error code %d: %s.", res, amf::AMFGetResultText(res));
 	}
 
-	//if (amf_surfaceIn == NULL) {
-	//	amf_surfaceIn = NULL;
-	//	res = amf_context->AllocSurface(s_memoryType, s_surfaceFormat, s_Width, s_Height, &amf_surfaceIn);
-	//	FillSurface()
-	//}
 	AMF_LOG_INFO("Create: Request completed.");
 }
 
 void AMF_Encoder::h264::destroy(void* data) {
-	AMF_LOG_INFO("h264::destroy");
 	AMF_Encoder::h264* enc = static_cast<AMF_Encoder::h264*>(data);
 	delete enc;
+	data = nullptr;
 }
 
 AMF_Encoder::h264::~h264() {
-	AMF_LOG_INFO("h264::~h264");
-	amf_encoder->Terminate();
-	amf_context->Terminate();
+	if (amf_encoder)
+		amf_encoder->Terminate();
+	if (amf_context)
+		amf_context->Terminate();
 }
 
 bool AMF_Encoder::h264::encode(void *data, struct encoder_frame *frame, struct encoder_packet *packet, bool *received_packet) {
+	if (!frame)
+		AMF_LOG_INFO("h264::encode: Frame is Null");
+	if (!packet)
+		AMF_LOG_INFO("h264::encode: Packet is Null");
+	if (!received_packet)
+		AMF_LOG_INFO("h264::encode: Received_Packet is Null");
+
 	return static_cast<AMF_Encoder::h264*>(data)->encode(frame, packet, received_packet);
 }
 
-bool AMF_Encoder::h264::encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
-	return true;
+void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 	AMF_RESULT res;
+	amf::AMFSurfacePtr surfaceIn;
 
-	// Input Handling
-#pragma region Input Handling
-	if (frame != nullptr) {
-		amf::AMFSurfacePtr surfaceIn;
-
-		if (s_memoryType == amf::AMF_MEMORY_HOST) {
-			// Host: RAM.
-			switch (s_surfaceFormat) {
-				case amf::AMF_SURFACE_RGBA:
-					// RGBA, Single Plane
-					res = amf_context->CreateSurfaceFromHostNative(s_surfaceFormat, s_Width, s_Height, s_Width, s_Height, frame->data[0], &surfaceIn, NULL);
-					break;
-				case amf::AMF_SURFACE_NV12:
-					// Y:U+V, Two Plane
-					res = amf_context->AllocSurface(s_memoryType, s_surfaceFormat, s_Width, s_Height, &surfaceIn);
-					size_t iMax = surfaceIn->GetPlanesCount();
-					for (uint8_t i = 0; i < iMax; i++) {
-						amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
-						void* plane_nat = plane->GetNative();
-						std::memcpy(plane_nat, frame->data[i], frame->linesize[i]);
-					}
-					break;
-			}
-		}
-		if (res != AMF_OK) {
-			const wchar_t* errormsg = amf::AMFGetResultText(res);
-			char* outbuf = new char[1024];
-			wcstombs(outbuf, errormsg, 1024);
-			AMF_LOG_ERROR("Encode: Failed to copy to AMF Surface, error code %d: %s.", res, outbuf);
-			delete outbuf;
-			return false;
-		}
-
-		surfaceIn->AddObserver(&amf_surfaceObserver);
-		surfaceIn->SetPts(frame->pts);
-		res = amf_encoder->SubmitInput(surfaceIn);
-		if (res != AMF_OK) {
-			const wchar_t* errormsg = amf::AMFGetResultText(res);
-			char* outbuf = new char[1024];
-			wcstombs(outbuf, errormsg, 1024);
-			AMF_LOG_ERROR("Encode: Failed to send to Encoder, error code %d: %s.", res, outbuf);
-			delete outbuf;
-			return false;
-		}
-	} else {
-		// Drain Input Queue when there are no more input frames.
-		AMF_LOG_ERROR("Encode: No Input Frame, draining Encoder...");
+	// Early-Exit if either the frame or the contained data is invalid.
+	if (!frame || !frame->data[0]) {
+		//// Drain Queues.
 		res = amf_encoder->Drain();
-		if (res == AMF_INPUT_FULL) {
-			//ToDo: Queue incoming frames if queue is full (should never happen anyway).
+		return;
+	}
+
+	// Create Surface depending on Memory Type.
+	if (s_memoryType == amf::AMF_MEMORY_HOST) {
+		// Host: RAM.
+		switch (s_surfaceFormat) {
+			case amf::AMF_SURFACE_NV12:
+				// Y:U+V, Two Plane
+				res = amf_context->AllocSurface(s_memoryType, s_surfaceFormat, s_Width, s_Height, &surfaceIn);
+				size_t iMax = surfaceIn->GetPlanesCount();
+				for (uint8_t i = 0; i < iMax; i++) {
+					amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
+					void* plane_nat = plane->GetNative();
+
+					if (i == 0)
+						std::memcpy(plane_nat, frame->data[i], plane->GetVPitch() * plane->GetHeight());
+//					else
+//						std::memcpy(plane_nat, frame->data[i], plane->GetVPitch() * plane->GetHeight());
+				}
+				break;
+			//case amf::AMF_SURFACE_RGBA:
+			//	// RGBA, Single Plane
+			//	res = amf_context->CreateSurfaceFromHostNative(s_surfaceFormat, s_Width, s_Height, s_Width, s_Height, frame->data[0], &surfaceIn, NULL);
+			//	break;
 		}
 	}
-#pragma endregion Input Handling
-
-	// Output Handling
-#pragma region Output Handling
-	amf::AMFDataPtr pData;
-	res = amf_encoder->QueryOutput(&pData);
-	if (res == AMF_OK) {
-		// Query Buffer
-		amf::AMFBufferPtr pBuffer(pData);
-		packet->size = pBuffer->GetSize();
-		packet->data = new uint8_t[pBuffer->GetSize()];
-		std::memcpy(packet->data, pBuffer->GetNative(), packet->size);
-		packet->type = OBS_ENCODER_VIDEO;
-
-		packet->pts = pData->GetPts();
-		packet->dts = 0;
-		AMF_LOG_INFO("Encode: Queried output, sending to OBS... %d, %d", packet->pts, packet->size);
-
-		*received_packet = true;
-	} else if (res == AMF_REPEAT) {
-		AMF_LOG_ERROR("Encode: Encoder asked for repeat?");
-		return true;
-	} else {
+	if (res != AMF_OK) { // Failed to create Surface.
 		const wchar_t* errormsg = amf::AMFGetResultText(res);
 		char* outbuf = new char[1024];
 		wcstombs(outbuf, errormsg, 1024);
-		AMF_LOG_ERROR("Encode: Failed to query Output, %d: %s.", res, outbuf);
+		AMF_LOG_ERROR("Encode: Failed to copy to AMF Surface, error code %d: %s.", res, outbuf);
 		delete outbuf;
-		return false;
+		return;
 	}
-	
-#pragma endregion Output Handling
 
-	//AMF_LOG_INFO("Encode: Request processed.");
-	return false;
+	// Set per-Surface Data.
+	surfaceIn->AddObserver(&amf_surfaceObserver);
+	surfaceIn->SetPts(frame->pts);
+
+	// Queue into Input Queue.
+	h264_input_frame* myFrame = new h264_input_frame;
+	myFrame->surface = surfaceIn;
+	this->inputQueue.push(myFrame);
+
+	//// Attempt to send it off.
+	//res = amf_encoder->SubmitInput(surfaceIn);
+	//if (res == AMF_OK) {
+	//	return;
+	//} else if (res == AMF_INPUT_FULL) {
+	//} else {
+
+	//	if (res == AMF_INPUT_FULL) {
+	//		// Drain Input Queue
+	//		do {
+	//			res = amf_encoder->Drain();
+	//		} while (res == AMF_INPUT_FULL);
+	//	} else if (res != AMF_OK) {
+	//	}
+	//}
+}
+
+void AMF_Encoder::h264::update_queues() {
+	AMF_RESULT res;
+	amf::AMFDataPtr pData;
+
+	// Input.
+	if (!inputQueue.empty()) {
+		do {
+			h264_input_frame* myFrame = inputQueue.front();
+			res = amf_encoder->SubmitInput(myFrame->surface);
+			if (res == AMF_OK) {
+				inputQueue.pop();
+				//myFrame->surface->Release(); // Does SubmitInput do this for me?
+				delete myFrame;
+			}
+		} while ((!inputQueue.empty()) && (res == AMF_OK));
+		if (res != AMF_OK && res != AMF_INPUT_FULL) {
+			const wchar_t* errormsg = amf::AMFGetResultText(res);
+			char* outbuf = new char[1024];
+			wcstombs(outbuf, errormsg, 1024);
+			AMF_LOG_ERROR("Update Queues: Failed to send to Encoder, error code %d: %s.", res, outbuf);
+			delete outbuf;
+		}
+	}
+
+	// Output.
+	do {
+		res = amf_encoder->QueryOutput(&pData);
+		if (res == AMF_OK) {
+			h264_output_frame* myFrame = new h264_output_frame();
+			myFrame->data = pData;
+			outputQueue.push(myFrame);
+		}
+	} while (res == AMF_OK);
+	if (res != AMF_OK && res != AMF_REPEAT) {
+		const wchar_t* errormsg = amf::AMFGetResultText(res);
+		char* outbuf = new char[1024];
+		wcstombs(outbuf, errormsg, 1024);
+		AMF_LOG_ERROR("Encode: Output failed, error code %d: %s.", res, outbuf);
+		delete outbuf;
+	}
+
+
+}
+
+void AMF_Encoder::h264::dequeue_frame(encoder_packet* packet, bool* received_packet) {
+	if (outputQueue.empty())
+		return;
+
+	h264_output_frame* myFrame = outputQueue.front();
+	if (myFrame) {
+		outputQueue.pop();
+
+		amf::AMFBufferPtr pBuffer(myFrame->data);
+		packet->size = pBuffer->GetSize();
+
+		if ((largeBuffer && (largeBufferSize < packet->size)) || (!largeBuffer)) {
+			if (largeBuffer) {
+				AMF_LOG_INFO("Dequeue_Frame: Buffer needs to be resized, deleting...");
+				delete[] largeBuffer;
+			}
+			largeBuffer = new uint8_t[packet->size + 1];
+			largeBufferSize = packet->size;
+		}
+
+		packet->data = largeBuffer;
+		std::memcpy(packet->data, pBuffer->GetNative(), packet->size);
+		packet->type = OBS_ENCODER_VIDEO;
+
+		packet->pts = myFrame->data->GetPts();
+		packet->dts = myFrame->data->GetPts();
+		packet->keyframe = true;
+
+		// Free AMF Memory
+		//myFrame->data->Release();
+		delete myFrame;
+
+		*received_packet = true;
+	}
+}
+
+bool AMF_Encoder::h264::encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
+	if (!frame || !packet || !received_packet)
+		return false;
+
+	// Input
+	queue_frame(frame);
+
+	// Work
+	update_queues();
+
+	// Output
+	dequeue_frame(packet, received_packet);
+	
+	return true;
 }
 
 void AMF_Encoder::h264::get_defaults(obs_data_t *settings) {
 	AMF_LOG_INFO("h264::get_defaults");
 
 	// Quality Preset & Usage
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET",
-		AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY); // amf_int64(AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM); default = depends on USAGE; Quality Preset 
-	///AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED
-	///AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED
-	///AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_USAGE_ENUM",
-		AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY); // amf_int64(AMF_VIDEO_ENCODER_USAGE_ENUM); default = N/A; Encoder usage type. fully configures parameter set. 
-	///AMF_VIDEO_ENCODER_USAGE_TRANSCONDING;
-	///AMF_VIDEO_ENCODER_USAGE_ULTRA_LOW_LATENCY;
-	///AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY;
-	///AMF_VIDEO_ENCODER_USAGE_WEBCAM;
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET", AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY);
+	// amf_int64(AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM); default = depends on USAGE; Quality Preset 
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_USAGE_ENUM", AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY);
+	// amf_int64(AMF_VIDEO_ENCODER_USAGE_ENUM); default = N/A; Encoder usage type. fully configures parameter set. 
 
 	// Profile & Level
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PROFILE_ENUM",
-		-1); // amf_int64(AMF_VIDEO_ENCODER_PROFILE_ENUM) ; default = AMF_VIDEO_ENCODER_PROFILE_MAIN;  H264 profile
-	///AMF_VIDEO_ENCODER_PROFILE_BASELINE
-	///AMF_VIDEO_ENCODER_PROFILE_MAIN
-	///AMF_VIDEO_ENCODER_PROFILE_HIGH
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PROFILE_LEVEL",
-		-1); // amf_int64; default = 42; H264 profile level
-	///AMF_Encoder::h264::LEVELS
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PROFILE_ENUM", -1);
+	// amf_int64(AMF_VIDEO_ENCODER_PROFILE_ENUM) ; default = AMF_VIDEO_ENCODER_PROFILE_MAIN;  H264 profile
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PROFILE_LEVEL", -1);
+	// amf_int64; default = 42; H264 profile level
 
 	// Rate Control
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD",
-		-1); // amf_int64(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM); default = depends on USAGE; Rate Control Method 
-	///AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTRAINED_QP
-	///AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR
-	///AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR
-	///AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR
-	obs_data_set_default_bool(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE",
-		false); // bool; default =  depends on USAGE; Rate Control Based Frame Skip 
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD", -1);
+	// amf_int64(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM); default = depends on USAGE; Rate Control Method 
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME", -1);
+	// bool; default =  depends on USAGE; Rate Control Based Frame Skip 
 
 	// CBR, VBR
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_TARGET_BITRATE",
-		-1); // amf_int64; default = depends on USAGE; Target bit rate in bits
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PEAK_BITRATE",
-		-1); // amf_int64; default = depends on USAGE; Peak bit rate in bits
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE",
-		-1); // amf_int64; default = depends on USAGE; VBV Buffer Size in bits
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_TARGET_BITRATE", -1);
+	// amf_int64; default = depends on USAGE; Target bit rate in bits
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PEAK_BITRATE", -1);
+	// amf_int64; default = depends on USAGE; Peak bit rate in bits
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", -1);
+	// amf_int64; default = depends on USAGE; VBV Buffer Size in bits
 
 	// Constrained QP
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MIN_QP",
-		-1); // amf_int64; default = depends on USAGE; Min QP; range = 0-51
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MAX_QP",
-		-1); // amf_int64; default = depends on USAGE; Max QP; range = 0-51
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_I",
-		-1); // amf_int64; default = 22; I-frame QP; range = 0-51
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_P",
-		-1); // amf_int64; default = 22; P-frame QP; range = 0-51
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_B",
-		-1); // amf_int64; default = 22; B-frame QP; range = 0-51
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MIN_QP", -1);
+	// amf_int64; default = depends on USAGE; Min QP; range = 0-51
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MAX_QP", -1);
+	// amf_int64; default = depends on USAGE; Max QP; range = 0-51
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_I", -1);
+	// amf_int64; default = 22; I-frame QP; range = 0-51
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_P", -1);
+	// amf_int64; default = 22; P-frame QP; range = 0-51
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_B", -1);
+	// amf_int64; default = 22; B-frame QP; range = 0-51
 
 	// Other
-	obs_data_set_default_bool(settings, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE",
-		true); // bool; default = false; Filler Data Enable
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_GOP_SIZE",
-		-1); // amf_int64; default = 60; GOP Size, in frames
+	obs_data_set_default_bool(settings, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE", false);
+	// bool; default = false; Filler Data Enable
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_GOP_SIZE", -1);
+	// amf_int64; default = 60; GOP Size, in frames
 
 //			 // Static properties - can be set befor Init()
 //#define AMF_VIDEO_ENCODER_EXTRADATA                             L"ExtraData"                // AMFInterface* - > AMFBuffer*; SPS/PPS buffer - read-only
@@ -404,29 +480,64 @@ obs_properties_t* AMF_Encoder::h264::get_properties() {
 	obs_property_t *list;
 
 	// Quality Preset & Usage
-	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_QUALITY_PRESET", AMF_TEXT_T("PRESET"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_QUALITY_PRESET", AMF_TEXT_T("PRESET"),
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, AMF_TEXT_T("PRESET.SPEED"), AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED);
 	obs_property_list_add_int(list, AMF_TEXT_T("PRESET.BALANCED"), AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED);
 	obs_property_list_add_int(list, AMF_TEXT_T("PRESET.QUALITY"), AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY);
 
-	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_USAGE_ENUM", AMF_TEXT_T("USAGE"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_USAGE_ENUM", AMF_TEXT_T("USAGE"),
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, AMF_TEXT_T("USAGE.TRANSCODING"), AMF_VIDEO_ENCODER_USAGE_TRANSCONDING);
 	obs_property_list_add_int(list, AMF_TEXT_T("USAGE.ULTRALOWLATENCY"), AMF_VIDEO_ENCODER_USAGE_ULTRA_LOW_LATENCY);
 	obs_property_list_add_int(list, AMF_TEXT_T("USAGE.LOWLATENCY"), AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY);
 	obs_property_list_add_int(list, AMF_TEXT_T("USAGE.WEBCAM"), AMF_VIDEO_ENCODER_USAGE_WEBCAM);
 
 	// Profile & Level
-	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_PROFILE_ENUM", AMF_TEXT_T("PROFILE"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_PROFILE_ENUM", AMF_TEXT_T("PROFILE"),
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, AMF_TEXT_T("PROFILE.DEFAULT"), -1);
 	for (unsigned int i = 0; i < AMF_Encoder::h264::PROFILES::PROFILE_COUNT_MAX; i++) {
 		obs_property_list_add_int(list, obs_module_text(AMF_Encoder::h264::PROFILE_NAMES[i]), i);
 	}
 
-	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_PROFILE_LEVEL", AMF_TEXT_T("LEVEL"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_PROFILE_LEVEL", AMF_TEXT_T("LEVEL"),
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, AMF_TEXT_T("LEVEL.DEFAULT"), -1);
 	for (unsigned int i = 0; i < AMF_Encoder::h264::LEVELS::LEVEL_COUNT_MAX; i++) {
 		obs_property_list_add_int(list, obs_module_text(AMF_Encoder::h264::LEVEL_NAMES[i]), i);
 	}
+
+	// Rate Control
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD", AMF_TEXT_T("RATE_CONTROL"),
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, AMF_TEXT_T("RATE_CONTROL.DEFAULT"), -1);
+	obs_property_list_add_int(list, AMF_TEXT_T("RATE_CONTROL.CONSTRAINEDQP"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTRAINED_QP);
+	obs_property_list_add_int(list, AMF_TEXT_T("RATE_CONTROL.CBR"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR);
+	obs_property_list_add_int(list, AMF_TEXT_T("RATE_CONTROL.PEAK_CONSTRAINED_VBR"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR);
+	obs_property_list_add_int(list, AMF_TEXT_T("RATE_CONTROL.LATENCY_CONSTRAINED_VBR"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR);
+
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME", AMF_TEXT_T("SKIP_FRAME"),
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, AMF_TEXT_T("SKIP_FRAME.DEFAULT"), -1);
+	obs_property_list_add_int(list, AMF_TEXT_T("SKIP_FRAME.DISABLE"), 0);
+	obs_property_list_add_int(list, AMF_TEXT_T("SKIP_FRAME.ENABLE"), 1);
+
+	// CBR, VBR
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_TARGET_BITRATE", AMF_TEXT_T("BITRATE.TARGET"), -1, 65535, 1);
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_PEAK_BITRATE", AMF_TEXT_T("BITRATE.PEAK"), -1, 65535, 1);
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", AMF_TEXT_T("VBV_BUFFER_SIZE"), -1, 65535, 1);
+
+	// Constrained QP
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_MIN_QP", AMF_TEXT_T("QP.MIN"), -1, 51, 1);
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_MAX_QP", AMF_TEXT_T("QP.MAX"), -1, 51, 1);
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_QP_I", AMF_TEXT_T("QP.I"), -1, 51, 1);
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_QP_P", AMF_TEXT_T("QP.P"), -1, 51, 1);
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_QP_B", AMF_TEXT_T("QP.B"), -1, 51, 1);
+
+	// Other
+	obs_properties_add_bool(props, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE", AMF_TEXT_T("FILLER_DATA"));
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_GOP_SIZE", AMF_TEXT_T("GOP_SIZE"), -1, 8192, 1);
 
 	return props;
 }
@@ -437,6 +548,21 @@ bool AMF_Encoder::h264::update(void *data, obs_data_t *settings) {
 
 bool AMF_Encoder::h264::update(obs_data_t* settings) {
 	AMF_LOG_INFO("h264::update");
+
+
+	//int t_rateControlMethod = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD");
+	//switch (t_rateControlMethod) {
+	//	case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTRAINED_QP:
+	//		break;
+	//	case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR:
+	//	case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR:
+
+	//	case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR:
+	//		break;
+	//}
+
+	//obs_properties_get(settings, )
+
 	return false;
 }
 
@@ -449,32 +575,34 @@ void AMF_Encoder::h264::get_video_info(struct video_scale_info* info) {
 	switch (s_surfaceFormat) {
 		case amf::AMF_SURFACE_NV12:
 			info->format = VIDEO_FORMAT_NV12;
-			return;
+			break;
 		/*case amf::AMF_SURFACE_YV12:
 			info->format = VIDEO_FORMAT_;
-			return;*/
+			break;*/
 		case amf::AMF_SURFACE_BGRA:
 			info->format = VIDEO_FORMAT_BGRA;
-			return;
+			break;
 		/*case amf::AMF_SURFACE_ARGB:
 			info->format = VIDEO_FORMAT_;
 			return;*/
 		case amf::AMF_SURFACE_RGBA:
 			info->format = VIDEO_FORMAT_RGBA;
-			return;
+			break;
 		case amf::AMF_SURFACE_GRAY8:
 			info->format = VIDEO_FORMAT_Y800;
-			return;
+			break;
 		case amf::AMF_SURFACE_YUV420P:
 			info->format = VIDEO_FORMAT_I420;
-			return;
-			/*case amf::AMF_SURFACE_U8V8:
+			break;
+		/*case amf::AMF_SURFACE_U8V8:
 			info->format = VIDEO_FORMAT_Y800;
-			return;*/
+			break;*/
 		case amf::AMF_SURFACE_YUY2:
 			info->format = VIDEO_FORMAT_YUY2;
-			return;
+			break;
 	}
+	//info->range = VIDEO_RANGE_FULL;
+	//info->colorspace = VIDEO_CS_709;
 }
 
 void AMF_STD_CALL AMF_Encoder::h264_SurfaceObserver::OnSurfaceDataRelease(amf::AMFSurface* pSurface) {

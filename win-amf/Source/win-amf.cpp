@@ -27,6 +27,7 @@ SOFTWARE.
 
 OBS_DECLARE_MODULE();
 OBS_MODULE_AUTHOR("Michael Fabian Dirks");
+OBS_MODULE_USE_DEFAULT_LOCALE("win-amf", "en-US");
 
 /**
 * Required: Called when the module is loaded.  Use this function to load all
@@ -34,7 +35,7 @@ OBS_MODULE_AUTHOR("Michael Fabian Dirks");
 * may need loading.
 *
 * @return           Return true to continue loading the module, otherwise
-*                   false to indcate failure and unload the module
+*                   false to indicate failure and unload the module
 */
 MODULE_EXPORT bool obs_module_load(void) {
 	AMF_Encoder::h264::encoder_register();
@@ -43,18 +44,16 @@ MODULE_EXPORT bool obs_module_load(void) {
 }
 
 /** Optional: Called when the module is unloaded.  */
-MODULE_EXPORT void obs_module_unload(void) {
+//MODULE_EXPORT void obs_module_unload(void) {
+//}
 
-}
-
-OBS_MODULE_USE_DEFAULT_LOCALE("win-amf", "en-US");
 
 /** Optional: Returns the full name of the module */
-MODULE_EXPORT const char *obs_module_name() {
-	return "Windows AMF Encoder";
-}
+//MODULE_EXPORT const char *obs_module_name() {
+//	return "Windows AMF Encoder";
+//}
 
 /** Optional: Returns a description of the module */
-MODULE_EXPORT const char *obs_module_description() {
-	return "AMF Encoder Plugin for OBS Studio";
-}
+//MODULE_EXPORT const char *obs_module_description() {
+//	return "AMF Encoder Plugin for OBS Studio";
+//}
