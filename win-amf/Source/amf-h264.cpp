@@ -129,6 +129,10 @@ AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
 	}
 
 	// Pre Initialization
+	///Quality Preset & Usage
+	res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET"));
+	res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, obs_data_get_int(settings, "AMF_VIDEO_ENCODER_USAGE_ENUM"));
+
 	///Framesize & Framerate
 	res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, ::AMFConstructSize(s_Width, s_Height)); // Take from OBS
 	AMF_LOG_INFO("Create: AMF_VIDEO_ENCODER_FRAMESIZE = %dx%d", s_Width, s_Height);
@@ -137,10 +141,6 @@ AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
 	res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_FRAMERATE, ::AMFConstructRate(s_FPS_num, s_FPS_den)); // Take from OBS
 	AMF_LOG_INFO("Create: AMF_VIDEO_ENCODER_FRAMERATE = %d/%d", s_FPS_num, s_FPS_den);
 	if (res != AMF_OK) AMF_LOG_ERROR("Create: AMF_VIDEO_ENCODER_FRAMERATE, error code %d: %s.", res, amf::AMFGetResultText(res));
-
-	///Quality Preset & Usage
-	res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET"));
-	res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, obs_data_get_int(settings, "AMF_VIDEO_ENCODER_USAGE_ENUM"));
 
 	///Profile & Profile Level
 	int64_t t_profile = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PROFILE_ENUM");
@@ -250,9 +250,23 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 				for (uint8_t i = 0; i < iMax; i++) {
 					amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
 					void* plane_nat = plane->GetNative();
-					
+
+					/*AMF_LOG_INFO("Plane Information for %d", i);
+					AMF_LOG_INFO("Size: %d, %d", plane->GetWidth(), plane->GetHeight());
+					AMF_LOG_INFO("Offset: %d, %d", plane->GetOffsetX(), plane->GetOffsetY());
+					AMF_LOG_INFO("Pitch: %d, %d", plane->GetHPitch(), plane->GetVPitch());
+					AMF_LOG_INFO("PixelSize: %d", plane->GetPixelSizeInBytes());*/
+
+					for (uint32_t py = 0; py < plane->GetHeight(); py++) {
+						size_t plane_off = py * plane->GetHPitch();
+						size_t frame_off = py * frame->linesize[i];
+
+						//AMF_LOG_INFO("Line: %d, %d, %d", py, plane_off, frame_off);
+						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+					}
+
 					// Copy to target buffer. Strangely distorted, perhaps not the right way?
-					std::memcpy(plane_nat, frame->data[i], plane->GetVPitch() * plane->GetHeight());
+//					std::memcpy(plane_nat, frame->data[i], plane->GetVPitch() * plane->GetHeight());
 //					else
 //						std::memcpy(plane_nat, frame->data[i], plane->GetVPitch() * plane->GetHeight());
 				}
@@ -389,7 +403,7 @@ bool AMF_Encoder::h264::encode(struct encoder_frame * frame, struct encoder_pack
 
 	// Output
 	dequeue_frame(packet, received_packet);
-	
+
 	return true;
 }
 
