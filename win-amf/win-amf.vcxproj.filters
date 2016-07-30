@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Resource Files\locate">
+      <UniqueIdentifier>{da92c87c-c5fd-4c93-a09c-af3071784a7c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\win-amf.h">
@@ -29,5 +32,10 @@
     <ClCompile Include="Source\amf-h264.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\locale\en-US.ini">
+      <Filter>Resource Files\locate</Filter>
+    </None>
   </ItemGroup>
 </Project>

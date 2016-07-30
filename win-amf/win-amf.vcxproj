@@ -28,27 +28,27 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -72,28 +72,28 @@
     <IncludePath>$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf\components;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf\core;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc;$(SolutionDir)#ThirdParty;$(ProjectDir)Include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <SourcePath>$(ProjectDir)Source;$(VC_SourcePath)</SourcePath>
     <LibraryPath>$(SolutionDir)#ThirdParty\OBS-Studio\build\libobs\RelWithDebInfo\;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\lib\amf\x86_64\$(Configuration)\vs12;$(LibraryPath)</LibraryPath>
-    <OutDir>$(ProjectDir)\#Build\$(Platform)-$(Configuration)\</OutDir>
+    <OutDir>$(ProjectDir)\#Build\$(Platform)-$(Configuration)\obs-plugins\64bit\</OutDir>
     <IntDir>$(ProjectDir)\#Intermediate\$(Platform)-$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf\components;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf\core;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc;$(SolutionDir)#ThirdParty;$(ProjectDir)Include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <SourcePath>$(ProjectDir)Source;$(VC_SourcePath)</SourcePath>
     <LibraryPath>$(SolutionDir)#ThirdParty\OBS-Studio\build\libobs\RelWithDebInfo\;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\lib\amf\x86_64\$(Configuration)\vs12;$(LibraryPath)</LibraryPath>
-    <OutDir>$(ProjectDir)\#Build\$(Platform)-$(Configuration)\</OutDir>
+    <OutDir>$(ProjectDir)\#Build\$(Platform)-$(Configuration)\obs-plugins\64bit\</OutDir>
     <IntDir>$(ProjectDir)\#Intermediate\$(Platform)-$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf\components;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf\core;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc;$(SolutionDir)#ThirdParty;$(ProjectDir)Include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <SourcePath>$(ProjectDir)Source;$(VC_SourcePath)</SourcePath>
     <LibraryPath>$(SolutionDir)#ThirdParty\OBS-Studio\build\libobs\RelWithDebInfo\;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\lib\amf\x86\$(Configuration)\vs12;$(LibraryPath)</LibraryPath>
-    <OutDir>$(ProjectDir)\#Build\$(Platform)-$(Configuration)\</OutDir>
+    <OutDir>$(ProjectDir)\#Build\$(Platform)-$(Configuration)\obs-plugins\32bit\</OutDir>
     <IntDir>$(ProjectDir)\#Intermediate\$(Platform)-$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf\components;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf\core;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc;$(SolutionDir)#ThirdParty;$(ProjectDir)Include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <SourcePath>$(ProjectDir)Source;$(VC_SourcePath)</SourcePath>
     <LibraryPath>$(SolutionDir)#ThirdParty\OBS-Studio\build\libobs\RelWithDebInfo\;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\lib\amf\x86\$(Configuration)\vs12;$(LibraryPath)</LibraryPath>
-    <OutDir>$(ProjectDir)\#Build\$(Platform)-$(Configuration)\</OutDir>
+    <OutDir>$(ProjectDir)\#Build\$(Platform)-$(Configuration)\obs-plugins\32bit\</OutDir>
     <IntDir>$(ProjectDir)\#Intermediate\$(Platform)-$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -152,7 +152,16 @@
     <ClCompile Include="Source\amf-h264.cpp" />
     <ClCompile Include="Source\win-amf.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\locale\en-US.ini" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="CopyResources" AfterTargets="Build">
+    <ItemGroup>
+      <Resources Include="$(ProjectDir)\Resources\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(Resources)" DestinationFiles="@(Resources->'$(TargetDir)..\..\data\obs-plugins\win-amf\%(RecursiveDir)\%(Filename)%(Extension)')" SkipUnchangedFiles="True" UseHardlinksIfPossible="True" />
+  </Target>
 </Project>

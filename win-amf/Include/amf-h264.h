@@ -46,16 +46,25 @@ SOFTWARE.
 #define AMF_TEXT_T(x) obs_module_text(AMF_TEXT(x))
 #define AMF_PROPERTY(x) ("amf_h264_" ## x)
 
-#define AMF_LOG(l, x) blog(l, "[AMF h264] %s", x)
-#define AMF_LOG_ERROR(x) AMF_LOG(LOG_ERROR, x)
-#define AMF_LOG_WARNING(x) AMF_LOG(LOG_WARNING, x)
-#define AMF_LOG_INFO(x) AMF_LOG(LOG_INFO, x)
-#define AMF_LOG_DEBUG(x) AMF_LOG(LOG_DEBUG, x)
+#define AMF_LOG(level, format, ...) \
+    blog(level, "[AMF_Encoder::h264] " format, ##__VA_ARGS__)
+#define AMF_LOG_ERROR(format, ...)   AMF_LOG(LOG_ERROR,   format, ##__VA_ARGS__)
+#define AMF_LOG_WARNING(format, ...) AMF_LOG(LOG_WARNING, format, ##__VA_ARGS__)
+#define AMF_LOG_INFO(format, ...)    AMF_LOG(LOG_INFO,    format, ##__VA_ARGS__)
+#define AMF_LOG_DEBUG(format, ...)   AMF_LOG(LOG_DEBUG,   format, ##__VA_ARGS__)
+
 
 namespace AMF_Encoder {
+	class h264_SurfaceObserver : public amf::AMFSurfaceObserver {
+
+		public:
+		virtual void AMF_STD_CALL OnSurfaceDataRelease(amf::AMFSurface* pSurface) override;
+
+	};
+
 	class h264 {
-	public:
-		// h264 Profiles
+		public:
+			// h264 Profiles
 		enum PROFILES {
 			PROFILE_AVC_BP,
 			PROFILE_AVC_XP,
@@ -94,8 +103,8 @@ namespace AMF_Encoder {
 		static const char* LEVEL_NAMES[LEVELS::LEVEL_COUNT_MAX];
 		static const unsigned char LEVEL_VALUES[LEVELS::LEVEL_COUNT_MAX];
 
-	public:
-		// Module Code
+		public:
+			// Module Code
 		static void encoder_register();
 
 		/**
@@ -210,19 +219,24 @@ namespace AMF_Encoder {
 
 		//void *type_data;
 		//void(*free_type_data)(void *type_data);
+		
+		private:
+		// OBS Data
+		obs_encoder_t* encoder;
+		obs_data_t* settings;
 
-	private:
 		// Settings
 		amf::AMF_MEMORY_TYPE s_memoryType;
 		amf::AMF_SURFACE_FORMAT s_surfaceFormat;
 		int s_Width, s_Height;
-		int s_Framerate;
-		int s_Bitrate;
+		int s_FPS_num, s_FPS_den;
+
 
 		// Internal
 		byte* frame_buf;
 		amf::AMFContextPtr amf_context;
 		amf::AMFComponentPtr amf_encoder;
-		amf::AMFSurfacePtr amf_surfaceIn;
+		h264_SurfaceObserver amf_surfaceObserver;
 	};
+
 }
