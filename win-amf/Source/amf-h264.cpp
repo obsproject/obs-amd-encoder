@@ -250,9 +250,9 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 				for (uint8_t i = 0; i < iMax; i++) {
 					amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
 					void* plane_nat = plane->GetNative();
-
-					if (i == 0)
-						std::memcpy(plane_nat, frame->data[i], plane->GetVPitch() * plane->GetHeight());
+					
+					// Copy to target buffer. Strangely distorted, perhaps not the right way?
+					std::memcpy(plane_nat, frame->data[i], plane->GetVPitch() * plane->GetHeight());
 //					else
 //						std::memcpy(plane_nat, frame->data[i], plane->GetVPitch() * plane->GetHeight());
 				}
@@ -273,7 +273,7 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 	}
 
 	// Set per-Surface Data.
-	surfaceIn->AddObserver(&amf_surfaceObserver);
+	//surfaceIn->AddObserver(&amf_surfaceObserver);
 	surfaceIn->SetPts(frame->pts);
 
 	// Queue into Input Queue.
@@ -338,8 +338,6 @@ void AMF_Encoder::h264::update_queues() {
 		AMF_LOG_ERROR("Encode: Output failed, error code %d: %s.", res, outbuf);
 		delete outbuf;
 	}
-
-
 }
 
 void AMF_Encoder::h264::dequeue_frame(encoder_packet* packet, bool* received_packet) {
@@ -355,9 +353,10 @@ void AMF_Encoder::h264::dequeue_frame(encoder_packet* packet, bool* received_pac
 
 		if ((largeBuffer && (largeBufferSize < packet->size)) || (!largeBuffer)) {
 			if (largeBuffer) {
-				AMF_LOG_INFO("Dequeue_Frame: Buffer needs to be resized, deleting...");
+				AMF_LOG_INFO("Dequeue_Frame: Buffer too small (%d < %d), deleting...", largeBufferSize, packet->size);
 				delete[] largeBuffer;
 			}
+			AMF_LOG_INFO("Dequeue_Frame: Creating Buffer with size %d...", packet->size);
 			largeBuffer = new uint8_t[packet->size + 1];
 			largeBufferSize = packet->size;
 		}
