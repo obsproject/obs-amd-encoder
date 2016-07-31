@@ -111,7 +111,7 @@ void AMF_Encoder::h264::get_defaults(obs_data_t *settings) {
 	//////////////////////////////////////////////////////////////////////////
 	// Quality Preset & Usage
 	/// amf_int64(AMF_VIDEO_ENCODER_USAGE_ENUM); default = N/A; Encoder usage type. fully configures parameter set. 
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_USAGE", AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY);
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_USAGE", AMF_VIDEO_ENCODER_USAGE_TRANSCONDING);
 	/// amf_int64(AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM); default = depends on USAGE; Quality Preset 
 	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET", AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY);
 
@@ -501,7 +501,7 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 		switch (m_AMFSurfaceFormat) {
 			case amf::AMF_SURFACE_NV12:
 			{
-				// Y:U+V, Two Plane
+				// NV12, Y:U+V, Two Plane
 				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight * 2); // It needs to be 1.5 times height, but 2 is safer for now.
 				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
 				std::memcpy(myFrame->surfaceBuffer.data() + (frame->linesize[0] * m_cfgHeight), frame->data[1], frame->linesize[0] * (m_cfgHeight >> 1));
@@ -527,11 +527,13 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 				// YUV 4:2:0, Y, subsampled U, subsampled V
 				size_t halfHeight = m_cfgHeight >> 1;
 				size_t fullFrame = (frame->linesize[0] * m_cfgHeight);
+				size_t halfFrame = frame->linesize[1] * halfHeight;
 
-				myFrame->surfaceBuffer.resize(frame->linesize[0] * (m_cfgHeight + halfHeight)); // Actually times 1.5.
+				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight * 2); // We actually need one full and two halved frames. Height * 1.5 should work for this.
+				//std::memset(myFrame->surfaceBuffer.data(), 128, myFrame->surfaceBuffer.size());
 				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
-				std::memcpy(myFrame->surfaceBuffer.data() + fullFrame, frame->data[1], frame->linesize[1] * m_cfgHeight);
-				std::memcpy(myFrame->surfaceBuffer.data() + (fullFrame >> 1), frame->data[2], frame->linesize[2] * m_cfgHeight);
+				std::memcpy(myFrame->surfaceBuffer.data() + fullFrame, frame->data[1], frame->linesize[1] * halfHeight);
+				std::memcpy(myFrame->surfaceBuffer.data() + (fullFrame + halfFrame), frame->data[2], frame->linesize[2] * halfHeight); // Doesn't work properly.
 				break;
 			}
 			case amf::AMF_SURFACE_YUY2:
