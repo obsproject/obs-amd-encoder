@@ -264,7 +264,7 @@ obs_properties_t* AMF_Encoder::h264::get_properties(void* data) {
 	/// GOP Size
 	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_GOP_SIZE", AMF_TEXT_T("GOP_SIZE"), -1, 8192, 1);
 	/// VBV Buffer
-	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", AMF_TEXT_T("VBV_BUFFER_SIZE"), -1, 65535, 1);
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", AMF_TEXT_T("VBV_BUFFER_SIZE"), -1, UINT_MAX, 1);
 	obs_properties_add_float_slider(props, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS", AMF_TEXT_T("INITIAL_VBV_BUFFER_FULLNESS"), 0.0, 1.0, 0.015625);
 	/// Max AU Size
 	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_MAX_AU_SIZE", AMF_TEXT_T("MAX_AU_SIZE"), -1, 1024, 1);
@@ -281,8 +281,8 @@ obs_properties_t* AMF_Encoder::h264::get_properties(void* data) {
 	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_QP_B", AMF_TEXT_T("QP.B"), -1, 51, 1);
 
 	// Rate Control: CBR, VBR
-	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_TARGET_BITRATE", AMF_TEXT_T("BITRATE.TARGET"), -1, 65535, 1);
-	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_PEAK_BITRATE", AMF_TEXT_T("BITRATE.PEAK"), -1, 65535, 1);
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_TARGET_BITRATE", AMF_TEXT_T("BITRATE.TARGET"), -1, UINT_MAX, 1);
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_PEAK_BITRATE", AMF_TEXT_T("BITRATE.PEAK"), -1, UINT_MAX, 1);
 
 	// Picture Control Properties
 	/// Header Insertion Spacing
@@ -753,8 +753,8 @@ bool AMF_Encoder::h264::update_properties(obs_data_t* settings) {
 	/// VBV Buffer Size
 	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE");
 	if (value != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, value * 1000);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", value * 1000);
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, value);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", value);
 	}
 	/// Initial VBV Buffer Fullnes
 	value = (int64_t)ceil(obs_data_get_double(settings, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS") * 64);
@@ -819,8 +819,8 @@ bool AMF_Encoder::h264::update_properties(obs_data_t* settings) {
 			/// Peak Bitrate
 			value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PEAK_BITRATE");
 			if (value != -1) {
-				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, value * 1000);
-				wa_log_property_int(res, "AMF_VIDEO_ENCODER_PEAK_BITRATE", value * 1000);
+				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, value);
+				wa_log_property_int(res, "AMF_VIDEO_ENCODER_PEAK_BITRATE", value);
 			}
 		}
 		case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR:
@@ -828,8 +828,8 @@ bool AMF_Encoder::h264::update_properties(obs_data_t* settings) {
 			/// Target Bitrate
 			value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_TARGET_BITRATE");
 			if (value != -1) {
-				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, value * 1000);
-				wa_log_property_int(res, "AMF_VIDEO_ENCODER_TARGET_BITRATE", value * 1000);
+				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, value);
+				wa_log_property_int(res, "AMF_VIDEO_ENCODER_TARGET_BITRATE", value);
 			}
 			break;
 		}
