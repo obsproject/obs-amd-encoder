@@ -702,7 +702,8 @@ bool AMF_Encoder::h264::get_extra_data(uint8_t** extra_data, size_t* size) {
 		amf::AMFBufferPtr buf(var.pInterface);
 		void* bufnat = buf->GetNative();
 		*size = buf->GetSize();
-		*extra_data = new uint8_t[*size];
+		m_ExtraData.resize(*size);
+		*extra_data = m_ExtraData.data();
 		std::memcpy(*extra_data, bufnat, *size);
 		AMF_LOG_INFO("get_extra_data: Extra Data is %d bytes big.", *size);
 
@@ -752,8 +753,8 @@ bool AMF_Encoder::h264::update_properties(obs_data_t* settings) {
 	/// VBV Buffer Size
 	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE");
 	if (value != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, value);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", value);
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, value * 1000);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", value * 1000);
 	}
 	/// Initial VBV Buffer Fullnes
 	value = (int64_t)ceil(obs_data_get_double(settings, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS") * 64);
@@ -818,8 +819,8 @@ bool AMF_Encoder::h264::update_properties(obs_data_t* settings) {
 			/// Peak Bitrate
 			value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PEAK_BITRATE");
 			if (value != -1) {
-				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, value);
-				wa_log_property_int(res, "AMF_VIDEO_ENCODER_PEAK_BITRATE", value);
+				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, value * 1000);
+				wa_log_property_int(res, "AMF_VIDEO_ENCODER_PEAK_BITRATE", value * 1000);
 			}
 		}
 		case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR:
@@ -827,8 +828,8 @@ bool AMF_Encoder::h264::update_properties(obs_data_t* settings) {
 			/// Target Bitrate
 			value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_TARGET_BITRATE");
 			if (value != -1) {
-				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, value);
-				wa_log_property_int(res, "AMF_VIDEO_ENCODER_TARGET_BITRATE", value);
+				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, value * 1000);
+				wa_log_property_int(res, "AMF_VIDEO_ENCODER_TARGET_BITRATE", value * 1000);
 			}
 			break;
 		}
