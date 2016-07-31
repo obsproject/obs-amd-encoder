@@ -56,14 +56,6 @@ SOFTWARE.
 
 
 namespace AMF_Encoder {
-
-	class h264_SurfaceObserver : public amf::AMFSurfaceObserver {
-
-		public:
-		virtual void AMF_STD_CALL OnSurfaceDataRelease(amf::AMFSurface* pSurface) override;
-
-	};
-
 	struct h264_input_frame {
 		amf::AMFSurfacePtr surface;
 	};
@@ -72,10 +64,10 @@ namespace AMF_Encoder {
 		amf::AMFDataPtr data;
 	};
 
+	//////////////////////////////////////////////////////////////////////////
+	// Encoder Class
+	//////////////////////////////////////////////////////////////////////////
 	class h264 {
-		public:
-		static obs_encoder_info* encoder_info;
-
 		public:
 
 		// h264 Profiles
@@ -100,99 +92,23 @@ namespace AMF_Encoder {
 		static const char* LEVEL_NAMES[LEVELS::LEVEL_COUNT_MAX];
 		static const unsigned char LEVEL_VALUES[LEVELS::LEVEL_COUNT_MAX];
 
+
+		//////////////////////////////////////////////////////////////////////////
+		// Static Code
+		//////////////////////////////////////////////////////////////////////////
 		public:
-			// Module Code
+
+		static obs_encoder_info* encoder_info;
 		static void encoder_register();
-
-		/**
-		* Gets the full translated name of this encoder
-		*
-		* @param  type_data  The type_data variable of this structure
-		* @return            Translated name of the encoder
-		*/
 		static const char* get_name(void* type_data);
-
-		/**
-		* Creates the encoder with the specified settings
-		*
-		* @param  settings  Settings for the encoder
-		* @param  encoder   OBS encoder context
-		* @return           Data associated with this encoder context, or
-		*                   NULL if initialization failed.
-		*/
 		static void* create(obs_data_t* settings, obs_encoder_t* encoder);
-		h264(obs_data_t* settings, obs_encoder_t* encoder);
-
-		/**
-		* Destroys the encoder data
-		*
-		* @param  data  Data associated with this encoder context
-		*/
 		static void destroy(void* data);
-		~h264();
-
-		/**
-		* Encodes frame(s), and outputs encoded packets as they become
-		* available.
-		*
-		* @param       data             Data associated with this encoder
-		*                               context
-		* @param[in]   frame            Raw audio/video data to encode
-		* @param[out]  packet           Encoder packet output, if any
-		* @param[out]  received_packet  Set to true if a packet was received,
-		*                               false otherwise
-		* @return                       true if successful, false otherwise.
-		*/
 		static bool encode(void *data, struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet);
-		bool encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet);
-
-		// Push a new input frame onto the stack for encoding.
-		void queue_frame(encoder_frame* frame);
-		// Update Queues
-		void update_queues();
-		// Pull an encoded frame from the stack for writing.
-		void dequeue_frame(encoder_packet* packet, bool* received_packet);
-
-		/* ----------------------------------------------------------------- */
-		/* Optional implementation */
-
-		/**
-		* Gets the default settings for this encoder
-		*
-		* @param[out]  settings  Data to assign default settings to
-		*/
 		static void get_defaults(obs_data_t *settings);
-
-		/**
-		* Gets the property information of this encoder
-		*
-		* @return         The properties data
-		*/
 		static obs_properties_t* get_properties(void* data);
-		obs_properties_t* get_properties();
-
-		/**
-		* Updates the settings for this encoder (usually used for things like
-		* changeing bitrate while active)
-		*
-		* @param  data      Data associated with this encoder context
-		* @param  settings  New settings for this encoder
-		* @return           true if successful, false otherwise
-		*/
 		static bool update(void *data, obs_data_t *settings);
-		bool update(obs_data_t* settings);
-
-		///**
-		//* Returns extra data associated with this encoder (usually header)
-		//*
-		//* @param  data             Data associated with this encoder context
-		//* @param[out]  extra_data  Pointer to receive the extra data
-		//* @param[out]  size        Pointer to receive the size of the extra
-		//*                          data
-		//* @return                  true if extra data available, false
-		//*                          otherwise
-		//*/
-		//bool(*get_extra_data)(void *data, uint8_t **extra_data, size_t *size);
+		static void get_video_info(void *data, struct video_scale_info *info);
+		static bool get_extra_data(void *data, uint8_t** extra_data, size_t* size);
 
 		///**
 		//* Gets the SEI data, if any
@@ -212,34 +128,52 @@ namespace AMF_Encoder {
 		//*/
 		//void(*get_audio_info)(void *data, struct audio_convert_info *info);
 
-		/**
-		* Returns desired video format information
-		*
-		* @param          data  Data associated with this encoder context
-		* @param[in/out]  info  Video format information
-		*/
-		static void get_video_info(void *data, struct video_scale_info *info);
-		void get_video_info(struct video_scale_info* info);
 
 		//void *type_data;
 		//void(*free_type_data)(void *type_data);
+		
+		static void wa_log_property_int(AMF_RESULT amfResult, char* sProperty, int64_t value);
+		static void wa_log_property_bool(AMF_RESULT amfResult, char* sProperty, bool value);
 
+		//////////////////////////////////////////////////////////////////////////
+		// Module Code
+		//////////////////////////////////////////////////////////////////////////
+		public:
+
+		h264(obs_data_t* settings, obs_encoder_t* encoder);
+		~h264();
+
+		bool encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet);
+		void queue_frame(encoder_frame* frame);
+		void update_queues();
+		void dequeue_frame(encoder_packet* packet, bool* received_packet);
+		bool update(obs_data_t* settings);
+		void get_video_info(struct video_scale_info* info);
+		bool get_extra_data(uint8_t** extra_data, size_t* size);
+
+		bool update_properties(obs_data_t* settings);
+
+		//////////////////////////////////////////////////////////////////////////
+		// Storage
+		//////////////////////////////////////////////////////////////////////////
 		private:
-		// Settings
-		amf::AMF_MEMORY_TYPE s_memoryType;
-		amf::AMF_SURFACE_FORMAT s_surfaceFormat;
-		int s_Width, s_Height;
-		int s_FPS_num, s_FPS_den;
+		// AMF Specific Things
+		amf::AMF_MEMORY_TYPE m_AMFMemoryType;
+		amf::AMF_SURFACE_FORMAT m_AMFSurfaceFormat;
+		amf::AMFContextPtr m_AMFContext;
+		amf::AMFComponentPtr m_AMFEncoder;
 
-		// Internal
-		amf::AMFContextPtr amf_context;
-		amf::AMFComponentPtr amf_encoder;
-		h264_SurfaceObserver amf_surfaceObserver;
-		uint8_t* largeBuffer;
-		size_t largeBufferSize;
+		// Settings
+		int m_cfgWidth, m_cfgHeight;
+		int m_cfgFPSnum, m_cfgFPSden;
 
 		// Queues
-		std::queue<h264_input_frame*> inputQueue;
-		std::queue<h264_output_frame*> outputQueue;
+		std::queue<h264_input_frame*> m_InputQueue;
+		std::queue<h264_output_frame*> m_OutputQueue;
+
+		// Internal
+		uint64_t m_frameIndex;
+		uint8_t* m_pLargeBuffer;
+		size_t m_LargeBufferSize;
 	};
 }

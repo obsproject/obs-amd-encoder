@@ -53,11 +53,12 @@ const unsigned char AMF_Encoder::h264::LEVEL_VALUES[LEVELS::LEVEL_COUNT_MAX] = {
 	50, 51, 52,
 };
 
+//////////////////////////////////////////////////////////////////////////
+// Static Code
+//////////////////////////////////////////////////////////////////////////
 obs_encoder_info* AMF_Encoder::h264::encoder_info;
-void AMF_Encoder::h264::encoder_register() {
-	AMF_LOG_INFO("h264::encoder_register");
-	//AMF_Encoder::h264::encoder_info = { 0 };
 
+void AMF_Encoder::h264::encoder_register() {
 	if (!AMF_Encoder::h264::encoder_info) {
 		AMF_Encoder::h264::encoder_info = new obs_encoder_info();
 		AMF_Encoder::h264::encoder_info->id = "amf_h264_encoder";
@@ -66,142 +67,29 @@ void AMF_Encoder::h264::encoder_register() {
 
 		// Functions
 		AMF_Encoder::h264::encoder_info->get_name = &AMF_Encoder::h264::get_name;
+		AMF_Encoder::h264::encoder_info->get_defaults = &AMF_Encoder::h264::get_defaults;
+		AMF_Encoder::h264::encoder_info->get_properties = &AMF_Encoder::h264::get_properties;
 		AMF_Encoder::h264::encoder_info->create = &AMF_Encoder::h264::create;
 		AMF_Encoder::h264::encoder_info->destroy = &AMF_Encoder::h264::destroy;
 		AMF_Encoder::h264::encoder_info->encode = &AMF_Encoder::h264::encode;
-		AMF_Encoder::h264::encoder_info->get_defaults = &AMF_Encoder::h264::get_defaults;
-		AMF_Encoder::h264::encoder_info->get_properties = &AMF_Encoder::h264::get_properties;
-		//AMF_Encoder::h264::encoder_info->update = &AMF_Encoder::h264::update;
+		AMF_Encoder::h264::encoder_info->update = &AMF_Encoder::h264::update;
+		AMF_Encoder::h264::encoder_info->get_extra_data = &AMF_Encoder::h264::get_extra_data;
 
 		obs_register_encoder(AMF_Encoder::h264::encoder_info);
 	}
 }
 
 const char* AMF_Encoder::h264::get_name(void* type_data) {
-	AMF_LOG_INFO("h264::get_name");
 	return AMF_TEXT_T("Name");
 }
 
 void* AMF_Encoder::h264::create(obs_data_t* settings, obs_encoder_t* encoder) {
-	AMF_LOG_INFO("h264::create");
-	AMF_Encoder::h264* enc = new AMF_Encoder::h264(settings, encoder);
-	return enc;
-}
-
-AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
-	AMF_LOG_INFO("Create: Initialization Request...");
-
-	// OBS Settings
-	video_t *video = obs_encoder_video(encoder);
-	const struct video_output_info *voi = video_output_get_info(video);
-
-	s_Width = obs_encoder_get_width(encoder);
-	s_Height = obs_encoder_get_height(encoder);
-	s_FPS_num = voi->fps_num; s_FPS_den = voi->fps_den;
-	switch (voi->format) {
-		case VIDEO_FORMAT_RGBA:
-			s_surfaceFormat = amf::AMF_SURFACE_RGBA;
-			break;
-		case VIDEO_FORMAT_NV12:
-		default:
-			s_surfaceFormat = amf::AMF_SURFACE_NV12;
-			break;
+	try {
+		AMF_Encoder::h264* enc = new AMF_Encoder::h264(settings, encoder);
+		return enc;
+	} catch (std::exception e) {
+		return NULL;
 	}
-
-	// Select Memory Type
-	s_memoryType = amf::AMF_MEMORY_HOST; // Host for now.
-
-	AMF_RESULT res = AMFCreateContext(&amf_context);
-	if (res != AMF_OK) {
-		AMF_LOG_ERROR("Create: Failed to create AMF context, error code %d: %s.", res, amf::AMFGetResultText(res));
-	}
-
-	// Encoder Component
-	switch (obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PROFILE_ENUM")) {
-		case h264::PROFILES::PROFILE_SVC_BP:
-		case h264::PROFILES::PROFILE_SVC_HiP:
-			res = AMFCreateComponent(amf_context, AMFVideoEncoderVCE_SVC, &this->amf_encoder);
-		default:
-			res = AMFCreateComponent(amf_context, AMFVideoEncoderVCE_AVC, &this->amf_encoder);
-	}
-	if (res != AMF_OK) {
-		AMF_LOG_ERROR("Create: Failed to create AMF context, error code %d: %s.", res, amf::AMFGetResultText(res));
-	}
-
-	// Pre Initialization
-	///Quality Preset & Usage
-	res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET"));
-	res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, obs_data_get_int(settings, "AMF_VIDEO_ENCODER_USAGE_ENUM"));
-
-	///Framesize & Framerate
-	res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, ::AMFConstructSize(s_Width, s_Height)); // Take from OBS
-	AMF_LOG_INFO("Create: AMF_VIDEO_ENCODER_FRAMESIZE = %dx%d", s_Width, s_Height);
-	if (res != AMF_OK) AMF_LOG_ERROR("Create: AMF_VIDEO_ENCODER_FRAMESIZE, error code %d: %s.", res, amf::AMFGetResultText(res));
-
-	res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_FRAMERATE, ::AMFConstructRate(s_FPS_num, s_FPS_den)); // Take from OBS
-	AMF_LOG_INFO("Create: AMF_VIDEO_ENCODER_FRAMERATE = %d/%d", s_FPS_num, s_FPS_den);
-	if (res != AMF_OK) AMF_LOG_ERROR("Create: AMF_VIDEO_ENCODER_FRAMERATE, error code %d: %s.", res, amf::AMFGetResultText(res));
-
-	///Profile & Profile Level
-	int64_t t_profile = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PROFILE_ENUM");
-	if (t_profile != -1)
-		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMF_Encoder::h264::PROFILE_VALUES[t_profile]);
-	int64_t t_profileLevel = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PROFILE_LEVEL");
-	if (t_profileLevel != -1)
-		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, AMF_Encoder::h264::LEVEL_VALUES[t_profileLevel]);
-
-	/// Rate Control
-	int64_t t_rateControl = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD");
-	if (t_rateControl != -1)
-		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, t_rateControl);
-	int64_t t_skipFrameEnable = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE");
-	if (t_skipFrameEnable != -1)
-		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, t_skipFrameEnable == 1);
-
-	/// CBR, VBR
-	int64_t t_bitrateTarget = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_TARGET_BITRATE");
-	if (t_bitrateTarget != -1)
-		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, t_bitrateTarget);
-	int64_t t_bitratePeak = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PEAK_BITRATE");
-	if (t_bitratePeak != -1)
-		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, t_bitratePeak);
-	int64_t t_vbvBufferSize = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE");
-	if (t_vbvBufferSize != -1)
-		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, t_vbvBufferSize);
-
-	/// Constrained QP
-	int64_t t_qpMin = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_MIN_QP");
-	if (t_qpMin != -1)
-		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_MIN_QP, t_qpMin);
-	int64_t t_qpMax = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_MAX_QP");
-	if (t_qpMax != -1)
-		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_MAX_QP, t_qpMax);
-	int64_t t_qpI = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QP_I");
-	if (t_qpI != -1)
-		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_QP_I, t_qpI);
-	int64_t t_qpP = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QP_P");
-	if (t_qpP != -1)
-		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_QP_P, t_qpP);
-	int64_t t_qpB = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QP_B");
-	if (t_qpB != -1)
-		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_QP_B, t_qpB);
-
-	// Other
-	res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE,
-		obs_data_get_bool(settings, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE"));
-	int64_t t_gopSize = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_GOP_SIZE");
-	if (t_gopSize != -1)
-		res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_GOP_SIZE, t_gopSize);
-
-	// During Runtime (only set it here anyway)
-	//res = amf_encoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, 2);
-
-	res = amf_encoder->Init(s_surfaceFormat, s_Width, s_Height);
-	if (res != AMF_OK) {
-		AMF_LOG_ERROR("Failed to create AMF context, error code %d: %s.", res, amf::AMFGetResultText(res));
-	}
-
-	AMF_LOG_INFO("Create: Request completed.");
 }
 
 void AMF_Encoder::h264::destroy(void* data) {
@@ -210,22 +98,373 @@ void AMF_Encoder::h264::destroy(void* data) {
 	data = nullptr;
 }
 
-AMF_Encoder::h264::~h264() {
-	if (amf_encoder)
-		amf_encoder->Terminate();
-	if (amf_context)
-		amf_context->Terminate();
+bool AMF_Encoder::h264::encode(void *data, struct encoder_frame *frame, struct encoder_packet *packet, bool *received_packet) {
+	return static_cast<AMF_Encoder::h264*>(data)->encode(frame, packet, received_packet);
 }
 
-bool AMF_Encoder::h264::encode(void *data, struct encoder_frame *frame, struct encoder_packet *packet, bool *received_packet) {
-	if (!frame)
-		AMF_LOG_INFO("h264::encode: Frame is Null");
-	if (!packet)
-		AMF_LOG_INFO("h264::encode: Packet is Null");
-	if (!received_packet)
-		AMF_LOG_INFO("h264::encode: Received_Packet is Null");
+void AMF_Encoder::h264::get_defaults(obs_data_t *settings) {
+	AMF_LOG_INFO("h264::get_defaults");
 
-	return static_cast<AMF_Encoder::h264*>(data)->encode(frame, packet, received_packet);
+	//////////////////////////////////////////////////////////////////////////
+	// Static Properties (Can't be changed during Encoding)
+	//////////////////////////////////////////////////////////////////////////
+	// Quality Preset & Usage
+	/// amf_int64(AMF_VIDEO_ENCODER_USAGE_ENUM); default = N/A; Encoder usage type. fully configures parameter set. 
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_USAGE", AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY);
+	/// amf_int64(AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM); default = depends on USAGE; Quality Preset 
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET", AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY);
+
+	// Profile & Level
+	/// amf_int64(AMF_VIDEO_ENCODER_PROFILE_ENUM) ; default = AMF_VIDEO_ENCODER_PROFILE_MAIN;  H264 profile
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PROFILE", -1);
+	/// amf_int64; default = 42; H264 profile level
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PROFILE_LEVEL", -1);
+
+	// Other
+	/// amf_int64; default = 0; Max number of LTR frames
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MAX_LTR_FRAMES", -1);
+	/// amf_int64(AMF_VIDEO_ENCODER_SCANTYPE_ENUM); default = AMF_VIDEO_ENCODER_SCANTYPE_PROGRESSIVE; indicates input stream type
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_SCANTYPE", 0);
+
+	//////////////////////////////////////////////////////////////////////////
+	// Dynamic Properties (Can be changed during Encoding)
+	//////////////////////////////////////////////////////////////////////////
+	// Rate Control
+	/// amf_int64(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM); default = depends on USAGE; Rate Control Method 
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD", -1);
+	/// bool; default =  depends on USAGE; Rate Control Based Frame Skip 
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME", -1);
+	/// bool; default = depends on USAGE; Enforce HRD
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_ENFORCE_HRD", -1);
+	/// bool; default = false; Filler Data Enable
+	obs_data_set_default_bool(settings, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE", false);
+	/// amf_int64; default = 60; GOP Size, in frames
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_GOP_SIZE", -1);
+	/// amf_int64; default = depends on USAGE; VBV Buffer Size in bits
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", -1);
+	/// amf_int64; default =  64; Initial VBV Buffer Fullness 0=0% 64=100%
+	obs_data_set_default_double(settings, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS", 1.0);
+	/// amf_int64; default = 60; Max AU Size in bits
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MAX_AU_SIZE", -1);
+	/// amf_int64; default = depends on USAGE; B-picture Delta
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_B_PIC_DELTA_QP", -1);
+	/// amf_int64; default = depends on USAGE; Reference B-picture Delta
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP", -1);
+
+	// Rate Control: Constrained QP
+	/// amf_int64; default = depends on USAGE; Min QP; range = 0-51
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MIN_QP", -1);
+	/// amf_int64; default = depends on USAGE; Max QP; range = 0-51
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MAX_QP", -1);
+	/// amf_int64; default = 22; I-frame QP; range = 0-51
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_I", -1);
+	/// amf_int64; default = 22; P-frame QP; range = 0-51
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_P", -1);
+	/// amf_int64; default = 22; B-frame QP; range = 0-51
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_B", -1);
+
+	// Rate Control:  CBR, VBR
+	/// amf_int64; default = depends on USAGE; Target bit rate in bits
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_TARGET_BITRATE", -1);
+	/// amf_int64; default = depends on USAGE; Peak bit rate in bits
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PEAK_BITRATE", -1);
+
+	// Picture Control Properties
+	/// amf_int64; default = 0; Header Insertion Spacing; range 0-1000
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING", -1);
+	/// amf_int64; default = 3; B-picture Pattern (number of B-Frames)
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_B_PIC_PATTERN", -1);
+	/// bool; default = depends on USAGE; De-blocking Filter
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER", -1);
+	/// bool; default = true; Enable Refrence to B-frames
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE", -1);
+	/// amf_int64; default = depends on USAGE; IDR Period in frames
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_IDR_PERIOD", -1);
+	/// amf_int64; default = depends on USAGE; Intra Refresh MBs Number Per Slot in Macroblocks
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT", -1);
+	/// amf_int64; default = 1; Number of slices Per Frame 
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_SLICES_PER_FRAME", -1);
+
+	// Motion Estimation
+	/// bool; default= true; Half Pixel 
+	obs_data_set_default_bool(settings, "AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL", true);
+	/// bool; default= true; Quarter Pixel
+	obs_data_set_default_bool(settings, "AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL", true);
+
+	// SVC (Scalable Profiles)
+	/// amf_int64; default = 0; range = 0, min(2, caps->GetMaxNumOfTemporalLayers()) number of temporal enhancment Layers (SVC)
+	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS", -1);
+}
+
+obs_properties_t* AMF_Encoder::h264::get_properties(void* data) {
+	obs_property_t* list;
+	obs_properties* props = obs_properties_create();
+
+	//////////////////////////////////////////////////////////////////////////
+	// Static Properties (Can't be changed during Encoding)
+	//////////////////////////////////////////////////////////////////////////
+	// Usage & Quality Preset
+	/// Usage
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_USAGE", AMF_TEXT_T("USAGE"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, AMF_TEXT_T("USAGE.TRANSCODING"), AMF_VIDEO_ENCODER_USAGE_TRANSCONDING);
+	obs_property_list_add_int(list, AMF_TEXT_T("USAGE.ULTRALOWLATENCY"), AMF_VIDEO_ENCODER_USAGE_ULTRA_LOW_LATENCY);
+	obs_property_list_add_int(list, AMF_TEXT_T("USAGE.LOWLATENCY"), AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY);
+	obs_property_list_add_int(list, AMF_TEXT_T("USAGE.WEBCAM"), AMF_VIDEO_ENCODER_USAGE_WEBCAM);
+	/// Quality Preset
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_QUALITY_PRESET", AMF_TEXT_T("PRESET"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, AMF_TEXT_T("PRESET.SPEED"), AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED);
+	obs_property_list_add_int(list, AMF_TEXT_T("PRESET.BALANCED"), AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED);
+	obs_property_list_add_int(list, AMF_TEXT_T("PRESET.QUALITY"), AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY);
+
+	// Profile & Level
+	/// h264 Profile
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_PROFILE", AMF_TEXT_T("PROFILE"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, AMF_TEXT_T("PROFILE.DEFAULT"), -1);
+	for (unsigned int i = 0; i < AMF_Encoder::h264::PROFILES::PROFILE_COUNT_MAX; i++) {
+		obs_property_list_add_int(list, obs_module_text(AMF_Encoder::h264::PROFILE_NAMES[i]), i);
+	}
+	/// h264 Profile Level
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_PROFILE_LEVEL", AMF_TEXT_T("LEVEL"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, AMF_TEXT_T("LEVEL.DEFAULT"), -1);
+	for (unsigned int i = 0; i < AMF_Encoder::h264::LEVELS::LEVEL_COUNT_MAX; i++) {
+		obs_property_list_add_int(list, obs_module_text(AMF_Encoder::h264::LEVEL_NAMES[i]), i);
+	}
+
+	// Other
+	/// Maximum LTR Frames
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_MAX_LTR_FRAMES", AMF_TEXT_T("MAXOFLTRFRAMES"), -1, 65535, 1);
+	/// Scan Type
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_SCANTYPE", AMF_TEXT_T("SCANTYPE"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, AMF_TEXT_T("SCANTYPE.PROGRESSIVE"), AMF_VIDEO_ENCODER_SCANTYPE_PROGRESSIVE);
+	obs_property_list_add_int(list, AMF_TEXT_T("SCANTYPE.INTERLACED"), AMF_VIDEO_ENCODER_SCANTYPE_INTERLACED);
+
+	//////////////////////////////////////////////////////////////////////////
+	// Dynamic Properties (Can be changed during Encoding)
+	//////////////////////////////////////////////////////////////////////////
+	// Rate Control
+	/// Method
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD", AMF_TEXT_T("RATE_CONTROL"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, AMF_TEXT_T("RATE_CONTROL.DEFAULT"), -1);
+	obs_property_list_add_int(list, AMF_TEXT_T("RATE_CONTROL.CONSTRAINEDQP"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTRAINED_QP);
+	obs_property_list_add_int(list, AMF_TEXT_T("RATE_CONTROL.CBR"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR);
+	obs_property_list_add_int(list, AMF_TEXT_T("RATE_CONTROL.PEAK_CONSTRAINED_VBR"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR);
+	obs_property_list_add_int(list, AMF_TEXT_T("RATE_CONTROL.LATENCY_CONSTRAINED_VBR"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR);
+	/// Skip Frames if necessary
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME", AMF_TEXT_T("SKIP_FRAME"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, AMF_TEXT_T("SKIP_FRAME.DEFAULT"), -1);
+	obs_property_list_add_int(list, AMF_TEXT_T("SKIP_FRAME.DISABLE"), 0);
+	obs_property_list_add_int(list, AMF_TEXT_T("SKIP_FRAME.ENABLE"), 1);
+	/// Enforce HRD (?)
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_ENFORCE_HRD", AMF_TEXT_T("ENFORCE_HRD"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, AMF_TEXT_T("ENFORCE_HRD.DEFAULT"), -1);
+	obs_property_list_add_int(list, AMF_TEXT_T("ENFORCE_HRD.DISABLE"), 0);
+	obs_property_list_add_int(list, AMF_TEXT_T("ENFORCE_HRD.ENABLE"), 1);
+	/// Filler Data
+	obs_properties_add_bool(props, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE", AMF_TEXT_T("FILLER_DATA"));
+	/// GOP Size
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_GOP_SIZE", AMF_TEXT_T("GOP_SIZE"), -1, 8192, 1);
+	/// VBV Buffer
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", AMF_TEXT_T("VBV_BUFFER_SIZE"), -1, 65535, 1);
+	obs_properties_add_float_slider(props, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS", AMF_TEXT_T("INITIAL_VBV_BUFFER_FULLNESS"), 0.0, 1.0, 0.015625);
+	/// Max AU Size
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_MAX_AU_SIZE", AMF_TEXT_T("MAX_AU_SIZE"), -1, 1024, 1);
+	/// B-Picture Delta QP
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_B_PIC_DELTA_QP", AMF_TEXT_T("B_PIC_DELTA_QP"), -1, 51, 1);
+	/// Reference B-Picture Delta QP
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP", AMF_TEXT_T("REF_B_PIC_DELTA_QP"), -1, 51, 1);
+
+	// Rate Control: Constrained QP
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_MIN_QP", AMF_TEXT_T("QP.MIN"), -1, 51, 1);
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_MAX_QP", AMF_TEXT_T("QP.MAX"), -1, 51, 1);
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_QP_I", AMF_TEXT_T("QP.I"), -1, 51, 1);
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_QP_P", AMF_TEXT_T("QP.P"), -1, 51, 1);
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_QP_B", AMF_TEXT_T("QP.B"), -1, 51, 1);
+
+	// Rate Control: CBR, VBR
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_TARGET_BITRATE", AMF_TEXT_T("BITRATE.TARGET"), -1, 65535, 1);
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_PEAK_BITRATE", AMF_TEXT_T("BITRATE.PEAK"), -1, 65535, 1);
+
+	// Picture Control Properties
+	/// Header Insertion Spacing
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING", AMF_TEXT_T("HEADER_INSERTION_SPACING"), -1, 1000, 1);
+	/// B-Pictures Pattern
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_B_PIC_PATTERN", AMF_TEXT_T("B_PIC_PATTERN"), -1, 16, 1);
+	/// De-Blocking Filter
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER", AMF_TEXT_T("DEBLOCKINGFILTER"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, AMF_TEXT_T("DEBLOCKINGFILTER.DEFAULT"), -1);
+	obs_property_list_add_int(list, AMF_TEXT_T("DEBLOCKINGFILTER.DISABLE"), 0);
+	obs_property_list_add_int(list, AMF_TEXT_T("DEBLOCKINGFILTER.ENABLE"), 1);
+	/// Enable Reference to B-Frames (2nd Generation GCN and newer)
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE", AMF_TEXT_T("BREFERENCE"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, AMF_TEXT_T("BREFERENCE.DEFAULT"), -1);
+	obs_property_list_add_int(list, AMF_TEXT_T("BREFERENCE.DISABLE"), 0);
+	obs_property_list_add_int(list, AMF_TEXT_T("BREFERENCE.ENABLE"), 1);
+	/// IDR Period (Is this Keyframe distance?)
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_IDR_PERIOD", AMF_TEXT_T("IDR_PERIOD"), -1, 1000, 1);
+	/// Intra Refresh MBs Number Per Slot in Macroblocks
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT", AMF_TEXT_T("INTRA_REFRESH_NUM_MBS_PER_SLOT"), -1, 1024, 1);
+	/// Number of slices Per Frame 
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_SLICES_PER_FRAME", AMF_TEXT_T("SLICES_PER_FRAME"), -1, 1000, 1);
+
+	// Motion Estimation
+	/// Half Pixel 
+	obs_properties_add_bool(props, "AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL", AMF_TEXT_T("MOTION_HALF_PIXEL"));
+	/// Quarter Pixel
+	obs_properties_add_bool(props, "AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL", AMF_TEXT_T("MOTION_QUARTER_PIXEL"));
+
+	// SVC (Scalable Profiles)
+	/// Number of Temporal Enhancment Layers (SVC)
+	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS", AMF_TEXT_T("NUM_TEMPORAL_ENHANCEMENT_LAYERS"), -1, 1024, 1);
+
+	return props;
+}
+
+bool AMF_Encoder::h264::update(void *data, obs_data_t *settings) {
+	return static_cast<AMF_Encoder::h264*>(data)->update(settings);
+}
+
+void AMF_Encoder::h264::get_video_info(void *data, struct video_scale_info *info) {
+	return static_cast<AMF_Encoder::h264*>(data)->get_video_info(info);
+}
+
+bool AMF_Encoder::h264::get_extra_data(void *data, uint8_t** extra_data, size_t* size) {
+	return static_cast<AMF_Encoder::h264*>(data)->get_extra_data(extra_data, size);
+}
+
+void AMF_Encoder::h264::wa_log_property_int(AMF_RESULT amfResult, char* sProperty, int64_t value) {
+	char* format = "[AMF_Encoder::h264] Attempted to set property '%s' to '%d', result: %s (%d).";
+
+	// Log AMF Error
+	char* amfErrorBuffer = new char[1024];
+	wcstombs(amfErrorBuffer, amf::AMFGetResultText(amfResult), 1024);
+
+	blog(LOG_INFO, format, sProperty, value, amfErrorBuffer, amfResult);// , args);
+
+	delete[] amfErrorBuffer;
+}
+void AMF_Encoder::h264::wa_log_property_bool(AMF_RESULT amfResult, char* sProperty, bool value) {
+	char* format = "[AMF_Encoder::h264] Attempted to set property '%s' to '%s', result: %s (%d).";
+
+	// Log AMF Error
+	char* amfErrorBuffer = new char[1024];
+	wcstombs(amfErrorBuffer, amf::AMFGetResultText(amfResult), 1024);
+
+	blog(LOG_INFO, format, sProperty, value ? "true" : "false", amfErrorBuffer, amfResult);// , args);
+
+	delete[] amfErrorBuffer;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Module Code
+//////////////////////////////////////////////////////////////////////////
+AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
+	AMF_LOG_INFO("Create: Initialization Request...");
+
+	// OBS Settings
+	video_t *video = obs_encoder_video(encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+
+	m_cfgWidth = obs_encoder_get_width(encoder);
+	m_cfgHeight = obs_encoder_get_height(encoder);
+	m_cfgFPSnum = voi->fps_num; m_cfgFPSden = voi->fps_den;
+	switch (voi->format) {
+		case VIDEO_FORMAT_RGBA:
+			m_AMFSurfaceFormat = amf::AMF_SURFACE_RGBA;
+			break;
+		case VIDEO_FORMAT_NV12:
+		default:
+			m_AMFSurfaceFormat = amf::AMF_SURFACE_NV12;
+			break;
+	}
+
+	// Select Memory Type
+	m_AMFMemoryType = amf::AMF_MEMORY_HOST; // Host for now.
+
+	AMF_RESULT res = AMFCreateContext(&m_AMFContext);
+	if (res != AMF_OK) {
+		AMF_LOG_ERROR("Create: Failed to create AMF context, error code %d: %s.", res, amf::AMFGetResultText(res));
+	}
+
+	// Encoder Component
+	switch (obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PROFILE_ENUM")) {
+		case h264::PROFILES::PROFILE_SVC_BP:
+		case h264::PROFILES::PROFILE_SVC_HiP:
+			res = AMFCreateComponent(m_AMFContext, AMFVideoEncoderVCE_SVC, &this->m_AMFEncoder);
+		default:
+			res = AMFCreateComponent(m_AMFContext, AMFVideoEncoderVCE_AVC, &this->m_AMFEncoder);
+	}
+	if (res != AMF_OK) {
+		AMF_LOG_ERROR("Create: Failed to create AMF context, error code %d: %s.", res, amf::AMFGetResultText(res));
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// Static Properties (Can't be changed during Encoding)
+	//////////////////////////////////////////////////////////////////////////
+	// Quality Preset & Usage
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, obs_data_get_int(settings, "AMF_VIDEO_ENCODER_USAGE"));
+	wa_log_property_int(res, "AMF_VIDEO_ENCODER_USAGE", obs_data_get_int(settings, "AMF_VIDEO_ENCODER_USAGE"));
+
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET"));
+	wa_log_property_int(res, "AMF_VIDEO_ENCODER_QUALITY_PRESET", obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET"));
+
+	// Framesize & Framerate
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, ::AMFConstructSize(m_cfgWidth, m_cfgHeight)); // Take from OBS
+	wa_log_property_int(res, "AMF_VIDEO_ENCODER_FRAMESIZE.X", m_cfgWidth);
+	wa_log_property_int(res, "AMF_VIDEO_ENCODER_FRAMESIZE.Y", m_cfgHeight);
+
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FRAMERATE, ::AMFConstructRate(m_cfgFPSnum, m_cfgFPSden)); // Take from OBS
+	wa_log_property_int(res, "AMF_VIDEO_ENCODER_FRAMERATE.Num", m_cfgFPSnum);
+	wa_log_property_int(res, "AMF_VIDEO_ENCODER_FRAMERATE.Den", m_cfgFPSden);
+
+	// Profile & Level
+	int64_t t_profile = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PROFILE");
+	if (t_profile != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMF_Encoder::h264::PROFILE_VALUES[t_profile]);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_PROFILE", AMF_Encoder::h264::PROFILE_VALUES[t_profile]);
+	}
+
+	int64_t t_profileLevel = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PROFILE_LEVEL");
+	if (t_profileLevel != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, AMF_Encoder::h264::LEVEL_VALUES[t_profileLevel]);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_PROFILE_LEVEL", AMF_Encoder::h264::LEVEL_VALUES[t_profileLevel]);
+	}
+
+	// Other
+	int64_t t_MaxLTRFrames = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_MAX_LTR_FRAMES");
+	if (t_MaxLTRFrames != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, t_MaxLTRFrames);
+		AMF_LOG_INFO("Create: AMF_VIDEO_ENCODER_MAX_LTR_FRAMES = %d", t_MaxLTRFrames);
+		//if (res != AMF_OK) AMF_LOG_ERROR("Create: AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, error code %d: %s.", res, amf::AMFGetResultText(res));
+	}
+
+	int64_t t_ScanType = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_SCANTYPE");
+	if (t_ScanType != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SCANTYPE, t_ScanType);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_SCANTYPE", t_ScanType);
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// Dynamic Properties (Can be changed during Encoding)
+	//////////////////////////////////////////////////////////////////////////
+	update_properties(settings);
+
+	//////////////////////////////////////////////////////////////////////////
+	// Initialize (locks static properties)
+	//////////////////////////////////////////////////////////////////////////
+	res = m_AMFEncoder->Init(m_AMFSurfaceFormat, m_cfgWidth, m_cfgHeight);
+	if (res != AMF_OK) {
+		AMF_LOG_ERROR("Failed to create AMF context, error code %d: %s.", res, amf::AMFGetResultText(res));
+		throw std::exception("Failed to create AMF context.");
+	}
+
+	AMF_LOG_INFO("Create: Request completed.");
+}
+
+AMF_Encoder::h264::~h264() {
+	if (m_AMFEncoder)
+		m_AMFEncoder->Terminate();
+	if (m_AMFContext)
+		m_AMFContext->Terminate();
 }
 
 void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
@@ -235,46 +474,56 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 	// Early-Exit if either the frame or the contained data is invalid.
 	if (!frame || !frame->data[0]) {
 		//// Drain Queues.
-		res = amf_encoder->Drain();
+		res = m_AMFEncoder->Drain();
 		return;
 	}
 
 	// Create Surface depending on Memory Type.
-	if (s_memoryType == amf::AMF_MEMORY_HOST) {
+	if (m_AMFMemoryType == amf::AMF_MEMORY_HOST) {
 		// Host: RAM.
-		switch (s_surfaceFormat) {
+		switch (m_AMFSurfaceFormat) {
 			case amf::AMF_SURFACE_NV12:
+			{
 				// Y:U+V, Two Plane
-				res = amf_context->AllocSurface(s_memoryType, s_surfaceFormat, s_Width, s_Height, &surfaceIn);
+				res = m_AMFContext->AllocSurface(m_AMFMemoryType, m_AMFSurfaceFormat, m_cfgWidth, m_cfgHeight, &surfaceIn);
 				size_t iMax = surfaceIn->GetPlanesCount();
 				for (uint8_t i = 0; i < iMax; i++) {
 					amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
 					void* plane_nat = plane->GetNative();
 
-					/*AMF_LOG_INFO("Plane Information for %d", i);
+					for (uint32_t py = 0; py < plane->GetHeight(); py++) {
+						size_t plane_off = py * plane->GetHPitch();
+						size_t frame_off = py * frame->linesize[i];
+						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+					}
+				}
+				break;
+			}
+			case amf::AMF_SURFACE_RGBA:
+			{
+				// RGBA, Single Plane
+
+				//	res = amf_context->CreateSurfaceFromHostNative(s_surfaceFormat, s_Width, s_Height, s_Width, s_Height, frame->data[0], &surfaceIn, NULL);
+				res = m_AMFContext->AllocSurface(m_AMFMemoryType, m_AMFSurfaceFormat, m_cfgWidth, m_cfgHeight, &surfaceIn);
+				size_t iMax = surfaceIn->GetPlanesCount();
+				for (uint8_t i = 0; i < iMax; i++) {
+					amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
+					void* plane_nat = plane->GetNative();
+
+					AMF_LOG_INFO("Plane Information for %d", i);
 					AMF_LOG_INFO("Size: %d, %d", plane->GetWidth(), plane->GetHeight());
 					AMF_LOG_INFO("Offset: %d, %d", plane->GetOffsetX(), plane->GetOffsetY());
 					AMF_LOG_INFO("Pitch: %d, %d", plane->GetHPitch(), plane->GetVPitch());
-					AMF_LOG_INFO("PixelSize: %d", plane->GetPixelSizeInBytes());*/
+					AMF_LOG_INFO("PixelSize: %d", plane->GetPixelSizeInBytes());
 
 					for (uint32_t py = 0; py < plane->GetHeight(); py++) {
 						size_t plane_off = py * plane->GetHPitch();
 						size_t frame_off = py * frame->linesize[i];
-
-						//AMF_LOG_INFO("Line: %d, %d, %d", py, plane_off, frame_off);
 						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
 					}
-
-					// Copy to target buffer. Strangely distorted, perhaps not the right way?
-//					std::memcpy(plane_nat, frame->data[i], plane->GetVPitch() * plane->GetHeight());
-//					else
-//						std::memcpy(plane_nat, frame->data[i], plane->GetVPitch() * plane->GetHeight());
 				}
 				break;
-			//case amf::AMF_SURFACE_RGBA:
-			//	// RGBA, Single Plane
-			//	res = amf_context->CreateSurfaceFromHostNative(s_surfaceFormat, s_Width, s_Height, s_Width, s_Height, frame->data[0], &surfaceIn, NULL);
-			//	break;
+			}
 		}
 	}
 	if (res != AMF_OK) { // Failed to create Surface.
@@ -287,29 +536,12 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 	}
 
 	// Set per-Surface Data.
-	//surfaceIn->AddObserver(&amf_surfaceObserver);
 	surfaceIn->SetPts(frame->pts);
 
 	// Queue into Input Queue.
 	h264_input_frame* myFrame = new h264_input_frame;
 	myFrame->surface = surfaceIn;
-	this->inputQueue.push(myFrame);
-
-	//// Attempt to send it off.
-	//res = amf_encoder->SubmitInput(surfaceIn);
-	//if (res == AMF_OK) {
-	//	return;
-	//} else if (res == AMF_INPUT_FULL) {
-	//} else {
-
-	//	if (res == AMF_INPUT_FULL) {
-	//		// Drain Input Queue
-	//		do {
-	//			res = amf_encoder->Drain();
-	//		} while (res == AMF_INPUT_FULL);
-	//	} else if (res != AMF_OK) {
-	//	}
-	//}
+	this->m_InputQueue.push(myFrame);
 }
 
 void AMF_Encoder::h264::update_queues() {
@@ -317,16 +549,16 @@ void AMF_Encoder::h264::update_queues() {
 	amf::AMFDataPtr pData;
 
 	// Input.
-	if (!inputQueue.empty()) {
+	if (!m_InputQueue.empty()) {
 		do {
-			h264_input_frame* myFrame = inputQueue.front();
-			res = amf_encoder->SubmitInput(myFrame->surface);
+			h264_input_frame* myFrame = m_InputQueue.front();
+			res = m_AMFEncoder->SubmitInput(myFrame->surface);
 			if (res == AMF_OK) {
-				inputQueue.pop();
+				m_InputQueue.pop();
 				//myFrame->surface->Release(); // Does SubmitInput do this for me?
 				delete myFrame;
 			}
-		} while ((!inputQueue.empty()) && (res == AMF_OK));
+		} while ((!m_InputQueue.empty()) && (res == AMF_OK));
 		if (res != AMF_OK && res != AMF_INPUT_FULL) {
 			const wchar_t* errormsg = amf::AMFGetResultText(res);
 			char* outbuf = new char[1024];
@@ -338,11 +570,11 @@ void AMF_Encoder::h264::update_queues() {
 
 	// Output.
 	do {
-		res = amf_encoder->QueryOutput(&pData);
+		res = m_AMFEncoder->QueryOutput(&pData);
 		if (res == AMF_OK) {
 			h264_output_frame* myFrame = new h264_output_frame();
 			myFrame->data = pData;
-			outputQueue.push(myFrame);
+			m_OutputQueue.push(myFrame);
 		}
 	} while (res == AMF_OK);
 	if (res != AMF_OK && res != AMF_REPEAT) {
@@ -355,36 +587,40 @@ void AMF_Encoder::h264::update_queues() {
 }
 
 void AMF_Encoder::h264::dequeue_frame(encoder_packet* packet, bool* received_packet) {
-	if (outputQueue.empty())
+	if (m_OutputQueue.empty())
 		return;
 
-	h264_output_frame* myFrame = outputQueue.front();
+	h264_output_frame* myFrame = m_OutputQueue.front();
 	if (myFrame) {
-		outputQueue.pop();
+		m_OutputQueue.pop();
 
 		amf::AMFBufferPtr pBuffer(myFrame->data);
 		packet->size = pBuffer->GetSize();
 
-		if ((largeBuffer && (largeBufferSize < packet->size)) || (!largeBuffer)) {
-			if (largeBuffer) {
-				AMF_LOG_INFO("Dequeue_Frame: Buffer too small (%d < %d), deleting...", largeBufferSize, packet->size);
-				delete[] largeBuffer;
+		if ((m_pLargeBuffer && (m_LargeBufferSize < packet->size)) || (!m_pLargeBuffer)) {
+			if (m_pLargeBuffer) {
+				AMF_LOG_INFO("Dequeue_Frame: Buffer too small (%d < %d), deleting...", m_LargeBufferSize, packet->size);
+				delete[] m_pLargeBuffer;
 			}
-			AMF_LOG_INFO("Dequeue_Frame: Creating Buffer with size %d...", packet->size);
-			largeBuffer = new uint8_t[packet->size + 1];
-			largeBufferSize = packet->size;
+			m_LargeBufferSize = (int64_t)exp2(ceil(log2(packet->size)));
+			m_pLargeBuffer = new uint8_t[m_LargeBufferSize];
+			AMF_LOG_INFO("Dequeue_Frame: Created Buffer with size %d...", packet->size);
 		}
 
-		packet->data = largeBuffer;
+		packet->data = m_pLargeBuffer;
 		std::memcpy(packet->data, pBuffer->GetNative(), packet->size);
 		packet->type = OBS_ENCODER_VIDEO;
 
 		packet->pts = myFrame->data->GetPts();
 		packet->dts = myFrame->data->GetPts();
-		packet->keyframe = true;
+
+		{
+			int t_frameDataType = -1;
+			pBuffer->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &t_frameDataType);
+			packet->keyframe = (t_frameDataType == AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR);
+		}
 
 		// Free AMF Memory
-		//myFrame->data->Release();
 		delete myFrame;
 
 		*received_packet = true;
@@ -407,195 +643,26 @@ bool AMF_Encoder::h264::encode(struct encoder_frame * frame, struct encoder_pack
 	return true;
 }
 
-void AMF_Encoder::h264::get_defaults(obs_data_t *settings) {
-	AMF_LOG_INFO("h264::get_defaults");
-
-	// Quality Preset & Usage
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET", AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY);
-	// amf_int64(AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM); default = depends on USAGE; Quality Preset 
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_USAGE_ENUM", AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY);
-	// amf_int64(AMF_VIDEO_ENCODER_USAGE_ENUM); default = N/A; Encoder usage type. fully configures parameter set. 
-
-	// Profile & Level
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PROFILE_ENUM", -1);
-	// amf_int64(AMF_VIDEO_ENCODER_PROFILE_ENUM) ; default = AMF_VIDEO_ENCODER_PROFILE_MAIN;  H264 profile
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PROFILE_LEVEL", -1);
-	// amf_int64; default = 42; H264 profile level
-
-	// Rate Control
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD", -1);
-	// amf_int64(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM); default = depends on USAGE; Rate Control Method 
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME", -1);
-	// bool; default =  depends on USAGE; Rate Control Based Frame Skip 
-
-	// CBR, VBR
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_TARGET_BITRATE", -1);
-	// amf_int64; default = depends on USAGE; Target bit rate in bits
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PEAK_BITRATE", -1);
-	// amf_int64; default = depends on USAGE; Peak bit rate in bits
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", -1);
-	// amf_int64; default = depends on USAGE; VBV Buffer Size in bits
-
-	// Constrained QP
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MIN_QP", -1);
-	// amf_int64; default = depends on USAGE; Min QP; range = 0-51
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MAX_QP", -1);
-	// amf_int64; default = depends on USAGE; Max QP; range = 0-51
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_I", -1);
-	// amf_int64; default = 22; I-frame QP; range = 0-51
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_P", -1);
-	// amf_int64; default = 22; P-frame QP; range = 0-51
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_B", -1);
-	// amf_int64; default = 22; B-frame QP; range = 0-51
-
-	// Other
-	obs_data_set_default_bool(settings, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE", false);
-	// bool; default = false; Filler Data Enable
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_GOP_SIZE", -1);
-	// amf_int64; default = 60; GOP Size, in frames
-
-//			 // Static properties - can be set befor Init()
-//#define AMF_VIDEO_ENCODER_EXTRADATA                             L"ExtraData"                // AMFInterface* - > AMFBuffer*; SPS/PPS buffer - read-only
-//#define AMF_VIDEO_ENCODER_MAX_LTR_FRAMES                        L"MaxOfLTRFrames"           // amf_int64; default = 0; Max number of LTR frames
-//#define AMF_VIDEO_ENCODER_SCANTYPE                              L"ScanType"                 // amf_int64(AMF_VIDEO_ENCODER_SCANTYPE_ENUM); default = AMF_VIDEO_ENCODER_SCANTYPE_PROGRESSIVE; indicates input stream type
-//
-//			 // Rate control properties
-//#define AMF_VIDEO_ENCODER_B_PIC_DELTA_QP                        L"BPicturesDeltaQP"         // amf_int64; default = depends on USAGE; B-picture Delta
-//#define AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP                    L"ReferenceBPicturesDeltaQP" //  amf_int64; default = depends on USAGE; Reference B-picture Delta
-//#define AMF_VIDEO_ENCODER_ENFORCE_HRD                           L"EnforceHRD"               // bool; default = depends on USAGE; Enforce HRD
-//#define AMF_VIDEO_ENCODER_MAX_AU_SIZE                           L"MaxAUSize"                // amf_int64; default = 60; Max AU Size in bits
-//
-//			 // Picture control properties - 
-//#define AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING              L"HeaderInsertionSpacing"   // amf_int64; default = 0; Header Insertion Spacing; range 0-1000
-//#define AMF_VIDEO_ENCODER_B_PIC_PATTERN                         L"BPicturesPattern"         // amf_int64; default = 3; B-picture Pattern (number of B-Frames)
-//#define AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER                    L"DeBlockingFilter"         // bool; default = depends on USAGE; De-blocking Filter
-//#define AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE                    L"BReferenceEnable"         // bool; default = true; Enable Refrence to B-frames
-//#define AMF_VIDEO_ENCODER_IDR_PERIOD                            L"IDRPeriod"                // amf_int64; default = depends on USAGE; IDR Period in frames
-//#define AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT        L"IntraRefreshMBsNumberPerSlot" // amf_int64; default = depends on USAGE; Intra Refresh MBs Number Per Slot in Macroblocks
-//#define AMF_VIDEO_ENCODER_SLICES_PER_FRAME                      L"SlicesPerFrame"           // amf_int64; default = 1; Number of slices Per Frame 
-//
-//			 // Motion estimation
-//#define AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL                     L"HalfPixel"                // bool; default= true; Half Pixel 
-//#define AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL                   L"QuarterPixel"             // bool; default= true; Quarter Pixel
-//
-//			 // SVC
-//#define AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS        L"NumOfTemporalEnhancmentLayers" // amf_int64; default = 0; range = 0, min(2, caps->GetMaxNumOfTemporalLayers()) number of temporal enhancment Layers (SVC)
-}
-
-obs_properties_t* AMF_Encoder::h264::get_properties(void* data) {
-	return static_cast<AMF_Encoder::h264*>(data)->get_properties();
-}
-
-obs_properties_t* AMF_Encoder::h264::get_properties() {
-	AMF_LOG_INFO("h264::get_properties");
-
-	obs_properties* props = obs_properties_create();
-	obs_property_t *list;
-
-	// Quality Preset & Usage
-	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_QUALITY_PRESET", AMF_TEXT_T("PRESET"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(list, AMF_TEXT_T("PRESET.SPEED"), AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED);
-	obs_property_list_add_int(list, AMF_TEXT_T("PRESET.BALANCED"), AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED);
-	obs_property_list_add_int(list, AMF_TEXT_T("PRESET.QUALITY"), AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY);
-
-	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_USAGE_ENUM", AMF_TEXT_T("USAGE"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(list, AMF_TEXT_T("USAGE.TRANSCODING"), AMF_VIDEO_ENCODER_USAGE_TRANSCONDING);
-	obs_property_list_add_int(list, AMF_TEXT_T("USAGE.ULTRALOWLATENCY"), AMF_VIDEO_ENCODER_USAGE_ULTRA_LOW_LATENCY);
-	obs_property_list_add_int(list, AMF_TEXT_T("USAGE.LOWLATENCY"), AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY);
-	obs_property_list_add_int(list, AMF_TEXT_T("USAGE.WEBCAM"), AMF_VIDEO_ENCODER_USAGE_WEBCAM);
-
-	// Profile & Level
-	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_PROFILE_ENUM", AMF_TEXT_T("PROFILE"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(list, AMF_TEXT_T("PROFILE.DEFAULT"), -1);
-	for (unsigned int i = 0; i < AMF_Encoder::h264::PROFILES::PROFILE_COUNT_MAX; i++) {
-		obs_property_list_add_int(list, obs_module_text(AMF_Encoder::h264::PROFILE_NAMES[i]), i);
-	}
-
-	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_PROFILE_LEVEL", AMF_TEXT_T("LEVEL"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(list, AMF_TEXT_T("LEVEL.DEFAULT"), -1);
-	for (unsigned int i = 0; i < AMF_Encoder::h264::LEVELS::LEVEL_COUNT_MAX; i++) {
-		obs_property_list_add_int(list, obs_module_text(AMF_Encoder::h264::LEVEL_NAMES[i]), i);
-	}
-
-	// Rate Control
-	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD", AMF_TEXT_T("RATE_CONTROL"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(list, AMF_TEXT_T("RATE_CONTROL.DEFAULT"), -1);
-	obs_property_list_add_int(list, AMF_TEXT_T("RATE_CONTROL.CONSTRAINEDQP"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTRAINED_QP);
-	obs_property_list_add_int(list, AMF_TEXT_T("RATE_CONTROL.CBR"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR);
-	obs_property_list_add_int(list, AMF_TEXT_T("RATE_CONTROL.PEAK_CONSTRAINED_VBR"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR);
-	obs_property_list_add_int(list, AMF_TEXT_T("RATE_CONTROL.LATENCY_CONSTRAINED_VBR"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR);
-
-	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME", AMF_TEXT_T("SKIP_FRAME"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(list, AMF_TEXT_T("SKIP_FRAME.DEFAULT"), -1);
-	obs_property_list_add_int(list, AMF_TEXT_T("SKIP_FRAME.DISABLE"), 0);
-	obs_property_list_add_int(list, AMF_TEXT_T("SKIP_FRAME.ENABLE"), 1);
-
-	// CBR, VBR
-	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_TARGET_BITRATE", AMF_TEXT_T("BITRATE.TARGET"), -1, 65535, 1);
-	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_PEAK_BITRATE", AMF_TEXT_T("BITRATE.PEAK"), -1, 65535, 1);
-	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", AMF_TEXT_T("VBV_BUFFER_SIZE"), -1, 65535, 1);
-
-	// Constrained QP
-	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_MIN_QP", AMF_TEXT_T("QP.MIN"), -1, 51, 1);
-	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_MAX_QP", AMF_TEXT_T("QP.MAX"), -1, 51, 1);
-	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_QP_I", AMF_TEXT_T("QP.I"), -1, 51, 1);
-	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_QP_P", AMF_TEXT_T("QP.P"), -1, 51, 1);
-	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_QP_B", AMF_TEXT_T("QP.B"), -1, 51, 1);
-
-	// Other
-	obs_properties_add_bool(props, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE", AMF_TEXT_T("FILLER_DATA"));
-	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_GOP_SIZE", AMF_TEXT_T("GOP_SIZE"), -1, 8192, 1);
-
-	return props;
-}
-
-bool AMF_Encoder::h264::update(void *data, obs_data_t *settings) {
-	return static_cast<AMF_Encoder::h264*>(data)->update(settings);
-}
-
 bool AMF_Encoder::h264::update(obs_data_t* settings) {
-	AMF_LOG_INFO("h264::update");
-
-
-	//int t_rateControlMethod = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD");
-	//switch (t_rateControlMethod) {
-	//	case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTRAINED_QP:
-	//		break;
-	//	case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR:
-	//	case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR:
-
-	//	case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR:
-	//		break;
-	//}
-
-	//obs_properties_get(settings, )
-
-	return false;
-}
-
-void AMF_Encoder::h264::get_video_info(void *data, struct video_scale_info *info) {
-	return static_cast<AMF_Encoder::h264*>(data)->get_video_info(info);
+	//////////////////////////////////////////////////////////////////////////
+	// Dynamic Properties (Can be changed during Encoding)
+	//////////////////////////////////////////////////////////////////////////
+	return update_properties(settings);
 }
 
 void AMF_Encoder::h264::get_video_info(struct video_scale_info* info) {
 	AMF_LOG_INFO("h264::get_video_info");
-	switch (s_surfaceFormat) {
+	switch (m_AMFSurfaceFormat) {
 		case amf::AMF_SURFACE_NV12:
 			info->format = VIDEO_FORMAT_NV12;
 			break;
-		/*case amf::AMF_SURFACE_YV12:
+		/*case amf::AMF_SURFACE_YV12: // Has no OBS equivalent
 			info->format = VIDEO_FORMAT_;
 			break;*/
 		case amf::AMF_SURFACE_BGRA:
 			info->format = VIDEO_FORMAT_BGRA;
 			break;
-		/*case amf::AMF_SURFACE_ARGB:
+		/*case amf::AMF_SURFACE_ARGB: // Has no OBS equivalent
 			info->format = VIDEO_FORMAT_;
 			return;*/
 		case amf::AMF_SURFACE_RGBA:
@@ -607,7 +674,7 @@ void AMF_Encoder::h264::get_video_info(struct video_scale_info* info) {
 		case amf::AMF_SURFACE_YUV420P:
 			info->format = VIDEO_FORMAT_I420;
 			break;
-		/*case amf::AMF_SURFACE_U8V8:
+		/*case amf::AMF_SURFACE_U8V8: // Has no OBS equivalent
 			info->format = VIDEO_FORMAT_Y800;
 			break;*/
 		case amf::AMF_SURFACE_YUY2:
@@ -618,6 +685,220 @@ void AMF_Encoder::h264::get_video_info(struct video_scale_info* info) {
 	//info->colorspace = VIDEO_CS_709;
 }
 
-void AMF_STD_CALL AMF_Encoder::h264_SurfaceObserver::OnSurfaceDataRelease(amf::AMFSurface* pSurface) {
-	//pSurface->
+bool AMF_Encoder::h264::get_extra_data(uint8_t** extra_data, size_t* size) {
+	// So far I have not observer this being called.
+
+	AMF_LOG_INFO("get_extra_data");
+	if (!m_AMFContext)
+		return false;
+	if (!m_AMFEncoder)
+		return false;
+
+	amf::AMFVariant var;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_EXTRADATA, &var);
+	if (res == AMF_OK && var.type == amf::AMF_VARIANT_INTERFACE) {
+		AMF_LOG_INFO("get_extra_data: Have Extra Data of Type %d", var.type);
+
+		amf::AMFBufferPtr buf(var.pInterface);
+		void* bufnat = buf->GetNative();
+		*size = buf->GetSize();
+		*extra_data = new uint8_t[*size];
+		std::memcpy(*extra_data, bufnat, *size);
+		AMF_LOG_INFO("get_extra_data: Extra Data is %d bytes big.", *size);
+
+		return true;
+	}
+	return false;
+}
+
+bool AMF_Encoder::h264::update_properties(obs_data_t* settings) {
+	AMF_RESULT res;
+	int64_t value;
+
+	//////////////////////////////////////////////////////////////////////////
+	// Dynamic Properties (Can be changed during Encoding)
+	//////////////////////////////////////////////////////////////////////////
+	// Rate Control
+	/// Method
+	int64_t t_rateControl = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD");
+	if (t_rateControl != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, t_rateControl);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD", t_rateControl);
+	}
+	/// Enable Skip Frame
+	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE");
+	if (value != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, value == 1);
+		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE", value == 1);
+	}
+	/// Enforce HRD
+	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_ENFORCE_HRD");
+	if (value != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, value);
+		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_ENFORCE_HRD", value);
+	}
+	/// Enable Filler Data
+	{
+		value = obs_data_get_bool(settings, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE");
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, value);
+		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE", value);
+	}
+	/// GOP Size
+	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_GOP_SIZE");
+	if (value != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_GOP_SIZE, value);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_GOP_SIZE", value);
+	}
+	/// VBV Buffer Size
+	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE");
+	if (value != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, value);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", value);
+	}
+	/// Initial VBV Buffer Fullnes
+	value = (int64_t)ceil(obs_data_get_double(settings, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS") * 64);
+	{
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, value);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS", value);
+	}
+	/// Max AU Size
+	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_MAX_AU_SIZE");
+	if (value != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, value);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_MAX_AU_SIZE", value);
+	}
+	/// B-Picture Delta QP
+	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_B_PIC_DELTA_QP");
+	if (value != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, value);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_B_PIC_DELTA_QP", value);
+	}
+	/// Ref B-Picture Delta QP
+	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP");
+	if (value != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, value);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP", value);
+	}
+
+	// Rate Control Parameters
+	switch (t_rateControl) {
+		case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTRAINED_QP:
+		{
+			/// Constrained QP
+			value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_MIN_QP");
+			if (value != -1) {
+				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MIN_QP, value);
+				wa_log_property_int(res, "AMF_VIDEO_ENCODER_MIN_QP", value);
+			}
+			value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_MAX_QP");
+			if (value != -1) {
+				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_QP, value);
+				wa_log_property_int(res, "AMF_VIDEO_ENCODER_MAX_QP", value);
+			}
+			value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QP_I");
+			if (value != -1) {
+				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_I, value);
+				wa_log_property_int(res, "AMF_VIDEO_ENCODER_QP_I", value);
+			}
+			value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QP_P");
+			if (value != -1) {
+				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_P, value);
+				wa_log_property_int(res, "AMF_VIDEO_ENCODER_QP_P", value);
+			}
+			value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QP_B");
+			if (value != -1) {
+				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_B, value);
+				wa_log_property_int(res, "AMF_VIDEO_ENCODER_QP_B", value);
+			}
+			break;
+		}
+		case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR:
+		case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR:
+		{
+			/// Peak Bitrate
+			value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PEAK_BITRATE");
+			if (value != -1) {
+				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, value);
+				wa_log_property_int(res, "AMF_VIDEO_ENCODER_PEAK_BITRATE", value);
+			}
+		}
+		case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR:
+		{
+			/// Target Bitrate
+			value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_TARGET_BITRATE");
+			if (value != -1) {
+				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, value);
+				wa_log_property_int(res, "AMF_VIDEO_ENCODER_TARGET_BITRATE", value);
+			}
+			break;
+		}
+	}
+
+	// Picture Control Properties
+	/// Header Insertion Spacing
+	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING");
+	if (value != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING, value);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING", value);
+	}
+	/// B-Pictures Pattern
+	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_B_PIC_PATTERN");
+	if (value != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, value);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_B_PIC_PATTERN", value);
+	}
+	/// De-Blocking Filter
+	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_B_PIC_PATTERN");
+	if (value != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER, value == 1);
+		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER", value == 1);
+	}
+	/// Enable Reference to B-Frames (2nd Generation GCN and newer)
+	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE");
+	if (value != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, value == 1);
+		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE", value == 1);
+	}
+	/// IDR Period (Is this Keyframe distance?)
+	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_IDR_PERIOD");
+	if (value != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, value);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_IDR_PERIOD", value);
+	}
+	/// Intra Refresh MBs Number Per Slot in Macroblocks
+	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT");
+	if (value != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, value);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT", value);
+	}
+	/// Number of slices Per Frame 
+	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_SLICES_PER_FRAME");
+	if (value != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, value);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_SLICES_PER_FRAME", value);
+	}
+	
+	// Motion Estimation
+	/// Half Pixel
+	{
+		value = obs_data_get_bool(settings, "AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL");
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, value == 1);
+		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE", value == 1);
+	}
+	/// Quarter Pixel
+	{
+		value = obs_data_get_bool(settings, "AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL");
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL, value == 1);
+		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL", value == 1);
+	}
+
+	// SVC (Scalable Profiles)
+	/// Number of Temporal Enhancment Layers (SVC)
+	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS");
+	if (value != -1) {
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS, value);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS", value);
+	}
+
+	return true;
 }
