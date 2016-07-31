@@ -495,28 +495,74 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 	// Create Surface depending on Memory Type.
 	if (m_AMFMemoryType == amf::AMF_MEMORY_HOST) {
 		// Host: RAM.
+	#ifndef USE_CreateSurfaceFromHostNative
+		res = m_AMFContext->AllocSurface(m_AMFMemoryType, m_AMFSurfaceFormat, m_cfgWidth, m_cfgHeight, &surfaceIn);
+	#endif
+
 		switch (m_AMFSurfaceFormat) {
 			case amf::AMF_SURFACE_NV12:
 			{
 				// NV12, Y:U+V, Two Plane
+			#ifndef USE_CreateSurfaceFromHostNative
+				size_t iMax = surfaceIn->GetPlanesCount();
+				for (uint8_t i = 0; i < iMax; i++) {
+					amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
+					void* plane_nat = plane->GetNative();
+
+					for (int32_t py = 0; py < plane->GetHeight(); py++) {
+						size_t plane_off = py * plane->GetHPitch();
+						size_t frame_off = py * frame->linesize[i];
+						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+					}
+				}
+			#else
 				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight * 2); // It needs to be 1.5 times height, but 2 is safer for now.
 				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
 				std::memcpy(myFrame->surfaceBuffer.data() + (frame->linesize[0] * m_cfgHeight), frame->data[1], frame->linesize[0] * (m_cfgHeight >> 1));
+			#endif
 				break;
 			}
 			case amf::AMF_SURFACE_BGRA:
 			case amf::AMF_SURFACE_RGBA:
 			{
+			#ifndef USE_CreateSurfaceFromHostNative
+				size_t iMax = surfaceIn->GetPlanesCount();
+				for (uint8_t i = 0; i < iMax; i++) {
+					amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
+					void* plane_nat = plane->GetNative();
+
+					for (int32_t py = 0; py < plane->GetHeight(); py++) {
+						size_t plane_off = py * plane->GetHPitch();
+						size_t frame_off = py * frame->linesize[i];
+						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+					}
+				}
+			#else
 				// RGBA/BGRA, Single Plane
 				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight);
 				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
+			#endif
 				break;
 			}
 			case amf::AMF_SURFACE_GRAY8:
 			{
 				// Gray 8, Single Component
+			#ifndef USE_CreateSurfaceFromHostNative
+				size_t iMax = surfaceIn->GetPlanesCount();
+				for (uint8_t i = 0; i < iMax; i++) {
+					amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
+					void* plane_nat = plane->GetNative();
+
+					for (int32_t py = 0; py < plane->GetHeight(); py++) {
+						size_t plane_off = py * plane->GetHPitch();
+						size_t frame_off = py * frame->linesize[i];
+						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+					}
+				}
+			#else
 				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight);
 				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
+			#endif
 				break;
 			}
 			case amf::AMF_SURFACE_YV12:
@@ -526,15 +572,52 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 				size_t fullFrame = (frame->linesize[0] * m_cfgHeight);
 				size_t halfFrame = frame->linesize[2] * halfHeight;
 
+			#ifndef USE_CreateSurfaceFromHostNative
+				// Flip
+				uint8_t* temp = frame->data[1];
+				frame->data[1] = frame->data[2];
+				frame->data[2] = temp;
+
+				size_t iMax = surfaceIn->GetPlanesCount();
+				for (uint8_t i = 0; i < iMax; i++) {
+					amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
+					void* plane_nat = plane->GetNative();
+
+					for (int32_t py = 0; py < plane->GetHeight(); py++) {
+						size_t plane_off = py * plane->GetHPitch();
+						size_t frame_off = py * frame->linesize[i];
+						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+					}
+				}
+
+				// Flip back
+				temp = frame->data[2];
+				frame->data[2] = frame->data[1];
+				frame->data[1] = temp;
+			#else
 				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight * 2); // We actually need one full and two halved frames. Height * 1.5 should work for this.
 				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
 				std::memcpy(myFrame->surfaceBuffer.data() + fullFrame, frame->data[2], frame->linesize[2] * halfHeight);
 				std::memcpy(myFrame->surfaceBuffer.data() + (fullFrame + halfFrame), frame->data[1], frame->linesize[1] * halfHeight);
+			#endif
 				break;
 			}
 			case amf::AMF_SURFACE_YUV420P:
 			{
 				// YUV 4:2:0, Y, subsampled U, subsampled V
+			#ifndef USE_CreateSurfaceFromHostNative
+				size_t iMax = surfaceIn->GetPlanesCount();
+				for (uint8_t i = 0; i < iMax; i++) {
+					amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
+					void* plane_nat = plane->GetNative();
+
+					for (int32_t py = 0; py < plane->GetHeight(); py++) {
+						size_t plane_off = py * plane->GetHPitch();
+						size_t frame_off = py * frame->linesize[i];
+						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+					}
+				}
+			#else
 				size_t halfHeight = m_cfgHeight >> 1;
 				size_t fullFrame = (frame->linesize[0] * m_cfgHeight);
 				size_t halfFrame = frame->linesize[1] * halfHeight;
@@ -543,18 +626,35 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
 				std::memcpy(myFrame->surfaceBuffer.data() + fullFrame, frame->data[1], frame->linesize[1] * halfHeight);
 				std::memcpy(myFrame->surfaceBuffer.data() + (fullFrame + halfFrame), frame->data[2], frame->linesize[2] * halfHeight);
+			#endif
 				break;
 			}
 			case amf::AMF_SURFACE_YUY2:
 			{
 				// YUY2, Y0,Cb,Y1,Cr
+			#ifndef USE_CreateSurfaceFromHostNative
+				size_t iMax = surfaceIn->GetPlanesCount();
+				for (uint8_t i = 0; i < iMax; i++) {
+					amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
+					void* plane_nat = plane->GetNative();
+
+					for (int32_t py = 0; py < plane->GetHeight(); py++) {
+						size_t plane_off = py * plane->GetHPitch();
+						size_t frame_off = py * frame->linesize[i];
+						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+					}
+				}
+			#else
 				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight);
 				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
+			#endif
 				break;
 			}
 		}
 	}
+#ifdef USE_CreateSurfaceFromHostNative
 	res = m_AMFContext->CreateSurfaceFromHostNative(m_AMFSurfaceFormat, m_cfgWidth, m_cfgHeight, m_cfgWidth, m_cfgHeight, myFrame->surfaceBuffer.data(), &surfaceIn, NULL);
+#endif
 	if (res != AMF_OK) { // Failed to create Surface.
 		wa_log_amf_error(res, "Encode: Creating AMF Surface failed");
 		delete myFrame;
@@ -893,7 +993,7 @@ bool AMF_Encoder::h264::update_properties(obs_data_t* settings) {
 		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, value);
 		wa_log_property_int(res, "AMF_VIDEO_ENCODER_SLICES_PER_FRAME", value);
 	}
-	
+
 	// Motion Estimation
 	/// Half Pixel
 	{
