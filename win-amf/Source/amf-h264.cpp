@@ -104,8 +104,6 @@ bool AMF_Encoder::h264::encode(void *data, struct encoder_frame *frame, struct e
 }
 
 void AMF_Encoder::h264::get_defaults(obs_data_t *settings) {
-	AMF_LOG_INFO("h264::get_defaults");
-
 	//////////////////////////////////////////////////////////////////////////
 	// Static Properties (Can't be changed during Encoding)
 	//////////////////////////////////////////////////////////////////////////
@@ -341,7 +339,6 @@ void AMF_Encoder::h264::wa_log_amf_error(AMF_RESULT amfResult, char* sMessage) {
 
 	AMF_LOG_ERROR("%s, error code %d: %s.", sMessage, amfResult, msgBuf.data());
 }
-
 void AMF_Encoder::h264::wa_log_property_int(AMF_RESULT amfResult, char* sProperty, int64_t value) {
 	char* format = "[AMF_Encoder::h264] Attempted to set property '%s' to '%d', result: %s (%d).";
 
@@ -522,6 +519,19 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
 				break;
 			}
+			case amf::AMF_SURFACE_YV12:
+			{
+				// YVU 4:2:0, Y, subsampled V, subsampled U
+				size_t halfHeight = m_cfgHeight >> 1;
+				size_t fullFrame = (frame->linesize[0] * m_cfgHeight);
+				size_t halfFrame = frame->linesize[2] * halfHeight;
+
+				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight * 2); // We actually need one full and two halved frames. Height * 1.5 should work for this.
+				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
+				std::memcpy(myFrame->surfaceBuffer.data() + fullFrame, frame->data[2], frame->linesize[2] * halfHeight);
+				std::memcpy(myFrame->surfaceBuffer.data() + (fullFrame + halfFrame), frame->data[1], frame->linesize[1] * halfHeight);
+				break;
+			}
 			case amf::AMF_SURFACE_YUV420P:
 			{
 				// YUV 4:2:0, Y, subsampled U, subsampled V
@@ -530,10 +540,9 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 				size_t halfFrame = frame->linesize[1] * halfHeight;
 
 				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight * 2); // We actually need one full and two halved frames. Height * 1.5 should work for this.
-				//std::memset(myFrame->surfaceBuffer.data(), 128, myFrame->surfaceBuffer.size());
 				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
 				std::memcpy(myFrame->surfaceBuffer.data() + fullFrame, frame->data[1], frame->linesize[1] * halfHeight);
-				std::memcpy(myFrame->surfaceBuffer.data() + (fullFrame + halfFrame), frame->data[2], frame->linesize[2] * halfHeight); // Doesn't work properly.
+				std::memcpy(myFrame->surfaceBuffer.data() + (fullFrame + halfFrame), frame->data[2], frame->linesize[2] * halfHeight);
 				break;
 			}
 			case amf::AMF_SURFACE_YUY2:
@@ -656,20 +665,17 @@ bool AMF_Encoder::h264::update(obs_data_t* settings) {
 }
 
 void AMF_Encoder::h264::get_video_info(struct video_scale_info* info) {
-	AMF_LOG_INFO("h264::get_video_info");
 	switch (m_AMFSurfaceFormat) {
 		case amf::AMF_SURFACE_NV12:
 			info->format = VIDEO_FORMAT_NV12;
 			break;
-		/*case amf::AMF_SURFACE_YV12: // Has no OBS equivalent
-			info->format = VIDEO_FORMAT_;
-			break;*/
+		case amf::AMF_SURFACE_YV12: // I420 with UV swapped
+			info->format = VIDEO_FORMAT_I420;
+			break;
 		case amf::AMF_SURFACE_BGRA:
 			info->format = VIDEO_FORMAT_BGRA;
 			break;
-		/*case amf::AMF_SURFACE_ARGB: // Has no OBS equivalent
-			info->format = VIDEO_FORMAT_;
-			return;*/
+			/// ARGB has no OBS equivalent.
 		case amf::AMF_SURFACE_RGBA:
 			info->format = VIDEO_FORMAT_RGBA;
 			break;
@@ -679,11 +685,15 @@ void AMF_Encoder::h264::get_video_info(struct video_scale_info* info) {
 		case amf::AMF_SURFACE_YUV420P:
 			info->format = VIDEO_FORMAT_I420;
 			break;
-		/*case amf::AMF_SURFACE_U8V8: // Has no OBS equivalent
+		/*case amf::AMF_SURFACE_U8V8: // Has no OBS equivalent, could I use I444 for this?
 			info->format = VIDEO_FORMAT_Y800;
 			break;*/
 		case amf::AMF_SURFACE_YUY2:
 			info->format = VIDEO_FORMAT_YUY2;
+			break;
+		default: // Should never occur.
+			m_AMFSurfaceFormat = amf::AMF_SURFACE_NV12;
+			info->format = VIDEO_FORMAT_NV12;
 			break;
 	}
 	//info->range = VIDEO_RANGE_FULL;

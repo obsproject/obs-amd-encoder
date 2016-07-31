@@ -24,9 +24,19 @@ SOFTWARE.
 
 #include "amf-h264-capabilities.h"
 
+AMF_Encoder::h264_capabilities* AMF_Encoder::h264_capabilities::instance;
+
 AMF_Encoder::h264_capabilities* AMF_Encoder::h264_capabilities::getInstance() {
 	if (!instance)
 		instance = new h264_capabilities();
 
 	return instance;
+}
+
+AMF_Encoder::h264_capabilities::h264_capabilities() {
+
+}
+
+AMF_Encoder::h264_capabilities::~h264_capabilities() {
+
 }

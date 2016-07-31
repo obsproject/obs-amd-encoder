@@ -24,12 +24,18 @@
     <ClInclude Include="Include\amf-h264.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Include\amf-h264-capabilities.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\win-amf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\amf-h264.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\amf-h264-capabilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

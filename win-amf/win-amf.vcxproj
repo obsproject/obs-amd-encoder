@@ -145,10 +145,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Include\amf-h264-capabilities.h" />
     <ClInclude Include="Include\amf-h264.h" />
     <ClInclude Include="Include\win-amf.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\amf-h264-capabilities.cpp" />
     <ClCompile Include="Source\amf-h264.cpp" />
     <ClCompile Include="Source\win-amf.cpp" />
   </ItemGroup>
