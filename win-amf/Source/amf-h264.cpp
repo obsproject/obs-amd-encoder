@@ -491,7 +491,7 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 					amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
 					void* plane_nat = plane->GetNative();
 
-					for (uint32_t py = 0; py < plane->GetHeight(); py++) {
+					for (int32_t py = 0; py < plane->GetHeight(); py++) {
 						size_t plane_off = py * plane->GetHPitch();
 						size_t frame_off = py * frame->linesize[i];
 						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
@@ -516,7 +516,7 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 					AMF_LOG_INFO("Pitch: %d, %d", plane->GetHPitch(), plane->GetVPitch());
 					AMF_LOG_INFO("PixelSize: %d", plane->GetPixelSizeInBytes());
 
-					for (uint32_t py = 0; py < plane->GetHeight(); py++) {
+					for (int32_t py = 0; py < plane->GetHeight(); py++) {
 						size_t plane_off = py * plane->GetHPitch();
 						size_t frame_off = py * frame->linesize[i];
 						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
@@ -597,24 +597,18 @@ void AMF_Encoder::h264::dequeue_frame(encoder_packet* packet, bool* received_pac
 		amf::AMFBufferPtr pBuffer(myFrame->data);
 		packet->size = pBuffer->GetSize();
 
-		if ((m_pLargeBuffer && (m_LargeBufferSize < packet->size)) || (!m_pLargeBuffer)) {
-			if (m_pLargeBuffer) {
-				AMF_LOG_INFO("Dequeue_Frame: Buffer too small (%d < %d), deleting...", m_LargeBufferSize, packet->size);
-				delete[] m_pLargeBuffer;
-			}
-			m_LargeBufferSize = (int64_t)exp2(ceil(log2(packet->size)));
-			m_pLargeBuffer = new uint8_t[m_LargeBufferSize];
-			AMF_LOG_INFO("Dequeue_Frame: Created Buffer with size %d...", packet->size);
+		if (m_LargeBuffer.size() < packet->size) {
+			m_LargeBuffer.resize((size_t)exp2(ceil(log2(packet->size))));
+			AMF_LOG_INFO("Dequeue_Frame: Resized Frame Buffer to %d...", m_LargeBuffer.size());
 		}
-
-		packet->data = m_pLargeBuffer;
 		std::memcpy(packet->data, pBuffer->GetNative(), packet->size);
+
+		packet->data = m_LargeBuffer.data();
 		packet->type = OBS_ENCODER_VIDEO;
+		packet->pts = myFrame->data->GetPts(); // So far works, but I'm not sure if this is actually correct.
+		packet->dts = myFrame->data->GetPts(); // Jackuns VCE fork divided this by ... 10000?
 
-		packet->pts = myFrame->data->GetPts();
-		packet->dts = myFrame->data->GetPts();
-
-		{
+		{ // If it is a Keyframe or not, the light will tell you... the light being this integer here.
 			int t_frameDataType = -1;
 			pBuffer->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &t_frameDataType);
 			packet->keyframe = (t_frameDataType == AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR);

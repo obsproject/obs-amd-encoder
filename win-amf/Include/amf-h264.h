@@ -173,9 +173,7 @@ namespace AMF_Encoder {
 		std::queue<h264_output_frame*> m_OutputQueue;
 
 		// Internal
-		uint64_t m_frameIndex;
-		uint8_t* m_pLargeBuffer;
-		size_t m_LargeBufferSize;
+		std::vector<uint8_t> m_LargeBuffer;
 		std::vector<uint8_t> m_ExtraData;
 	};
 }
