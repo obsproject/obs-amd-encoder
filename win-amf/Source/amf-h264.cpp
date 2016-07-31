@@ -734,14 +734,14 @@ bool AMF_Encoder::h264::update_properties(obs_data_t* settings) {
 	/// Enforce HRD
 	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_ENFORCE_HRD");
 	if (value != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, value);
-		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_ENFORCE_HRD", value);
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, value == 1);
+		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_ENFORCE_HRD", value == 1);
 	}
 	/// Enable Filler Data
 	{
 		value = obs_data_get_bool(settings, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE");
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, value);
-		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE", value);
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, value == 1);
+		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE", value == 1);
 	}
 	/// GOP Size
 	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_GOP_SIZE");
