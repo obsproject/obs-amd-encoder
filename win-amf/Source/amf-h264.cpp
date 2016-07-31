@@ -388,6 +388,8 @@ AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
 			break;
 	}
 
+	int64_t t_profile = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PROFILE_ENUM");
+
 	// Select Memory Type
 	m_AMFMemoryType = amf::AMF_MEMORY_HOST; // Host for now.
 
@@ -397,9 +399,13 @@ AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
 	}
 
 	// Encoder Component
-	switch (obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PROFILE_ENUM")) {
+	switch (t_profile) {
 		case h264::PROFILES::PROFILE_SVC_BP:
 		case h264::PROFILES::PROFILE_SVC_HiP:
+			if (t_profile == h264::PROFILES::PROFILE_SVC_BP)
+				t_profile = h264::PROFILE_AVC_BP;
+			else
+				t_profile = h264::PROFILE_AVC_HiP;
 			res = AMFCreateComponent(m_AMFContext, AMFVideoEncoderVCE_SVC, &this->m_AMFEncoder);
 		default:
 			res = AMFCreateComponent(m_AMFContext, AMFVideoEncoderVCE_AVC, &this->m_AMFEncoder);
@@ -428,7 +434,7 @@ AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
 	wa_log_property_int(res, "AMF_VIDEO_ENCODER_FRAMERATE.Den", m_cfgFPSden);
 
 	// Profile & Level
-	int64_t t_profile = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PROFILE");
+	t_profile = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PROFILE");
 	if (t_profile != -1) {
 		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMF_Encoder::h264::PROFILE_VALUES[t_profile]);
 		wa_log_property_int(res, "AMF_VIDEO_ENCODER_PROFILE", AMF_Encoder::h264::PROFILE_VALUES[t_profile]);
