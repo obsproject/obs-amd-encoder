@@ -8,6 +8,7 @@ AMF support for OBS via plugins
 * Visual Studio 2015 Community (or similar)
 * Windows 10 SDK (Bundled with Visual Studio 2015)
 * [AMD Media SDK](http://developer.amd.com/tools-and-sdks/media-sdk/), Version 1.1
+* Newest [AMF Binaries](http://www.amd.com/en-us/innovations/software-technologies/enhanced-media)
 
 ## Getting Started
 
