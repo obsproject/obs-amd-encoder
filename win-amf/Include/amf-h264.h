@@ -30,6 +30,7 @@ SOFTWARE.
 #include <string> // std::string
 #include <sstream> // std::stringstream
 #include <queue>
+#include <vector>
 
 #include "OBS-Studio/libobs/obs-module.h"
 #include "OBS-Studio/libobs/obs-encoder.h"
@@ -175,5 +176,6 @@ namespace AMF_Encoder {
 		uint64_t m_frameIndex;
 		uint8_t* m_pLargeBuffer;
 		size_t m_LargeBufferSize;
+		std::vector<uint8_t> m_ExtraData;
 	};
 }
