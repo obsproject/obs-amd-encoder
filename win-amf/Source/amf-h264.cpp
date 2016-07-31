@@ -848,7 +848,7 @@ bool AMF_Encoder::h264::update_properties(obs_data_t* settings) {
 		wa_log_property_int(res, "AMF_VIDEO_ENCODER_B_PIC_PATTERN", value);
 	}
 	/// De-Blocking Filter
-	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_B_PIC_PATTERN");
+	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER");
 	if (value != -1) {
 		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER, value == 1);
 		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER", value == 1);
@@ -882,8 +882,8 @@ bool AMF_Encoder::h264::update_properties(obs_data_t* settings) {
 	/// Half Pixel
 	{
 		value = obs_data_get_bool(settings, "AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL");
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, value == 1);
-		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE", value == 1);
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, value == 1);
+		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL", value == 1);
 	}
 	/// Quarter Pixel
 	{
