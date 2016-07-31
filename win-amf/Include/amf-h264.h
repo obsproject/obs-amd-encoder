@@ -59,6 +59,7 @@ SOFTWARE.
 namespace AMF_Encoder {
 	struct h264_input_frame {
 		amf::AMFSurfacePtr surface;
+		std::vector<uint8_t> surfaceBuffer;
 	};
 
 	struct h264_output_frame {
@@ -133,6 +134,7 @@ namespace AMF_Encoder {
 		//void *type_data;
 		//void(*free_type_data)(void *type_data);
 		
+		static void wa_log_amf_error(AMF_RESULT amfResult, char* sMessage);
 		static void wa_log_property_int(AMF_RESULT amfResult, char* sProperty, int64_t value);
 		static void wa_log_property_bool(AMF_RESULT amfResult, char* sProperty, bool value);
 

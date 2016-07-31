@@ -73,6 +73,7 @@ void AMF_Encoder::h264::encoder_register() {
 		AMF_Encoder::h264::encoder_info->destroy = &AMF_Encoder::h264::destroy;
 		AMF_Encoder::h264::encoder_info->encode = &AMF_Encoder::h264::encode;
 		AMF_Encoder::h264::encoder_info->update = &AMF_Encoder::h264::update;
+		AMF_Encoder::h264::encoder_info->get_video_info = &AMF_Encoder::h264::get_video_info;
 		AMF_Encoder::h264::encoder_info->get_extra_data = &AMF_Encoder::h264::get_extra_data;
 
 		obs_register_encoder(AMF_Encoder::h264::encoder_info);
@@ -316,6 +317,9 @@ obs_properties_t* AMF_Encoder::h264::get_properties(void* data) {
 	/// Number of Temporal Enhancment Layers (SVC)
 	obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS", AMF_TEXT_T("NUM_TEMPORAL_ENHANCEMENT_LAYERS"), -1, 1024, 1);
 
+	//
+	/// ToDo: Option to override requested Surface Format? Allows for a lot more recording types, including Grayscale.
+
 	return props;
 }
 
@@ -329,6 +333,13 @@ void AMF_Encoder::h264::get_video_info(void *data, struct video_scale_info *info
 
 bool AMF_Encoder::h264::get_extra_data(void *data, uint8_t** extra_data, size_t* size) {
 	return static_cast<AMF_Encoder::h264*>(data)->get_extra_data(extra_data, size);
+}
+
+void AMF_Encoder::h264::wa_log_amf_error(AMF_RESULT amfResult, char* sMessage) {
+	std::vector<char> msgBuf(1024);
+	wcstombs(msgBuf.data(), amf::AMFGetResultText(amfResult), msgBuf.size());
+
+	AMF_LOG_ERROR("%s, error code %d: %s.", sMessage, amfResult, msgBuf.data());
 }
 
 void AMF_Encoder::h264::wa_log_property_int(AMF_RESULT amfResult, char* sProperty, int64_t value) {
@@ -371,6 +382,9 @@ AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
 		case VIDEO_FORMAT_RGBA:
 			m_AMFSurfaceFormat = amf::AMF_SURFACE_RGBA;
 			break;
+		case VIDEO_FORMAT_I420:
+			m_AMFSurfaceFormat = amf::AMF_SURFACE_YUV420P;
+			break;
 		case VIDEO_FORMAT_NV12:
 		default:
 			m_AMFSurfaceFormat = amf::AMF_SURFACE_NV12;
@@ -382,7 +396,7 @@ AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
 
 	AMF_RESULT res = AMFCreateContext(&m_AMFContext);
 	if (res != AMF_OK) {
-		AMF_LOG_ERROR("Create: Failed to create AMF context, error code %d: %s.", res, amf::AMFGetResultText(res));
+		wa_log_amf_error(res, "Create: Failed to create AMF context");
 	}
 
 	// Encoder Component
@@ -394,7 +408,7 @@ AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
 			res = AMFCreateComponent(m_AMFContext, AMFVideoEncoderVCE_AVC, &this->m_AMFEncoder);
 	}
 	if (res != AMF_OK) {
-		AMF_LOG_ERROR("Create: Failed to create AMF context, error code %d: %s.", res, amf::AMFGetResultText(res));
+		wa_log_amf_error(res, "Create: Failed to create AMF component");
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -453,8 +467,8 @@ AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
 	//////////////////////////////////////////////////////////////////////////
 	res = m_AMFEncoder->Init(m_AMFSurfaceFormat, m_cfgWidth, m_cfgHeight);
 	if (res != AMF_OK) {
-		AMF_LOG_ERROR("Failed to create AMF context, error code %d: %s.", res, amf::AMFGetResultText(res));
-		throw std::exception("Failed to create AMF context.");
+		wa_log_amf_error(res, "Create: Failed to initialize AMF encoder");
+		throw std::exception("Failed to initialize AMF encoder");
 	}
 
 	AMF_LOG_INFO("Create: Request completed.");
@@ -478,6 +492,9 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 		return;
 	}
 
+	// Create a new frame.
+	h264_input_frame* myFrame = new h264_input_frame;
+
 	// Create Surface depending on Memory Type.
 	if (m_AMFMemoryType == amf::AMF_MEMORY_HOST) {
 		// Host: RAM.
@@ -485,53 +502,51 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 			case amf::AMF_SURFACE_NV12:
 			{
 				// Y:U+V, Two Plane
-				res = m_AMFContext->AllocSurface(m_AMFMemoryType, m_AMFSurfaceFormat, m_cfgWidth, m_cfgHeight, &surfaceIn);
-				size_t iMax = surfaceIn->GetPlanesCount();
-				for (uint8_t i = 0; i < iMax; i++) {
-					amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
-					void* plane_nat = plane->GetNative();
-
-					for (int32_t py = 0; py < plane->GetHeight(); py++) {
-						size_t plane_off = py * plane->GetHPitch();
-						size_t frame_off = py * frame->linesize[i];
-						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
-					}
-				}
+				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight * 2); // It needs to be 1.5 times height, but 2 is safer for now.
+				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
+				std::memcpy(myFrame->surfaceBuffer.data() + (frame->linesize[0] * m_cfgHeight), frame->data[1], frame->linesize[0] * (m_cfgHeight >> 1));
 				break;
 			}
+			case amf::AMF_SURFACE_BGRA:
 			case amf::AMF_SURFACE_RGBA:
 			{
-				// RGBA, Single Plane
+				// RGBA/BGRA, Single Plane
+				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight);
+				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
+				break;
+			}
+			case amf::AMF_SURFACE_GRAY8:
+			{
+				// Gray 8, Single Component
+				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight);
+				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
+				break;
+			}
+			case amf::AMF_SURFACE_YUV420P:
+			{
+				// YUV 4:2:0, Y, subsampled U, subsampled V
+				size_t halfHeight = m_cfgHeight >> 1;
+				size_t fullFrame = (frame->linesize[0] * m_cfgHeight);
 
-				//	res = amf_context->CreateSurfaceFromHostNative(s_surfaceFormat, s_Width, s_Height, s_Width, s_Height, frame->data[0], &surfaceIn, NULL);
-				res = m_AMFContext->AllocSurface(m_AMFMemoryType, m_AMFSurfaceFormat, m_cfgWidth, m_cfgHeight, &surfaceIn);
-				size_t iMax = surfaceIn->GetPlanesCount();
-				for (uint8_t i = 0; i < iMax; i++) {
-					amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
-					void* plane_nat = plane->GetNative();
-
-					AMF_LOG_INFO("Plane Information for %d", i);
-					AMF_LOG_INFO("Size: %d, %d", plane->GetWidth(), plane->GetHeight());
-					AMF_LOG_INFO("Offset: %d, %d", plane->GetOffsetX(), plane->GetOffsetY());
-					AMF_LOG_INFO("Pitch: %d, %d", plane->GetHPitch(), plane->GetVPitch());
-					AMF_LOG_INFO("PixelSize: %d", plane->GetPixelSizeInBytes());
-
-					for (int32_t py = 0; py < plane->GetHeight(); py++) {
-						size_t plane_off = py * plane->GetHPitch();
-						size_t frame_off = py * frame->linesize[i];
-						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
-					}
-				}
+				myFrame->surfaceBuffer.resize(frame->linesize[0] * (m_cfgHeight + halfHeight)); // Actually times 1.5.
+				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
+				std::memcpy(myFrame->surfaceBuffer.data() + fullFrame, frame->data[1], frame->linesize[1] * m_cfgHeight);
+				std::memcpy(myFrame->surfaceBuffer.data() + (fullFrame >> 1), frame->data[2], frame->linesize[2] * m_cfgHeight);
+				break;
+			}
+			case amf::AMF_SURFACE_YUY2:
+			{
+				// YUY2, Y0,Cb,Y1,Cr
+				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight);
+				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
 				break;
 			}
 		}
 	}
+	res = m_AMFContext->CreateSurfaceFromHostNative(m_AMFSurfaceFormat, m_cfgWidth, m_cfgHeight, m_cfgWidth, m_cfgHeight, myFrame->surfaceBuffer.data(), &surfaceIn, NULL);
 	if (res != AMF_OK) { // Failed to create Surface.
-		const wchar_t* errormsg = amf::AMFGetResultText(res);
-		char* outbuf = new char[1024];
-		wcstombs(outbuf, errormsg, 1024);
-		AMF_LOG_ERROR("Encode: Failed to copy to AMF Surface, error code %d: %s.", res, outbuf);
-		delete outbuf;
+		wa_log_amf_error(res, "Encode: Creating AMF Surface failed");
+		delete myFrame;
 		return;
 	}
 
@@ -539,7 +554,6 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 	surfaceIn->SetPts(frame->pts);
 
 	// Queue into Input Queue.
-	h264_input_frame* myFrame = new h264_input_frame;
 	myFrame->surface = surfaceIn;
 	this->m_InputQueue.push(myFrame);
 }
@@ -560,11 +574,7 @@ void AMF_Encoder::h264::update_queues() {
 			}
 		} while ((!m_InputQueue.empty()) && (res == AMF_OK));
 		if (res != AMF_OK && res != AMF_INPUT_FULL) {
-			const wchar_t* errormsg = amf::AMFGetResultText(res);
-			char* outbuf = new char[1024];
-			wcstombs(outbuf, errormsg, 1024);
-			AMF_LOG_ERROR("Update Queues: Failed to send to Encoder, error code %d: %s.", res, outbuf);
-			delete outbuf;
+			wa_log_amf_error(res, "Encode: Sending to Encoder failed");
 		}
 	}
 
@@ -578,11 +588,7 @@ void AMF_Encoder::h264::update_queues() {
 		}
 	} while (res == AMF_OK);
 	if (res != AMF_OK && res != AMF_REPEAT) {
-		const wchar_t* errormsg = amf::AMFGetResultText(res);
-		char* outbuf = new char[1024];
-		wcstombs(outbuf, errormsg, 1024);
-		AMF_LOG_ERROR("Encode: Output failed, error code %d: %s.", res, outbuf);
-		delete outbuf;
+		wa_log_amf_error(res, "Encode: Querying output failed");
 	}
 }
 
