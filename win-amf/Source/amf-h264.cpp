@@ -595,15 +595,18 @@ void AMF_Encoder::h264::dequeue_frame(encoder_packet* packet, bool* received_pac
 		m_OutputQueue.pop();
 
 		amf::AMFBufferPtr pBuffer(myFrame->data);
-		packet->size = pBuffer->GetSize();
+		size_t bufferSize = pBuffer->GetSize();
 
-		if (m_LargeBuffer.size() < packet->size) {
-			m_LargeBuffer.resize((size_t)exp2(ceil(log2(packet->size))));
-			AMF_LOG_INFO("Dequeue_Frame: Resized Frame Buffer to %d...", m_LargeBuffer.size());
+		if (m_LargeBuffer.size() < bufferSize) {
+			size_t newSize = (size_t)exp2(ceil(log2(bufferSize)));
+			m_LargeBuffer.resize(newSize);
+			AMF_LOG_INFO("Dequeue_Frame: Resized Frame Buffer to %d (incoming data is %d big)...", newSize, bufferSize);
 		}
-		std::memcpy(packet->data, pBuffer->GetNative(), packet->size);
+		if ((bufferSize > 0) && (m_LargeBuffer.data()))
+			std::memcpy(m_LargeBuffer.data(), pBuffer->GetNative(), bufferSize);
 
 		packet->data = m_LargeBuffer.data();
+		packet->size = bufferSize;
 		packet->type = OBS_ENCODER_VIDEO;
 		packet->pts = myFrame->data->GetPts(); // So far works, but I'm not sure if this is actually correct.
 		packet->dts = myFrame->data->GetPts(); // Jackuns VCE fork divided this by ... 10000?
