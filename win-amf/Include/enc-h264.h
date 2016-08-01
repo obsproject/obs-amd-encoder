@@ -56,29 +56,33 @@ SOFTWARE.
 #define AMF_TEXT_H264(x) (AMF_TEXT("h264." ## x))
 #define AMF_TEXT_H264_T(x) obs_module_text(AMF_TEXT_H264(x))
 
+#define AMF_VCE_H264_USAGE				AMF_TEXT_H264("Usage")
+#define AMF_VCE_H264_USAGE2(x)			AMF_TEXT_H264_T("Usage." ## x)
+#define AMF_VCE_H264_QUALITY_PRESET		AMF_TEXT_H264("QualityPreset")
+#define AMF_VCE_H264_QUALITY_PRESET2(x)	AMF_TEXT_H264("QualityPreset." ## x)
+#define AMF_VCE_H264_PROFILE			AMF_TEXT_H264("Profile")
+#define AMF_VCE_H264_PROFILE2(x)		AMF_TEXT_H264("Profile" ## x)
+#define AMF_VCE_H264_PROFILE_LEVEL		AMF_TEXT_H264("ProfileLevel")
+#define AMF_VCE_H264_PROFILE_LEVEL2(x)	AMF_TEXT_H264("ProfileLevel" ## x)
+#define AMF_VCE_H264_MAX_LTR_FRAMES		AMF_TEXT_H264("MaxLTRFrames")
+#define AMF_VCE_H264_SCAN_TYPE			AMF_TEXT_H264("ScanType")
+#define AMF_VCE_H264_SCAN_TYPE2(x)		AMF_TEXT_H264("ScanType." ## x)
+
+//#define AMF_VCE_H264_FRAMESIZE			AMF_TEXT_H264("FrameSize")
+//#define AMF_VCE_H264_FRAMERATE			AMF_TEXT_H264("FrameRate")
+
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
 namespace AMFEncoder {
-	struct h264_input_frame {
-		amf::AMFSurfacePtr surface;
-		std::vector<uint8_t> surfaceBuffer;
-	};
 
-	struct h264_output_frame {
-		amf::AMFDataPtr data;
-	};
-
-	//////////////////////////////////////////////////////////////////////////
-	// Encoder Class
-	//////////////////////////////////////////////////////////////////////////
-	class h264_encoder {
+	class VCE_H264_Encoder {
 		public:
 
 		// h264 Profiles
 		enum PROFILES {
-			PROFILE_AVC_BP, PROFILE_AVC_XP, PROFILE_AVC_MP,
-			PROFILE_AVC_HiP, PROFILE_AVC_Hi10P, PROFILE_AVC_Hi422P, PROFILE_AVC_Hi444P,
+			PROFILE_AVC_BP, PROFILE_AVC_MP,
+			PROFILE_AVC_HiP,
 			PROFILE_SVC_BP, PROFILE_SVC_HiP,
 			PROFILE_COUNT_MAX
 		};
@@ -96,7 +100,6 @@ namespace AMFEncoder {
 		};
 		static const char* LEVEL_NAMES[LEVELS::LEVEL_COUNT_MAX];
 		static const unsigned char LEVEL_VALUES[LEVELS::LEVEL_COUNT_MAX];
-
 
 		//////////////////////////////////////////////////////////////////////////
 		// Static Code
@@ -146,8 +149,8 @@ namespace AMFEncoder {
 		//////////////////////////////////////////////////////////////////////////
 		public:
 
-		h264_encoder(obs_data_t* settings, obs_encoder_t* encoder);
-		~h264_encoder();
+		VCE_H264_Encoder(obs_data_t* settings, obs_encoder_t* encoder);
+		~VCE_H264_Encoder();
 
 		bool encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet);
 		bool update(obs_data_t* settings);
@@ -160,22 +163,11 @@ namespace AMFEncoder {
 		// Storage
 		//////////////////////////////////////////////////////////////////////////
 		private:
-		// AMF Specific Things
-		amf::AMF_MEMORY_TYPE m_AMFMemoryType;
-		amf::AMF_SURFACE_FORMAT m_AMFSurfaceFormat;
-		amf::AMFContextPtr m_AMFContext;
-		amf::AMFComponentPtr m_AMFEncoder;
-
 		// Settings
 		int m_cfgWidth, m_cfgHeight;
 		int m_cfgFPSnum, m_cfgFPSden;
 
-		// Queues
-		std::queue<h264_input_frame*> m_InputQueue;
-		std::queue<h264_output_frame*> m_OutputQueue;
-
-		// Internal
-		std::vector<uint8_t> m_LargeBuffer;
-		std::vector<uint8_t> m_ExtraData;
+		// Encoder
+		AMFEncoder::VCE* m_VCE;
 	};
 }

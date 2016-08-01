@@ -39,10 +39,10 @@
 //////////////////////////////////////////////////////////////////////////
 // Defines
 //////////////////////////////////////////////////////////////////////////
-#define PLUGIN_VERSION "1.1.3"
+#define PLUGIN_VERSION "1.2.0"
 
 #define AMF_LOG(level, format, ...) \
-    blog(level, "[AMF Encoder] " format, ##__VA_ARGS__)
+    blog(level, "[AMF Encoder " PLUGIN_VERSION"] " format, ##__VA_ARGS__)
 #define AMF_LOG_ERROR(format, ...)   AMF_LOG(LOG_ERROR,   format, ##__VA_ARGS__)
 #define AMF_LOG_WARNING(format, ...) AMF_LOG(LOG_WARNING, format, ##__VA_ARGS__)
 #define AMF_LOG_INFO(format, ...)    AMF_LOG(LOG_INFO,    format, ##__VA_ARGS__)

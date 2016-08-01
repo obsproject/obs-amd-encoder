@@ -25,7 +25,7 @@ SOFTWARE.
 #pragma once
 #include "amf-h264.h"
 
-AMFEncoder::VCE::VCE(H264_Encoder_Type encoderType) {
+AMFEncoder::VCE::VCE(VCE_Encoder_Type encoderType) {
 	AMF_RESULT res;
 	VCE_Capabilities::EncoderCaps* encoderCaps;
 
@@ -39,7 +39,7 @@ AMFEncoder::VCE::VCE(H264_Encoder_Type encoderType) {
 
 	// Create AMF VCE Component depending on Type.
 	switch (m_encoderType) {
-		case H264_ENCODER_TYPE_AVC:
+		case VCE_ENCODER_TYPE_AVC:
 			AMF_LOG_INFO("<AMFEncoder::VCE::H264> Attempting to create AVC Encoder...");
 			encoderCaps = &(VCE_Capabilities::getInstance()->m_AVCCaps);
 			if (encoderCaps->acceleration_type != amf::AMF_ACCEL_HARDWARE) {
@@ -48,7 +48,7 @@ AMFEncoder::VCE::VCE(H264_Encoder_Type encoderType) {
 
 			res = AMFCreateComponent(m_AMFContext, AMFVideoEncoderVCE_AVC, &m_AMFEncoder);
 			break;
-		case H264_ENCODER_TYPE_SVC:
+		case VCE_ENCODER_TYPE_SVC:
 			AMF_LOG_INFO("<AMFEncoder::VCE::H264> Attempting to create SVC Encoder...");
 			encoderCaps = &(VCE_Capabilities::getInstance()->m_SVCCaps);
 			if (encoderCaps->acceleration_type != amf::AMF_ACCEL_HARDWARE) {
@@ -57,7 +57,7 @@ AMFEncoder::VCE::VCE(H264_Encoder_Type encoderType) {
 
 			res = AMFCreateComponent(m_AMFContext, AMFVideoEncoderVCE_SVC, &m_AMFEncoder);
 			break;
-		case H264_ENCODER_TYPE_HEVC:
+		case VCE_ENCODER_TYPE_HEVC:
 			AMF_LOG_INFO("<AMFEncoder::VCE::H264> Attempting to create HEVC Encoder...");
 
 			res = AMFCreateComponent(m_AMFContext, L"AMFVideoEncoderVCE_HEVC", &m_AMFEncoder);
@@ -76,7 +76,7 @@ AMFEncoder::VCE::~VCE() {
 		m_AMFContext->Terminate();
 }
 
-void AMFEncoder::VCE::SetMemoryType(H264_Memory_Type memoryType) {
+void AMFEncoder::VCE::SetMemoryType(VCE_Memory_Type memoryType) {
 	char* memoryTypes[] = {
 		"Host",
 		"DirectX11",
@@ -96,11 +96,11 @@ void AMFEncoder::VCE::SetMemoryType(H264_Memory_Type memoryType) {
 	AMF_LOG_INFO("<AMFEncoder::VCE::SetMemoryType> Set to %s.", memoryTypes[m_memoryType]);
 }
 
-AMFEncoder::H264_Memory_Type AMFEncoder::VCE::GetMemoryType() {
+AMFEncoder::VCE_Memory_Type AMFEncoder::VCE::GetMemoryType() {
 	return m_memoryType;
 }
 
-void AMFEncoder::VCE::SetSurfaceFormat(H264_Surface_Format surfaceFormat) {
+void AMFEncoder::VCE::SetSurfaceFormat(VCE_Surface_Format surfaceFormat) {
 	char* surfaceFormats[] = {
 		"NV12",
 		"I420",
@@ -121,11 +121,11 @@ void AMFEncoder::VCE::SetSurfaceFormat(H264_Surface_Format surfaceFormat) {
 	AMF_LOG_INFO("<AMFEncoder::VCE::SetSurfaceFormat> Set to %s.", surfaceFormats[m_surfaceFormat]);
 }
 
-AMFEncoder::H264_Surface_Format AMFEncoder::VCE::GetSurfaceFormat() {
+AMFEncoder::VCE_Surface_Format AMFEncoder::VCE::GetSurfaceFormat() {
 	return m_surfaceFormat;
 }
 
-void AMFEncoder::VCE::SetUsage(H264_Usage usage) {
+void AMFEncoder::VCE::SetUsage(VCE_Usage usage) {
 	AMF_RESULT res;
 	char* usages[] = {
 		"Transcoding",
@@ -143,16 +143,16 @@ void AMFEncoder::VCE::SetUsage(H264_Usage usage) {
 
 	// Set usage
 	switch (usage) {
-		case H264_USAGE_WEBCAM:
+		case VCE_USAGE_WEBCAM:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, AMF_VIDEO_ENCODER_USAGE_WEBCAM);
 			break;
-		case H264_USAGE_ULTRA_LOW_LATENCY:
+		case VCE_USAGE_ULTRA_LOW_LATENCY:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, AMF_VIDEO_ENCODER_USAGE_ULTRA_LOW_LATENCY);
 			break;
-		case H264_USAGE_LOW_LATENCY:
+		case VCE_USAGE_LOW_LATENCY:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY);
 			break;
-		case H264_USAGE_TRANSCODING:
+		case VCE_USAGE_TRANSCODING:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCONDING);
 			break;
 	}
@@ -164,7 +164,7 @@ void AMFEncoder::VCE::SetUsage(H264_Usage usage) {
 	}
 }
 
-AMFEncoder::H264_Usage AMFEncoder::VCE::GetUsage() {
+AMFEncoder::VCE_Usage AMFEncoder::VCE::GetUsage() {
 	AMF_RESULT res;
 	amf::AMFVariant variant;
 
@@ -172,16 +172,16 @@ AMFEncoder::H264_Usage AMFEncoder::VCE::GetUsage() {
 	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
 		switch (variant.ToInt64()) {
 			case AMF_VIDEO_ENCODER_USAGE_TRANSCONDING:
-				m_usage = H264_USAGE_TRANSCODING;
+				m_usage = VCE_USAGE_TRANSCODING;
 				break;
 			case AMF_VIDEO_ENCODER_USAGE_ULTRA_LOW_LATENCY:
-				m_usage = H264_USAGE_ULTRA_LOW_LATENCY;
+				m_usage = VCE_USAGE_ULTRA_LOW_LATENCY;
 				break;
 			case AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY:
-				m_usage = H264_USAGE_LOW_LATENCY;
+				m_usage = VCE_USAGE_LOW_LATENCY;
 				break;
 			case AMF_VIDEO_ENCODER_USAGE_WEBCAM:
-				m_usage = H264_USAGE_WEBCAM;
+				m_usage = VCE_USAGE_WEBCAM;
 				break;
 		}
 	} else {
@@ -191,7 +191,7 @@ AMFEncoder::H264_Usage AMFEncoder::VCE::GetUsage() {
 	return m_usage;
 }
 
-void AMFEncoder::VCE::SetQualityPreset(H264_Quality_Preset qualityPreset) {
+void AMFEncoder::VCE::SetQualityPreset(VCE_Quality_Preset qualityPreset) {
 	AMF_RESULT res;
 	char* qualities[] = {
 		"Speed",
@@ -208,16 +208,16 @@ void AMFEncoder::VCE::SetQualityPreset(H264_Quality_Preset qualityPreset) {
 
 	// Set usage
 	switch (qualityPreset) {
-		case H264_USAGE_WEBCAM:
+		case VCE_USAGE_WEBCAM:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, AMF_VIDEO_ENCODER_USAGE_WEBCAM);
 			break;
-		case H264_USAGE_ULTRA_LOW_LATENCY:
+		case VCE_USAGE_ULTRA_LOW_LATENCY:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, AMF_VIDEO_ENCODER_USAGE_ULTRA_LOW_LATENCY);
 			break;
-		case H264_USAGE_LOW_LATENCY:
+		case VCE_USAGE_LOW_LATENCY:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY);
 			break;
-		case H264_USAGE_TRANSCODING:
+		case VCE_USAGE_TRANSCODING:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCONDING);
 			break;
 	}
@@ -229,7 +229,7 @@ void AMFEncoder::VCE::SetQualityPreset(H264_Quality_Preset qualityPreset) {
 	}
 }
 
-AMFEncoder::H264_Quality_Preset AMFEncoder::VCE::GetQualityPreset() {
+AMFEncoder::VCE_Quality_Preset AMFEncoder::VCE::GetQualityPreset() {
 	AMF_RESULT res;
 	amf::AMFVariant variant;
 
@@ -237,13 +237,13 @@ AMFEncoder::H264_Quality_Preset AMFEncoder::VCE::GetQualityPreset() {
 	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
 		switch (variant.ToInt64()) {
 			case AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED:
-				m_qualityPreset = H264_QUALITY_PRESET_SPEED;
+				m_qualityPreset = VCE_QUALITY_PRESET_SPEED;
 				break;
 			case AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED:
-				m_qualityPreset = H264_QUALITY_PRESET_BALANCED;
+				m_qualityPreset = VCE_QUALITY_PRESET_BALANCED;
 				break;
 			case AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY:
-				m_qualityPreset = H264_QUALITY_PRESET_QUALITY;
+				m_qualityPreset = VCE_QUALITY_PRESET_QUALITY;
 				break;
 		}
 	} else {
@@ -253,7 +253,7 @@ AMFEncoder::H264_Quality_Preset AMFEncoder::VCE::GetQualityPreset() {
 	return m_qualityPreset;
 }
 
-void AMFEncoder::VCE::SetProfile(H264_Profile profile) {
+void AMFEncoder::VCE::SetProfile(VCE_Profile profile) {
 	AMF_RESULT res;
 	char* profiles[] = {
 		"Baseline",
@@ -270,13 +270,13 @@ void AMFEncoder::VCE::SetProfile(H264_Profile profile) {
 
 	// Set profile
 	switch (profile) {
-		case H264_PROFILE_BASELINE:
+		case VCE_PROFILE_BASELINE:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMF_VIDEO_ENCODER_PROFILE_BASELINE);
 			break;
-		case H264_PROFILE_MAIN:
+		case VCE_PROFILE_MAIN:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMF_VIDEO_ENCODER_PROFILE_MAIN);
 			break;
-		case H264_PROFILE_HIGH:
+		case VCE_PROFILE_HIGH:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMF_VIDEO_ENCODER_PROFILE_HIGH);
 			break;
 	}
@@ -288,7 +288,7 @@ void AMFEncoder::VCE::SetProfile(H264_Profile profile) {
 	}
 }
 
-AMFEncoder::H264_Profile AMFEncoder::VCE::GetProfile() {
+AMFEncoder::VCE_Profile AMFEncoder::VCE::GetProfile() {
 	AMF_RESULT res;
 	amf::AMFVariant variant;
 
@@ -296,13 +296,13 @@ AMFEncoder::H264_Profile AMFEncoder::VCE::GetProfile() {
 	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
 		switch (variant.ToInt64()) {
 			case AMF_VIDEO_ENCODER_PROFILE_BASELINE:
-				m_profile = H264_PROFILE_BASELINE;
+				m_profile = VCE_PROFILE_BASELINE;
 				break;
 			case AMF_VIDEO_ENCODER_PROFILE_MAIN:
-				m_profile = H264_PROFILE_MAIN;
+				m_profile = VCE_PROFILE_MAIN;
 				break;
 			case AMF_VIDEO_ENCODER_PROFILE_HIGH:
-				m_profile = H264_PROFILE_HIGH;
+				m_profile = VCE_PROFILE_HIGH;
 				break;
 		}
 	} else {
@@ -312,7 +312,7 @@ AMFEncoder::H264_Profile AMFEncoder::VCE::GetProfile() {
 	return m_profile;
 }
 
-void AMFEncoder::VCE::SetProfileLevel(H264_Profile_Level profileLevel) {
+void AMFEncoder::VCE::SetProfileLevel(VCE_Profile_Level profileLevel) {
 	AMF_RESULT res;
 	char* profiles[] = {
 		"1.0", "1.1", "1.2", "1.3",
@@ -331,30 +331,30 @@ void AMFEncoder::VCE::SetProfileLevel(H264_Profile_Level profileLevel) {
 
 	// Set profile level
 	switch (profileLevel) {
-		case H264_PROFILE_LEVEL_1:
-		case H264_PROFILE_LEVEL_11:
-		case H264_PROFILE_LEVEL_12:
-		case H264_PROFILE_LEVEL_13:
+		case VCE_PROFILE_LEVEL_1:
+		case VCE_PROFILE_LEVEL_11:
+		case VCE_PROFILE_LEVEL_12:
+		case VCE_PROFILE_LEVEL_13:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 10);
 			break;
-		case H264_PROFILE_LEVEL_2:
-		case H264_PROFILE_LEVEL_21:
-		case H264_PROFILE_LEVEL_22:
+		case VCE_PROFILE_LEVEL_2:
+		case VCE_PROFILE_LEVEL_21:
+		case VCE_PROFILE_LEVEL_22:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 20);
 			break;
-		case H264_PROFILE_LEVEL_3:
-		case H264_PROFILE_LEVEL_31:
-		case H264_PROFILE_LEVEL_32:
+		case VCE_PROFILE_LEVEL_3:
+		case VCE_PROFILE_LEVEL_31:
+		case VCE_PROFILE_LEVEL_32:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 30);
 			break;
-		case H264_PROFILE_LEVEL_4:
-		case H264_PROFILE_LEVEL_41:
-		case H264_PROFILE_LEVEL_42:
+		case VCE_PROFILE_LEVEL_4:
+		case VCE_PROFILE_LEVEL_41:
+		case VCE_PROFILE_LEVEL_42:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 40);
 			break;
-		case H264_PROFILE_LEVEL_5:
-		case H264_PROFILE_LEVEL_51:
-		case H264_PROFILE_LEVEL_52:
+		case VCE_PROFILE_LEVEL_5:
+		case VCE_PROFILE_LEVEL_51:
+		case VCE_PROFILE_LEVEL_52:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 50);
 			break;
 	}
@@ -366,7 +366,7 @@ void AMFEncoder::VCE::SetProfileLevel(H264_Profile_Level profileLevel) {
 	}
 }
 
-AMFEncoder::H264_Profile_Level AMFEncoder::VCE::GetProfileLevel() {
+AMFEncoder::VCE_Profile_Level AMFEncoder::VCE::GetProfileLevel() {
 	AMF_RESULT res;
 	amf::AMFVariant variant;
 
@@ -374,19 +374,19 @@ AMFEncoder::H264_Profile_Level AMFEncoder::VCE::GetProfileLevel() {
 	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
 		switch (variant.ToInt64()) {
 			case 10:case 11:case 12:case 13:
-				m_profileLevel = (H264_Profile_Level)(variant.ToInt64() - 10);
+				m_profileLevel = (VCE_Profile_Level)(variant.ToInt64() - 10);
 				break;
 			case 20:case 21:case 22:
-				m_profileLevel = (H264_Profile_Level)(variant.ToInt64() - 20 + H264_PROFILE_LEVEL_2);
+				m_profileLevel = (VCE_Profile_Level)(variant.ToInt64() - 20 + VCE_PROFILE_LEVEL_2);
 				break;
 			case 30:case 31:case 32:
-				m_profileLevel = (H264_Profile_Level)(variant.ToInt64() - 30 + H264_PROFILE_LEVEL_3);
+				m_profileLevel = (VCE_Profile_Level)(variant.ToInt64() - 30 + VCE_PROFILE_LEVEL_3);
 				break;
 			case 40:case 41:case 42:
-				m_profileLevel = (H264_Profile_Level)(variant.ToInt64() - 40 + H264_PROFILE_LEVEL_4);
+				m_profileLevel = (VCE_Profile_Level)(variant.ToInt64() - 40 + VCE_PROFILE_LEVEL_4);
 				break;
 			case 50:case 51:case 52:
-				m_profileLevel = (H264_Profile_Level)(variant.ToInt64() - 50 + H264_PROFILE_LEVEL_5);
+				m_profileLevel = (VCE_Profile_Level)(variant.ToInt64() - 50 + VCE_PROFILE_LEVEL_5);
 				break;
 		}
 	} else {
@@ -430,7 +430,7 @@ uint32_t AMFEncoder::VCE::GetMaxLTRFrames() {
 	return m_maxLTRFrames;
 }
 
-void AMFEncoder::VCE::SetScanType(H264_ScanType scanType) {
+void AMFEncoder::VCE::SetScanType(VCE_ScanType scanType) {
 	AMF_RESULT res;
 	char* scanTypes[] = {
 		"Progressive",
@@ -454,13 +454,13 @@ void AMFEncoder::VCE::SetScanType(H264_ScanType scanType) {
 	}
 }
 
-AMFEncoder::H264_ScanType AMFEncoder::VCE::GetScanType() {
+AMFEncoder::VCE_ScanType AMFEncoder::VCE::GetScanType() {
 	AMF_RESULT res;
 	amf::AMFVariant variant;
 
 	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_SCANTYPE, &variant);
 	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
-		m_scanType = (H264_ScanType)variant.ToInt32();
+		m_scanType = (VCE_ScanType)variant.ToInt32();
 	} else {
 		throwAMFError("<AMFEncoder::VCE::GetScanType> Failed to retrieve, error %s (code %d).", res);
 	}
@@ -620,7 +620,7 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 	#ifdef USE_CreateSurfaceFromHostNative
 	std::vector frameData((frame->linesize[0] * m_frameSize.second) << 1); // Fits all supported formats, I believe.
 	#endif
-	if (m_memoryType == H264_MEMORY_TYPE_HOST) {
+	if (m_memoryType == VCE_MEMORY_TYPE_HOST) {
 		#ifndef USE_CreateSurfaceFromHostNative
 		res = m_AMFContext->AllocSurface(
 			memoryTypeToAMF[m_memoryType], surfaceFormatToAMF[m_surfaceFormat],
@@ -629,7 +629,7 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 		#endif
 
 		switch (m_surfaceFormat) {
-			case H264_SURFACE_FORMAT_NV12:
+			case VCE_SURFACE_FORMAT_NV12:
 			{ // NV12, Y:U+V, Two Plane
 				#ifndef USE_CreateSurfaceFromHostNative
 				size_t iMax = pSurface->GetPlanesCount();
@@ -653,7 +653,7 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 				#endif
 				break;
 			}
-			case H264_SURFACE_FORMAT_I420:
+			case VCE_SURFACE_FORMAT_I420:
 			{	// YUV 4:2:0, Y, subsampled U, subsampled V
 				#ifndef USE_CreateSurfaceFromHostNative
 				size_t iMax = pSurface->GetPlanesCount();
@@ -682,11 +682,11 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 				#endif
 				break;
 			}
-			case H264_SURFACE_FORMAT_I444:
+			case VCE_SURFACE_FORMAT_I444:
 			{
 				break;
 			}
-			case H264_SURFACE_FORMAT_RGB:
+			case VCE_SURFACE_FORMAT_RGB:
 			{ // RGBA, Single Plane
 				#ifndef USE_CreateSurfaceFromHostNative
 				size_t iMax = pSurface->GetPlanesCount();

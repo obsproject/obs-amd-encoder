@@ -44,72 +44,72 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 
 #define AMF_H264(x) ("AMF." ## x)
-#define AMF_H264_T(x) obs_module_text(AMF_TEXT(x))
+#define AMF_VCE_T(x) obs_module_text(AMF_TEXT(x))
 
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
 namespace AMFEncoder {
-	enum H264_Encoder_Type {
-		H264_ENCODER_TYPE_AVC, // Advanced Video Coding
-		H264_ENCODER_TYPE_SVC, // Scalable Video Coding
-		H264_ENCODER_TYPE_HEVC, // High-Efficiency Video Coding (Experimental)
+	enum VCE_Encoder_Type {
+		VCE_ENCODER_TYPE_AVC, // Advanced Video Coding
+		VCE_ENCODER_TYPE_SVC, // Scalable Video Coding
+		VCE_ENCODER_TYPE_HEVC, // High-Efficiency Video Coding (Experimental)
 	};
 
-	enum H264_Memory_Type {
-		H264_MEMORY_TYPE_HOST,      // Use Host-Managed Memory
-		H264_MEMORY_TYPE_DIRECTX11, // Copy straight from DirectX11
-		H264_MEMORY_TYPE_OPENGL     // Copy straight from OpenGL
+	enum VCE_Memory_Type {
+		VCE_MEMORY_TYPE_HOST,      // Use Host-Managed Memory
+		VCE_MEMORY_TYPE_DIRECTX11, // Copy straight from DirectX11
+		VCE_MEMORY_TYPE_OPENGL     // Copy straight from OpenGL
 	};
 
-	enum H264_Surface_Format {
-		H264_SURFACE_FORMAT_NV12, // NV 12
-		H264_SURFACE_FORMAT_I420, // YUV 420 Progressive
-		H264_SURFACE_FORMAT_I444, // Not supported by SDK?
-		H264_SURFACE_FORMAT_RGB   // RGBA
+	enum VCE_Surface_Format {
+		VCE_SURFACE_FORMAT_NV12, // NV 12
+		VCE_SURFACE_FORMAT_I420, // YUV 420 Progressive
+		VCE_SURFACE_FORMAT_I444, // Not supported by SDK?
+		VCE_SURFACE_FORMAT_RGB   // RGBA
 	};
 
-	enum H264_Usage {
-		H264_USAGE_TRANSCODING,
-		H264_USAGE_ULTRA_LOW_LATENCY,
-		H264_USAGE_LOW_LATENCY,
-		H264_USAGE_WEBCAM,
+	enum VCE_Usage {
+		VCE_USAGE_TRANSCODING,
+		VCE_USAGE_ULTRA_LOW_LATENCY,
+		VCE_USAGE_LOW_LATENCY,
+		VCE_USAGE_WEBCAM,
 	};
 
-	enum H264_Quality_Preset {
-		H264_QUALITY_PRESET_SPEED,
-		H264_QUALITY_PRESET_BALANCED,
-		H264_QUALITY_PRESET_QUALITY
+	enum VCE_Quality_Preset {
+		VCE_QUALITY_PRESET_SPEED,
+		VCE_QUALITY_PRESET_BALANCED,
+		VCE_QUALITY_PRESET_QUALITY
 	};
 
-	enum H264_Profile {
-		H264_PROFILE_BASELINE,
-		H264_PROFILE_MAIN,
-		H264_PROFILE_HIGH,
+	enum VCE_Profile {
+		VCE_PROFILE_BASELINE,
+		VCE_PROFILE_MAIN,
+		VCE_PROFILE_HIGH,
 	};
 
-	enum H264_Profile_Level {
-		H264_PROFILE_LEVEL_1,
-		H264_PROFILE_LEVEL_11,
-		H264_PROFILE_LEVEL_12,
-		H264_PROFILE_LEVEL_13,
-		H264_PROFILE_LEVEL_2,
-		H264_PROFILE_LEVEL_21,
-		H264_PROFILE_LEVEL_22,
-		H264_PROFILE_LEVEL_3,
-		H264_PROFILE_LEVEL_31,
-		H264_PROFILE_LEVEL_32,
-		H264_PROFILE_LEVEL_4,
-		H264_PROFILE_LEVEL_41,
-		H264_PROFILE_LEVEL_42,
-		H264_PROFILE_LEVEL_5,
-		H264_PROFILE_LEVEL_51,
-		H264_PROFILE_LEVEL_52, // Experimental
+	enum VCE_Profile_Level {
+		VCE_PROFILE_LEVEL_1,
+		VCE_PROFILE_LEVEL_11,
+		VCE_PROFILE_LEVEL_12,
+		VCE_PROFILE_LEVEL_13,
+		VCE_PROFILE_LEVEL_2,
+		VCE_PROFILE_LEVEL_21,
+		VCE_PROFILE_LEVEL_22,
+		VCE_PROFILE_LEVEL_3,
+		VCE_PROFILE_LEVEL_31,
+		VCE_PROFILE_LEVEL_32,
+		VCE_PROFILE_LEVEL_4,
+		VCE_PROFILE_LEVEL_41,
+		VCE_PROFILE_LEVEL_42,
+		VCE_PROFILE_LEVEL_5,
+		VCE_PROFILE_LEVEL_51,
+		VCE_PROFILE_LEVEL_52, // Experimental
 	};
 
-	enum H264_ScanType {
-		H264_SCANTYPE_PROGRESSIVE,
-		H264_SCANTYPE_INTERLACED
+	enum VCE_ScanType {
+		VCE_SCANTYPE_PROGRESSIVE,
+		VCE_SCANTYPE_INTERLACED
 	};
 
 	/**
@@ -122,7 +122,7 @@ namespace AMFEncoder {
 		//////////////////////////////////////////////////////////////////////////
 		// Initializer & Finalizer
 		//////////////////////////////////////////////////////////////////////////
-		VCE(H264_Encoder_Type);
+		VCE(VCE_Encoder_Type);
 		~VCE();
 
 		//////////////////////////////////////////////////////////////////////////
@@ -130,23 +130,23 @@ namespace AMFEncoder {
 		//////////////////////////////////////////////////////////////////////////
 		// Pre-Start Properties
 		/// 
-		void SetMemoryType(H264_Memory_Type);
-		H264_Memory_Type GetMemoryType();
-		void SetSurfaceFormat(H264_Surface_Format);
-		H264_Surface_Format GetSurfaceFormat();
+		void SetMemoryType(VCE_Memory_Type);
+		VCE_Memory_Type GetMemoryType();
+		void SetSurfaceFormat(VCE_Surface_Format);
+		VCE_Surface_Format GetSurfaceFormat();
 		/// 
-		void SetUsage(H264_Usage);
-		H264_Usage GetUsage();
-		void SetQualityPreset(H264_Quality_Preset);
-		H264_Quality_Preset GetQualityPreset();
-		void SetProfile(H264_Profile);
-		H264_Profile GetProfile();
-		void SetProfileLevel(H264_Profile_Level);
-		H264_Profile_Level GetProfileLevel();
+		void SetUsage(VCE_Usage);
+		VCE_Usage GetUsage();
+		void SetQualityPreset(VCE_Quality_Preset);
+		VCE_Quality_Preset GetQualityPreset();
+		void SetProfile(VCE_Profile);
+		VCE_Profile GetProfile();
+		void SetProfileLevel(VCE_Profile_Level);
+		VCE_Profile_Level GetProfileLevel();
 		void SetMaxLTRFrames(uint32_t);
 		uint32_t GetMaxLTRFrames();
-		void SetScanType(H264_ScanType);
-		H264_ScanType GetScanType();
+		void SetScanType(VCE_ScanType);
+		VCE_ScanType GetScanType();
 		/// 
 		void SetFrameSize(std::pair<uint32_t, uint32_t>&);
 		std::pair<uint32_t, uint32_t> GetFrameSize();
@@ -154,7 +154,7 @@ namespace AMFEncoder {
 		std::pair<uint32_t, uint32_t> GetFrameRate();
 
 		// Post-Start Properties
-
+		///ToDo
 
 		//////////////////////////////////////////////////////////////////////////
 		// Core Functions
@@ -174,16 +174,16 @@ namespace AMFEncoder {
 
 		// Pre-Startup
 		/// 
-		H264_Encoder_Type m_encoderType;
-		H264_Memory_Type m_memoryType;
-		H264_Surface_Format m_surfaceFormat;
+		VCE_Encoder_Type m_encoderType;
+		VCE_Memory_Type m_memoryType;
+		VCE_Surface_Format m_surfaceFormat;
 		/// 
-		H264_Usage m_usage;
-		H264_Quality_Preset m_qualityPreset;
-		H264_Profile m_profile;
-		H264_Profile_Level m_profileLevel;
+		VCE_Usage m_usage;
+		VCE_Quality_Preset m_qualityPreset;
+		VCE_Profile m_profile;
+		VCE_Profile_Level m_profileLevel;
 		uint32_t m_maxLTRFrames;
-		H264_ScanType m_scanType;
+		VCE_ScanType m_scanType;
 		/// 
 		std::pair<uint32_t, uint32_t> m_frameSize;
 		std::pair<uint32_t, uint32_t> m_frameRate;

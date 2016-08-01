@@ -45,7 +45,7 @@ OBS_MODULE_USE_DEFAULT_LOCALE("win-amf", "en-US");
 *                   false to indicate failure and unload the module
 */
 MODULE_EXPORT bool obs_module_load(void) {
-	AMF_LOG_INFO(PLUGIN_VERSION " loaded.");
+	AMF_LOG_INFO("Loading...");
 
 	//////////////////////////////////////////////////////////////////////////
 	// Report Capabilities to log file first.
@@ -128,8 +128,9 @@ MODULE_EXPORT bool obs_module_load(void) {
 #pragma endregion
 
 	// Register Encoder
-	AMFEncoder::h264_encoder::encoder_register();
+	AMFEncoder::VCE_H264_Encoder::encoder_register();
 
+	AMF_LOG_INFO("Loaded...");
 	return true;
 }
 
