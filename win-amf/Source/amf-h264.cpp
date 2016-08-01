@@ -503,7 +503,7 @@ std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameSize() {
 		m_frameSize.first = size.width;
 		m_frameSize.second = size.height;
 	} else {
-		throwAMFError("<AMFEncoder::VCE::GetScanType> Failed to retrieve, error %s (code %d).", res);
+		throwAMFError("<AMFEncoder::VCE::GetFrameSize> Failed to retrieve, error %s (code %d).", res);
 	}
 
 	return std::pair<uint32_t, uint32_t>(m_frameSize);
@@ -535,7 +535,19 @@ void AMFEncoder::VCE::SetFrameRate(std::pair<uint32_t, uint32_t>& framerate) {
 }
 
 std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameRate() {
+	AMF_RESULT res;
+	amf::AMFVariant variant;
 
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FRAMERATE, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_RATE) {
+		AMFRate rate = variant.ToRate();
+		m_frameRate.first = rate.num;
+		m_frameRate.second = rate.den;
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetFrameRate> Failed to retrieve, error %s (code %d).", res);
+	}
+
+	return std::pair<uint32_t, uint32_t>(m_frameRate);
 }
 
 void AMFEncoder::VCE::throwAMFError(const char* errorMsg, AMF_RESULT res) {
