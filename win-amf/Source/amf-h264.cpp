@@ -510,7 +510,28 @@ std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameSize() {
 }
 
 void AMFEncoder::VCE::SetFrameRate(std::pair<uint32_t, uint32_t>& framerate) {
+	AMF_RESULT res;
 
+	// Early-Exception if encoding.
+	if (m_isStarted) {
+		const char* error = "<AMFEncoder::VCE::SetFrameRate> Attempted to change while encoding.";
+		AMF_LOG_ERROR("%s", error);
+		throw std::exception(error);
+	}
+
+	// ToDo: Verify with Capabilities.
+
+	// Set frame size
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FRAMERATE, ::AMFConstructRate(framerate.first, framerate.second));
+	if (res == AMF_OK) {
+		m_frameRate.first = framerate.first;
+		m_frameRate.second = framerate.second;
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetFrameRate> Set to %d/%d.", framerate.first, framerate.second);
+	} else { // Not OK? Then throw an error instead.
+		std::vector<char> sizebuf(256);
+		sprintf(sizebuf.data(), "%d/%d", framerate.first, framerate.second);
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetFrameRate> Failed to set to %s, error %s (code %d).", sizebuf.data(), res);
+	}
 }
 
 std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameRate() {
