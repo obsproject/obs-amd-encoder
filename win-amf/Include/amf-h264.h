@@ -65,7 +65,7 @@ namespace AMFEncoder {
 	enum H264_Surface_Format {
 		H264_SURFACE_FORMAT_NV12, // NV 12
 		H264_SURFACE_FORMAT_I420, // YUV 420 Progressive
-		H264_SURFACE_FORMAT_I444, // Not supported by SDK
+		H264_SURFACE_FORMAT_I444, // Not supported by SDK?
 		H264_SURFACE_FORMAT_RGB   // RGBA
 	};
 
@@ -159,7 +159,7 @@ namespace AMFEncoder {
 		//////////////////////////////////////////////////////////////////////////
 		// Core Functions
 		//////////////////////////////////////////////////////////////////////////
-		bool Start();
+		void Start();
 		void Stop();
 		void SendInput(struct encoder_frame*&);
 		void GetOutput(struct encoder_packet*&, bool*&);

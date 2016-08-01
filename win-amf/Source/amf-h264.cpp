@@ -550,19 +550,182 @@ std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameRate() {
 	return std::pair<uint32_t, uint32_t>(m_frameRate);
 }
 
-bool AMFEncoder::VCE::Start() {
+void AMFEncoder::VCE::Start() {
+	AMF_RESULT res;
+	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
+		amf::AMF_SURFACE_NV12,
+		amf::AMF_SURFACE_YUV420P,
+		(amf::AMF_SURFACE_FORMAT)(amf::AMF_SURFACE_LAST + 1), // YUV444, but missing from SDK. (Experimental)
+		amf::AMF_SURFACE_RGBA
+	};
 
+	// Early-Exception if encoding.
+	if (m_isStarted) {
+		const char* error = "<AMFEncoder::VCE::Start> Attempted to start again while already running.";
+		AMF_LOG_ERROR("%s", error);
+		throw std::exception(error);
+	}
+
+	//ToDo: Support for ReInit at different Framesize? How does that even work?
+	res = m_AMFEncoder->Init(surfaceFormatToAMF[m_surfaceFormat], m_frameSize.first, m_frameSize.second);
+	if (res != AMF_OK) {
+		throwAMFError("<AMFEncoder::VCE::Start> Unable to start, error %s (code %d).", res);
+	} else {
+		m_isStarted = true;
+	}
 }
 
 void AMFEncoder::VCE::Stop() {
+	AMF_RESULT res;
 
+	// Early-Exception if encoding.
+	if (!m_isStarted) {
+		const char* error = "<AMFEncoder::VCE::Stop> Attempted to stop while not running.";
+		AMF_LOG_ERROR("%s", error);
+		throw std::exception(error);
+	}
+
+	//ToDo: Support for ReInit at different Framesize? How does that even work?
+	res = m_AMFEncoder->Terminate();
+	if (res != AMF_OK) {
+		throwAMFError("<AMFEncoder::VCE::Stop> Unable to stop, error %s (code %d).", res);
+	} else {
+		m_isStarted = false;
+	}
 }
 
-void AMFEncoder::VCE::SendInput(struct encoder_frame*&) {
+void AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
+	AMF_RESULT res;
+	amf::AMFSurfacePtr pSurface;
+	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
+		amf::AMF_SURFACE_NV12,
+		amf::AMF_SURFACE_YUV420P,
+		(amf::AMF_SURFACE_FORMAT)(amf::AMF_SURFACE_LAST + 1), // YUV444, but missing from SDK. (Experimental)
+		amf::AMF_SURFACE_RGBA
+	};
+	amf::AMF_MEMORY_TYPE memoryTypeToAMF[] = {
+		amf::AMF_MEMORY_HOST,
+		amf::AMF_MEMORY_DX11,
+		amf::AMF_MEMORY_OPENGL
+	};
 
+	// Early-Exception if encoding.
+	if (!m_isStarted) {
+		const char* error = "<AMFEncoder::VCE::SendInput> Attempted to send input while not running.";
+		AMF_LOG_ERROR("%s", error);
+		throw std::exception(error);
+	}
+
+	// Memory Type: Host
+	if (m_memoryType == H264_MEMORY_TYPE_HOST) {
+		#ifndef USE_CreateSurfaceFromHostNative
+		res = m_AMFContext->AllocSurface(
+			memoryTypeToAMF[m_memoryType], surfaceFormatToAMF[m_surfaceFormat],
+			m_frameSize.first, m_frameSize.second,
+			&pSurface);
+		#endif
+
+		switch (m_surfaceFormat) {
+			case H264_SURFACE_FORMAT_NV12:
+			{ // NV12, Y:U+V, Two Plane
+				#ifndef USE_CreateSurfaceFromHostNative
+				size_t iMax = pSurface->GetPlanesCount();
+				#pragma loop(hint_parallel(2))
+				for (uint8_t i = 0; i < iMax; i++) {
+					amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
+					void* plane_nat = plane->GetNative();
+					int32_t height = plane->GetHeight();
+					size_t hpitch = plane->GetHPitch();
+
+					#pragma loop(hint_parallel(4))
+					for (int32_t py = 0; py < height; py++) {
+						size_t plane_off = py * hpitch;
+						size_t frame_off = py * frame->linesize[i];
+						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+					}
+				}
+				#else
+				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight * 2); // It needs to be 1.5 times height, but 2 is safer for now.
+				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
+				std::memcpy(myFrame->surfaceBuffer.data() + (frame->linesize[0] * m_cfgHeight), frame->data[1], frame->linesize[0] * (m_cfgHeight >> 1));
+				#endif
+				break;
+			}
+			case H264_SURFACE_FORMAT_I420:
+			{	// YUV 4:2:0, Y, subsampled U, subsampled V
+				#ifndef USE_CreateSurfaceFromHostNative
+				size_t iMax = pSurface->GetPlanesCount();
+				#pragma loop(hint_parallel(3))
+				for (uint8_t i = 0; i < iMax; i++) {
+					amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
+					void* plane_nat = plane->GetNative();
+					int32_t height = plane->GetHeight();
+					size_t hpitch = plane->GetHPitch();
+
+					#pragma loop(hint_parallel(8))
+					for (int32_t py = 0; py < height; py++) {
+						size_t plane_off = py * hpitch;
+						size_t frame_off = py * frame->linesize[i];
+						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+					}
+				}
+				#else
+				size_t halfHeight = m_cfgHeight >> 1;
+				size_t fullFrame = (frame->linesize[0] * m_cfgHeight);
+				size_t halfFrame = frame->linesize[1] * halfHeight;
+
+				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight * 2); // We actually need one full and two halved frames. Height * 1.5 should work for this.
+				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
+				std::memcpy(myFrame->surfaceBuffer.data() + fullFrame, frame->data[1], frame->linesize[1] * halfHeight);
+				std::memcpy(myFrame->surfaceBuffer.data() + (fullFrame + halfFrame), frame->data[2], frame->linesize[2] * halfHeight);
+				#endif
+				break;
+			}
+			case H264_SURFACE_FORMAT_I444:
+			{
+				break;
+			}
+			case H264_SURFACE_FORMAT_RGB:
+			{ // RGBA, Single Plane
+				#ifndef USE_CreateSurfaceFromHostNative
+				size_t iMax = pSurface->GetPlanesCount();
+				for (uint8_t i = 0; i < iMax; i++) {
+					amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
+					void* plane_nat = plane->GetNative();
+					int32_t height = plane->GetHeight();
+					size_t hpitch = plane->GetHPitch();
+
+					#pragma loop(hint_parallel(8))
+					for (int32_t py = 0; py < height; py++) {
+						size_t plane_off = py * hpitch;
+						size_t frame_off = py * frame->linesize[i];
+						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+					}
+				}
+				#else
+
+				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight);
+				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
+				#endif
+				break;
+			}
+
+		}
+		#ifdef USE_CreateSurfaceFromHostNative
+		res = m_AMFContext->CreateSurfaceFromHostNative(m_AMFSurfaceFormat, m_cfgWidth, m_cfgHeight, m_cfgWidth, m_cfgHeight, myFrame->surfaceBuffer.data(), &surfaceIn, NULL);
+		#endif
+	}
+	if (res != AMF_OK) { // Failed to create Surface.
+		if (res == AMF_INPUT_FULL) // Drain Queue if full.
+			res = m_AMFEncoder->Drain();
+
+		wa_log_amf_error(res, "Encode: Creating AMF Surface failed");
+		delete myFrame;
+		return;
+	}
 }
 
-void AMFEncoder::VCE::GetOutput(struct encoder_packet*&, bool*&) {
+void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_packet) {
 
 }
 
