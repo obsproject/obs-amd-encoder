@@ -494,7 +494,19 @@ void AMFEncoder::VCE::SetFrameSize(std::pair<uint32_t, uint32_t>& framesize) {
 }
 
 std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameSize() {
+	AMF_RESULT res;
+	amf::AMFVariant variant;
 
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_SIZE) {
+		AMFSize size = variant.ToSize();
+		m_frameSize.first = size.width;
+		m_frameSize.second = size.height;
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetScanType> Failed to retrieve, error %s (code %d).", res);
+	}
+
+	return std::pair<uint32_t, uint32_t>(m_frameSize);
 }
 
 void AMFEncoder::VCE::SetFrameRate(std::pair<uint32_t, uint32_t>& framerate) {
