@@ -550,6 +550,22 @@ std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameRate() {
 	return std::pair<uint32_t, uint32_t>(m_frameRate);
 }
 
+bool AMFEncoder::VCE::Start() {
+
+}
+
+void AMFEncoder::VCE::Stop() {
+
+}
+
+void AMFEncoder::VCE::SendInput(struct encoder_frame*&) {
+
+}
+
+void AMFEncoder::VCE::GetOutput(struct encoder_packet*&, bool*&) {
+
+}
+
 void AMFEncoder::VCE::throwAMFError(const char* errorMsg, AMF_RESULT res) {
 	std::vector<char> msgBuf(1024);
 	formatAMFError(&msgBuf, errorMsg, res);
