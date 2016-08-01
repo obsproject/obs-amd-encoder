@@ -179,6 +179,8 @@ AMFEncoder::H264_Usage AMFEncoder::VCE::GetUsage() {
 				m_usage = H264_USAGE_WEBCAM;
 				break;
 		}
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetUsage> Failed to retrieve, error %s (code %d).", res);
 	}
 
 	return m_usage;
@@ -216,7 +218,7 @@ void AMFEncoder::VCE::SetQualityPreset(H264_Quality_Preset qualityPreset) {
 	}
 	if (res == AMF_OK) {
 		m_qualityPreset = qualityPreset;
-		AMF_LOG_INFO("<AMFEncoder::VCE::SetQualityPreset> Set to %s.", qualities[m_usage]);
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetQualityPreset> Set to %s.", qualities[m_qualityPreset]);
 	} else { // Not OK? Then throw an error instead.
 		throwAMFError("<AMFEncoder::VCE::SetQualityPreset> Failed to set to %s, error %s (code %d).", res);
 	}
@@ -239,6 +241,8 @@ AMFEncoder::H264_Quality_Preset AMFEncoder::VCE::GetQualityPreset() {
 				m_qualityPreset = H264_QUALITY_PRESET_QUALITY;
 				break;
 		}
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetQualityPreset> Failed to retrieve, error %s (code %d).", res);
 	}
 
 	return m_qualityPreset;
@@ -246,7 +250,7 @@ AMFEncoder::H264_Quality_Preset AMFEncoder::VCE::GetQualityPreset() {
 
 void AMFEncoder::VCE::SetProfile(H264_Profile profile) {
 	AMF_RESULT res;
-	char* qualities[] = {
+	char* profiles[] = {
 		"Baseline",
 		"Main",
 		"High"
@@ -273,10 +277,34 @@ void AMFEncoder::VCE::SetProfile(H264_Profile profile) {
 	}
 	if (res == AMF_OK) {
 		m_profile = profile;
-		AMF_LOG_INFO("<AMFEncoder::VCE::SetProfile> Set to %s.", qualities[m_usage]);
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetProfile> Set to %s.", profiles[m_profile]);
 	} else { // Not OK? Then throw an error instead.
 		throwAMFError("<AMFEncoder::VCE::SetProfile> Failed to set to %s, error %s (code %d).", res);
 	}
+}
+
+AMFEncoder::H264_Profile AMFEncoder::VCE::GetProfile() {
+	AMF_RESULT res;
+
+	AMF_VIDEO_ENCODER_PROFILE_ENUM eProfile;
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PROFILE, &eProfile);
+	if (res == AMF_OK) {
+		switch (eProfile) {
+			case AMF_VIDEO_ENCODER_PROFILE_BASELINE:
+				m_profile = H264_PROFILE_BASELINE;
+				break;
+			case AMF_VIDEO_ENCODER_PROFILE_MAIN:
+				m_profile = H264_PROFILE_MAIN;
+				break;
+			case AMF_VIDEO_ENCODER_PROFILE_HIGH:
+				m_profile = H264_PROFILE_HIGH;
+				break;
+		}
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetProfile> Failed to retrieve, error %s (code %d).", res);
+	}
+
+	return m_profile;
 }
 
 void AMFEncoder::VCE::SetProfileLevel(H264_Profile_Level profileLevel) {
