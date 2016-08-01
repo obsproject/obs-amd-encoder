@@ -181,9 +181,9 @@ namespace AMFEncoder {
 		amf::AMFComponentPtr m_AMFEncoder;
 
 		static void throwAMFError(const char* errorMsg, AMF_RESULT res);
-		static void throwAMFErrorAdvanced(const char* errorMsg, AMF_RESULT res, ...);
+		static void throwAMFErrorAdvanced(const char* errorMsg, char* other, AMF_RESULT res);
 		static void formatAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res);
-		static void formatAMFErrorAdvanced(std::vector<char>* buffer, const char* format, AMF_RESULT res, ...);
+		static void formatAMFErrorAdvanced(std::vector<char>* buffer, const char* format, char* other, AMF_RESULT res);
 	};
 
 }

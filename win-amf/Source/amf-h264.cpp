@@ -363,7 +363,33 @@ void AMFEncoder::VCE::SetProfileLevel(H264_Profile_Level profileLevel) {
 }
 
 AMFEncoder::H264_Profile_Level AMFEncoder::VCE::GetProfileLevel() {
+	AMF_RESULT res;
+	amf::AMFVariant variant;
 
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PROFILE, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		switch (variant.ToInt64()) {
+			case 10:case 11:case 12:case 13:
+				m_profileLevel = (H264_Profile_Level)(variant.ToInt64() - 10);
+				break;
+			case 20:case 21:case 22:
+				m_profileLevel = (H264_Profile_Level)(variant.ToInt64() - 20 + H264_PROFILE_LEVEL_2);
+				break;
+			case 30:case 31:case 32:
+				m_profileLevel = (H264_Profile_Level)(variant.ToInt64() - 30 + H264_PROFILE_LEVEL_3);
+				break;
+			case 40:case 41:case 42:
+				m_profileLevel = (H264_Profile_Level)(variant.ToInt64() - 40 + H264_PROFILE_LEVEL_4);
+				break;
+			case 50:case 51:case 52:
+				m_profileLevel = (H264_Profile_Level)(variant.ToInt64() - 50 + H264_PROFILE_LEVEL_5);
+				break;
+		}
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetProfileLevel> Failed to retrieve, error %s (code %d).", res);
+	}
+
+	return m_profileLevel;
 }
 
 void AMFEncoder::VCE::SetMaxOfLTRFrames(uint32_t maxOfLTRFrames) {
@@ -419,8 +445,6 @@ void AMFEncoder::VCE::formatAMFError(std::vector<char>* buffer, const char* form
 }
 
 void AMFEncoder::VCE::formatAMFErrorAdvanced(std::vector<char>* buffer, const char* format, char* other, AMF_RESULT res) {
-	va_list args;
-
 	std::vector<char> errBuf(1024);
 	wcstombs(errBuf.data(), amf::AMFGetResultText(res), errBuf.size());
 	sprintf(buffer->data(), format, other, errBuf, res);
