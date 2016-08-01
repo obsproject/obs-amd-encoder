@@ -129,10 +129,12 @@ namespace AMFEncoder {
 		// Properties
 		//////////////////////////////////////////////////////////////////////////
 		// Pre-Start Properties
+		/// 
 		void SetMemoryType(H264_Memory_Type);
 		H264_Memory_Type GetMemoryType();
 		void SetSurfaceFormat(H264_Surface_Format);
 		H264_Surface_Format GetSurfaceFormat();
+		/// 
 		void SetUsage(H264_Usage);
 		H264_Usage GetUsage();
 		void SetQualityPreset(H264_Quality_Preset);
@@ -145,6 +147,7 @@ namespace AMFEncoder {
 		uint32_t GetMaxOfLTRFrames();
 		void SetScanType(H264_ScanType);
 		H264_ScanType GetScanType();
+		/// 
 		void SetFrameSize(std::pair<uint32_t, uint32_t>&);
 		std::pair<uint32_t, uint32_t> GetFrameSize();
 		void SetFrameRate(std::pair<uint32_t, uint32_t>&);
@@ -178,7 +181,9 @@ namespace AMFEncoder {
 		amf::AMFComponentPtr m_AMFEncoder;
 
 		static void throwAMFError(const char* errorMsg, AMF_RESULT res);
-		static void tempFormatAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res);
+		static void throwAMFErrorAdvanced(const char* errorMsg, AMF_RESULT res, ...);
+		static void formatAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res);
+		static void formatAMFErrorAdvanced(std::vector<char>* buffer, const char* format, AMF_RESULT res, ...);
 	};
 
 }

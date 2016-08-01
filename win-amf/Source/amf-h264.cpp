@@ -155,7 +155,7 @@ void AMFEncoder::VCE::SetUsage(H264_Usage usage) {
 		m_usage = usage;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetUsage> Set to %s.", usages[m_usage]);
 	} else { // Not OK? Then throw an error instead.
-		throwAMFError("<AMFEncoder::VCE::SetUsage> Failed to set to %s, error %s (code %d).", res);
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetUsage> Failed to set to %s, error %s (code %d).", usages[m_usage], res);
 	}
 }
 
@@ -220,7 +220,7 @@ void AMFEncoder::VCE::SetQualityPreset(H264_Quality_Preset qualityPreset) {
 		m_qualityPreset = qualityPreset;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetQualityPreset> Set to %s.", qualities[m_qualityPreset]);
 	} else { // Not OK? Then throw an error instead.
-		throwAMFError("<AMFEncoder::VCE::SetQualityPreset> Failed to set to %s, error %s (code %d).", res);
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetQualityPreset> Failed to set to %s, error %s (code %d).", qualities[m_qualityPreset], res);
 	}
 }
 
@@ -266,20 +266,20 @@ void AMFEncoder::VCE::SetProfile(H264_Profile profile) {
 	// Set profile
 	switch (profile) {
 		case H264_PROFILE_BASELINE:
-			m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMF_VIDEO_ENCODER_PROFILE_BASELINE);
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMF_VIDEO_ENCODER_PROFILE_BASELINE);
 			break;
 		case H264_PROFILE_MAIN:
-			m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMF_VIDEO_ENCODER_PROFILE_MAIN);
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMF_VIDEO_ENCODER_PROFILE_MAIN);
 			break;
 		case H264_PROFILE_HIGH:
-			m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMF_VIDEO_ENCODER_PROFILE_HIGH);
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMF_VIDEO_ENCODER_PROFILE_HIGH);
 			break;
 	}
 	if (res == AMF_OK) {
 		m_profile = profile;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetProfile> Set to %s.", profiles[m_profile]);
 	} else { // Not OK? Then throw an error instead.
-		throwAMFError("<AMFEncoder::VCE::SetProfile> Failed to set to %s, error %s (code %d).", res);
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetProfile> Failed to set to %s, error %s (code %d).", profiles[m_profile], res);
 	}
 }
 
@@ -308,6 +308,57 @@ AMFEncoder::H264_Profile AMFEncoder::VCE::GetProfile() {
 }
 
 void AMFEncoder::VCE::SetProfileLevel(H264_Profile_Level profileLevel) {
+	AMF_RESULT res;
+	char* profiles[] = {
+		"1.0", "1.1", "1.2", "1.3",
+		"2.0", "2.1", "2.2",
+		"3.0", "3.1", "3.2",
+		"4.0", "4.1", "4.2",
+		"5.0", "5.1", "5.2"
+	};
+
+	// Early-Exception if encoding.
+	if (m_isStarted) {
+		const char* error = "<AMFEncoder::VCE::SetProfileLevel> Attempted to change while encoding.";
+		AMF_LOG_ERROR("%s", error);
+		throw std::exception(error);
+	}
+
+	// Set profile level
+	switch (profileLevel) {
+		case H264_PROFILE_LEVEL_1:
+		case H264_PROFILE_LEVEL_11:
+		case H264_PROFILE_LEVEL_12:
+		case H264_PROFILE_LEVEL_13:
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 10);
+			break;
+		case H264_PROFILE_LEVEL_2:
+		case H264_PROFILE_LEVEL_21:
+		case H264_PROFILE_LEVEL_22:
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 20);
+			break;
+		case H264_PROFILE_LEVEL_3:
+		case H264_PROFILE_LEVEL_31:
+		case H264_PROFILE_LEVEL_32:
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 30);
+			break;
+		case H264_PROFILE_LEVEL_4:
+		case H264_PROFILE_LEVEL_41:
+		case H264_PROFILE_LEVEL_42:
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 40);
+			break;
+		case H264_PROFILE_LEVEL_5:
+		case H264_PROFILE_LEVEL_51:
+		case H264_PROFILE_LEVEL_52:
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 50);
+			break;
+	}
+	if (res == AMF_OK) {
+		m_profileLevel = profileLevel;
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetProfile> Set to %s.", profiles[m_profileLevel]);
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetProfile> Failed to set to %s, error %s (code %d).", profiles[m_profileLevel], res);
+	}
 
 }
 
@@ -349,13 +400,28 @@ std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameRate() {
 
 void AMFEncoder::VCE::throwAMFError(const char* errorMsg, AMF_RESULT res) {
 	std::vector<char> msgBuf(1024);
-	tempFormatAMFError(&msgBuf, errorMsg, res);
+	formatAMFError(&msgBuf, errorMsg, res);
 	AMF_LOG_ERROR("%s", msgBuf.data());
 	throw std::exception(msgBuf.data());
 }
 
-void AMFEncoder::VCE::tempFormatAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res) {
+void AMFEncoder::VCE::throwAMFErrorAdvanced(const char* errorMsg, char* other, AMF_RESULT res) {
+	std::vector<char> msgBuf(1024);
+	formatAMFErrorAdvanced(&msgBuf, errorMsg, other, res);
+	AMF_LOG_ERROR("%s", msgBuf.data());
+	throw std::exception(msgBuf.data());
+}
+
+void AMFEncoder::VCE::formatAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res) {
 	std::vector<char> errBuf(1024);
 	wcstombs(errBuf.data(), amf::AMFGetResultText(res), errBuf.size());
 	sprintf(buffer->data(), format, errBuf, res);
+}
+
+void AMFEncoder::VCE::formatAMFErrorAdvanced(std::vector<char>* buffer, const char* format, char* other, AMF_RESULT res) {
+	va_list args;
+
+	std::vector<char> errBuf(1024);
+	wcstombs(errBuf.data(), amf::AMFGetResultText(res), errBuf.size());
+	sprintf(buffer->data(), format, other, errBuf, res);
 }
