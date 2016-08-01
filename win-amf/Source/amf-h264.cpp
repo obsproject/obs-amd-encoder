@@ -199,6 +199,9 @@ obs_properties_t* AMF_Encoder::h264::get_properties(void* data) {
 	obs_property_t* list;
 	obs_properties* props = obs_properties_create();
 
+	//ToDo: Reset Button?
+	
+
 	//////////////////////////////////////////////////////////////////////////
 	// Static Properties (Can't be changed during Encoding)
 	//////////////////////////////////////////////////////////////////////////
@@ -574,10 +577,6 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 			case amf::AMF_SURFACE_YV12:
 			{
 				// YVU 4:2:0, Y, subsampled V, subsampled U
-				size_t halfHeight = m_cfgHeight >> 1;
-				size_t fullFrame = (frame->linesize[0] * m_cfgHeight);
-				size_t halfFrame = frame->linesize[2] * halfHeight;
-
 			#ifndef USE_CreateSurfaceFromHostNative
 				// Flip
 				uint8_t* temp = frame->data[1];
@@ -601,6 +600,10 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 				frame->data[2] = frame->data[1];
 				frame->data[1] = temp;
 			#else
+				size_t halfHeight = m_cfgHeight >> 1;
+				size_t fullFrame = (frame->linesize[0] * m_cfgHeight);
+				size_t halfFrame = frame->linesize[2] * halfHeight;
+
 				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight * 2); // We actually need one full and two halved frames. Height * 1.5 should work for this.
 				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
 				std::memcpy(myFrame->surfaceBuffer.data() + fullFrame, frame->data[2], frame->linesize[2] * halfHeight);
@@ -662,6 +665,9 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 	res = m_AMFContext->CreateSurfaceFromHostNative(m_AMFSurfaceFormat, m_cfgWidth, m_cfgHeight, m_cfgWidth, m_cfgHeight, myFrame->surfaceBuffer.data(), &surfaceIn, NULL);
 #endif
 	if (res != AMF_OK) { // Failed to create Surface.
+		if (res == AMF_INPUT_FULL) // Drain Queue if full.
+			res = m_AMFEncoder->Drain();
+
 		wa_log_amf_error(res, "Encode: Creating AMF Surface failed");
 		delete myFrame;
 		return;

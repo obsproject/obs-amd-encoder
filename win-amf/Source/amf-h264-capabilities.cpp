@@ -34,9 +34,85 @@ AMF_Encoder::h264_capabilities* AMF_Encoder::h264_capabilities::getInstance() {
 }
 
 AMF_Encoder::h264_capabilities::h264_capabilities() {
-
+	refreshCapabilities();
 }
 
 AMF_Encoder::h264_capabilities::~h264_capabilities() {
 
 }
+
+bool AMF_Encoder::h264_capabilities::refreshCapabilities() {
+	AMF_RESULT res;
+	amf::AMFCapabilityManagerPtr mgr;
+
+	res = AMFCreateCapsManager(&mgr);
+	if (res != AMF_OK) {
+		std::vector<char> msgBuf(1024);
+		wcstombs(msgBuf.data(), amf::AMFGetResultText(res), msgBuf.size());
+
+		AMF_LOG_ERROR("%s, error code %d: %s.", "AMFCreateCapsManager", res, msgBuf.data());
+		return false;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// Get Encoder Capabilities
+	//////////////////////////////////////////////////////////////////////////
+	EncoderCaps* caps[2] = { &m_AVCCaps, &m_SVCCaps };
+	const wchar_t* capsString[2] = { AMFVideoEncoderVCE_AVC , AMFVideoEncoderVCE_SVC };
+	for (uint8_t capsIndex = 0; capsIndex < 2; capsIndex++) {
+		amf::AMFEncoderCapsPtr encCaps;
+		if (capsIndex == 0)
+			res = mgr->GetEncoderCaps(AMFVideoEncoderVCE_AVC, &encCaps);
+		else
+			res = mgr->GetEncoderCaps(AMFVideoEncoderVCE_SVC, &encCaps);
+
+		if (res != AMF_OK)
+			break;
+
+		// Basic Capabilities
+		caps[capsIndex]->acceleration_type = encCaps->GetAccelerationType();
+		caps[capsIndex]->maxStreamCount = encCaps->GetMaxNumOfStreams();
+		caps[capsIndex]->maxBitrate = encCaps->GetMaxBitrate();
+
+		// Input Capabilities
+		amf::AMFIOCapsPtr capsIO[2];
+		EncoderCaps::IOCaps* capsIOS[2] = { &caps[capsIndex]->input, &caps[capsIndex]->output };
+
+		res = encCaps->GetInputCaps(&capsIO[0]);
+		res = encCaps->GetOutputCaps(&capsIO[1]);
+
+		for (uint8_t ioIndex = 0; ioIndex < 2; ioIndex++) {
+			capsIO[ioIndex]->GetWidthRange(&(capsIOS[ioIndex]->minWidth), &(capsIOS[ioIndex]->maxWidth));
+			capsIO[ioIndex]->GetHeightRange(&(capsIOS[ioIndex]->minHeight), &(capsIOS[ioIndex]->maxHeight));
+			capsIOS[ioIndex]->isInterlacedSupported = capsIO[ioIndex]->IsInterlacedSupported();
+			capsIOS[ioIndex]->verticalAlignment = capsIO[ioIndex]->GetVertAlign();
+
+			int32_t numFormats = capsIO[ioIndex]->GetNumOfFormats();
+			capsIOS[ioIndex]->formats.resize(numFormats);
+			for (uint32_t formatIndex = 0; formatIndex < numFormats; formatIndex++) {
+				amf::AMF_SURFACE_FORMAT format = amf::AMF_SURFACE_UNKNOWN;
+				bool isNative = false;
+
+				capsIO[ioIndex]->GetFormatAt(formatIndex, &format, &isNative);
+				capsIOS[ioIndex]->formats[formatIndex].first = format;
+				capsIOS[ioIndex]->formats[formatIndex].second = isNative;
+			}
+
+			int32_t numMemoryTypes = capsIO[ioIndex]->GetNumOfMemoryTypes();
+			capsIOS[ioIndex]->memoryTypes.resize(numMemoryTypes);
+			for (uint32_t memoryTypeIndex = 0; memoryTypeIndex < numMemoryTypes; memoryTypeIndex++) {
+				amf::AMF_MEMORY_TYPE type = amf::AMF_MEMORY_UNKNOWN;
+				bool isNative = false;
+
+				capsIO[ioIndex]->GetMemoryTypeAt(memoryTypeIndex, &type, &isNative);
+				capsIOS[ioIndex]->memoryTypes[memoryTypeIndex].first = type;
+				capsIOS[ioIndex]->memoryTypes[memoryTypeIndex].second = isNative;
+			}
+		}
+	}
+
+	mgr->Terminate();
+
+	return true;
+}
+

@@ -44,24 +44,15 @@ SOFTWARE.
 #include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderVCE.h"
 #include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderVCECaps.h"
 
-#define AMF_TEXT(x) ("AMF.h264." ## x)
-#define AMF_TEXT_T(x) obs_module_text(AMF_TEXT(x))
-//#define AMF_PROPERTY(x) ("amf_h264_" ## x)
-
-#define AMF_LOG(level, format, ...) \
-    blog(level, "[AMF_Encoder::h264] " format, ##__VA_ARGS__)
-#define AMF_LOG_ERROR(format, ...)   AMF_LOG(LOG_ERROR,   format, ##__VA_ARGS__)
-#define AMF_LOG_WARNING(format, ...) AMF_LOG(LOG_WARNING, format, ##__VA_ARGS__)
-#define AMF_LOG_INFO(format, ...)    AMF_LOG(LOG_INFO,    format, ##__VA_ARGS__)
-#define AMF_LOG_DEBUG(format, ...)   AMF_LOG(LOG_DEBUG,   format, ##__VA_ARGS__)
-
+// Plugin
+#include "win-amf.h"
 
 namespace AMF_Encoder {
 	struct h264_input_frame {
 		amf::AMFSurfacePtr surface;
 		std::vector<uint8_t> surfaceBuffer;
 	};
-
+	
 	struct h264_output_frame {
 		amf::AMFDataPtr data;
 	};

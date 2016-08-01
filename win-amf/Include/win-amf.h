@@ -23,10 +23,34 @@
 */
 
 #pragma once
+//////////////////////////////////////////////////////////////////////////
+// Includes
+//////////////////////////////////////////////////////////////////////////
 #include "windows.h"
-#include "OBS-Studio/libobs/obs-module.h"
-#include "amf-h264.h"
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
-	return TRUE;
-}
+// OBS
+#include "OBS-Studio/libobs/obs-module.h"
+
+// Plugin
+#include "amf-h264.h"
+#include "amf-h264-capabilities.h"
+
+//////////////////////////////////////////////////////////////////////////
+// Defines
+//////////////////////////////////////////////////////////////////////////
+#define PLUGIN_VERSION "1.1.3"
+
+#define AMF_LOG(level, format, ...) \
+    blog(level, "[AMF_Encoder::h264] " format, ##__VA_ARGS__)
+#define AMF_LOG_ERROR(format, ...)   AMF_LOG(LOG_ERROR,   format, ##__VA_ARGS__)
+#define AMF_LOG_WARNING(format, ...) AMF_LOG(LOG_WARNING, format, ##__VA_ARGS__)
+#define AMF_LOG_INFO(format, ...)    AMF_LOG(LOG_INFO,    format, ##__VA_ARGS__)
+#define AMF_LOG_DEBUG(format, ...)   AMF_LOG(LOG_DEBUG,   format, ##__VA_ARGS__)
+
+#define AMF_TEXT(x) ("AMF.h264." ## x)
+#define AMF_TEXT_T(x) obs_module_text(AMF_TEXT(x))
+
+//////////////////////////////////////////////////////////////////////////
+// Code
+//////////////////////////////////////////////////////////////////////////
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved);

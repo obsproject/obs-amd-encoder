@@ -25,6 +25,13 @@ SOFTWARE.
 #pragma once
 #include "win-amf.h"
 
+using namespace AMF_Encoder;
+
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
+	return TRUE;
+}
+
+
 OBS_DECLARE_MODULE();
 OBS_MODULE_AUTHOR("Michael Fabian Dirks");
 OBS_MODULE_USE_DEFAULT_LOCALE("win-amf", "en-US");
@@ -38,6 +45,86 @@ OBS_MODULE_USE_DEFAULT_LOCALE("win-amf", "en-US");
 *                   false to indicate failure and unload the module
 */
 MODULE_EXPORT bool obs_module_load(void) {
+	AMF_LOG_INFO(PLUGIN_VERSION " loaded.");
+
+	//////////////////////////////////////////////////////////////////////////
+	// Report Capabilities to log file first.
+	//////////////////////////////////////////////////////////////////////////
+	AMF_LOG_INFO("Gathering Capability Information...");
+	h264_capabilities* caps = h264_capabilities::getInstance();
+
+	AMF_LOG_INFO("Encoder Capabilities:");
+	h264_capabilities::EncoderCaps* capsEnc[2] = { &caps->m_AVCCaps, &caps->m_SVCCaps };
+	for (uint8_t i = 0; i < 2; i++) {
+		if (i == 0)
+			AMF_LOG_INFO("	AVC:");
+		else
+			AMF_LOG_INFO("	SVC:");
+
+		switch (capsEnc[i]->acceleration_type) {
+			case amf::AMF_ACCEL_NOT_SUPPORTED:
+				AMF_LOG_INFO("		Acceleration Type: %s", "Not Supported");
+				break;
+			case amf::AMF_ACCEL_HARDWARE:
+				AMF_LOG_INFO("		Acceleration Type: %s", "Hardware");
+				break;
+			case amf::AMF_ACCEL_GPU:
+				AMF_LOG_INFO("		Acceleration Type: %s", "GPU");
+				break;
+			case amf::AMF_ACCEL_SOFTWARE:
+				AMF_LOG_INFO("		Acceleration Type: %s", "Software");
+				break;
+		}
+		AMF_LOG_INFO("		Maximum Bitrate: %d bits", capsEnc[i]->maxBitrate);
+		AMF_LOG_INFO("		Maximum Stream Count: %d", capsEnc[i]->maxStreamCount);
+
+		h264_capabilities::EncoderCaps::IOCaps* capsIO[2] = { &capsEnc[i]->input, &capsEnc[i]->output };
+		for (uint8_t i = 0; i < 2; i++) {
+			if (i == 0)
+				AMF_LOG_INFO("		Input:");
+			else
+				AMF_LOG_INFO("		Output:");
+
+			AMF_LOG_INFO("			Width Range: %d, %d", capsIO[i]->minWidth, capsIO[i]->maxWidth);
+			AMF_LOG_INFO("			Height Range: %d, %d", capsIO[i]->minHeight, capsIO[i]->maxHeight);
+			AMF_LOG_INFO("			Supports Interlaced: %s", capsIO[i]->isInterlacedSupported ? "Yes" : "No");
+			AMF_LOG_INFO("			Vertical Buffer Alignment: %d bytes", capsIO[i]->verticalAlignment);
+
+			char* surfaceFormat[] = {
+				"Unknown",
+				"NV12",
+				"YV12",
+				"BRGA",
+				"ARGB",
+				"RGBA",
+				"GRAY8",
+				"YUV420P",
+				"U8V8",
+				"YUY2"
+			};
+			AMF_LOG_INFO("			Surface Formats:");
+			for (uint32_t i2 = 0; i2 < capsIO[i]->formats.size(); i2++) {
+				AMF_LOG_INFO("			- %s%s", surfaceFormat[capsIO[i]->formats[i2].first], capsIO[i]->formats[i2].second ? " (Native)" : "");
+			}
+
+			char * memoryTypes[] = {
+				"Unknown",
+				"Host",
+				"DirectX9",
+				"DirectX11",
+				"OpenCL",
+				"OpenGL",
+				"XV",
+				"GrAlloc"
+			};
+			AMF_LOG_INFO("			Memory Types:");
+			for (uint32_t i2 = 0; i2 < capsIO[i]->memoryTypes.size(); i2++) {
+				AMF_LOG_INFO("			- %s%s", memoryTypes[capsIO[i]->memoryTypes[i2].first], capsIO[i]->memoryTypes[i2].second ? " (Native)" : "");
+			}
+		}
+	}
+
+	// Register Encoder
 	AMF_Encoder::h264::encoder_register();
 
 	return true;
