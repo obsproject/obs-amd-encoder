@@ -24,24 +24,24 @@ SOFTWARE.
 
 #include "amf-h264-capabilities.h"
 
-AMFEncoder::H264_Capabilities* AMFEncoder::H264_Capabilities::instance;
+AMFEncoder::VCE_Capabilities* AMFEncoder::VCE_Capabilities::instance;
 
-AMFEncoder::H264_Capabilities* AMFEncoder::H264_Capabilities::getInstance() {
+AMFEncoder::VCE_Capabilities* AMFEncoder::VCE_Capabilities::getInstance() {
 	if (!instance)
-		instance = new H264_Capabilities();
+		instance = new VCE_Capabilities();
 
 	return instance;
 }
 
-AMFEncoder::H264_Capabilities::H264_Capabilities() {
+AMFEncoder::VCE_Capabilities::VCE_Capabilities() {
 	refreshCapabilities();
 }
 
-AMFEncoder::H264_Capabilities::~H264_Capabilities() {
+AMFEncoder::VCE_Capabilities::~VCE_Capabilities() {
 
 }
 
-bool AMFEncoder::H264_Capabilities::refreshCapabilities() {
+bool AMFEncoder::VCE_Capabilities::refreshCapabilities() {
 	AMF_RESULT res;
 	amf::AMFCapabilityManagerPtr mgr;
 

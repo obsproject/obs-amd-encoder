@@ -38,21 +38,21 @@ SOFTWARE.
 #include "win-amf.h"
 
 namespace AMFEncoder {
-	class H264_Capabilities {
+	class VCE_Capabilities {
 		//////////////////////////////////////////////////////////////////////////
 		// Singleton
 		//////////////////////////////////////////////////////////////////////////
-		static H264_Capabilities* instance;
+		static VCE_Capabilities* instance;
 
 		public:
-		static H264_Capabilities* getInstance();
+		static VCE_Capabilities* getInstance();
 
 		//////////////////////////////////////////////////////////////////////////
 		// Class
 		//////////////////////////////////////////////////////////////////////////
 		public:
-		H264_Capabilities();
-		~H264_Capabilities();
+		VCE_Capabilities();
+		~VCE_Capabilities();
 
 		bool refreshCapabilities();
 

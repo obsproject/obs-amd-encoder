@@ -56,19 +56,17 @@ namespace AMFEncoder {
 		H264_ENCODER_TYPE_HEVC, // High-Efficiency Video Coding (Experimental)
 	};
 
+	enum H264_Memory_Type {
+		H264_MEMORY_TYPE_HOST,      // Use Host-Managed Memory
+		H264_MEMORY_TYPE_DIRECTX11, // Copy straight from DirectX11
+		H264_MEMORY_TYPE_OPENGL     // Copy straight from OpenGL
+	};
+
 	enum H264_Surface_Format {
-		H264_SURFACE_FORMAT_UNKNOWN,
 		H264_SURFACE_FORMAT_NV12, // NV 12
 		H264_SURFACE_FORMAT_I420, // YUV 420 Progressive
 		H264_SURFACE_FORMAT_I444, // Not supported by SDK
 		H264_SURFACE_FORMAT_RGB   // RGBA
-	};
-
-	enum H264_Memory_Type {
-		H264_MEMORY_TYPE_UKNONWN,
-		H264_MEMORY_TYPE_HOST,      // Use Host-Managed Memory
-		H264_MEMORY_TYPE_DIRECTX11, // Copy straight from DirectX11
-		H264_MEMORY_TYPE_OPENGL     // Copy straight from OpenGL
 	};
 
 	enum H264_Usage {
@@ -118,30 +116,39 @@ namespace AMFEncoder {
 	* Class for the actual AMF Encoder.
 	*
 	*/
-	class H264 {
+	class VCE {
 		public:
 
 		//////////////////////////////////////////////////////////////////////////
 		// Initializer & Finalizer
 		//////////////////////////////////////////////////////////////////////////
-		H264(H264_Encoder_Type);
-		~H264();
+		VCE(H264_Encoder_Type);
+		~VCE();
 
 		//////////////////////////////////////////////////////////////////////////
 		// Properties
 		//////////////////////////////////////////////////////////////////////////
-		// Pre-StartUp Properties
+		// Pre-Start Properties
 		void SetMemoryType(H264_Memory_Type);
+		H264_Memory_Type GetMemoryType();
 		void SetSurfaceFormat(H264_Surface_Format);
+		H264_Surface_Format GetSurfaceFormat();
 		void SetUsage(H264_Usage);
+		H264_Usage GetUsage();
 		void SetQualityPreset(H264_Quality_Preset);
+		H264_Quality_Preset GetQualityPreset();
 		void SetProfile(H264_Profile);
+		H264_Profile GetProfile();
 		void SetProfileLevel(H264_Profile_Level);
+		H264_Profile_Level GetProfileLevel();
 		void SetMaxOfLTRFrames(uint32_t);
+		uint32_t GetMaxOfLTRFrames();
 		void SetScanType(H264_ScanType);
+		H264_ScanType GetScanType();
 		void SetFrameSize(std::pair<uint32_t, uint32_t>&);
+		std::pair<uint32_t, uint32_t> GetFrameSize();
 		void SetFrameRate(std::pair<uint32_t, uint32_t>&);
-
+		std::pair<uint32_t, uint32_t> GetFrameRate();
 
 		//////////////////////////////////////////////////////////////////////////
 		// Core Functions
@@ -150,8 +157,7 @@ namespace AMFEncoder {
 		void Stop();
 		void SendInput(struct encoder_frame*&);
 		void GetOutput(struct encoder_packet*&, bool*&);
-
-
+		
 		//////////////////////////////////////////////////////////////////////////
 		// Internal-only, do not expose.
 		//////////////////////////////////////////////////////////////////////////
@@ -166,7 +172,6 @@ namespace AMFEncoder {
 		H264_Quality_Preset m_qualityPreset;
 		H264_Profile m_profile;
 		H264_Profile_Level m_profileLevel;
-
 
 		// AMF
 		amf::AMFContextPtr m_AMFContext;
