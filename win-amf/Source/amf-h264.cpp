@@ -311,7 +311,15 @@ void AMFEncoder::VCE::SetProfileLevel(H264_Profile_Level profileLevel) {
 
 }
 
+AMFEncoder::H264_Profile_Level AMFEncoder::VCE::GetProfileLevel() {
+
+}
+
 void AMFEncoder::VCE::SetMaxOfLTRFrames(uint32_t maxOfLTRFrames) {
+
+}
+
+uint32_t AMFEncoder::VCE::GetMaxOfLTRFrames() {
 
 }
 
@@ -319,11 +327,23 @@ void AMFEncoder::VCE::SetScanType(H264_ScanType scanType) {
 
 }
 
+AMFEncoder::H264_ScanType AMFEncoder::VCE::GetScanType() {
+
+}
+
 void AMFEncoder::VCE::SetFrameSize(std::pair<uint32_t, uint32_t>& framesize) {
 
 }
 
+std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameSize() {
+
+}
+
 void AMFEncoder::VCE::SetFrameRate(std::pair<uint32_t, uint32_t>& framerate) {
+
+}
+
+std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameRate() {
 
 }
 
