@@ -43,6 +43,8 @@ SOFTWARE.
 // Defines
 //////////////////////////////////////////////////////////////////////////
 
+#define AMF_H264(x) ("AMF." ## x)
+#define AMF_H264_T(x) obs_module_text(AMF_TEXT(x))
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -54,18 +56,28 @@ namespace AMFEncoder {
 	*/
 	class H264 {
 		public:
-		H264();
+
+		/**
+		* This will initialize the Encoder.
+		*/
+		H264(H264_Usage Usage, H264_Quality_Preset QualityPreset,
+			std::pair<uint32_t, uint32_t>& framesize, std::pair<int, int>& framerate,
+			H264_Profile profile, H264_Profile_Level profileLevel,
+			int maxOfLTRFrames, H264_ScanType scanType);
 		~H264();
 
+		bool StartUp();
+		void SendInput(struct encoder_frame* &frame);
+		void GetOutput(struct encoder_packet* &packet, bool* &received);
+		void ShutDown();
 
-		void Startup(H264_Usage Usage, H264_Quality_Preset QualityPreset,
-			std::pair<uint32_t, uint32_t>& framesize, std::pair<int, int>& framerate,
-			int profile, int profileLevel, int maxOfLTRFrames, int scanType);
-		void Shutdown();
+		//////////////////////////////////////////////////////////////////////////
+		// Internal-only, do not expose.
+		private:
+		amf::AMFContextPtr m_amfContext;
+		amf::AMFComponentPtr m_amfVCEEncoder;
 
-		void SubmitFrame(struct encoder_frame* &frame);
-		void GetFrame(struct encoder_packet* &packet, bool* &received);
-
+		static void tempFormatAMFError(std::vector<char>* buffer, const char* format, amf::AMF_RESULT res);
 	};
 
 	enum H264_Usage {
@@ -83,8 +95,10 @@ namespace AMFEncoder {
 
 	enum H264_Profile {
 		H264_PROFILE_BASELINE,
+		H264_PROFILE_BASELINE_SCALABLE,
 		H264_PROFILE_MAIN,
 		H264_PROFILE_HIGH,
+		H264_PROFILE_HIGH_SCALABLE,
 	};
 
 	enum H264_Profile_Level {
@@ -104,5 +118,10 @@ namespace AMFEncoder {
 		H264_PROFILE_LEVEL_5,
 		H264_PROFILE_LEVEL_51,
 		H264_PROFILE_LEVEL_52,
+	};
+
+	enum H264_ScanType {
+		H264_SCANTYPE_PROGRESSIVE,
+		H264_SCANTYPE_INTERLACED
 	};
 }
