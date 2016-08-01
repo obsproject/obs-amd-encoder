@@ -143,7 +143,7 @@ namespace AMFEncoder {
 		H264_Profile GetProfile();
 		void SetProfileLevel(H264_Profile_Level);
 		H264_Profile_Level GetProfileLevel();
-		void SetMaxOfLTRFrames(uint32_t);
+		void SetMaxLTRFrames(uint32_t);
 		uint32_t GetMaxOfLTRFrames();
 		void SetScanType(H264_ScanType);
 		H264_ScanType GetScanType();
@@ -175,15 +175,19 @@ namespace AMFEncoder {
 		H264_Quality_Preset m_qualityPreset;
 		H264_Profile m_profile;
 		H264_Profile_Level m_profileLevel;
+		uint32_t m_maxLTRFrames;
 
 		// AMF
 		amf::AMFContextPtr m_AMFContext;
 		amf::AMFComponentPtr m_AMFEncoder;
 
 		static void throwAMFError(const char* errorMsg, AMF_RESULT res);
-		static void throwAMFErrorAdvanced(const char* errorMsg, char* other, AMF_RESULT res);
 		static void formatAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res);
-		static void formatAMFErrorAdvanced(std::vector<char>* buffer, const char* format, char* other, AMF_RESULT res);
+
+		template<typename _T>
+		void AMFEncoder::VCE::formatAMFErrorAdvanced(std::vector<char>* buffer, const char* format, _T other, AMF_RESULT res);
+		template<typename _T>
+		void AMFEncoder::VCE::throwAMFErrorAdvanced(const char* errorMsg, _T other, AMF_RESULT res);
 	};
 
 }

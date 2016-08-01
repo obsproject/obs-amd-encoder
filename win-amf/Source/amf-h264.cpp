@@ -359,7 +359,6 @@ void AMFEncoder::VCE::SetProfileLevel(H264_Profile_Level profileLevel) {
 	} else { // Not OK? Then throw an error instead.
 		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetProfile> Failed to set to %s, error %s (code %d).", profiles[m_profileLevel], res);
 	}
-
 }
 
 AMFEncoder::H264_Profile_Level AMFEncoder::VCE::GetProfileLevel() {
@@ -392,12 +391,38 @@ AMFEncoder::H264_Profile_Level AMFEncoder::VCE::GetProfileLevel() {
 	return m_profileLevel;
 }
 
-void AMFEncoder::VCE::SetMaxOfLTRFrames(uint32_t maxOfLTRFrames) {
+void AMFEncoder::VCE::SetMaxLTRFrames(uint32_t maxLTRFrames) {
+	AMF_RESULT res;
 
+	// Early-Exception if encoding.
+	if (m_isStarted) {
+		const char* error = "<AMFEncoder::VCE::SetMaxOfLTRFrames> Attempted to change while encoding.";
+		AMF_LOG_ERROR("%s", error);
+		throw std::exception(error);
+	}
+
+	// Set usage
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, maxLTRFrames);
+	if (res == AMF_OK) {
+		m_maxLTRFrames = maxLTRFrames;
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetMaxOfLTRFrames> Set to %s.", maxLTRFrames);
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetMaxOfLTRFrames> Failed to set to %d, error %s (code %d).", maxLTRFrames, res);
+	}
 }
 
-uint32_t AMFEncoder::VCE::GetMaxOfLTRFrames() {
+uint32_t AMFEncoder::VCE::GetMaxLTRFrames() {
+	AMF_RESULT res;
+	amf::AMFVariant variant;
 
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		m_maxLTRFrames = variant.ToInt32();
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetMaxOfLTRFrames> Failed to retrieve, error %s (code %d).", res);
+	}
+
+	return m_maxLTRFrames;
 }
 
 void AMFEncoder::VCE::SetScanType(H264_ScanType scanType) {
@@ -431,21 +456,24 @@ void AMFEncoder::VCE::throwAMFError(const char* errorMsg, AMF_RESULT res) {
 	throw std::exception(msgBuf.data());
 }
 
-void AMFEncoder::VCE::throwAMFErrorAdvanced(const char* errorMsg, char* other, AMF_RESULT res) {
-	std::vector<char> msgBuf(1024);
-	formatAMFErrorAdvanced(&msgBuf, errorMsg, other, res);
-	AMF_LOG_ERROR("%s", msgBuf.data());
-	throw std::exception(msgBuf.data());
-}
-
 void AMFEncoder::VCE::formatAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res) {
 	std::vector<char> errBuf(1024);
 	wcstombs(errBuf.data(), amf::AMFGetResultText(res), errBuf.size());
 	sprintf(buffer->data(), format, errBuf, res);
 }
 
-void AMFEncoder::VCE::formatAMFErrorAdvanced(std::vector<char>* buffer, const char* format, char* other, AMF_RESULT res) {
+template<typename _T>
+void AMFEncoder::VCE::formatAMFErrorAdvanced(std::vector<char>* buffer, const char* format, _T other, AMF_RESULT res) {
 	std::vector<char> errBuf(1024);
 	wcstombs(errBuf.data(), amf::AMFGetResultText(res), errBuf.size());
 	sprintf(buffer->data(), format, other, errBuf, res);
 }
+
+template<typename _T>
+void AMFEncoder::VCE::throwAMFErrorAdvanced(const char* errorMsg, _T other, AMF_RESULT res) {
+	std::vector<char> msgBuf(1024);
+	formatAMFErrorAdvanced(&msgBuf, errorMsg, other, res);
+	AMF_LOG_ERROR("%s", msgBuf.data());
+	throw std::exception(msgBuf.data());
+}
+
