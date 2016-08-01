@@ -161,11 +161,11 @@ void AMFEncoder::VCE::SetUsage(H264_Usage usage) {
 
 AMFEncoder::H264_Usage AMFEncoder::VCE::GetUsage() {
 	AMF_RESULT res;
+	amf::AMFVariant variant;
 
-	AMF_VIDEO_ENCODER_USAGE_ENUM eUsageType;
-	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_USAGE, &eUsageType);
-	if (res == AMF_OK) {
-		switch (eUsageType) {
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_USAGE, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		switch (variant.ToInt64()) {
 			case AMF_VIDEO_ENCODER_USAGE_TRANSCONDING:
 				m_usage = H264_USAGE_TRANSCODING;
 				break;
@@ -226,11 +226,11 @@ void AMFEncoder::VCE::SetQualityPreset(H264_Quality_Preset qualityPreset) {
 
 AMFEncoder::H264_Quality_Preset AMFEncoder::VCE::GetQualityPreset() {
 	AMF_RESULT res;
+	amf::AMFVariant variant;
 
-	AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM eQualityPreset;
-	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, &eQualityPreset);
-	if (res == AMF_OK) {
-		switch (eQualityPreset) {
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		switch (variant.ToInt64()) {
 			case AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED:
 				m_qualityPreset = H264_QUALITY_PRESET_SPEED;
 				break;
@@ -285,11 +285,11 @@ void AMFEncoder::VCE::SetProfile(H264_Profile profile) {
 
 AMFEncoder::H264_Profile AMFEncoder::VCE::GetProfile() {
 	AMF_RESULT res;
+	amf::AMFVariant variant;
 
-	AMF_VIDEO_ENCODER_PROFILE_ENUM eProfile;
-	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PROFILE, &eProfile);
-	if (res == AMF_OK) {
-		switch (eProfile) {
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PROFILE, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		switch (variant.ToInt64()) {
 			case AMF_VIDEO_ENCODER_PROFILE_BASELINE:
 				m_profile = H264_PROFILE_BASELINE;
 				break;

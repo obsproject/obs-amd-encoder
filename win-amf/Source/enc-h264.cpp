@@ -686,7 +686,7 @@ void AMFEncoder::h264_encoder::queue_frame(encoder_frame* frame) {
 	}
 
 	// Set per-Surface Data.
-	surfaceIn->SetPts(frame->pts);
+	surfaceIn->SetPts(frame->pts * 10000); // Fix by jackun
 
 	// Queue into Input Queue.
 	myFrame->surface = surfaceIn;
@@ -749,8 +749,8 @@ void AMFEncoder::h264_encoder::dequeue_frame(encoder_packet* packet, bool* recei
 		packet->data = m_LargeBuffer.data();
 		packet->size = bufferSize;
 		packet->type = OBS_ENCODER_VIDEO;
-		packet->pts = myFrame->data->GetPts(); // So far works, but I'm not sure if this is actually correct.
-		packet->dts = myFrame->data->GetPts(); // Jackuns VCE fork divided this by ... 10000?
+		packet->pts = myFrame->data->GetPts() / 10000; // Fix by jackun
+		packet->dts = myFrame->data->GetPts() / 10000; // 
 
 		{ // If it is a Keyframe or not, the light will tell you... the light being this integer here.
 			int t_frameDataType = -1;
