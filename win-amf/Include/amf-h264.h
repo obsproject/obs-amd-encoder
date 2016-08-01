@@ -161,8 +161,10 @@ namespace AMFEncoder {
 		//////////////////////////////////////////////////////////////////////////
 		void Start();
 		void Stop();
-		void SendInput(struct encoder_frame*&);
+		bool SendInput(struct encoder_frame*&);
 		void GetOutput(struct encoder_packet*&, bool*&);
+		bool GetExtraData(uint8_t**&, size_t*&);
+		void GetVideoInfo(struct video_scale_info*&);
 		
 		//////////////////////////////////////////////////////////////////////////
 		// Internal-only, do not expose.
@@ -190,6 +192,12 @@ namespace AMFEncoder {
 		amf::AMFContextPtr m_AMFContext;
 		amf::AMFComponentPtr m_AMFEncoder;
 
+		//
+		std::vector<uint8_t> m_PacketDataBuffer;
+
+		//////////////////////////////////////////////////////////////////////////
+		// Logging & Exception Helpers
+		//////////////////////////////////////////////////////////////////////////
 		static void throwAMFError(const char* errorMsg, AMF_RESULT res);
 		static void formatAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res);
 

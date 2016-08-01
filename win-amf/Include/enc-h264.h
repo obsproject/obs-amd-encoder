@@ -150,9 +150,6 @@ namespace AMFEncoder {
 		~h264_encoder();
 
 		bool encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet);
-		void queue_frame(encoder_frame* frame);
-		void update_queues();
-		void dequeue_frame(encoder_packet* packet, bool* received_packet);
 		bool update(obs_data_t* settings);
 		void get_video_info(struct video_scale_info* info);
 		bool get_extra_data(uint8_t** extra_data, size_t* size);

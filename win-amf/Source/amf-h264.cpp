@@ -594,7 +594,7 @@ void AMFEncoder::VCE::Stop() {
 	}
 }
 
-void AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
+bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 	AMF_RESULT res;
 	amf::AMFSurfacePtr pSurface;
 	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
@@ -617,6 +617,9 @@ void AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 	}
 
 	// Memory Type: Host
+	#ifdef USE_CreateSurfaceFromHostNative
+	std::vector frameData((frame->linesize[0] * m_frameSize.second) << 1); // Fits all supported formats, I believe.
+	#endif
 	if (m_memoryType == H264_MEMORY_TYPE_HOST) {
 		#ifndef USE_CreateSurfaceFromHostNative
 		res = m_AMFContext->AllocSurface(
@@ -645,9 +648,8 @@ void AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 					}
 				}
 				#else
-				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight * 2); // It needs to be 1.5 times height, but 2 is safer for now.
-				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
-				std::memcpy(myFrame->surfaceBuffer.data() + (frame->linesize[0] * m_cfgHeight), frame->data[1], frame->linesize[0] * (m_cfgHeight >> 1));
+				std::memcpy(frameData, frame->data[0], frame->linesize[0] * m_cfgHeight);
+				std::memcpy(frameData + (frame->linesize[0] * m_cfgHeight), frame->data[1], frame->linesize[0] * (m_cfgHeight >> 1));
 				#endif
 				break;
 			}
@@ -674,10 +676,9 @@ void AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 				size_t fullFrame = (frame->linesize[0] * m_cfgHeight);
 				size_t halfFrame = frame->linesize[1] * halfHeight;
 
-				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight * 2); // We actually need one full and two halved frames. Height * 1.5 should work for this.
-				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
-				std::memcpy(myFrame->surfaceBuffer.data() + fullFrame, frame->data[1], frame->linesize[1] * halfHeight);
-				std::memcpy(myFrame->surfaceBuffer.data() + (fullFrame + halfFrame), frame->data[2], frame->linesize[2] * halfHeight);
+				std::memcpy(frameData, frame->data[0], frame->linesize[0] * m_cfgHeight);
+				std::memcpy(frameData + fullFrame, frame->data[1], frame->linesize[1] * halfHeight);
+				std::memcpy(frameData + (fullFrame + halfFrame), frame->data[2], frame->linesize[2] * halfHeight);
 				#endif
 				break;
 			}
@@ -703,9 +704,7 @@ void AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 					}
 				}
 				#else
-
-				myFrame->surfaceBuffer.resize(frame->linesize[0] * m_cfgHeight);
-				std::memcpy(myFrame->surfaceBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
+				std::memcpy(frameData, frame->data[0], frame->linesize[0] * m_cfgHeight);
 				#endif
 				break;
 			}
@@ -715,18 +714,58 @@ void AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 		res = m_AMFContext->CreateSurfaceFromHostNative(m_AMFSurfaceFormat, m_cfgWidth, m_cfgHeight, m_cfgWidth, m_cfgHeight, myFrame->surfaceBuffer.data(), &surfaceIn, NULL);
 		#endif
 	}
-	if (res != AMF_OK) { // Failed to create Surface.
-		if (res == AMF_INPUT_FULL) // Drain Queue if full.
-			res = m_AMFEncoder->Drain();
+	if (res != AMF_OK) // Unable to create Surface
+		throwAMFError("<AMFEncoder::VCE::SendInput> Unable to create AMFSurface, error %s (code %d).", res);
 
-		wa_log_amf_error(res, "Encode: Creating AMF Surface failed");
-		delete myFrame;
-		return;
+	pSurface->SetPts(frame->pts * 10000);
+
+	res = m_AMFEncoder->SubmitInput(pSurface);
+	if (res != AMF_OK) {// Unable to submit Surface
+		std::vector<char> msgBuf(1024);
+		formatAMFError(&msgBuf, "<AMFEncoder::VCE::SendInput> Unable to submit input, error %s (code %d).", res);
+		AMF_LOG_ERROR("%s", msgBuf.data());
+		return false;
+		//throwAMFError("<AMFEncoder::VCE::SendInput> Unable to submit AMFSurface, error %s (code %d).", res);
 	}
+
+	return true;
 }
 
 void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_packet) {
+	AMF_RESULT res;
+	amf::AMFDataPtr pData;
 
+	res = m_AMFEncoder->QueryOutput(&pData);
+	if (res != AMF_OK) {
+		std::vector<char> msgBuf(1024);
+		formatAMFError(&msgBuf, "<AMFEncoder::VCE::GetOutput> Unable to query output, error %s (code %d).", res);
+		AMF_LOG_ERROR("%s", msgBuf.data());
+	} else {
+		amf::AMFBufferPtr pBuffer(pData);
+
+		size_t bufferSize = pBuffer->GetSize();
+		if (m_PacketDataBuffer.size() < bufferSize) {
+			size_t newSize = (size_t)exp2(ceil(log2(bufferSize)));
+			m_PacketDataBuffer.resize(newSize);
+			std::vector<char> msgBuf(1024);
+			formatAMFError(&msgBuf, "<AMFEncoder::VCE::GetOutput> Resized Packet Buffer, error %s (code %d).", res);
+			AMF_LOG_WARNING("%s", msgBuf.data());
+		}
+		if ((bufferSize > 0) && (m_PacketDataBuffer.data()))
+			std::memcpy(m_PacketDataBuffer.data(), pBuffer->GetNative(), bufferSize);
+
+		packet->data = m_PacketDataBuffer.data();
+		packet->type = OBS_ENCODER_VIDEO;
+		packet->size = pBuffer->GetSize();
+		packet->pts = pData->GetPts() / 10000; // Fix by jackun
+		packet->dts = pData->GetPts() / 10000; // Question: Should actually be calculated here?
+		{ // If it is a Keyframe or not, the light will tell you... the light being this integer here.
+			int t_frameDataType = -1;
+			pBuffer->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &t_frameDataType);
+			packet->keyframe = (t_frameDataType == AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR);
+		}
+		*received_packet = true;
+	}
 }
 
 void AMFEncoder::VCE::throwAMFError(const char* errorMsg, AMF_RESULT res) {
