@@ -22,8 +22,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#pragma once
+//////////////////////////////////////////////////////////////////////////
+// Includes
+//////////////////////////////////////////////////////////////////////////
 #include "amf-vce-capabilities.h"
 
+// AMF
+#include "AMD-Media-SDK/1.1/inc/amf/components/CapabilityManager.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/ComponentCaps.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderCaps.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderVCECaps.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderVCE.h"
+
+// Plugin
+#include "win-amf.h"
+
+//////////////////////////////////////////////////////////////////////////
+// Code
+//////////////////////////////////////////////////////////////////////////
 AMFEncoder::VCE_Capabilities* AMFEncoder::VCE_Capabilities::instance;
 
 AMFEncoder::VCE_Capabilities* AMFEncoder::VCE_Capabilities::getInstance() {

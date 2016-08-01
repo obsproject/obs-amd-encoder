@@ -22,10 +22,36 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-
 #pragma once
+//////////////////////////////////////////////////////////////////////////
+// Includes
+//////////////////////////////////////////////////////////////////////////
 #include "enc-h264.h"
 
+#include <exception>
+#include <stdexcept>
+#include <memory>
+#include <chrono>
+#include <string> // std::string
+#include <sstream> // std::stringstream
+#include <queue>
+
+// AMF
+#include "AMD-Media-SDK/1.1/inc/ErrorCodes.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/CapabilityManager.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/Component.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/ComponentCaps.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderCaps.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderVCE.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderVCECaps.h"
+
+// Plugin
+#include "win-amf.h"
+#include "amf-vce.h"
+
+//////////////////////////////////////////////////////////////////////////
+// Code
+//////////////////////////////////////////////////////////////////////////
 // h264 Profiles
 const char* AMFEncoder::VCE_H264_Encoder::PROFILE_NAMES[AMFEncoder::VCE_H264_Encoder::PROFILES::PROFILE_COUNT_MAX] = {
 	AMF_VCE_H264_PROFILE2("AVC.BP"),
@@ -414,7 +440,11 @@ AMFEncoder::VCE_H264_Encoder::VCE_H264_Encoder(obs_data_t* settings, obs_encoder
 	// Static Properties (Can't be changed during Encoding)
 	//////////////////////////////////////////////////////////////////////////
 	// Quality Preset & Usage
-	m_VCE->SetUsage((VCE_Usage)obs_data_get_int(settings, "AMF_VIDEO_ENCODER_USAGE"));
+	try {
+		m_VCE->SetUsage((VCE_Usage)obs_data_get_int(settings, "AMF_VIDEO_ENCODER_USAGE"));
+	} catch (std::exception e) {
+
+	}
 	wa_log_property_int(res, "AMF_VIDEO_ENCODER_USAGE", obs_data_get_int(settings, "AMF_VIDEO_ENCODER_USAGE"));
 	
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET"));

@@ -26,18 +26,18 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Includes
 //////////////////////////////////////////////////////////////////////////
-// System
-#include <exception>
-#include <stdexcept>
+#include <stdint.h>
+#include <inttypes.h>
 #include <vector>
-
-// Plugin
-#include "win-amf.h"
 
 // AMF
 #include "AMD-Media-SDK/1.1/inc/ErrorCodes.h"
 #include "AMD-Media-SDK/1.1/inc/amf/components/Component.h"
 #include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderVCE.h"
+
+// OBS
+#include "OBS-Studio/libobs/obs-module.h"
+#include "OBS-Studio/libobs/obs-encoder.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Defines

@@ -23,14 +23,23 @@ SOFTWARE.
 */
 
 #pragma once
+//////////////////////////////////////////////////////////////////////////
+// Includes
+//////////////////////////////////////////////////////////////////////////
 #include "win-amf.h"
 
+// Plugin
+#include "amf-vce-capabilities.h"
+#include "enc-h264.h"
+
+//////////////////////////////////////////////////////////////////////////
+// Code
+//////////////////////////////////////////////////////////////////////////
 using namespace AMFEncoder;
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
 	return TRUE;
 }
-
 
 OBS_DECLARE_MODULE();
 OBS_MODULE_AUTHOR("Michael Fabian Dirks");
@@ -50,7 +59,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 	//////////////////////////////////////////////////////////////////////////
 	// Report Capabilities to log file first.
 	//////////////////////////////////////////////////////////////////////////
-#pragma region Capability Reporting
+	#pragma region Capability Reporting
 
 	AMF_LOG_INFO("Gathering Capability Information...");
 	VCE_Capabilities* caps = VCE_Capabilities::getInstance();
@@ -125,7 +134,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 			}
 		}
 	}
-#pragma endregion
+	#pragma endregion
 
 	// Register Encoder
 	AMFEncoder::VCE_H264_Encoder::encoder_register();
@@ -135,16 +144,15 @@ MODULE_EXPORT bool obs_module_load(void) {
 }
 
 /** Optional: Called when the module is unloaded.  */
-//MODULE_EXPORT void obs_module_unload(void) {
-//}
+MODULE_EXPORT void obs_module_unload(void) {}
 
 
 /** Optional: Returns the full name of the module */
-//MODULE_EXPORT const char *obs_module_name() {
-//	return "Windows AMF Encoder";
-//}
+MODULE_EXPORT const char *obs_module_name() {
+	return "AMD Media Framework Plugin";
+}
 
 /** Optional: Returns a description of the module */
-//MODULE_EXPORT const char *obs_module_description() {
-//	return "AMF Encoder Plugin for OBS Studio";
-//}
+MODULE_EXPORT const char *obs_module_description() {
+	return "AMD Media Framework Plugin";
+}

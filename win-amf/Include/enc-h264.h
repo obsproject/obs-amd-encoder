@@ -26,29 +26,15 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Includes
 //////////////////////////////////////////////////////////////////////////
-#include <exception>
-#include <stdexcept>
-#include <memory>
-#include <chrono>
-#include <string> // std::string
-#include <sstream> // std::stringstream
-#include <queue>
+#include <stdint.h>
+#include <inttypes.h>
 #include <vector>
 
+// OBS
 #include "OBS-Studio/libobs/obs-module.h"
 #include "OBS-Studio/libobs/obs-encoder.h"
 
-// AMF
-#include "AMD-Media-SDK/1.1/inc/ErrorCodes.h"
-#include "AMD-Media-SDK/1.1/inc/amf/components/CapabilityManager.h"
-#include "AMD-Media-SDK/1.1/inc/amf/components/Component.h"
-#include "AMD-Media-SDK/1.1/inc/amf/components/ComponentCaps.h"
-#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderCaps.h"
-#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderVCE.h"
-#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderVCECaps.h"
-
 // Plugin
-#include "win-amf.h"
 #include "amf-vce.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -171,6 +157,6 @@ namespace AMFEncoder {
 		int m_cfgFPSnum, m_cfgFPSden;
 
 		// Encoder
-		VCE* m_VCE;
+		AMFEncoder::VCE* m_VCE;
 	};
 }

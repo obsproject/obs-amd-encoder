@@ -23,20 +23,19 @@ SOFTWARE.
 */
 
 #pragma once
+//////////////////////////////////////////////////////////////////////////
+// Includes
+//////////////////////////////////////////////////////////////////////////
 #include <stdint.h>
 #include <inttypes.h>
 #include <vector>
 
 // AMF
-#include "AMD-Media-SDK/1.1/inc/amf/components/CapabilityManager.h"
 #include "AMD-Media-SDK/1.1/inc/amf/components/ComponentCaps.h"
-#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderCaps.h"
-#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderVCECaps.h"
-#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderVCE.h"
 
-// Plugin
-#include "win-amf.h"
-
+//////////////////////////////////////////////////////////////////////////
+// Code
+//////////////////////////////////////////////////////////////////////////
 namespace AMFEncoder {
 	class VCE_Capabilities {
 		//////////////////////////////////////////////////////////////////////////
@@ -55,8 +54,6 @@ namespace AMFEncoder {
 		~VCE_Capabilities();
 
 		bool refreshCapabilities();
-
-
 
 		// Structure
 		struct EncoderCaps {

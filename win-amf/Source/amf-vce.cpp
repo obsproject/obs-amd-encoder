@@ -23,8 +23,28 @@ SOFTWARE.
 */
 
 #pragma once
+//////////////////////////////////////////////////////////////////////////
+// Includes
+//////////////////////////////////////////////////////////////////////////
 #include "amf-vce.h"
 
+// System
+#include <exception>
+#include <stdexcept>
+#include <vector>
+
+// AMF
+#include "AMD-Media-SDK/1.1/inc/ErrorCodes.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/Component.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderVCE.h"
+
+// Plugin
+#include "win-amf.h"
+#include "amf-vce-capabilities.h"
+
+//////////////////////////////////////////////////////////////////////////
+// Code
+//////////////////////////////////////////////////////////////////////////
 AMFEncoder::VCE::VCE(VCE_Encoder_Type encoderType) {
 	AMF_RESULT res;
 	VCE_Capabilities::EncoderCaps* encoderCaps;

@@ -28,13 +28,7 @@
 //////////////////////////////////////////////////////////////////////////
 #include "windows.h"
 
-// OBS
 #include "OBS-Studio/libobs/obs-module.h"
-
-// Plugin
-#include "amf-vce.h"
-#include "amf-vce-capabilities.h"
-#include "enc-h264.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Defines
@@ -55,3 +49,7 @@
 // Code
 //////////////////////////////////////////////////////////////////////////
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved);
+MODULE_EXPORT bool obs_module_load(void);
+MODULE_EXPORT void obs_module_unload(void);
+MODULE_EXPORT const char *obs_module_name();
+MODULE_EXPORT const char *obs_module_description();
