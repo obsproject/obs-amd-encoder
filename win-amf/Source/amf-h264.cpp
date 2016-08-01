@@ -405,7 +405,7 @@ void AMFEncoder::VCE::SetMaxLTRFrames(uint32_t maxLTRFrames) {
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, maxLTRFrames);
 	if (res == AMF_OK) {
 		m_maxLTRFrames = maxLTRFrames;
-		AMF_LOG_INFO("<AMFEncoder::VCE::SetMaxOfLTRFrames> Set to %s.", maxLTRFrames);
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetMaxOfLTRFrames> Set to %d.", maxLTRFrames);
 	} else { // Not OK? Then throw an error instead.
 		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetMaxOfLTRFrames> Failed to set to %d, error %s (code %d).", maxLTRFrames, res);
 	}
@@ -426,11 +426,41 @@ uint32_t AMFEncoder::VCE::GetMaxLTRFrames() {
 }
 
 void AMFEncoder::VCE::SetScanType(H264_ScanType scanType) {
+	AMF_RESULT res;
+	char* scanTypes[] = {
+		"Progressive",
+		"Interlaced"
+	};
 
+	// Early-Exception if encoding.
+	if (m_isStarted) {
+		const char* error = "<AMFEncoder::VCE::SetScanType> Attempted to change while encoding.";
+		AMF_LOG_ERROR("%s", error);
+		throw std::exception(error);
+	}
+
+	// Set usage
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SCANTYPE, scanType);
+	if (res == AMF_OK) {
+		m_scanType = scanType;
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetScanType> Set to %s.", scanTypes[scanType]);
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetScanType> Failed to set to %s, error %s (code %d).", scanTypes[scanType], res);
+	}
 }
 
 AMFEncoder::H264_ScanType AMFEncoder::VCE::GetScanType() {
+	AMF_RESULT res;
+	amf::AMFVariant variant;
 
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_SCANTYPE, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		m_scanType = (H264_ScanType)variant.ToInt32();
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetScanType> Failed to retrieve, error %s (code %d).", res);
+	}
+
+	return m_scanType;
 }
 
 void AMFEncoder::VCE::SetFrameSize(std::pair<uint32_t, uint32_t>& framesize) {

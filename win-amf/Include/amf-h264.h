@@ -144,7 +144,7 @@ namespace AMFEncoder {
 		void SetProfileLevel(H264_Profile_Level);
 		H264_Profile_Level GetProfileLevel();
 		void SetMaxLTRFrames(uint32_t);
-		uint32_t GetMaxOfLTRFrames();
+		uint32_t GetMaxLTRFrames();
 		void SetScanType(H264_ScanType);
 		H264_ScanType GetScanType();
 		/// 
@@ -168,14 +168,20 @@ namespace AMFEncoder {
 		bool m_isStarted;
 
 		// Pre-Startup
+		/// 
 		H264_Encoder_Type m_encoderType;
 		H264_Memory_Type m_memoryType;
 		H264_Surface_Format m_surfaceFormat;
+		/// 
 		H264_Usage m_usage;
 		H264_Quality_Preset m_qualityPreset;
 		H264_Profile m_profile;
 		H264_Profile_Level m_profileLevel;
 		uint32_t m_maxLTRFrames;
+		H264_ScanType m_scanType;
+		/// 
+		std::pair<uint32_t, uint32_t> m_frameSize;
+		std::pair<uint32_t, uint32_t> m_frameRate;
 
 		// AMF
 		amf::AMFContextPtr m_AMFContext;
