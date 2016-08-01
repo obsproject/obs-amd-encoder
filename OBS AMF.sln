@@ -11,8 +11,8 @@ Global
 		Debug|x86 = Debug|x86
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
-		Release-withAllocSurface|x64 = Release-withAllocSurface|x64
-		Release-withAllocSurface|x86 = Release-withAllocSurface|x86
+		Release-noAllocSurface|x64 = Release-noAllocSurface|x64
+		Release-noAllocSurface|x86 = Release-noAllocSurface|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{49237B5E-655D-46B5-AA1F-780B387327A1}.Debug|x64.ActiveCfg = Debug|x64
@@ -23,10 +23,10 @@ Global
 		{49237B5E-655D-46B5-AA1F-780B387327A1}.Release|x64.Build.0 = Release|x64
 		{49237B5E-655D-46B5-AA1F-780B387327A1}.Release|x86.ActiveCfg = Release|Win32
 		{49237B5E-655D-46B5-AA1F-780B387327A1}.Release|x86.Build.0 = Release|Win32
-		{49237B5E-655D-46B5-AA1F-780B387327A1}.Release-withAllocSurface|x64.ActiveCfg = Release-withAllocSurface|x64
-		{49237B5E-655D-46B5-AA1F-780B387327A1}.Release-withAllocSurface|x64.Build.0 = Release-withAllocSurface|x64
-		{49237B5E-655D-46B5-AA1F-780B387327A1}.Release-withAllocSurface|x86.ActiveCfg = Release-withAllocSurface|Win32
-		{49237B5E-655D-46B5-AA1F-780B387327A1}.Release-withAllocSurface|x86.Build.0 = Release-withAllocSurface|Win32
+		{49237B5E-655D-46B5-AA1F-780B387327A1}.Release-noAllocSurface|x64.ActiveCfg = Release-noAllocSurface|x64
+		{49237B5E-655D-46B5-AA1F-780B387327A1}.Release-noAllocSurface|x64.Build.0 = Release-noAllocSurface|x64
+		{49237B5E-655D-46B5-AA1F-780B387327A1}.Release-noAllocSurface|x86.ActiveCfg = Release-noAllocSurface|Win32
+		{49237B5E-655D-46B5-AA1F-780B387327A1}.Release-noAllocSurface|x86.Build.0 = Release-noAllocSurface|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
