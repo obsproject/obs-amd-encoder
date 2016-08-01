@@ -514,12 +514,16 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 				// NV12, Y:U+V, Two Plane
 			#ifndef USE_CreateSurfaceFromHostNative
 				size_t iMax = surfaceIn->GetPlanesCount();
+			#pragma loop(hint_parallel(2))
 				for (uint8_t i = 0; i < iMax; i++) {
 					amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
 					void* plane_nat = plane->GetNative();
+					int32_t height = plane->GetHeight();
+					size_t hpitch = plane->GetHPitch();
 
-					for (int32_t py = 0; py < plane->GetHeight(); py++) {
-						size_t plane_off = py * plane->GetHPitch();
+				#pragma loop(hint_parallel(8))
+					for (int32_t py = 0; py < height; py++) {
+						size_t plane_off = py * hpitch;
 						size_t frame_off = py * frame->linesize[i];
 						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
 					}
@@ -539,9 +543,12 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 				for (uint8_t i = 0; i < iMax; i++) {
 					amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
 					void* plane_nat = plane->GetNative();
+					int32_t height = plane->GetHeight();
+					size_t hpitch = plane->GetHPitch();
 
-					for (int32_t py = 0; py < plane->GetHeight(); py++) {
-						size_t plane_off = py * plane->GetHPitch();
+				#pragma loop(hint_parallel(8))
+					for (int32_t py = 0; py < height; py++) {
+						size_t plane_off = py * hpitch;
 						size_t frame_off = py * frame->linesize[i];
 						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
 					}
@@ -616,12 +623,16 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 				// YUV 4:2:0, Y, subsampled U, subsampled V
 			#ifndef USE_CreateSurfaceFromHostNative
 				size_t iMax = surfaceIn->GetPlanesCount();
+			#pragma loop(hint_parallel(3))
 				for (uint8_t i = 0; i < iMax; i++) {
 					amf::AMFPlane* plane = surfaceIn->GetPlaneAt(i);
 					void* plane_nat = plane->GetNative();
+					int32_t height = plane->GetHeight();
+					size_t hpitch = plane->GetHPitch();
 
-					for (int32_t py = 0; py < plane->GetHeight(); py++) {
-						size_t plane_off = py * plane->GetHPitch();
+				#pragma loop(hint_parallel(8))
+					for (int32_t py = 0; py < height; py++) {
+						size_t plane_off = py * hpitch;
 						size_t frame_off = py * frame->linesize[i];
 						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
 					}

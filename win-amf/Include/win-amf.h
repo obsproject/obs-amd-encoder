@@ -41,13 +41,13 @@
 #define PLUGIN_VERSION "1.1.3"
 
 #define AMF_LOG(level, format, ...) \
-    blog(level, "[AMF_Encoder::h264] " format, ##__VA_ARGS__)
+    blog(level, "[AMF Encoder] " format, ##__VA_ARGS__)
 #define AMF_LOG_ERROR(format, ...)   AMF_LOG(LOG_ERROR,   format, ##__VA_ARGS__)
 #define AMF_LOG_WARNING(format, ...) AMF_LOG(LOG_WARNING, format, ##__VA_ARGS__)
 #define AMF_LOG_INFO(format, ...)    AMF_LOG(LOG_INFO,    format, ##__VA_ARGS__)
 #define AMF_LOG_DEBUG(format, ...)   AMF_LOG(LOG_DEBUG,   format, ##__VA_ARGS__)
 
-#define AMF_TEXT(x) ("AMF.h264." ## x)
+#define AMF_TEXT(x) ("AMF." ## x)
 #define AMF_TEXT_T(x) obs_module_text(AMF_TEXT(x))
 
 //////////////////////////////////////////////////////////////////////////

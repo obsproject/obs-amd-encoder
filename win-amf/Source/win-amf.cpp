@@ -50,6 +50,8 @@ MODULE_EXPORT bool obs_module_load(void) {
 	//////////////////////////////////////////////////////////////////////////
 	// Report Capabilities to log file first.
 	//////////////////////////////////////////////////////////////////////////
+#pragma region Capability Reporting
+
 	AMF_LOG_INFO("Gathering Capability Information...");
 	h264_capabilities* caps = h264_capabilities::getInstance();
 
@@ -123,6 +125,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 			}
 		}
 	}
+#pragma endregion
 
 	// Register Encoder
 	AMF_Encoder::h264::encoder_register();
