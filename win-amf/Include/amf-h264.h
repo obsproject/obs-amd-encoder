@@ -104,7 +104,7 @@ namespace AMFEncoder {
 		H264_PROFILE_LEVEL_42,
 		H264_PROFILE_LEVEL_5,
 		H264_PROFILE_LEVEL_51,
-		H264_PROFILE_LEVEL_52,
+		H264_PROFILE_LEVEL_52, // Experimental
 	};
 
 	enum H264_ScanType {

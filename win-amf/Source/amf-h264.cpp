@@ -57,6 +57,11 @@ AMFEncoder::VCE::VCE(H264_Encoder_Type encoderType) {
 
 			res = AMFCreateComponent(m_AMFContext, AMFVideoEncoderVCE_SVC, &m_AMFEncoder);
 			break;
+		case H264_ENCODER_TYPE_HEVC:
+			AMF_LOG_INFO("<AMFEncoder::VCE::H264> Attempting to create HEVC Encoder...");
+
+			res = AMFCreateComponent(m_AMFContext, L"AMFVideoEncoderVCE_HEVC", &m_AMFEncoder);
+			break;
 	}
 	if (res != AMF_OK) {
 		m_AMFContext->Terminate();
@@ -464,7 +469,28 @@ AMFEncoder::H264_ScanType AMFEncoder::VCE::GetScanType() {
 }
 
 void AMFEncoder::VCE::SetFrameSize(std::pair<uint32_t, uint32_t>& framesize) {
+	AMF_RESULT res;
 
+	// Early-Exception if encoding.
+	if (m_isStarted) {
+		const char* error = "<AMFEncoder::VCE::SetFrameSize> Attempted to change while encoding.";
+		AMF_LOG_ERROR("%s", error);
+		throw std::exception(error);
+	}
+
+	// ToDo: Verify with Capabilities.
+
+	// Set frame size
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, ::AMFConstructSize(framesize.first, framesize.second));
+	if (res == AMF_OK) {
+		m_frameSize.first = framesize.first;
+		m_frameSize.second = framesize.second;
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetFrameSize> Set to %dx%d.", framesize.first, framesize.second);
+	} else { // Not OK? Then throw an error instead.
+		std::vector<char> sizebuf(256);
+		sprintf(sizebuf.data(), "%dx%d", framesize.first, framesize.second);
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetFrameSize> Failed to set to %s, error %s (code %d).", sizebuf.data(), res);
+	}
 }
 
 std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameSize() {
