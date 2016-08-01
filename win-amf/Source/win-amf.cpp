@@ -53,10 +53,10 @@ MODULE_EXPORT bool obs_module_load(void) {
 #pragma region Capability Reporting
 
 	AMF_LOG_INFO("Gathering Capability Information...");
-	h264_capabilities* caps = h264_capabilities::getInstance();
+	H264_Capabilities* caps = H264_Capabilities::getInstance();
 
 	AMF_LOG_INFO("Encoder Capabilities:");
-	h264_capabilities::EncoderCaps* capsEnc[2] = { &caps->m_AVCCaps, &caps->m_SVCCaps };
+	H264_Capabilities::EncoderCaps* capsEnc[2] = { &caps->m_AVCCaps, &caps->m_SVCCaps };
 	for (uint8_t i = 0; i < 2; i++) {
 		if (i == 0)
 			AMF_LOG_INFO("	AVC:");
@@ -80,7 +80,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 		AMF_LOG_INFO("		Maximum Bitrate: %d bits", capsEnc[i]->maxBitrate);
 		AMF_LOG_INFO("		Maximum Stream Count: %d", capsEnc[i]->maxStreamCount);
 
-		h264_capabilities::EncoderCaps::IOCaps* capsIO[2] = { &capsEnc[i]->input, &capsEnc[i]->output };
+		H264_Capabilities::EncoderCaps::IOCaps* capsIO[2] = { &capsEnc[i]->input, &capsEnc[i]->output };
 		for (uint8_t i = 0; i < 2; i++) {
 			if (i == 0)
 				AMF_LOG_INFO("		Input:");

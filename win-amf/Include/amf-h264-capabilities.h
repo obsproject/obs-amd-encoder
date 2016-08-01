@@ -37,22 +37,22 @@ SOFTWARE.
 // Plugin
 #include "win-amf.h"
 
-namespace AMF_Encoder {
-	class h264_capabilities {
+namespace AMFEncoder {
+	class H264_Capabilities {
 		//////////////////////////////////////////////////////////////////////////
 		// Singleton
 		//////////////////////////////////////////////////////////////////////////
-		static h264_capabilities* instance;
+		static H264_Capabilities* instance;
 
 		public:
-		static h264_capabilities* getInstance();
+		static H264_Capabilities* getInstance();
 
 		//////////////////////////////////////////////////////////////////////////
 		// Class
 		//////////////////////////////////////////////////////////////////////////
 		public:
-		h264_capabilities();
-		~h264_capabilities();
+		H264_Capabilities();
+		~H264_Capabilities();
 
 		bool refreshCapabilities();
 

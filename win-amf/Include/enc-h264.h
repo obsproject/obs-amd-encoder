@@ -58,11 +58,51 @@ namespace AMFEncoder {
 		~H264();
 
 
-		void Startup(int Usage, int QualityPreset, std::pair<int,int>& framesize, std::pair<int,int>& framerate, int profile, int profileLevel, int maxOfLTRFrames, int scanType);
+		void Startup(H264_Usage Usage, H264_Quality_Preset QualityPreset,
+			std::pair<uint32_t, uint32_t>& framesize, std::pair<int,int>& framerate,
+			int profile, int profileLevel, int maxOfLTRFrames, int scanType);
 		void Shutdown();
 
 		void SubmitFrame(struct encoder_frame* &frame);
 		void GetFrame(struct encoder_packet* &packet, bool* &received);
 
+	};
+
+	enum H264_Usage {
+		H264_USAGE_TRANSCODING,
+		H264_USAGE_ULTRA_LOW_LATENCY,
+		H264_USAGE_LOW_LATENCY,
+		H264_USAGE_WEBCAM,
+	};
+
+	enum H264_Quality_Preset {
+		H264_QUALITY_PRESET_SPEED,
+		H264_QUALITY_PRESET_BALANCED,
+		H264_QUALITY_PRESET_QUALITY
+	};
+
+	enum H264_Profile {
+		H264_PROFILE_BASELINE,
+		H264_PROFILE_MAIN,
+		H264_PROFILE_HIGH,
+	};
+
+	enum H264_Profile_Level {
+		H264_PROFILE_LEVEL_1,
+		H264_PROFILE_LEVEL_11,
+		H264_PROFILE_LEVEL_12,
+		H264_PROFILE_LEVEL_13,
+		H264_PROFILE_LEVEL_2,
+		H264_PROFILE_LEVEL_21,
+		H264_PROFILE_LEVEL_22,
+		H264_PROFILE_LEVEL_3,
+		H264_PROFILE_LEVEL_31,
+		H264_PROFILE_LEVEL_32,
+		H264_PROFILE_LEVEL_4,
+		H264_PROFILE_LEVEL_41,
+		H264_PROFILE_LEVEL_42,
+		H264_PROFILE_LEVEL_5,
+		H264_PROFILE_LEVEL_51,
+		H264_PROFILE_LEVEL_52,
 	};
 }
