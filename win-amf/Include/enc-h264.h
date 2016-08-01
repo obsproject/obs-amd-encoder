@@ -102,8 +102,8 @@ namespace AMFEncoder {
 
 		static void* create(obs_data_t* settings, obs_encoder_t* encoder);
 		static void destroy(void* data);
-		static bool encode(void *data, struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet);
 		static bool update(void *data, obs_data_t *settings);
+		static bool encode(void *data, struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet);
 		static void get_video_info(void *data, struct video_scale_info *info);
 		static bool get_extra_data(void *data, uint8_t** extra_data, size_t* size);
 
@@ -141,8 +141,8 @@ namespace AMFEncoder {
 		VCE_H264_Encoder(obs_data_t* settings, obs_encoder_t* encoder);
 		~VCE_H264_Encoder();
 
-		bool encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet);
 		bool update(obs_data_t* settings);
+		bool encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet);
 		void get_video_info(struct video_scale_info* info);
 		bool get_extra_data(uint8_t** extra_data, size_t* size);
 

@@ -229,13 +229,13 @@ void AMFEncoder::VCE_H264_Encoder::get_defaults(obs_data_t *settings) {
 obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 	obs_properties* props = obs_properties_create();
 	obs_property_t* list;
-	obs_property_t* p;
+//	obs_property_t* p;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Controls
 	//////////////////////////////////////////////////////////////////////////
 	obs_properties_add_button(props, AMF_VCE_H264_RESET, obs_module_text(AMF_VCE_H264_RESET), &reset_clicked);
-	
+
 	//////////////////////////////////////////////////////////////////////////
 	// Static Properties (Can't be changed during Encoding)
 	//////////////////////////////////////////////////////////////////////////
@@ -362,7 +362,7 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 }
 
 bool AMFEncoder::VCE_H264_Encoder::reset_clicked(obs_properties* props, obs_property_t* property, void* data) {
-
+	return false;
 }
 
 bool AMFEncoder::VCE_H264_Encoder::update(void *data, obs_data_t *settings) {
@@ -440,65 +440,40 @@ AMFEncoder::VCE_H264_Encoder::VCE_H264_Encoder(obs_data_t* settings, obs_encoder
 	// Static Properties (Can't be changed during Encoding)
 	//////////////////////////////////////////////////////////////////////////
 	// Quality Preset & Usage
-	try {
-		m_VCE->SetUsage((VCE_Usage)obs_data_get_int(settings, "AMF_VIDEO_ENCODER_USAGE"));
-	} catch (std::exception e) {
-
-	}
-	wa_log_property_int(res, "AMF_VIDEO_ENCODER_USAGE", obs_data_get_int(settings, "AMF_VIDEO_ENCODER_USAGE"));
-	
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET"));
-	wa_log_property_int(res, "AMF_VIDEO_ENCODER_QUALITY_PRESET", obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET"));
-
-	// Framesize & Framerate
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, ::AMFConstructSize(m_cfgWidth, m_cfgHeight)); // Take from OBS
-	wa_log_property_int(res, "AMF_VIDEO_ENCODER_FRAMESIZE.X", m_cfgWidth);
-	wa_log_property_int(res, "AMF_VIDEO_ENCODER_FRAMESIZE.Y", m_cfgHeight);
-
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FRAMERATE, ::AMFConstructRate(m_cfgFPSnum, m_cfgFPSden)); // Take from OBS
-	wa_log_property_int(res, "AMF_VIDEO_ENCODER_FRAMERATE.Num", m_cfgFPSnum);
-	wa_log_property_int(res, "AMF_VIDEO_ENCODER_FRAMERATE.Den", m_cfgFPSden);
+	m_VCE->SetUsage((VCE_Usage)obs_data_get_int(settings, AMF_VCE_H264_USAGE));
+	m_VCE->SetQualityPreset((VCE_Quality_Preset)obs_data_get_int(settings, AMF_VCE_H264_QUALITY_PRESET));
 
 	// Profile & Level
-	t_profile = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PROFILE");
-	if (t_profile != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMFEncoder::VCE_H264_Encoder::PROFILE_VALUES[t_profile]);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_PROFILE", AMFEncoder::VCE_H264_Encoder::PROFILE_VALUES[t_profile]);
-	}
+	t_profile = obs_data_get_int(settings, AMF_VCE_H264_PROFILE);
+	if (t_profile != -1)
+		m_VCE->SetProfile((VCE_Profile)t_profile);
 
-	int64_t t_profileLevel = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PROFILE_LEVEL");
-	if (t_profileLevel != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, AMFEncoder::VCE_H264_Encoder::LEVEL_VALUES[t_profileLevel]);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_PROFILE_LEVEL", AMFEncoder::VCE_H264_Encoder::LEVEL_VALUES[t_profileLevel]);
-	}
+	int64_t t_profileLevel = obs_data_get_int(settings, AMF_VCE_H264_PROFILE_LEVEL);
+	if (t_profileLevel != -1)
+		m_VCE->SetProfileLevel((VCE_Profile_Level)t_profileLevel);
 
 	// Other
-	int64_t t_MaxLTRFrames = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_MAX_LTR_FRAMES");
-	if (t_MaxLTRFrames != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, t_MaxLTRFrames);
-		AMF_LOG_INFO("Create: AMF_VIDEO_ENCODER_MAX_LTR_FRAMES = %d", t_MaxLTRFrames);
-		//if (res != AMF_OK) AMF_LOG_ERROR("Create: AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, error code %d: %s.", res, amf::AMFGetResultText(res));
-	}
+	int64_t t_maxLTRFrames = obs_data_get_int(settings, AMF_VCE_H264_MAX_LTR_FRAMES);
+	if (t_maxLTRFrames != -1)
+		m_VCE->SetMaxLTRFrames((uint32_t)t_maxLTRFrames);
 
-	int64_t t_ScanType = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_SCANTYPE");
-	if (t_ScanType != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SCANTYPE, t_ScanType);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_SCANTYPE", t_ScanType);
-	}
+	int64_t t_scanType = obs_data_get_int(settings, AMF_VCE_H264_SCAN_TYPE);
+	if (t_scanType != -1)
+		m_VCE->SetScanType((VCE_ScanType)t_scanType);
 
-	//////////////////////////////////////////////////////////////////////////
-	// Dynamic Properties (Can be changed during Encoding)
-	//////////////////////////////////////////////////////////////////////////
-	update_properties(settings);
+	// Framesize & Framerate
+	m_VCE->SetFrameSize(std::pair<uint32_t, uint32_t>(m_cfgWidth, m_cfgHeight));
+	m_VCE->SetFrameRate(std::pair<uint32_t, uint32_t>(m_cfgFPSnum, m_cfgFPSden));
+
+	////////////////////////////////////////////////////////////////////////////
+	//// Dynamic Properties (Can be changed during Encoding)
+	////////////////////////////////////////////////////////////////////////////
+	//update_properties(settings);
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize (locks static properties)
 	//////////////////////////////////////////////////////////////////////////
-	res = m_AMFEncoder->Init(m_AMFSurfaceFormat, m_cfgWidth, m_cfgHeight);
-	if (res != AMF_OK) {
-		wa_log_amf_error(res, "Create: Failed to initialize AMF encoder");
-		throw std::exception("Failed to initialize AMF encoder");
-	}
+	m_VCE->Start();
 
 	AMF_LOG_INFO("Create: Request completed.");
 }
@@ -506,271 +481,217 @@ AMFEncoder::VCE_H264_Encoder::VCE_H264_Encoder(obs_data_t* settings, obs_encoder
 AMFEncoder::VCE_H264_Encoder::~VCE_H264_Encoder() {
 
 }
-bool AMFEncoder::VCE_H264_Encoder::encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
-	if (!frame || !packet || !received_packet)
-		return false;
-	
-	return true;
-}
 
 bool AMFEncoder::VCE_H264_Encoder::update(obs_data_t* settings) {
-	//////////////////////////////////////////////////////////////////////////
-	// Dynamic Properties (Can be changed during Encoding)
-	//////////////////////////////////////////////////////////////////////////
 	return update_properties(settings);
 }
 
+bool AMFEncoder::VCE_H264_Encoder::encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
+	if (!frame || !packet || !received_packet)
+		return false;
+
+	m_VCE->SendInput(frame);
+	m_VCE->GetOutput(packet, received_packet);
+
+	return true;
+}
+
 void AMFEncoder::VCE_H264_Encoder::get_video_info(struct video_scale_info* info) {
-	switch (m_AMFSurfaceFormat) {
-		case amf::AMF_SURFACE_NV12:
-			info->format = VIDEO_FORMAT_NV12;
-			break;
-		case amf::AMF_SURFACE_YV12: // I420 with UV swapped
-			info->format = VIDEO_FORMAT_I420;
-			break;
-		case amf::AMF_SURFACE_BGRA:
-			info->format = VIDEO_FORMAT_BGRA;
-			break;
-			/// ARGB has no OBS equivalent.
-		case amf::AMF_SURFACE_RGBA:
-			info->format = VIDEO_FORMAT_RGBA;
-			break;
-		case amf::AMF_SURFACE_GRAY8:
-			info->format = VIDEO_FORMAT_Y800;
-			break;
-		case amf::AMF_SURFACE_YUV420P:
-			info->format = VIDEO_FORMAT_I420;
-			break;
-			/*case amf::AMF_SURFACE_U8V8: // Has no OBS equivalent, could I use I444 for this?
-			info->format = VIDEO_FORMAT_Y800;
-			break;*/
-		case amf::AMF_SURFACE_YUY2:
-			info->format = VIDEO_FORMAT_YUY2;
-			break;
-		default: // Should never occur.
-			m_AMFSurfaceFormat = amf::AMF_SURFACE_NV12;
-			info->format = VIDEO_FORMAT_NV12;
-			break;
-	}
-	//info->range = VIDEO_RANGE_FULL;
-	//info->colorspace = VIDEO_CS_709;
+	m_VCE->GetVideoInfo(info);
 }
 
 bool AMFEncoder::VCE_H264_Encoder::get_extra_data(uint8_t** extra_data, size_t* size) {
-	// So far I have not observer this being called.
-
-	AMF_LOG_INFO("get_extra_data");
-	if (!m_AMFContext)
-		return false;
-	if (!m_AMFEncoder)
-		return false;
-
-	amf::AMFVariant var;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_EXTRADATA, &var);
-	if (res == AMF_OK && var.type == amf::AMF_VARIANT_INTERFACE) {
-		AMF_LOG_INFO("get_extra_data: Have Extra Data of Type %d", var.type);
-
-		amf::AMFBufferPtr buf(var.pInterface);
-		void* bufnat = buf->GetNative();
-		*size = buf->GetSize();
-		m_ExtraData.resize(*size);
-		*extra_data = m_ExtraData.data();
-		std::memcpy(*extra_data, bufnat, *size);
-		AMF_LOG_INFO("get_extra_data: Extra Data is %d bytes big.", *size);
-
-		return true;
-	}
-	return false;
+	return m_VCE->GetExtraData(extra_data, size);
 }
 
 bool AMFEncoder::VCE_H264_Encoder::update_properties(obs_data_t* settings) {
-	AMF_RESULT res;
-	int64_t value;
+	//AMF_RESULT res;
+	//int64_t value;
 
-	//////////////////////////////////////////////////////////////////////////
-	// Dynamic Properties (Can be changed during Encoding)
-	//////////////////////////////////////////////////////////////////////////
-	// Rate Control
-	/// Method
-	int64_t t_rateControl = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD");
-	if (t_rateControl != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, t_rateControl);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD", t_rateControl);
-	}
-	/// Enable Skip Frame
-	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE");
-	if (value != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, value == 1);
-		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE", value == 1);
-	}
-	/// Enforce HRD
-	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_ENFORCE_HRD");
-	if (value != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, value == 1);
-		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_ENFORCE_HRD", value == 1);
-	}
-	/// Enable Filler Data
-	{
-		value = obs_data_get_bool(settings, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE");
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, value == 1);
-		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE", value == 1);
-	}
-	/// GOP Size
-	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_GOP_SIZE");
-	if (value != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_GOP_SIZE, value);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_GOP_SIZE", value);
-	}
-	/// VBV Buffer Size
-	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE");
-	if (value != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, value);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", value);
-	}
-	/// Initial VBV Buffer Fullnes
-	value = (int64_t)ceil(obs_data_get_double(settings, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS") * 64);
-	{
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, value);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS", value);
-	}
-	/// Max AU Size
-	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_MAX_AU_SIZE");
-	if (value != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, value);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_MAX_AU_SIZE", value);
-	}
-	/// B-Picture Delta QP
-	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_B_PIC_DELTA_QP");
-	if (value != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, value);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_B_PIC_DELTA_QP", value);
-	}
-	/// Ref B-Picture Delta QP
-	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP");
-	if (value != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, value);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP", value);
-	}
+	////////////////////////////////////////////////////////////////////////////
+	//// Dynamic Properties (Can be changed during Encoding)
+	////////////////////////////////////////////////////////////////////////////
+	//// Rate Control
+	///// Method
+	//int64_t t_rateControl = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD");
+	//if (t_rateControl != -1) {
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, t_rateControl);
+	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD", t_rateControl);
+	//}
+	///// Enable Skip Frame
+	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE");
+	//if (value != -1) {
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, value == 1);
+	//	wa_log_property_bool(res, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE", value == 1);
+	//}
+	///// Enforce HRD
+	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_ENFORCE_HRD");
+	//if (value != -1) {
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, value == 1);
+	//	wa_log_property_bool(res, "AMF_VIDEO_ENCODER_ENFORCE_HRD", value == 1);
+	//}
+	///// Enable Filler Data
+	//{
+	//	value = obs_data_get_bool(settings, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE");
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, value == 1);
+	//	wa_log_property_bool(res, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE", value == 1);
+	//}
+	///// GOP Size
+	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_GOP_SIZE");
+	//if (value != -1) {
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_GOP_SIZE, value);
+	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_GOP_SIZE", value);
+	//}
+	///// VBV Buffer Size
+	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE");
+	//if (value != -1) {
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, value);
+	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", value);
+	//}
+	///// Initial VBV Buffer Fullnes
+	//value = (int64_t)ceil(obs_data_get_double(settings, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS") * 64);
+	//{
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, value);
+	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS", value);
+	//}
+	///// Max AU Size
+	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_MAX_AU_SIZE");
+	//if (value != -1) {
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, value);
+	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_MAX_AU_SIZE", value);
+	//}
+	///// B-Picture Delta QP
+	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_B_PIC_DELTA_QP");
+	//if (value != -1) {
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, value);
+	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_B_PIC_DELTA_QP", value);
+	//}
+	///// Ref B-Picture Delta QP
+	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP");
+	//if (value != -1) {
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, value);
+	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP", value);
+	//}
 
-	// Rate Control Parameters
-	switch (t_rateControl) {
-		case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTRAINED_QP:
-		{
-			/// Constrained QP
-			value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_MIN_QP");
-			if (value != -1) {
-				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MIN_QP, value);
-				wa_log_property_int(res, "AMF_VIDEO_ENCODER_MIN_QP", value);
-			}
-			value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_MAX_QP");
-			if (value != -1) {
-				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_QP, value);
-				wa_log_property_int(res, "AMF_VIDEO_ENCODER_MAX_QP", value);
-			}
-			value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QP_I");
-			if (value != -1) {
-				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_I, value);
-				wa_log_property_int(res, "AMF_VIDEO_ENCODER_QP_I", value);
-			}
-			value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QP_P");
-			if (value != -1) {
-				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_P, value);
-				wa_log_property_int(res, "AMF_VIDEO_ENCODER_QP_P", value);
-			}
-			value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QP_B");
-			if (value != -1) {
-				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_B, value);
-				wa_log_property_int(res, "AMF_VIDEO_ENCODER_QP_B", value);
-			}
-			break;
-		}
-		case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR:
-		case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR:
-		{
-			/// Peak Bitrate
-			value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PEAK_BITRATE");
-			if (value != -1) {
-				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, value);
-				wa_log_property_int(res, "AMF_VIDEO_ENCODER_PEAK_BITRATE", value);
-			}
-		}
-		case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR:
-		{
-			/// Target Bitrate
-			value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_TARGET_BITRATE");
-			if (value != -1) {
-				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, value);
-				wa_log_property_int(res, "AMF_VIDEO_ENCODER_TARGET_BITRATE", value);
-			}
-			break;
-		}
-	}
+	//// Rate Control Parameters
+	//switch (t_rateControl) {
+	//	case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTRAINED_QP:
+	//	{
+	//		/// Constrained QP
+	//		value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_MIN_QP");
+	//		if (value != -1) {
+	//			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MIN_QP, value);
+	//			wa_log_property_int(res, "AMF_VIDEO_ENCODER_MIN_QP", value);
+	//		}
+	//		value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_MAX_QP");
+	//		if (value != -1) {
+	//			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_QP, value);
+	//			wa_log_property_int(res, "AMF_VIDEO_ENCODER_MAX_QP", value);
+	//		}
+	//		value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QP_I");
+	//		if (value != -1) {
+	//			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_I, value);
+	//			wa_log_property_int(res, "AMF_VIDEO_ENCODER_QP_I", value);
+	//		}
+	//		value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QP_P");
+	//		if (value != -1) {
+	//			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_P, value);
+	//			wa_log_property_int(res, "AMF_VIDEO_ENCODER_QP_P", value);
+	//		}
+	//		value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QP_B");
+	//		if (value != -1) {
+	//			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_B, value);
+	//			wa_log_property_int(res, "AMF_VIDEO_ENCODER_QP_B", value);
+	//		}
+	//		break;
+	//	}
+	//	case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR:
+	//	case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR:
+	//	{
+	//		/// Peak Bitrate
+	//		value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PEAK_BITRATE");
+	//		if (value != -1) {
+	//			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, value);
+	//			wa_log_property_int(res, "AMF_VIDEO_ENCODER_PEAK_BITRATE", value);
+	//		}
+	//	}
+	//	case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR:
+	//	{
+	//		/// Target Bitrate
+	//		value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_TARGET_BITRATE");
+	//		if (value != -1) {
+	//			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, value);
+	//			wa_log_property_int(res, "AMF_VIDEO_ENCODER_TARGET_BITRATE", value);
+	//		}
+	//		break;
+	//	}
+	//}
 
-	// Picture Control Properties
-	/// Header Insertion Spacing
-	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING");
-	if (value != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING, value);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING", value);
-	}
-	/// B-Pictures Pattern
-	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_B_PIC_PATTERN");
-	if (value != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, value);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_B_PIC_PATTERN", value);
-	}
-	/// De-Blocking Filter
-	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER");
-	if (value != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER, value == 1);
-		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER", value == 1);
-	}
-	/// Enable Reference to B-Frames (2nd Generation GCN and newer)
-	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE");
-	if (value != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, value == 1);
-		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE", value == 1);
-	}
-	/// IDR Period (Is this Keyframe distance?)
-	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_IDR_PERIOD");
-	if (value != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, value);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_IDR_PERIOD", value);
-	}
-	/// Intra Refresh MBs Number Per Slot in Macroblocks
-	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT");
-	if (value != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, value);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT", value);
-	}
-	/// Number of slices Per Frame 
-	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_SLICES_PER_FRAME");
-	if (value != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, value);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_SLICES_PER_FRAME", value);
-	}
+	//// Picture Control Properties
+	///// Header Insertion Spacing
+	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING");
+	//if (value != -1) {
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING, value);
+	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING", value);
+	//}
+	///// B-Pictures Pattern
+	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_B_PIC_PATTERN");
+	//if (value != -1) {
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, value);
+	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_B_PIC_PATTERN", value);
+	//}
+	///// De-Blocking Filter
+	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER");
+	//if (value != -1) {
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER, value == 1);
+	//	wa_log_property_bool(res, "AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER", value == 1);
+	//}
+	///// Enable Reference to B-Frames (2nd Generation GCN and newer)
+	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE");
+	//if (value != -1) {
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, value == 1);
+	//	wa_log_property_bool(res, "AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE", value == 1);
+	//}
+	///// IDR Period (Is this Keyframe distance?)
+	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_IDR_PERIOD");
+	//if (value != -1) {
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, value);
+	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_IDR_PERIOD", value);
+	//}
+	///// Intra Refresh MBs Number Per Slot in Macroblocks
+	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT");
+	//if (value != -1) {
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, value);
+	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT", value);
+	//}
+	///// Number of slices Per Frame 
+	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_SLICES_PER_FRAME");
+	//if (value != -1) {
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, value);
+	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_SLICES_PER_FRAME", value);
+	//}
 
-	// Motion Estimation
-	/// Half Pixel
-	{
-		value = obs_data_get_bool(settings, "AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL");
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, value == 1);
-		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL", value == 1);
-	}
-	/// Quarter Pixel
-	{
-		value = obs_data_get_bool(settings, "AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL");
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL, value == 1);
-		wa_log_property_bool(res, "AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL", value == 1);
-	}
+	//// Motion Estimation
+	///// Half Pixel
+	//{
+	//	value = obs_data_get_bool(settings, "AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL");
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, value == 1);
+	//	wa_log_property_bool(res, "AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL", value == 1);
+	//}
+	///// Quarter Pixel
+	//{
+	//	value = obs_data_get_bool(settings, "AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL");
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL, value == 1);
+	//	wa_log_property_bool(res, "AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL", value == 1);
+	//}
 
-	// SVC (Scalable Profiles)
-	/// Number of Temporal Enhancment Layers (SVC)
-	value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS");
-	if (value != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS, value);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS", value);
-	}
+	//// SVC (Scalable Profiles)
+	///// Number of Temporal Enhancment Layers (SVC)
+	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS");
+	//if (value != -1) {
+	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS, value);
+	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS", value);
+	//}
 
 	return true;
 }

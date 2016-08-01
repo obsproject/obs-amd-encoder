@@ -789,11 +789,66 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 }
 
 bool AMFEncoder::VCE::GetExtraData(uint8_t**& extra_data, size_t*& extra_data_size) {
+	//// So far I have not observer this being called.
+
+	//AMF_LOG_INFO("get_extra_data");
+	//if (!m_AMFContext)
+	//	return false;
+	//if (!m_AMFEncoder)
+	//	return false;
+
+	//amf::AMFVariant var;
+	//AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_EXTRADATA, &var);
+	//if (res == AMF_OK && var.type == amf::AMF_VARIANT_INTERFACE) {
+	//	AMF_LOG_INFO("get_extra_data: Have Extra Data of Type %d", var.type);
+
+	//	amf::AMFBufferPtr buf(var.pInterface);
+	//	void* bufnat = buf->GetNative();
+	//	*size = buf->GetSize();
+	//	m_ExtraData.resize(*size);
+	//	*extra_data = m_ExtraData.data();
+	//	std::memcpy(*extra_data, bufnat, *size);
+	//	AMF_LOG_INFO("get_extra_data: Extra Data is %d bytes big.", *size);
+
+	//	return true;
+	//}
 	return false;
 }
 
 void AMFEncoder::VCE::GetVideoInfo(struct video_scale_info*& info) {
-
+	//switch (m_AMFSurfaceFormat) {
+	//	case amf::AMF_SURFACE_NV12:
+	//		info->format = VIDEO_FORMAT_NV12;
+	//		break;
+	//	case amf::AMF_SURFACE_YV12: // I420 with UV swapped
+	//		info->format = VIDEO_FORMAT_I420;
+	//		break;
+	//	case amf::AMF_SURFACE_BGRA:
+	//		info->format = VIDEO_FORMAT_BGRA;
+	//		break;
+	//		/// ARGB has no OBS equivalent.
+	//	case amf::AMF_SURFACE_RGBA:
+	//		info->format = VIDEO_FORMAT_RGBA;
+	//		break;
+	//	case amf::AMF_SURFACE_GRAY8:
+	//		info->format = VIDEO_FORMAT_Y800;
+	//		break;
+	//	case amf::AMF_SURFACE_YUV420P:
+	//		info->format = VIDEO_FORMAT_I420;
+	//		break;
+	//		/*case amf::AMF_SURFACE_U8V8: // Has no OBS equivalent, could I use I444 for this?
+	//		info->format = VIDEO_FORMAT_Y800;
+	//		break;*/
+	//	case amf::AMF_SURFACE_YUY2:
+	//		info->format = VIDEO_FORMAT_YUY2;
+	//		break;
+	//	default: // Should never occur.
+	//		m_AMFSurfaceFormat = amf::AMF_SURFACE_NV12;
+	//		info->format = VIDEO_FORMAT_NV12;
+	//		break;
+	//}
+	////info->range = VIDEO_RANGE_FULL;
+	////info->colorspace = VIDEO_CS_709;
 }
 
 void AMFEncoder::VCE::throwAMFError(const char* errorMsg, AMF_RESULT res) {
