@@ -32,8 +32,8 @@
 #include "OBS-Studio/libobs/obs-module.h"
 
 // Plugin
-#include "amf-h264.h"
-#include "amf-h264-capabilities.h"
+#include "amf-vce.h"
+#include "amf-vce-capabilities.h"
 #include "enc-h264.h"
 
 //////////////////////////////////////////////////////////////////////////

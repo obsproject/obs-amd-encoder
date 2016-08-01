@@ -49,6 +49,7 @@ SOFTWARE.
 
 // Plugin
 #include "win-amf.h"
+#include "amf-vce.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Defines
@@ -56,6 +57,7 @@ SOFTWARE.
 #define AMF_TEXT_H264(x) (AMF_TEXT("h264." ## x))
 #define AMF_TEXT_H264_T(x) obs_module_text(AMF_TEXT_H264(x))
 
+#define AMF_VCE_H264_RESET				AMF_TEXT_H264("Reset")
 #define AMF_VCE_H264_USAGE				AMF_TEXT_H264("Usage")
 #define AMF_VCE_H264_USAGE2(x)			AMF_TEXT_H264_T("Usage." ## x)
 #define AMF_VCE_H264_QUALITY_PRESET		AMF_TEXT_H264("QualityPreset")
@@ -75,7 +77,6 @@ SOFTWARE.
 // Code
 //////////////////////////////////////////////////////////////////////////
 namespace AMFEncoder {
-
 	class VCE_H264_Encoder {
 		public:
 
@@ -109,11 +110,13 @@ namespace AMFEncoder {
 		static obs_encoder_info* encoder_info;
 		static void encoder_register();
 		static const char* get_name(void* type_data);
+		static void get_defaults(obs_data_t *settings);
+		static obs_properties_t* get_properties(void* data);
+		static bool reset_clicked(obs_properties* props, obs_property_t* property, void* data);
+
 		static void* create(obs_data_t* settings, obs_encoder_t* encoder);
 		static void destroy(void* data);
 		static bool encode(void *data, struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet);
-		static void get_defaults(obs_data_t *settings);
-		static obs_properties_t* get_properties(void* data);
 		static bool update(void *data, obs_data_t *settings);
 		static void get_video_info(void *data, struct video_scale_info *info);
 		static bool get_extra_data(void *data, uint8_t** extra_data, size_t* size);
@@ -168,6 +171,6 @@ namespace AMFEncoder {
 		int m_cfgFPSnum, m_cfgFPSden;
 
 		// Encoder
-		AMFEncoder::VCE* m_VCE;
+		VCE* m_VCE;
 	};
 }

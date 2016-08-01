@@ -23,7 +23,7 @@ SOFTWARE.
 */
 
 #pragma once
-#include "amf-h264.h"
+#include "amf-vce.h"
 
 AMFEncoder::VCE::VCE(VCE_Encoder_Type encoderType) {
 	AMF_RESULT res;
@@ -766,6 +766,14 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 		}
 		*received_packet = true;
 	}
+}
+
+bool AMFEncoder::VCE::GetExtraData(uint8_t**& extra_data, size_t*& extra_data_size) {
+	return false;
+}
+
+void AMFEncoder::VCE::GetVideoInfo(struct video_scale_info*& info) {
+
 }
 
 void AMFEncoder::VCE::throwAMFError(const char* errorMsg, AMF_RESULT res) {

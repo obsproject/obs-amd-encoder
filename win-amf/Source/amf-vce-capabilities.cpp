@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "amf-h264-capabilities.h"
+#include "amf-vce-capabilities.h"
 
 AMFEncoder::VCE_Capabilities* AMFEncoder::VCE_Capabilities::instance;
 

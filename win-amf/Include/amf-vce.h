@@ -114,7 +114,6 @@ namespace AMFEncoder {
 
 	/**
 	* Class for the actual AMF Encoder.
-	*
 	*/
 	class VCE {
 		public:

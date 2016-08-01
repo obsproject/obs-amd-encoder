@@ -21,13 +21,13 @@
     <ClInclude Include="Include\win-amf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\amf-h264.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\amf-h264-capabilities.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Include\enc-h264.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\amf-vce.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\amf-vce-capabilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -35,13 +35,13 @@
     <ClCompile Include="Source\win-amf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\amf-h264.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\amf-h264-capabilities.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\enc-h264.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\amf-vce.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\amf-vce-capabilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

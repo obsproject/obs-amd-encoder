@@ -205,9 +205,11 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 	obs_property_t* list;
 	obs_property_t* p;
 
-	//ToDo: Reset Button?
-
-
+	//////////////////////////////////////////////////////////////////////////
+	// Controls
+	//////////////////////////////////////////////////////////////////////////
+	obs_properties_add_button(props, AMF_VCE_H264_RESET, obs_module_text(AMF_VCE_H264_RESET), &reset_clicked);
+	
 	//////////////////////////////////////////////////////////////////////////
 	// Static Properties (Can't be changed during Encoding)
 	//////////////////////////////////////////////////////////////////////////
@@ -331,6 +333,10 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 	///// ToDo: Option to override requested Surface Format? Allows for a lot more recording types, including Grayscale.
 
 	return props;
+}
+
+bool AMFEncoder::VCE_H264_Encoder::reset_clicked(obs_properties* props, obs_property_t* property, void* data) {
+
 }
 
 bool AMFEncoder::VCE_H264_Encoder::update(void *data, obs_data_t *settings) {
