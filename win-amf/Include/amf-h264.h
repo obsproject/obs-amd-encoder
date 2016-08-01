@@ -177,6 +177,7 @@ namespace AMFEncoder {
 		amf::AMFContextPtr m_AMFContext;
 		amf::AMFComponentPtr m_AMFEncoder;
 
+		static void throwAMFError(const char* errorMsg, AMF_RESULT res);
 		static void tempFormatAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res);
 	};
 
