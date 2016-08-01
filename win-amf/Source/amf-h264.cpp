@@ -25,45 +25,175 @@ SOFTWARE.
 #pragma once
 #include "amf-h264.h"
 
-AMFEncoder::H264::H264(H264_Usage Usage, H264_Quality_Preset QualityPreset,
-	std::pair<uint32_t, uint32_t>& framesize, std::pair<int, int>& framerate,
-	H264_Profile profile, H264_Profile_Level profileLevel,
-	int maxOfLTRFrames, H264_ScanType scanType) {
+AMFEncoder::H264::H264(H264_Encoder_Type encoderType) {
 	AMF_RESULT res;
+	H264_Capabilities::EncoderCaps* encoderCaps;
 
-	// Create AMF Context
-	res = AMFCreateContext(&m_amfContext);
-	if (res != AMF_OK) {
-		std::vector<char> msgBuf(1024);
-		tempFormatAMFError(&msgBuf, "<AMFEncoder::H264::H264> AMFCreateContext failed, error %s (code %d).", res);
-		AMF_LOG_ERROR("%s", msgBuf.data());
-		throw std::exception(msgBuf.data());
-	}
+	try {
+		// Set Encoder Type
+		m_encoderType = encoderType;
 
-	// Create AMF VCE Component depending on Profile.
-	if ((profile == H264_PROFILE_BASELINE_SCALABLE)
-		|| (profile == H264_PROFILE_HIGH_SCALABLE)) {
-		res = AMFCreateComponent(m_amfContext, AMFVideoEncoderVCE_SVC, &m_amfVCEEncoder);
-		AMF_LOG_INFO("<AMFEncoder::H264::H264> Attempting to create SVC Encoder...");
-	} else {
-		res = AMFCreateComponent(m_amfContext, AMFVideoEncoderVCE_AVC, &m_amfVCEEncoder);
-		AMF_LOG_INFO("<AMFEncoder::H264::H264> Attempting to create AVC Encoder...");
-	}
-	if (res != AMF_OK) {
-		m_amfContext->Terminate(); m_amfContext = nullptr;
+		// Create AMF Context
+		res = AMFCreateContext(&m_AMFContext);
+		if (res != AMF_OK) {
+			std::vector<char> msgBuf(1024);
+			tempFormatAMFError(&msgBuf, "<AMFEncoder::H264::H264> AMFCreateContext failed, error %s (code %d).", res);
+			AMF_LOG_ERROR("%s", msgBuf.data());
+			throw std::exception(msgBuf.data());
+		}
 
-		std::vector<char> msgBuf(1024);
-		tempFormatAMFError(&msgBuf, "<AMFEncoder::H264::H264> AMFCreateComponent failed, error %s (code %d).", res);
-		AMF_LOG_ERROR("%s", msgBuf.data());
-		throw std::exception(msgBuf.data());
+		// Create AMF VCE Component depending on Type.
+		switch (m_encoderType) {
+			case H264_ENCODER_TYPE_AVC:
+				AMF_LOG_INFO("<AMFEncoder::H264::H264> Attempting to create AVC Encoder...");
+				encoderCaps = &(H264_Capabilities::getInstance()->m_AVCCaps);
+				if (encoderCaps->acceleration_type != amf::AMF_ACCEL_HARDWARE) {
+					AMF_LOG_WARNING("<AMFEncoder::H264::H264> AVC Encoder is not Hardware-Accelerated!");
+				}
+
+				res = AMFCreateComponent(m_AMFContext, AMFVideoEncoderVCE_AVC, &m_AMFEncoder);
+				break;
+			case H264_ENCODER_TYPE_SVC:
+				AMF_LOG_INFO("<AMFEncoder::H264::H264> Attempting to create SVC Encoder...");
+				encoderCaps = &(H264_Capabilities::getInstance()->m_SVCCaps);
+				if (encoderCaps->acceleration_type != amf::AMF_ACCEL_HARDWARE) {
+					AMF_LOG_WARNING("<AMFEncoder::H264::H264> SVC Encoder is not Hardware-Accelerated!");
+				}
+
+				res = AMFCreateComponent(m_AMFContext, AMFVideoEncoderVCE_SVC, &m_AMFEncoder);
+				break;
+		}
+		if (res != AMF_OK) {
+			std::vector<char> msgBuf(1024);
+			tempFormatAMFError(&msgBuf, "<AMFEncoder::H264::H264> AMFCreateComponent failed, error %s (code %d).", res);
+			AMF_LOG_ERROR("%s", msgBuf.data());
+			throw std::exception(msgBuf.data());
+		}
+		//////////////////////////////////////////////////////////////////////////
+		// Set static Properties (Can only do this before StartUp())
+		//////////////////////////////////////////////////////////////////////////
+		/// Usage
+		switch (Usage) {
+			case H264_USAGE_WEBCAM:
+				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, AMF_VIDEO_ENCODER_USAGE_WEBCAM);
+				AMF_LOG_INFO("<AMFEncoder::H264::H264> Usage: Web-Camera");
+				break;
+			case H264_USAGE_ULTRA_LOW_LATENCY:
+				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, AMF_VIDEO_ENCODER_USAGE_ULTRA_LOW_LATENCY);
+				AMF_LOG_INFO("<AMFEncoder::H264::H264> Usage: Ultra Low Latency");
+				break;
+			case H264_USAGE_LOW_LATENCY:
+				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY);
+				AMF_LOG_INFO("<AMFEncoder::H264::H264> Usage: Low Latency");
+				break;
+			case H264_USAGE_TRANSCODING:
+			default:
+				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCONDING);
+				AMF_LOG_INFO("<AMFEncoder::H264::H264> Usage: Transcoding");
+				break;
+		}
+		if (res != AMF_OK) {
+			std::vector<char> msgBuf(1024);
+			tempFormatAMFError(&msgBuf, "<AMFEncoder::H264::H264> SetProperty(AMF_VIDEO_ENCODER_USAGE) failed, error %s (code %d).", res);
+			AMF_LOG_ERROR("%s", msgBuf.data());
+			throw std::exception(msgBuf.data());
+		}
+
+		/// Quality Preset
+		switch (QualityPreset) {
+			case H264_QUALITY_PRESET_SPEED:
+				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED);
+				AMF_LOG_INFO("<AMFEncoder::H264::H264> Quality Preset: Speed");
+				break;
+			case H264_QUALITY_PRESET_BALANCED:
+				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED);
+				AMF_LOG_INFO("<AMFEncoder::H264::H264> Quality Preset: Balanced");
+				break;
+			case H264_QUALITY_PRESET_QUALITY:
+			default:
+				res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY);
+				AMF_LOG_INFO("<AMFEncoder::H264::H264> Quality Preset: Quality");
+				break;
+		}
+		if (res != AMF_OK) {
+			std::vector<char> msgBuf(1024);
+			tempFormatAMFError(&msgBuf, "<AMFEncoder::H264::H264> SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET) failed, error %s (code %d).", res);
+			AMF_LOG_ERROR("%s", msgBuf.data());
+			throw std::exception(msgBuf.data());
+		}
+
+		/// Frame Size
+		if (((framesize.first >= encoderCaps->input.minWidth) && (framesize.first <= encoderCaps->input.maxWidth))
+			&& ((framesize.second >= encoderCaps->input.minHeight) && (framesize.second <= encoderCaps->input.maxHeight))) {
+
+		}
+
+	} catch(...) {
+		if (m_AMFEncoder)
+			m_AMFEncoder->Terminate();
+		if (m_AMFContext)
+			m_AMFContext->Terminate();
+
+		throw;
 	}
 }
 
 AMFEncoder::H264::~H264() {
-	if (m_amfVCEEncoder)
-		m_amfVCEEncoder->Terminate();
-	if (m_amfContext)
-		m_amfContext->Terminate();
+	if (m_AMFEncoder)
+		m_AMFEncoder->Terminate();
+	if (m_AMFContext)
+		m_AMFContext->Terminate();
+}
+
+void AMFEncoder::H264::SetMemoryType(H264_Memory_Type memoryType) {
+	if (m_isStarted) {
+		const char* error = "<AMFEncoder::H264::SetMemoryType> Attempted to change MemoryType while encoding.";
+		AMF_LOG_ERROR("%s", error);
+		throw std::exception(error);
+	}
+
+	m_memoryType = memoryType;
+}
+
+void AMFEncoder::H264::SetSurfaceFormat(H264_Surface_Format surfaceFormat) {
+	if (m_isStarted) {
+		const char* error = "<AMFEncoder::H264::SetMemoryType> Attempted to change SurfaceFormat while encoding.";
+		AMF_LOG_ERROR("%s", error);
+		throw std::exception(error);
+	}
+
+}
+
+void AMFEncoder::H264::SetUsage(H264_Usage usage) {
+
+}
+
+void AMFEncoder::H264::SetQualityPreset(H264_Quality_Preset qualityPreset) {
+
+}
+
+void AMFEncoder::H264::SetProfile(H264_Profile profile) {
+
+}
+
+void AMFEncoder::H264::SetProfileLevel(H264_Profile_Level profileLevel) {
+
+}
+
+void AMFEncoder::H264::SetMaxOfLTRFrames(uint32_t maxOfLTRFrames) {
+
+}
+
+void AMFEncoder::H264::SetScanType(H264_ScanType scanType) {
+
+}
+
+void AMFEncoder::H264::SetFrameSize(std::pair<uint32_t, uint32_t>& framesize) {
+
+}
+
+void AMFEncoder::H264::SetFrameRate(std::pair<uint32_t, uint32_t>& framerate) {
+
 }
 
 void AMFEncoder::H264::tempFormatAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res) {

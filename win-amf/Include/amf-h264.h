@@ -50,34 +50,25 @@ SOFTWARE.
 // Code
 //////////////////////////////////////////////////////////////////////////
 namespace AMFEncoder {
-	/**
-	* Class for the actual AMF Encoder.
-	*
-	*/
-	class H264 {
-		public:
+	enum H264_Encoder_Type {
+		H264_ENCODER_TYPE_AVC, // Advanced Video Coding
+		H264_ENCODER_TYPE_SVC, // Scalable Video Coding
+		H264_ENCODER_TYPE_HEVC, // High-Efficiency Video Coding (Experimental)
+	};
 
-		/**
-		* This will initialize the Encoder.
-		*/
-		H264(H264_Usage Usage, H264_Quality_Preset QualityPreset,
-			std::pair<uint32_t, uint32_t>& framesize, std::pair<int, int>& framerate,
-			H264_Profile profile, H264_Profile_Level profileLevel,
-			int maxOfLTRFrames, H264_ScanType scanType);
-		~H264();
+	enum H264_Surface_Format {
+		H264_SURFACE_FORMAT_UNKNOWN,
+		H264_SURFACE_FORMAT_NV12, // NV 12
+		H264_SURFACE_FORMAT_I420, // YUV 420 Progressive
+		H264_SURFACE_FORMAT_I444, // Not supported by SDK
+		H264_SURFACE_FORMAT_RGB   // RGBA
+	};
 
-		bool StartUp();
-		void SendInput(struct encoder_frame* &frame);
-		void GetOutput(struct encoder_packet* &packet, bool* &received);
-		void ShutDown();
-
-		//////////////////////////////////////////////////////////////////////////
-		// Internal-only, do not expose.
-		private:
-		amf::AMFContextPtr m_amfContext;
-		amf::AMFComponentPtr m_amfVCEEncoder;
-
-		static void tempFormatAMFError(std::vector<char>* buffer, const char* format, amf::AMF_RESULT res);
+	enum H264_Memory_Type {
+		H264_MEMORY_TYPE_UKNONWN,
+		H264_MEMORY_TYPE_HOST,      // Use Host-Managed Memory
+		H264_MEMORY_TYPE_DIRECTX11, // Copy straight from DirectX11
+		H264_MEMORY_TYPE_OPENGL     // Copy straight from OpenGL
 	};
 
 	enum H264_Usage {
@@ -95,10 +86,8 @@ namespace AMFEncoder {
 
 	enum H264_Profile {
 		H264_PROFILE_BASELINE,
-		H264_PROFILE_BASELINE_SCALABLE,
 		H264_PROFILE_MAIN,
 		H264_PROFILE_HIGH,
-		H264_PROFILE_HIGH_SCALABLE,
 	};
 
 	enum H264_Profile_Level {
@@ -124,4 +113,66 @@ namespace AMFEncoder {
 		H264_SCANTYPE_PROGRESSIVE,
 		H264_SCANTYPE_INTERLACED
 	};
+
+	/**
+	* Class for the actual AMF Encoder.
+	*
+	*/
+	class H264 {
+		public:
+
+		//////////////////////////////////////////////////////////////////////////
+		// Initializer & Finalizer
+		//////////////////////////////////////////////////////////////////////////
+		H264(H264_Encoder_Type);
+		~H264();
+
+		//////////////////////////////////////////////////////////////////////////
+		// Properties
+		//////////////////////////////////////////////////////////////////////////
+		// Pre-StartUp Properties
+		void SetMemoryType(H264_Memory_Type);
+		void SetSurfaceFormat(H264_Surface_Format);
+		void SetUsage(H264_Usage);
+		void SetQualityPreset(H264_Quality_Preset);
+		void SetProfile(H264_Profile);
+		void SetProfileLevel(H264_Profile_Level);
+		void SetMaxOfLTRFrames(uint32_t);
+		void SetScanType(H264_ScanType);
+		void SetFrameSize(std::pair<uint32_t, uint32_t>&);
+		void SetFrameRate(std::pair<uint32_t, uint32_t>&);
+
+
+		//////////////////////////////////////////////////////////////////////////
+		// Core Functions
+		//////////////////////////////////////////////////////////////////////////
+		bool Start();
+		void Stop();
+		void SendInput(struct encoder_frame*&);
+		void GetOutput(struct encoder_packet*&, bool*&);
+
+
+		//////////////////////////////////////////////////////////////////////////
+		// Internal-only, do not expose.
+		//////////////////////////////////////////////////////////////////////////
+		private:
+		bool m_isStarted;
+
+		// Pre-Startup
+		H264_Encoder_Type m_encoderType;
+		H264_Memory_Type m_memoryType;
+		H264_Surface_Format m_surfaceFormat;
+		H264_Usage m_usage;
+		H264_Quality_Preset m_qualityPreset;
+		H264_Profile m_profile;
+		H264_Profile_Level m_profileLevel;
+
+
+		// AMF
+		amf::AMFContextPtr m_AMFContext;
+		amf::AMFComponentPtr m_AMFEncoder;
+
+		static void tempFormatAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res);
+	};
+
 }

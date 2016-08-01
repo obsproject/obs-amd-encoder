@@ -59,7 +59,7 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
-namespace AMF_Encoder {
+namespace AMFEncoder {
 	struct h264_input_frame {
 		amf::AMFSurfacePtr surface;
 		std::vector<uint8_t> surfaceBuffer;
@@ -72,7 +72,7 @@ namespace AMF_Encoder {
 	//////////////////////////////////////////////////////////////////////////
 	// Encoder Class
 	//////////////////////////////////////////////////////////////////////////
-	class h264 {
+	class h264_encoder {
 		public:
 
 		// h264 Profiles
@@ -146,8 +146,8 @@ namespace AMF_Encoder {
 		//////////////////////////////////////////////////////////////////////////
 		public:
 
-		h264(obs_data_t* settings, obs_encoder_t* encoder);
-		~h264();
+		h264_encoder(obs_data_t* settings, obs_encoder_t* encoder);
+		~h264_encoder();
 
 		bool encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet);
 		void queue_frame(encoder_frame* frame);

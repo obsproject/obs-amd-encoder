@@ -34,6 +34,7 @@
 // Plugin
 #include "amf-h264.h"
 #include "amf-h264-capabilities.h"
+#include "enc-h264.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Defines

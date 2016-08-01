@@ -25,7 +25,7 @@ SOFTWARE.
 #pragma once
 #include "win-amf.h"
 
-using namespace AMF_Encoder;
+using namespace AMFEncoder;
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
 	return TRUE;
@@ -128,7 +128,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 #pragma endregion
 
 	// Register Encoder
-	AMF_Encoder::h264::encoder_register();
+	AMFEncoder::h264_encoder::encoder_register();
 
 	return true;
 }

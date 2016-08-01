@@ -27,26 +27,26 @@ SOFTWARE.
 #include "enc-h264.h"
 
 // h264 Profiles
-const char* AMF_Encoder::h264::PROFILE_NAMES[AMF_Encoder::h264::PROFILES::PROFILE_COUNT_MAX] = {
+const char* AMFEncoder::h264_encoder::PROFILE_NAMES[AMFEncoder::h264_encoder::PROFILES::PROFILE_COUNT_MAX] = {
 	AMF_TEXT_H264("PROFILE.AVC.BP"), AMF_TEXT_H264("PROFILE.AVC.XP"), AMF_TEXT_H264("PROFILE.AVC.MP"),
 	AMF_TEXT_H264("PROFILE.AVC.HiP"), AMF_TEXT_H264("PROFILE.AVC.Hi10P"), AMF_TEXT_H264("PROFILE.AVC.Hi422P"), AMF_TEXT_H264("PROFILE.AVC.Hi444P"),
 	AMF_TEXT_H264("PROFILE.SVC.BP"), AMF_TEXT_H264("PROFILE.SVC.HiP")
 };
-const unsigned char AMF_Encoder::h264::PROFILE_VALUES[AMF_Encoder::h264::PROFILES::PROFILE_COUNT_MAX] = {
+const unsigned char AMFEncoder::h264_encoder::PROFILE_VALUES[AMFEncoder::h264_encoder::PROFILES::PROFILE_COUNT_MAX] = {
 	66, 88, 77,
 	100, 110, 122, 244,
 	83, 86
 };
 
 // h264 Levels
-const char* AMF_Encoder::h264::LEVEL_NAMES[AMF_Encoder::h264::LEVELS::LEVEL_COUNT_MAX] = {
+const char* AMFEncoder::h264_encoder::LEVEL_NAMES[AMFEncoder::h264_encoder::LEVELS::LEVEL_COUNT_MAX] = {
 	AMF_TEXT_H264("LEVEL.10"), AMF_TEXT_H264("LEVEL.11"), AMF_TEXT_H264("LEVEL.12"), AMF_TEXT_H264("LEVEL.13"),
 	AMF_TEXT_H264("LEVEL.20"), AMF_TEXT_H264("LEVEL.21"), AMF_TEXT_H264("LEVEL.22"),
 	AMF_TEXT_H264("LEVEL.30"), AMF_TEXT_H264("LEVEL.31"), AMF_TEXT_H264("LEVEL.32"),
 	AMF_TEXT_H264("LEVEL.40"), AMF_TEXT_H264("LEVEL.41"), AMF_TEXT_H264("LEVEL.42"),
 	AMF_TEXT_H264("LEVEL.50"), AMF_TEXT_H264("LEVEL.51"), AMF_TEXT_H264("LEVEL.52")
 };
-const unsigned char AMF_Encoder::h264::LEVEL_VALUES[LEVELS::LEVEL_COUNT_MAX] = {
+const unsigned char AMFEncoder::h264_encoder::LEVEL_VALUES[LEVELS::LEVEL_COUNT_MAX] = {
 	10, 11, 12, 13,
 	20, 21, 22,
 	30, 31, 32,
@@ -57,54 +57,54 @@ const unsigned char AMF_Encoder::h264::LEVEL_VALUES[LEVELS::LEVEL_COUNT_MAX] = {
 //////////////////////////////////////////////////////////////////////////
 // Static Code
 //////////////////////////////////////////////////////////////////////////
-obs_encoder_info* AMF_Encoder::h264::encoder_info;
+obs_encoder_info* AMFEncoder::h264_encoder::encoder_info;
 
-void AMF_Encoder::h264::encoder_register() {
-	if (!AMF_Encoder::h264::encoder_info) {
-		AMF_Encoder::h264::encoder_info = new obs_encoder_info();
-		AMF_Encoder::h264::encoder_info->id = "amf_h264_encoder";
-		AMF_Encoder::h264::encoder_info->type = obs_encoder_type::OBS_ENCODER_VIDEO;
-		AMF_Encoder::h264::encoder_info->codec = "h264";
+void AMFEncoder::h264_encoder::encoder_register() {
+	if (!AMFEncoder::h264_encoder::encoder_info) {
+		AMFEncoder::h264_encoder::encoder_info = new obs_encoder_info();
+		AMFEncoder::h264_encoder::encoder_info->id = "amf_h264_encoder";
+		AMFEncoder::h264_encoder::encoder_info->type = obs_encoder_type::OBS_ENCODER_VIDEO;
+		AMFEncoder::h264_encoder::encoder_info->codec = "h264";
 
 		// Functions
-		AMF_Encoder::h264::encoder_info->get_name = &AMF_Encoder::h264::get_name;
-		AMF_Encoder::h264::encoder_info->get_defaults = &AMF_Encoder::h264::get_defaults;
-		AMF_Encoder::h264::encoder_info->get_properties = &AMF_Encoder::h264::get_properties;
-		AMF_Encoder::h264::encoder_info->create = &AMF_Encoder::h264::create;
-		AMF_Encoder::h264::encoder_info->destroy = &AMF_Encoder::h264::destroy;
-		AMF_Encoder::h264::encoder_info->encode = &AMF_Encoder::h264::encode;
-		AMF_Encoder::h264::encoder_info->update = &AMF_Encoder::h264::update;
-		AMF_Encoder::h264::encoder_info->get_video_info = &AMF_Encoder::h264::get_video_info;
-		AMF_Encoder::h264::encoder_info->get_extra_data = &AMF_Encoder::h264::get_extra_data;
+		AMFEncoder::h264_encoder::encoder_info->get_name = &AMFEncoder::h264_encoder::get_name;
+		AMFEncoder::h264_encoder::encoder_info->get_defaults = &AMFEncoder::h264_encoder::get_defaults;
+		AMFEncoder::h264_encoder::encoder_info->get_properties = &AMFEncoder::h264_encoder::get_properties;
+		AMFEncoder::h264_encoder::encoder_info->create = &AMFEncoder::h264_encoder::create;
+		AMFEncoder::h264_encoder::encoder_info->destroy = &AMFEncoder::h264_encoder::destroy;
+		AMFEncoder::h264_encoder::encoder_info->encode = &AMFEncoder::h264_encoder::encode;
+		AMFEncoder::h264_encoder::encoder_info->update = &AMFEncoder::h264_encoder::update;
+		AMFEncoder::h264_encoder::encoder_info->get_video_info = &AMFEncoder::h264_encoder::get_video_info;
+		AMFEncoder::h264_encoder::encoder_info->get_extra_data = &AMFEncoder::h264_encoder::get_extra_data;
 
-		obs_register_encoder(AMF_Encoder::h264::encoder_info);
+		obs_register_encoder(AMFEncoder::h264_encoder::encoder_info);
 	}
 }
 
-const char* AMF_Encoder::h264::get_name(void* type_data) {
+const char* AMFEncoder::h264_encoder::get_name(void* type_data) {
 	return AMF_TEXT_H264_T("Name");
 }
 
-void* AMF_Encoder::h264::create(obs_data_t* settings, obs_encoder_t* encoder) {
+void* AMFEncoder::h264_encoder::create(obs_data_t* settings, obs_encoder_t* encoder) {
 	try {
-		AMF_Encoder::h264* enc = new AMF_Encoder::h264(settings, encoder);
+		AMFEncoder::h264_encoder* enc = new AMFEncoder::h264_encoder(settings, encoder);
 		return enc;
 	} catch (std::exception e) {
 		return NULL;
 	}
 }
 
-void AMF_Encoder::h264::destroy(void* data) {
-	AMF_Encoder::h264* enc = static_cast<AMF_Encoder::h264*>(data);
+void AMFEncoder::h264_encoder::destroy(void* data) {
+	AMFEncoder::h264_encoder* enc = static_cast<AMFEncoder::h264_encoder*>(data);
 	delete enc;
 	data = nullptr;
 }
 
-bool AMF_Encoder::h264::encode(void *data, struct encoder_frame *frame, struct encoder_packet *packet, bool *received_packet) {
-	return static_cast<AMF_Encoder::h264*>(data)->encode(frame, packet, received_packet);
+bool AMFEncoder::h264_encoder::encode(void *data, struct encoder_frame *frame, struct encoder_packet *packet, bool *received_packet) {
+	return static_cast<AMFEncoder::h264_encoder*>(data)->encode(frame, packet, received_packet);
 }
 
-void AMF_Encoder::h264::get_defaults(obs_data_t *settings) {
+void AMFEncoder::h264_encoder::get_defaults(obs_data_t *settings) {
 	//////////////////////////////////////////////////////////////////////////
 	// Static Properties (Can't be changed during Encoding)
 	//////////////////////////////////////////////////////////////////////////
@@ -196,7 +196,7 @@ void AMF_Encoder::h264::get_defaults(obs_data_t *settings) {
 	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS", -1);
 }
 
-obs_properties_t* AMF_Encoder::h264::get_properties(void* data) {
+obs_properties_t* AMFEncoder::h264_encoder::get_properties(void* data) {
 	obs_property_t* list;
 	obs_properties* props = obs_properties_create();
 
@@ -223,14 +223,14 @@ obs_properties_t* AMF_Encoder::h264::get_properties(void* data) {
 	/// h264 Profile
 	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_PROFILE", AMF_TEXT_H264_T("PROFILE"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, AMF_TEXT_H264_T("PROFILE.DEFAULT"), -1);
-	for (unsigned int i = 0; i < AMF_Encoder::h264::PROFILES::PROFILE_COUNT_MAX; i++) {
-		obs_property_list_add_int(list, obs_module_text(AMF_Encoder::h264::PROFILE_NAMES[i]), i);
+	for (unsigned int i = 0; i < AMFEncoder::h264_encoder::PROFILES::PROFILE_COUNT_MAX; i++) {
+		obs_property_list_add_int(list, obs_module_text(AMFEncoder::h264_encoder::PROFILE_NAMES[i]), i);
 	}
 	/// h264 Profile Level
 	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_PROFILE_LEVEL", AMF_TEXT_H264_T("LEVEL"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, AMF_TEXT_H264_T("LEVEL.DEFAULT"), -1);
-	for (unsigned int i = 0; i < AMF_Encoder::h264::LEVELS::LEVEL_COUNT_MAX; i++) {
-		obs_property_list_add_int(list, obs_module_text(AMF_Encoder::h264::LEVEL_NAMES[i]), i);
+	for (unsigned int i = 0; i < AMFEncoder::h264_encoder::LEVELS::LEVEL_COUNT_MAX; i++) {
+		obs_property_list_add_int(list, obs_module_text(AMFEncoder::h264_encoder::LEVEL_NAMES[i]), i);
 	}
 
 	// Other
@@ -325,26 +325,26 @@ obs_properties_t* AMF_Encoder::h264::get_properties(void* data) {
 	return props;
 }
 
-bool AMF_Encoder::h264::update(void *data, obs_data_t *settings) {
-	return static_cast<AMF_Encoder::h264*>(data)->update(settings);
+bool AMFEncoder::h264_encoder::update(void *data, obs_data_t *settings) {
+	return static_cast<AMFEncoder::h264_encoder*>(data)->update(settings);
 }
 
-void AMF_Encoder::h264::get_video_info(void *data, struct video_scale_info *info) {
-	return static_cast<AMF_Encoder::h264*>(data)->get_video_info(info);
+void AMFEncoder::h264_encoder::get_video_info(void *data, struct video_scale_info *info) {
+	return static_cast<AMFEncoder::h264_encoder*>(data)->get_video_info(info);
 }
 
-bool AMF_Encoder::h264::get_extra_data(void *data, uint8_t** extra_data, size_t* size) {
-	return static_cast<AMF_Encoder::h264*>(data)->get_extra_data(extra_data, size);
+bool AMFEncoder::h264_encoder::get_extra_data(void *data, uint8_t** extra_data, size_t* size) {
+	return static_cast<AMFEncoder::h264_encoder*>(data)->get_extra_data(extra_data, size);
 }
 
-void AMF_Encoder::h264::wa_log_amf_error(AMF_RESULT amfResult, char* sMessage) {
+void AMFEncoder::h264_encoder::wa_log_amf_error(AMF_RESULT amfResult, char* sMessage) {
 	std::vector<char> msgBuf(1024);
 	wcstombs(msgBuf.data(), amf::AMFGetResultText(amfResult), msgBuf.size());
 
 	AMF_LOG_ERROR("%s, error code %d: %s.", sMessage, amfResult, msgBuf.data());
 }
-void AMF_Encoder::h264::wa_log_property_int(AMF_RESULT amfResult, char* sProperty, int64_t value) {
-	char* format = "[AMF_Encoder::h264] Attempted to set property '%s' to '%d', result: %s (%d).";
+void AMFEncoder::h264_encoder::wa_log_property_int(AMF_RESULT amfResult, char* sProperty, int64_t value) {
+	char* format = "[AMFEncoder::h264] Attempted to set property '%s' to '%d', result: %s (%d).";
 
 	// Log AMF Error
 	char* amfErrorBuffer = new char[1024];
@@ -354,8 +354,8 @@ void AMF_Encoder::h264::wa_log_property_int(AMF_RESULT amfResult, char* sPropert
 
 	delete[] amfErrorBuffer;
 }
-void AMF_Encoder::h264::wa_log_property_bool(AMF_RESULT amfResult, char* sProperty, bool value) {
-	char* format = "[AMF_Encoder::h264] Attempted to set property '%s' to '%s', result: %s (%d).";
+void AMFEncoder::h264_encoder::wa_log_property_bool(AMF_RESULT amfResult, char* sProperty, bool value) {
+	char* format = "[AMFEncoder::h264] Attempted to set property '%s' to '%s', result: %s (%d).";
 
 	// Log AMF Error
 	char* amfErrorBuffer = new char[1024];
@@ -369,7 +369,7 @@ void AMF_Encoder::h264::wa_log_property_bool(AMF_RESULT amfResult, char* sProper
 //////////////////////////////////////////////////////////////////////////
 // Module Code
 //////////////////////////////////////////////////////////////////////////
-AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
+AMFEncoder::h264_encoder::h264_encoder(obs_data_t* settings, obs_encoder_t* encoder) {
 	AMF_LOG_INFO("Create: Initialization Request...");
 
 	// OBS Settings
@@ -404,12 +404,12 @@ AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
 
 	// Encoder Component
 	switch (t_profile) {
-		case h264::PROFILES::PROFILE_SVC_BP:
-		case h264::PROFILES::PROFILE_SVC_HiP:
-			if (t_profile == h264::PROFILES::PROFILE_SVC_BP)
-				t_profile = h264::PROFILE_AVC_BP;
+		case h264_encoder::PROFILES::PROFILE_SVC_BP:
+		case h264_encoder::PROFILES::PROFILE_SVC_HiP:
+			if (t_profile == h264_encoder::PROFILES::PROFILE_SVC_BP)
+				t_profile = h264_encoder::PROFILE_AVC_BP;
 			else
-				t_profile = h264::PROFILE_AVC_HiP;
+				t_profile = h264_encoder::PROFILE_AVC_HiP;
 			res = AMFCreateComponent(m_AMFContext, AMFVideoEncoderVCE_SVC, &this->m_AMFEncoder);
 		default:
 			res = AMFCreateComponent(m_AMFContext, AMFVideoEncoderVCE_AVC, &this->m_AMFEncoder);
@@ -424,7 +424,7 @@ AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
 	// Quality Preset & Usage
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, obs_data_get_int(settings, "AMF_VIDEO_ENCODER_USAGE"));
 	wa_log_property_int(res, "AMF_VIDEO_ENCODER_USAGE", obs_data_get_int(settings, "AMF_VIDEO_ENCODER_USAGE"));
-
+	
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET"));
 	wa_log_property_int(res, "AMF_VIDEO_ENCODER_QUALITY_PRESET", obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET"));
 
@@ -440,14 +440,14 @@ AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
 	// Profile & Level
 	t_profile = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PROFILE");
 	if (t_profile != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMF_Encoder::h264::PROFILE_VALUES[t_profile]);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_PROFILE", AMF_Encoder::h264::PROFILE_VALUES[t_profile]);
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMFEncoder::h264_encoder::PROFILE_VALUES[t_profile]);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_PROFILE", AMFEncoder::h264_encoder::PROFILE_VALUES[t_profile]);
 	}
 
 	int64_t t_profileLevel = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PROFILE_LEVEL");
 	if (t_profileLevel != -1) {
-		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, AMF_Encoder::h264::LEVEL_VALUES[t_profileLevel]);
-		wa_log_property_int(res, "AMF_VIDEO_ENCODER_PROFILE_LEVEL", AMF_Encoder::h264::LEVEL_VALUES[t_profileLevel]);
+		res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, AMFEncoder::h264_encoder::LEVEL_VALUES[t_profileLevel]);
+		wa_log_property_int(res, "AMF_VIDEO_ENCODER_PROFILE_LEVEL", AMFEncoder::h264_encoder::LEVEL_VALUES[t_profileLevel]);
 	}
 
 	// Other
@@ -481,14 +481,14 @@ AMF_Encoder::h264::h264(obs_data_t* settings, obs_encoder_t* encoder) {
 	AMF_LOG_INFO("Create: Request completed.");
 }
 
-AMF_Encoder::h264::~h264() {
+AMFEncoder::h264_encoder::~h264_encoder() {
 	if (m_AMFEncoder)
 		m_AMFEncoder->Terminate();
 	if (m_AMFContext)
 		m_AMFContext->Terminate();
 }
 
-void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
+void AMFEncoder::h264_encoder::queue_frame(encoder_frame* frame) {
 	AMF_RESULT res;
 	amf::AMFSurfacePtr surfaceIn;
 
@@ -693,7 +693,7 @@ void AMF_Encoder::h264::queue_frame(encoder_frame* frame) {
 	this->m_InputQueue.push(myFrame);
 }
 
-void AMF_Encoder::h264::update_queues() {
+void AMFEncoder::h264_encoder::update_queues() {
 	AMF_RESULT res;
 	amf::AMFDataPtr pData;
 
@@ -727,7 +727,7 @@ void AMF_Encoder::h264::update_queues() {
 	}
 }
 
-void AMF_Encoder::h264::dequeue_frame(encoder_packet* packet, bool* received_packet) {
+void AMFEncoder::h264_encoder::dequeue_frame(encoder_packet* packet, bool* received_packet) {
 	if (m_OutputQueue.empty())
 		return;
 
@@ -765,7 +765,7 @@ void AMF_Encoder::h264::dequeue_frame(encoder_packet* packet, bool* received_pac
 	}
 }
 
-bool AMF_Encoder::h264::encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
+bool AMFEncoder::h264_encoder::encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
 	if (!frame || !packet || !received_packet)
 		return false;
 
@@ -781,14 +781,14 @@ bool AMF_Encoder::h264::encode(struct encoder_frame * frame, struct encoder_pack
 	return true;
 }
 
-bool AMF_Encoder::h264::update(obs_data_t* settings) {
+bool AMFEncoder::h264_encoder::update(obs_data_t* settings) {
 	//////////////////////////////////////////////////////////////////////////
 	// Dynamic Properties (Can be changed during Encoding)
 	//////////////////////////////////////////////////////////////////////////
 	return update_properties(settings);
 }
 
-void AMF_Encoder::h264::get_video_info(struct video_scale_info* info) {
+void AMFEncoder::h264_encoder::get_video_info(struct video_scale_info* info) {
 	switch (m_AMFSurfaceFormat) {
 		case amf::AMF_SURFACE_NV12:
 			info->format = VIDEO_FORMAT_NV12;
@@ -824,7 +824,7 @@ void AMF_Encoder::h264::get_video_info(struct video_scale_info* info) {
 	//info->colorspace = VIDEO_CS_709;
 }
 
-bool AMF_Encoder::h264::get_extra_data(uint8_t** extra_data, size_t* size) {
+bool AMFEncoder::h264_encoder::get_extra_data(uint8_t** extra_data, size_t* size) {
 	// So far I have not observer this being called.
 
 	AMF_LOG_INFO("get_extra_data");
@@ -851,7 +851,7 @@ bool AMF_Encoder::h264::get_extra_data(uint8_t** extra_data, size_t* size) {
 	return false;
 }
 
-bool AMF_Encoder::h264::update_properties(obs_data_t* settings) {
+bool AMFEncoder::h264_encoder::update_properties(obs_data_t* settings) {
 	AMF_RESULT res;
 	int64_t value;
 

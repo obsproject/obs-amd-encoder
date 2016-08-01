@@ -89,7 +89,7 @@ bool AMFEncoder::H264_Capabilities::refreshCapabilities() {
 
 			int32_t numFormats = capsIO[ioIndex]->GetNumOfFormats();
 			capsIOS[ioIndex]->formats.resize(numFormats);
-			for (uint32_t formatIndex = 0; formatIndex < numFormats; formatIndex++) {
+			for (int32_t formatIndex = 0; formatIndex < numFormats; formatIndex++) {
 				amf::AMF_SURFACE_FORMAT format = amf::AMF_SURFACE_UNKNOWN;
 				bool isNative = false;
 
@@ -100,7 +100,7 @@ bool AMFEncoder::H264_Capabilities::refreshCapabilities() {
 
 			int32_t numMemoryTypes = capsIO[ioIndex]->GetNumOfMemoryTypes();
 			capsIOS[ioIndex]->memoryTypes.resize(numMemoryTypes);
-			for (uint32_t memoryTypeIndex = 0; memoryTypeIndex < numMemoryTypes; memoryTypeIndex++) {
+			for (int32_t memoryTypeIndex = 0; memoryTypeIndex < numMemoryTypes; memoryTypeIndex++) {
 				amf::AMF_MEMORY_TYPE type = amf::AMF_MEMORY_UNKNOWN;
 				bool isNative = false;
 
