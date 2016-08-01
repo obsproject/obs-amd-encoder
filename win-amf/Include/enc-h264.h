@@ -23,7 +23,30 @@ SOFTWARE.
 */
 
 #pragma once
+//////////////////////////////////////////////////////////////////////////
+// Includes
+//////////////////////////////////////////////////////////////////////////
+// System
+#include <exception>
+#include <stdexcept>
+#include <vector>
 
+// Plugin
+#include "win-amf.h"
+
+// AMF
+#include "AMD-Media-SDK/1.1/inc/ErrorCodes.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/Component.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderVCE.h"
+
+//////////////////////////////////////////////////////////////////////////
+// Defines
+//////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////
+// Code
+//////////////////////////////////////////////////////////////////////////
 namespace AMFEncoder {
 	/**
 	 * Class for the actual AMF Encoder.
@@ -35,11 +58,11 @@ namespace AMFEncoder {
 		~H264();
 
 
-		void Startup();
+		void Startup(int Usage, int QualityPreset, std::pair<int,int>& framesize, std::pair<int,int>& framerate, int profile, int profileLevel, int maxOfLTRFrames, int scanType);
 		void Shutdown();
 
-		void SubmitFrame();
-		void GetFrame();
+		void SubmitFrame(struct encoder_frame* &frame);
+		void GetFrame(struct encoder_packet* &packet, bool* &received);
 
 	};
 }
