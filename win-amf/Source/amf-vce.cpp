@@ -356,6 +356,13 @@ void AMFEncoder::VCE::SetProfileLevel(VCE_Profile_Level profileLevel) {
 		"4.0", "4.1", "4.2",
 		"5.0", "5.1", "5.2"
 	};
+	uint32_t profileToAMF[] = {
+		10, 11, 12, 13,
+		20, 21, 22,
+		30, 31, 32,
+		40, 41, 42,
+		50, 51, 52
+	};
 
 	// Early-Exception if encoding.
 	if (m_isStarted) {
@@ -365,34 +372,7 @@ void AMFEncoder::VCE::SetProfileLevel(VCE_Profile_Level profileLevel) {
 	}
 
 	// Set profile level
-	switch (profileLevel) {
-		case VCE_PROFILE_LEVEL_10:
-		case VCE_PROFILE_LEVEL_11:
-		case VCE_PROFILE_LEVEL_12:
-		case VCE_PROFILE_LEVEL_13:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 10);
-			break;
-		case VCE_PROFILE_LEVEL_20:
-		case VCE_PROFILE_LEVEL_21:
-		case VCE_PROFILE_LEVEL_22:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 16);
-			break;
-		case VCE_PROFILE_LEVEL_30:
-		case VCE_PROFILE_LEVEL_31:
-		case VCE_PROFILE_LEVEL_32:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 23);
-			break;
-		case VCE_PROFILE_LEVEL_40:
-		case VCE_PROFILE_LEVEL_41:
-		case VCE_PROFILE_LEVEL_42:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 30);
-			break;
-		case VCE_PROFILE_LEVEL_50:
-		case VCE_PROFILE_LEVEL_51:
-		case VCE_PROFILE_LEVEL_52:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 37);
-			break;
-	}
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileToAMF[profileLevel]);
 	if (res == AMF_OK) {
 		m_profileLevel = profileLevel;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetProfile> Set to %s.", profiles[m_profileLevel]);
