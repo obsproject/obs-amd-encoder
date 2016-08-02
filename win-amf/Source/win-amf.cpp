@@ -139,7 +139,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 	// Register Encoder
 	AMFEncoder::VCE_H264_Encoder::encoder_register();
 
-	AMF_LOG_INFO("Loaded...");
+	AMF_LOG_INFO("Loaded.");
 	return true;
 }
 
