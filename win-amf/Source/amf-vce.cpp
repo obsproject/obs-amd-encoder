@@ -360,22 +360,22 @@ void AMFEncoder::VCE::SetProfileLevel(VCE_Profile_Level profileLevel) {
 		case VCE_PROFILE_LEVEL_2:
 		case VCE_PROFILE_LEVEL_21:
 		case VCE_PROFILE_LEVEL_22:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 20);
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 16);
 			break;
 		case VCE_PROFILE_LEVEL_3:
 		case VCE_PROFILE_LEVEL_31:
 		case VCE_PROFILE_LEVEL_32:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 30);
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 23);
 			break;
 		case VCE_PROFILE_LEVEL_4:
 		case VCE_PROFILE_LEVEL_41:
 		case VCE_PROFILE_LEVEL_42:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 40);
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 30);
 			break;
 		case VCE_PROFILE_LEVEL_5:
 		case VCE_PROFILE_LEVEL_51:
 		case VCE_PROFILE_LEVEL_52:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 50);
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 37);
 			break;
 	}
 	if (res == AMF_OK) {
