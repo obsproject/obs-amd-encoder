@@ -84,13 +84,12 @@ namespace AMFEncoder {
 
 		// h264 Profiles
 		enum PROFILES {
-			PROFILE_AVC_BP, PROFILE_AVC_MP,
-			PROFILE_AVC_HiP,
+			PROFILE_AVC_BP, PROFILE_AVC_MP, PROFILE_AVC_HiP,
 			PROFILE_SVC_BP, PROFILE_SVC_HiP,
 			PROFILE_COUNT_MAX
 		};
 		static const char* PROFILE_NAMES[PROFILES::PROFILE_COUNT_MAX];
-		static const unsigned char PROFILE_VALUES[PROFILES::PROFILE_COUNT_MAX];
+		static const VCE_Profile PROFILE_VALUES[PROFILES::PROFILE_COUNT_MAX];
 
 		// h264 Levels
 		enum LEVELS {
@@ -102,7 +101,7 @@ namespace AMFEncoder {
 			LEVEL_COUNT_MAX
 		};
 		static const char* LEVEL_NAMES[LEVELS::LEVEL_COUNT_MAX];
-		static const unsigned char LEVEL_VALUES[LEVELS::LEVEL_COUNT_MAX];
+		static const VCE_Profile_Level LEVEL_VALUES[LEVELS::LEVEL_COUNT_MAX];
 
 		//////////////////////////////////////////////////////////////////////////
 		// Static Code
