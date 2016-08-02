@@ -789,29 +789,26 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 }
 
 bool AMFEncoder::VCE::GetExtraData(uint8_t**& extra_data, size_t*& extra_data_size) {
-	//// So far I have not observer this being called.
+	if (!m_AMFContext || !m_AMFEncoder)
+		throw std::exception("<AMFEncoder::VCE::GetExtraData> Called while not initialized.");
 
-	//AMF_LOG_INFO("get_extra_data");
-	//if (!m_AMFContext)
-	//	return false;
-	//if (!m_AMFEncoder)
-	//	return false;
+	if (!m_isStarted)
+		throw std::exception("<AMFEncoder::VCE::GetExtraData> Called while not encoding.");
 
-	//amf::AMFVariant var;
-	//AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_EXTRADATA, &var);
-	//if (res == AMF_OK && var.type == amf::AMF_VARIANT_INTERFACE) {
-	//	AMF_LOG_INFO("get_extra_data: Have Extra Data of Type %d", var.type);
+	amf::AMFVariant var;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_EXTRADATA, &var);
+	if (res == AMF_OK && var.type == amf::AMF_VARIANT_INTERFACE) {
+		amf::AMFBufferPtr buf(var.pInterface);
 
-	//	amf::AMFBufferPtr buf(var.pInterface);
-	//	void* bufnat = buf->GetNative();
-	//	*size = buf->GetSize();
-	//	m_ExtraData.resize(*size);
-	//	*extra_data = m_ExtraData.data();
-	//	std::memcpy(*extra_data, bufnat, *size);
-	//	AMF_LOG_INFO("get_extra_data: Extra Data is %d bytes big.", *size);
+		*extra_data_size = buf->GetSize();
+		m_ExtraDataBuffer.resize(*extra_data_size);
+		std::memcpy(m_ExtraDataBuffer.data(), buf->GetNative(), *extra_data_size);
+		*extra_data = m_ExtraDataBuffer.data();
+		
+		buf->Release();
 
-	//	return true;
-	//}
+		return true;
+	}
 	return false;
 }
 

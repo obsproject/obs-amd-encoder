@@ -127,13 +127,13 @@ namespace AMFEncoder {
 		//////////////////////////////////////////////////////////////////////////
 		// Properties
 		//////////////////////////////////////////////////////////////////////////
-		// Pre-Start Properties
-		/// 
+		// Static Properties
+		/// Memory Type & Surface Format
 		void SetMemoryType(VCE_Memory_Type);
 		VCE_Memory_Type GetMemoryType();
 		void SetSurfaceFormat(VCE_Surface_Format);
 		VCE_Surface_Format GetSurfaceFormat();
-		/// 
+		/// Encoder Parameters
 		void SetUsage(VCE_Usage);
 		VCE_Usage GetUsage();
 		void SetQualityPreset(VCE_Quality_Preset);
@@ -142,11 +142,11 @@ namespace AMFEncoder {
 		VCE_Profile GetProfile();
 		void SetProfileLevel(VCE_Profile_Level);
 		VCE_Profile_Level GetProfileLevel();
-		void SetMaxLTRFrames(uint32_t);
+		void SetMaxLTRFrames(uint32_t); // Long Term Reference Frames (for Hierarchical B-Picture-Based Video Coding)
 		uint32_t GetMaxLTRFrames();
 		void SetScanType(VCE_ScanType);
 		VCE_ScanType GetScanType();
-		/// 
+		/// Frame Size & Rate
 		void SetFrameSize(std::pair<uint32_t, uint32_t>&);
 		std::pair<uint32_t, uint32_t> GetFrameSize();
 		void SetFrameRate(std::pair<uint32_t, uint32_t>&);
@@ -164,26 +164,26 @@ namespace AMFEncoder {
 		void GetOutput(struct encoder_packet*&, bool*&);
 		bool GetExtraData(uint8_t**&, size_t*&);
 		void GetVideoInfo(struct video_scale_info*&);
-		
+
 		//////////////////////////////////////////////////////////////////////////
 		// Internal-only, do not expose.
 		//////////////////////////////////////////////////////////////////////////
 		private:
 		bool m_isStarted;
 
-		// Pre-Startup
-		/// 
+		// Static Properties
+		/// Encoder Type, Memory Type & Surface Format
 		VCE_Encoder_Type m_encoderType;
 		VCE_Memory_Type m_memoryType;
 		VCE_Surface_Format m_surfaceFormat;
-		/// 
+		/// Encoder Parameters
 		VCE_Usage m_usage;
 		VCE_Quality_Preset m_qualityPreset;
 		VCE_Profile m_profile;
 		VCE_Profile_Level m_profileLevel;
 		uint32_t m_maxLTRFrames;
 		VCE_ScanType m_scanType;
-		/// 
+		/// Frame Size & Rate
 		std::pair<uint32_t, uint32_t> m_frameSize;
 		std::pair<uint32_t, uint32_t> m_frameRate;
 
@@ -191,8 +191,10 @@ namespace AMFEncoder {
 		amf::AMFContextPtr m_AMFContext;
 		amf::AMFComponentPtr m_AMFEncoder;
 
-		//
+		// Buffers
+		std::vector<uint8_t> m_FrameDataBuffer;
 		std::vector<uint8_t> m_PacketDataBuffer;
+		std::vector<uint8_t> m_ExtraDataBuffer;
 
 		//////////////////////////////////////////////////////////////////////////
 		// Logging & Exception Helpers
@@ -205,5 +207,4 @@ namespace AMFEncoder {
 		template<typename _T>
 		void AMFEncoder::VCE::throwAMFErrorAdvanced(const char* errorMsg, _T other, AMF_RESULT res);
 	};
-
 }
