@@ -51,7 +51,7 @@ SOFTWARE.
 #define AMF_VCE_H264_PROFILE			AMF_TEXT_H264("Profile")
 #define AMF_VCE_H264_PROFILE2(x)		AMF_TEXT_H264("Profile" ## x)
 #define AMF_VCE_H264_PROFILE_LEVEL		AMF_TEXT_H264("ProfileLevel")
-#define AMF_VCE_H264_PROFILE_LEVEL2(x)	AMF_TEXT_H264("ProfileLevel" ## x)
+#define AMF_VCE_H264_PROFILE_LEVEL2(x)	AMF_TEXT_H264("ProfileLevel." ## x)
 #define AMF_VCE_H264_MAX_LTR_FRAMES		AMF_TEXT_H264("MaxLTRFrames")
 #define AMF_VCE_H264_SCAN_TYPE			AMF_TEXT_H264("ScanType")
 #define AMF_VCE_H264_SCAN_TYPE2(x)		AMF_TEXT_H264("ScanType." ## x)

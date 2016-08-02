@@ -139,91 +139,58 @@ void AMFEncoder::VCE_H264_Encoder::get_defaults(obs_data_t *settings) {
 	// Static Properties (Can't be changed during Encoding)
 	//////////////////////////////////////////////////////////////////////////
 	// Quality Preset & Usage
-	/// amf_int64(AMF_VIDEO_ENCODER_USAGE_ENUM); default = N/A; Encoder usage type. fully configures parameter set. 
 	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_USAGE", AMF_VIDEO_ENCODER_USAGE_TRANSCONDING);
-	/// amf_int64(AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM); default = depends on USAGE; Quality Preset 
 	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET", AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY);
 
 	// Profile & Level
-	/// amf_int64(AMF_VIDEO_ENCODER_PROFILE_ENUM) ; default = AMF_VIDEO_ENCODER_PROFILE_MAIN;  H264 profile
 	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PROFILE", -1);
-	/// amf_int64; default = 42; H264 profile level
 	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PROFILE_LEVEL", -1);
 
 	// Other
-	/// amf_int64; default = 0; Max number of LTR frames
 	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MAX_LTR_FRAMES", -1);
-	/// amf_int64(AMF_VIDEO_ENCODER_SCANTYPE_ENUM); default = AMF_VIDEO_ENCODER_SCANTYPE_PROGRESSIVE; indicates input stream type
 	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_SCANTYPE", 0);
 
-	//////////////////////////////////////////////////////////////////////////
-	// Dynamic Properties (Can be changed during Encoding)
-	//////////////////////////////////////////////////////////////////////////
-	// Rate Control
-	/// amf_int64(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM); default = depends on USAGE; Rate Control Method 
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD", -1);
-	/// bool; default =  depends on USAGE; Rate Control Based Frame Skip 
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME", -1);
-	/// bool; default = depends on USAGE; Enforce HRD
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_ENFORCE_HRD", -1);
-	/// bool; default = false; Filler Data Enable
-	obs_data_set_default_bool(settings, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE", false);
-	/// amf_int64; default = 60; GOP Size, in frames
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_GOP_SIZE", -1);
-	/// amf_int64; default = depends on USAGE; VBV Buffer Size in bits
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", -1);
-	/// amf_int64; default =  64; Initial VBV Buffer Fullness 0=0% 64=100%
-	obs_data_set_default_double(settings, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS", 1.0);
-	/// amf_int64; default = 60; Max AU Size in bits
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MAX_AU_SIZE", -1);
-	/// amf_int64; default = depends on USAGE; B-picture Delta
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_B_PIC_DELTA_QP", -1);
-	/// amf_int64; default = depends on USAGE; Reference B-picture Delta
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP", -1);
+	////////////////////////////////////////////////////////////////////////////
+	//// Dynamic Properties (Can be changed during Encoding)
+	////////////////////////////////////////////////////////////////////////////
+	//// Rate Control
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD", -1);
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME", -1);
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_ENFORCE_HRD", -1);
+	//obs_data_set_default_bool(settings, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE", false);
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_GOP_SIZE", -1);
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", -1);
+	//obs_data_set_default_double(settings, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS", 1.0);
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MAX_AU_SIZE", -1);
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_B_PIC_DELTA_QP", -1);
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP", -1);
 
-	// Rate Control: Constrained QP
-	/// amf_int64; default = depends on USAGE; Min QP; range = 0-51
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MIN_QP", -1);
-	/// amf_int64; default = depends on USAGE; Max QP; range = 0-51
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MAX_QP", -1);
-	/// amf_int64; default = 22; I-frame QP; range = 0-51
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_I", -1);
-	/// amf_int64; default = 22; P-frame QP; range = 0-51
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_P", -1);
-	/// amf_int64; default = 22; B-frame QP; range = 0-51
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_B", -1);
+	//// Rate Control: Constrained QP
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MIN_QP", -1);
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MAX_QP", -1);
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_I", -1);
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_P", -1);
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_B", -1);
 
-	// Rate Control:  CBR, VBR
-	/// amf_int64; default = depends on USAGE; Target bit rate in bits
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_TARGET_BITRATE", -1);
-	/// amf_int64; default = depends on USAGE; Peak bit rate in bits
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PEAK_BITRATE", -1);
+	//// Rate Control:  CBR, VBR
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_TARGET_BITRATE", -1);
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PEAK_BITRATE", -1);
 
-	// Picture Control Properties
-	/// amf_int64; default = 0; Header Insertion Spacing; range 0-1000
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING", -1);
-	/// amf_int64; default = 3; B-picture Pattern (number of B-Frames)
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_B_PIC_PATTERN", -1);
-	/// bool; default = depends on USAGE; De-blocking Filter
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER", -1);
-	/// bool; default = true; Enable Refrence to B-frames
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE", -1);
-	/// amf_int64; default = depends on USAGE; IDR Period in frames
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_IDR_PERIOD", -1);
-	/// amf_int64; default = depends on USAGE; Intra Refresh MBs Number Per Slot in Macroblocks
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT", -1);
-	/// amf_int64; default = 1; Number of slices Per Frame 
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_SLICES_PER_FRAME", -1);
+	//// Picture Control Properties
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING", -1);
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_B_PIC_PATTERN", -1);
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER", -1);
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE", -1);
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_IDR_PERIOD", -1);
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT", -1);
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_SLICES_PER_FRAME", -1);
 
-	// Motion Estimation
-	/// bool; default= true; Half Pixel 
-	obs_data_set_default_bool(settings, "AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL", true);
-	/// bool; default= true; Quarter Pixel
-	obs_data_set_default_bool(settings, "AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL", true);
+	//// Motion Estimation
+	//obs_data_set_default_bool(settings, "AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL", true);
+	//obs_data_set_default_bool(settings, "AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL", true);
 
-	// SVC (Scalable Profiles)
-	/// amf_int64; default = 0; range = 0, min(2, caps->GetMaxNumOfTemporalLayers()) number of temporal enhancment Layers (SVC)
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS", -1);
+	//// SVC (Scalable Profiles)
+	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS", -1);
 }
 
 obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
