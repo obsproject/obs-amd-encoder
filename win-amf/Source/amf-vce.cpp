@@ -86,6 +86,21 @@ AMFEncoder::VCE::VCE(VCE_Encoder_Type encoderType) {
 	if (res != AMF_OK) {
 		m_AMFContext->Terminate();
 		throwAMFError("<AMFEncoder::VCE::H264> AMFCreateComponent failed, error %s (code %d).", res);
+	} else {
+		// Apply Defaults
+		SetUsage(VCE_USAGE_TRANSCODING);
+		SetQualityPreset(VCE_QUALITY_PRESET_BALANCED);
+
+		// Gather Information from Encoder
+		GetUsage();
+		GetQualityPreset();
+		GetProfile();
+		GetProfileLevel();
+		GetMaxLTRFrames();
+		GetScanType();
+		GetFrameSize();
+		if (m_encoderType != VCE_ENCODER_TYPE_SVC)
+			GetFrameRate();
 	}
 }
 
@@ -146,7 +161,7 @@ AMFEncoder::VCE_Surface_Format AMFEncoder::VCE::GetSurfaceFormat() {
 }
 
 void AMFEncoder::VCE::SetUsage(VCE_Usage usage) {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 	char* usages[] = {
 		"Transcoding",
 		"Ultra Low Latency",
@@ -185,7 +200,7 @@ void AMFEncoder::VCE::SetUsage(VCE_Usage usage) {
 }
 
 AMFEncoder::VCE_Usage AMFEncoder::VCE::GetUsage() {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFVariant variant;
 
 	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_USAGE, &variant);
@@ -212,7 +227,7 @@ AMFEncoder::VCE_Usage AMFEncoder::VCE::GetUsage() {
 }
 
 void AMFEncoder::VCE::SetQualityPreset(VCE_Quality_Preset qualityPreset) {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 	char* qualities[] = {
 		"Speed",
 		"Balanced",
@@ -250,7 +265,7 @@ void AMFEncoder::VCE::SetQualityPreset(VCE_Quality_Preset qualityPreset) {
 }
 
 AMFEncoder::VCE_Quality_Preset AMFEncoder::VCE::GetQualityPreset() {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFVariant variant;
 
 	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, &variant);
@@ -274,7 +289,7 @@ AMFEncoder::VCE_Quality_Preset AMFEncoder::VCE::GetQualityPreset() {
 }
 
 void AMFEncoder::VCE::SetProfile(VCE_Profile profile) {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 	char* profiles[] = {
 		"Baseline",
 		"Main",
@@ -309,7 +324,7 @@ void AMFEncoder::VCE::SetProfile(VCE_Profile profile) {
 }
 
 AMFEncoder::VCE_Profile AMFEncoder::VCE::GetProfile() {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFVariant variant;
 
 	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PROFILE, &variant);
@@ -333,7 +348,7 @@ AMFEncoder::VCE_Profile AMFEncoder::VCE::GetProfile() {
 }
 
 void AMFEncoder::VCE::SetProfileLevel(VCE_Profile_Level profileLevel) {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 	char* profiles[] = {
 		"1.0", "1.1", "1.2", "1.3",
 		"2.0", "2.1", "2.2",
@@ -351,28 +366,28 @@ void AMFEncoder::VCE::SetProfileLevel(VCE_Profile_Level profileLevel) {
 
 	// Set profile level
 	switch (profileLevel) {
-		case VCE_PROFILE_LEVEL_1:
+		case VCE_PROFILE_LEVEL_10:
 		case VCE_PROFILE_LEVEL_11:
 		case VCE_PROFILE_LEVEL_12:
 		case VCE_PROFILE_LEVEL_13:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 10);
 			break;
-		case VCE_PROFILE_LEVEL_2:
+		case VCE_PROFILE_LEVEL_20:
 		case VCE_PROFILE_LEVEL_21:
 		case VCE_PROFILE_LEVEL_22:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 20);
 			break;
-		case VCE_PROFILE_LEVEL_3:
+		case VCE_PROFILE_LEVEL_30:
 		case VCE_PROFILE_LEVEL_31:
 		case VCE_PROFILE_LEVEL_32:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 30);
 			break;
-		case VCE_PROFILE_LEVEL_4:
+		case VCE_PROFILE_LEVEL_40:
 		case VCE_PROFILE_LEVEL_41:
 		case VCE_PROFILE_LEVEL_42:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 40);
 			break;
-		case VCE_PROFILE_LEVEL_5:
+		case VCE_PROFILE_LEVEL_50:
 		case VCE_PROFILE_LEVEL_51:
 		case VCE_PROFILE_LEVEL_52:
 			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileLevel + 50);
@@ -387,7 +402,7 @@ void AMFEncoder::VCE::SetProfileLevel(VCE_Profile_Level profileLevel) {
 }
 
 AMFEncoder::VCE_Profile_Level AMFEncoder::VCE::GetProfileLevel() {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFVariant variant;
 
 	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PROFILE, &variant);
@@ -397,16 +412,16 @@ AMFEncoder::VCE_Profile_Level AMFEncoder::VCE::GetProfileLevel() {
 				m_profileLevel = (VCE_Profile_Level)(variant.ToInt64() - 10);
 				break;
 			case 20:case 21:case 22:
-				m_profileLevel = (VCE_Profile_Level)(variant.ToInt64() - 20 + VCE_PROFILE_LEVEL_2);
+				m_profileLevel = (VCE_Profile_Level)(variant.ToInt64() - 20 + VCE_PROFILE_LEVEL_20);
 				break;
 			case 30:case 31:case 32:
-				m_profileLevel = (VCE_Profile_Level)(variant.ToInt64() - 30 + VCE_PROFILE_LEVEL_3);
+				m_profileLevel = (VCE_Profile_Level)(variant.ToInt64() - 30 + VCE_PROFILE_LEVEL_30);
 				break;
 			case 40:case 41:case 42:
-				m_profileLevel = (VCE_Profile_Level)(variant.ToInt64() - 40 + VCE_PROFILE_LEVEL_4);
+				m_profileLevel = (VCE_Profile_Level)(variant.ToInt64() - 40 + VCE_PROFILE_LEVEL_40);
 				break;
 			case 50:case 51:case 52:
-				m_profileLevel = (VCE_Profile_Level)(variant.ToInt64() - 50 + VCE_PROFILE_LEVEL_5);
+				m_profileLevel = (VCE_Profile_Level)(variant.ToInt64() - 50 + VCE_PROFILE_LEVEL_50);
 				break;
 		}
 	} else {
@@ -417,7 +432,7 @@ AMFEncoder::VCE_Profile_Level AMFEncoder::VCE::GetProfileLevel() {
 }
 
 void AMFEncoder::VCE::SetMaxLTRFrames(uint32_t maxLTRFrames) {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Early-Exception if encoding.
 	if (m_isStarted) {
@@ -437,7 +452,7 @@ void AMFEncoder::VCE::SetMaxLTRFrames(uint32_t maxLTRFrames) {
 }
 
 uint32_t AMFEncoder::VCE::GetMaxLTRFrames() {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFVariant variant;
 
 	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, &variant);
@@ -451,7 +466,7 @@ uint32_t AMFEncoder::VCE::GetMaxLTRFrames() {
 }
 
 void AMFEncoder::VCE::SetScanType(VCE_ScanType scanType) {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 	char* scanTypes[] = {
 		"Progressive",
 		"Interlaced"
@@ -475,7 +490,7 @@ void AMFEncoder::VCE::SetScanType(VCE_ScanType scanType) {
 }
 
 AMFEncoder::VCE_ScanType AMFEncoder::VCE::GetScanType() {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFVariant variant;
 
 	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_SCANTYPE, &variant);
@@ -489,7 +504,7 @@ AMFEncoder::VCE_ScanType AMFEncoder::VCE::GetScanType() {
 }
 
 void AMFEncoder::VCE::SetFrameSize(std::pair<uint32_t, uint32_t>& framesize) {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Early-Exception if encoding.
 	if (m_isStarted) {
@@ -514,7 +529,7 @@ void AMFEncoder::VCE::SetFrameSize(std::pair<uint32_t, uint32_t>& framesize) {
 }
 
 std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameSize() {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFVariant variant;
 
 	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, &variant);
@@ -530,7 +545,7 @@ std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameSize() {
 }
 
 void AMFEncoder::VCE::SetFrameRate(std::pair<uint32_t, uint32_t>& framerate) {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Early-Exception if encoding.
 	if (m_isStarted) {
@@ -539,24 +554,36 @@ void AMFEncoder::VCE::SetFrameRate(std::pair<uint32_t, uint32_t>& framerate) {
 		throw std::exception(error);
 	}
 
-	// ToDo: Verify with Capabilities.
+	// Early-Exception if setting framerate with scalable mode.
+	if (m_encoderType == VCE_ENCODER_TYPE_SVC) {
+		const char* error = "<AMFEncoder::VCE::SetFrameRate> Frame Rate is not supported for Scalable Video Coding.";
+		AMF_LOG_ERROR("%s", error);
+		throw std::exception(error);
+	}
 
 	// Set frame size
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FRAMERATE, ::AMFConstructRate(framerate.first, framerate.second));
 	if (res == AMF_OK) {
 		m_frameRate.first = framerate.first;
 		m_frameRate.second = framerate.second;
-		AMF_LOG_INFO("<AMFEncoder::VCE::SetFrameRate> Set to %d/%d.", framerate.first, framerate.second);
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetFrameRate> Set to %d/%d.", m_frameRate.first, m_frameRate.second);
 	} else { // Not OK? Then throw an error instead.
-		std::vector<char> sizebuf(256);
-		sprintf(sizebuf.data(), "%d/%d", framerate.first, framerate.second);
+		std::vector<char> sizebuf(96);
+		sprintf(sizebuf.data(), "%d/%d", m_frameRate.first, m_frameRate.second);
 		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetFrameRate> Failed to set to %s, error %s (code %d).", sizebuf.data(), res);
 	}
 }
 
 std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameRate() {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFVariant variant;
+
+	// Early-Exception if setting framerate with scalable mode.
+	if (m_encoderType == VCE_ENCODER_TYPE_SVC) {
+		const char* error = "<AMFEncoder::VCE::GetFrameRate> Frame Rate is not supported for Scalable Video Coding.";
+		AMF_LOG_ERROR("%s", error);
+		throw std::exception(error);
+	}
 
 	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FRAMERATE, &variant);
 	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_RATE) {
@@ -571,7 +598,7 @@ std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameRate() {
 }
 
 void AMFEncoder::VCE::Start() {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
 		amf::AMF_SURFACE_NV12,
 		amf::AMF_SURFACE_YUV420P,
@@ -596,7 +623,7 @@ void AMFEncoder::VCE::Start() {
 }
 
 void AMFEncoder::VCE::Stop() {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Early-Exception if encoding.
 	if (!m_isStarted) {
@@ -615,7 +642,7 @@ void AMFEncoder::VCE::Stop() {
 }
 
 bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFSurfacePtr pSurface;
 	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
 		amf::AMF_SURFACE_NV12,
@@ -638,7 +665,7 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 
 	// Memory Type: Host
 	#ifdef USE_CreateSurfaceFromHostNative
-	std::vector frameData((frame->linesize[0] * m_frameSize.second) << 1); // Fits all supported formats, I believe.
+	m_FrameDataBuffer.resize((frame->linesize[0] * m_frameSize.second) << 1); // Fits all supported formats, I believe.
 	#endif
 	if (m_memoryType == VCE_MEMORY_TYPE_HOST) {
 		#ifndef USE_CreateSurfaceFromHostNative
@@ -668,8 +695,8 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 					}
 				}
 				#else
-				std::memcpy(frameData, frame->data[0], frame->linesize[0] * m_cfgHeight);
-				std::memcpy(frameData + (frame->linesize[0] * m_cfgHeight), frame->data[1], frame->linesize[0] * (m_cfgHeight >> 1));
+				std::memcpy(m_FrameDataBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
+				std::memcpy(m_FrameDataBuffer.data() + (frame->linesize[0] * m_cfgHeight), frame->data[1], frame->linesize[0] * (m_cfgHeight >> 1));
 				#endif
 				break;
 			}
@@ -696,9 +723,9 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 				size_t fullFrame = (frame->linesize[0] * m_cfgHeight);
 				size_t halfFrame = frame->linesize[1] * halfHeight;
 
-				std::memcpy(frameData, frame->data[0], frame->linesize[0] * m_cfgHeight);
-				std::memcpy(frameData + fullFrame, frame->data[1], frame->linesize[1] * halfHeight);
-				std::memcpy(frameData + (fullFrame + halfFrame), frame->data[2], frame->linesize[2] * halfHeight);
+				std::memcpy(m_FrameDataBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
+				std::memcpy(m_FrameDataBuffer.data() + fullFrame, frame->data[1], frame->linesize[1] * halfHeight);
+				std::memcpy(m_FrameDataBuffer.data() + (fullFrame + halfFrame), frame->data[2], frame->linesize[2] * halfHeight);
 				#endif
 				break;
 			}
@@ -724,7 +751,7 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 					}
 				}
 				#else
-				std::memcpy(frameData, frame->data[0], frame->linesize[0] * m_cfgHeight);
+				std::memcpy(m_FrameDataBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
 				#endif
 				break;
 			}
@@ -752,7 +779,7 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 }
 
 void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_packet) {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFDataPtr pData;
 
 	res = m_AMFEncoder->QueryOutput(&pData);
@@ -813,39 +840,20 @@ bool AMFEncoder::VCE::GetExtraData(uint8_t**& extra_data, size_t*& extra_data_si
 }
 
 void AMFEncoder::VCE::GetVideoInfo(struct video_scale_info*& info) {
-	//switch (m_AMFSurfaceFormat) {
-	//	case amf::AMF_SURFACE_NV12:
-	//		info->format = VIDEO_FORMAT_NV12;
-	//		break;
-	//	case amf::AMF_SURFACE_YV12: // I420 with UV swapped
-	//		info->format = VIDEO_FORMAT_I420;
-	//		break;
-	//	case amf::AMF_SURFACE_BGRA:
-	//		info->format = VIDEO_FORMAT_BGRA;
-	//		break;
-	//		/// ARGB has no OBS equivalent.
-	//	case amf::AMF_SURFACE_RGBA:
-	//		info->format = VIDEO_FORMAT_RGBA;
-	//		break;
-	//	case amf::AMF_SURFACE_GRAY8:
-	//		info->format = VIDEO_FORMAT_Y800;
-	//		break;
-	//	case amf::AMF_SURFACE_YUV420P:
-	//		info->format = VIDEO_FORMAT_I420;
-	//		break;
-	//		/*case amf::AMF_SURFACE_U8V8: // Has no OBS equivalent, could I use I444 for this?
-	//		info->format = VIDEO_FORMAT_Y800;
-	//		break;*/
-	//	case amf::AMF_SURFACE_YUY2:
-	//		info->format = VIDEO_FORMAT_YUY2;
-	//		break;
-	//	default: // Should never occur.
-	//		m_AMFSurfaceFormat = amf::AMF_SURFACE_NV12;
-	//		info->format = VIDEO_FORMAT_NV12;
-	//		break;
-	//}
-	////info->range = VIDEO_RANGE_FULL;
-	////info->colorspace = VIDEO_CS_709;
+	switch (m_surfaceFormat) {
+		case VCE_SURFACE_FORMAT_NV12:
+			info->format = VIDEO_FORMAT_NV12;
+			break;
+		case VCE_SURFACE_FORMAT_I420:
+			info->format = VIDEO_FORMAT_I420;
+			break;
+		case VCE_SURFACE_FORMAT_I444:
+			info->format = VIDEO_FORMAT_I444;
+			break;
+		case VCE_SURFACE_FORMAT_RGB:
+			info->format = VIDEO_FORMAT_RGBA;
+			break;
+	}
 }
 
 void AMFEncoder::VCE::throwAMFError(const char* errorMsg, AMF_RESULT res) {
@@ -858,14 +866,14 @@ void AMFEncoder::VCE::throwAMFError(const char* errorMsg, AMF_RESULT res) {
 void AMFEncoder::VCE::formatAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res) {
 	std::vector<char> errBuf(1024);
 	wcstombs(errBuf.data(), amf::AMFGetResultText(res), errBuf.size());
-	sprintf(buffer->data(), format, errBuf, res);
+	sprintf(buffer->data(), format, errBuf.data(), res);
 }
 
 template<typename _T>
 void AMFEncoder::VCE::formatAMFErrorAdvanced(std::vector<char>* buffer, const char* format, _T other, AMF_RESULT res) {
 	std::vector<char> errBuf(1024);
 	wcstombs(errBuf.data(), amf::AMFGetResultText(res), errBuf.size());
-	sprintf(buffer->data(), format, other, errBuf, res);
+	sprintf(buffer->data(), format, other, errBuf.data(), res);
 }
 
 template<typename _T>
