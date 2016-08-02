@@ -40,21 +40,37 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Defines
 //////////////////////////////////////////////////////////////////////////
-#define AMF_TEXT_H264(x) (AMF_TEXT("h264." ## x))
+#define AMF_TEXT_H264(x) (AMF_TEXT("H264." ## x))
 #define AMF_TEXT_H264_T(x) obs_module_text(AMF_TEXT_H264(x))
 
+#define AMF_VCE_H264_NAME				AMF_TEXT_H264("Name")
 #define AMF_VCE_H264_RESET				AMF_TEXT_H264("Reset")
 #define AMF_VCE_H264_USAGE				AMF_TEXT_H264("Usage")
-#define AMF_VCE_H264_USAGE2(x)			AMF_TEXT_H264_T("Usage." ## x)
+#define AMF_VCE_H264_USAGE2(x)			AMF_TEXT_H264("Usage." ## x)
+#define AMF_VCE_H264_USAGE_TRANSCODING		AMF_VCE_H264_USAGE2("Transcoding")
+#define AMF_VCE_H264_USAGE_ULTRALOWLATENCY	AMF_VCE_H264_USAGE2("UltraLowLatency")
+#define AMF_VCE_H264_USAGE_LOWLATENCY		AMF_VCE_H264_USAGE2("LowLatency")
+#define AMF_VCE_H264_USAGE_WEBCAM			AMF_VCE_H264_USAGE2("Webcam")
 #define AMF_VCE_H264_QUALITY_PRESET		AMF_TEXT_H264("QualityPreset")
 #define AMF_VCE_H264_QUALITY_PRESET2(x)	AMF_TEXT_H264("QualityPreset." ## x)
+#define AMF_VCE_H264_QUALITY_PRESET_SPEED		AMF_VCE_H264_QUALITY_PRESET2("Speed")
+#define AMF_VCE_H264_QUALITY_PRESET_BALANCED	AMF_VCE_H264_QUALITY_PRESET2("Balanced")
+#define AMF_VCE_H264_QUALITY_PRESET_QUALITY		AMF_VCE_H264_QUALITY_PRESET2("Quality")
 #define AMF_VCE_H264_PROFILE			AMF_TEXT_H264("Profile")
-#define AMF_VCE_H264_PROFILE2(x)		AMF_TEXT_H264("Profile" ## x)
+#define AMF_VCE_H264_PROFILE2(x)		AMF_TEXT_H264("Profile." ## x)
+#define AMF_VCE_H264_PROFILE_DEFAULT	AMF_VCE_H264_PROFILE2("Default")
+#define AMF_VCE_H264_PROFILE_AVC_BASELINE	AMF_VCE_H264_PROFILE2("AVC.Baseline")
+#define AMF_VCE_H264_PROFILE_AVC_MAIN		AMF_VCE_H264_PROFILE2("AVC.Main")
+#define AMF_VCE_H264_PROFILE_AVC_HIGH		AMF_VCE_H264_PROFILE2("AVC.High")
+#define AMF_VCE_H264_PROFILE_SVC_BASELINE	AMF_VCE_H264_PROFILE2("SVC.Baseline")
+#define AMF_VCE_H264_PROFILE_SVC_HIGH		AMF_VCE_H264_PROFILE2("SVC.High")
 #define AMF_VCE_H264_PROFILE_LEVEL		AMF_TEXT_H264("ProfileLevel")
 #define AMF_VCE_H264_PROFILE_LEVEL2(x)	AMF_TEXT_H264("ProfileLevel." ## x)
 #define AMF_VCE_H264_MAX_LTR_FRAMES		AMF_TEXT_H264("MaxLTRFrames")
 #define AMF_VCE_H264_SCAN_TYPE			AMF_TEXT_H264("ScanType")
 #define AMF_VCE_H264_SCAN_TYPE2(x)		AMF_TEXT_H264("ScanType." ## x)
+#define AMF_VCE_H264_SCAN_TYPE_PROGRESSIVE	AMF_VCE_H264_SCAN_TYPE2("Progressive")
+#define AMF_VCE_H264_SCAN_TYPE_INTERLACED	AMF_VCE_H264_SCAN_TYPE2("Interlaced")
 
 //#define AMF_VCE_H264_FRAMESIZE			AMF_TEXT_H264("FrameSize")
 //#define AMF_VCE_H264_FRAMERATE			AMF_TEXT_H264("FrameRate")
@@ -98,7 +114,7 @@ namespace AMFEncoder {
 		static const char* get_name(void* type_data);
 		static void get_defaults(obs_data_t *settings);
 		static obs_properties_t* get_properties(void* data);
-		static bool reset_clicked(obs_properties* props, obs_property_t* property, void* data);
+		static bool button_reset_callback(obs_properties* props, obs_property_t* property, void* data);
 
 		static void* create(obs_data_t* settings, obs_encoder_t* encoder);
 		static void destroy(void* data);
@@ -116,23 +132,10 @@ namespace AMFEncoder {
 		//* @return                true if SEI data available, false otherwise
 		//*/
 		//bool(*get_sei_data)(void *data, uint8_t **sei_data, size_t *size);
-
-		///**
-		//* Returns desired audio format and sample information
-		//*
-		//* @param          data  Data associated with this encoder context
-		//* @param[in/out]  info  Audio format information
-		//*/
-		//void(*get_audio_info)(void *data, struct audio_convert_info *info);
-
-
+		
 		//void *type_data;
 		//void(*free_type_data)(void *type_data);
-
-		static void wa_log_amf_error(AMF_RESULT amfResult, char* sMessage);
-		static void wa_log_property_int(AMF_RESULT amfResult, char* sProperty, int64_t value);
-		static void wa_log_property_bool(AMF_RESULT amfResult, char* sProperty, bool value);
-
+		
 		//////////////////////////////////////////////////////////////////////////
 		// Module Code
 		//////////////////////////////////////////////////////////////////////////
@@ -158,5 +161,17 @@ namespace AMFEncoder {
 
 		// Encoder
 		AMFEncoder::VCE* m_VCE;
+	};
+
+	class VCE_H264_PropertiesData {
+		public:
+		VCE_H264_PropertiesData();
+		~VCE_H264_PropertiesData();
+
+		void* input;
+
+		static void Destroy(void *data) {
+			delete reinterpret_cast<VCE_H264_PropertiesData*>(data);
+		}
 	};
 }

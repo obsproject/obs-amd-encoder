@@ -54,11 +54,11 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // h264 Profiles
 const char* AMFEncoder::VCE_H264_Encoder::PROFILE_NAMES[AMFEncoder::VCE_H264_Encoder::PROFILES::PROFILE_COUNT_MAX] = {
-	AMF_VCE_H264_PROFILE2("AVC.BP"),
-	AMF_VCE_H264_PROFILE2("AVC.MP"),
-	AMF_VCE_H264_PROFILE2("AVC.HiP"),
-	AMF_VCE_H264_PROFILE2("SVC.BP"),
-	AMF_VCE_H264_PROFILE2("SVC.HiP")
+	AMF_VCE_H264_PROFILE_AVC_BASELINE,
+	AMF_VCE_H264_PROFILE_AVC_MAIN,
+	AMF_VCE_H264_PROFILE_AVC_HIGH,
+	AMF_VCE_H264_PROFILE_SVC_BASELINE,
+	AMF_VCE_H264_PROFILE_SVC_HIGH
 };
 const unsigned char AMFEncoder::VCE_H264_Encoder::PROFILE_VALUES[AMFEncoder::VCE_H264_Encoder::PROFILES::PROFILE_COUNT_MAX] = {
 	66,
@@ -135,24 +135,18 @@ bool AMFEncoder::VCE_H264_Encoder::encode(void *data, struct encoder_frame *fram
 }
 
 void AMFEncoder::VCE_H264_Encoder::get_defaults(obs_data_t *settings) {
-	//////////////////////////////////////////////////////////////////////////
-	// Static Properties (Can't be changed during Encoding)
-	//////////////////////////////////////////////////////////////////////////
-	// Quality Preset & Usage
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_USAGE", AMF_VIDEO_ENCODER_USAGE_TRANSCONDING);
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QUALITY_PRESET", AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY);
+	// Static Properties
+	/// Quality Preset & Usage
+	obs_data_set_default_int(settings, AMF_VCE_H264_USAGE, VCE_USAGE_TRANSCODING);
+	obs_data_set_default_int(settings, AMF_VCE_H264_QUALITY_PRESET, VCE_QUALITY_PRESET_BALANCED);
+	/// Profile & Level
+	obs_data_set_default_int(settings, AMF_VCE_H264_PROFILE, -1);
+	obs_data_set_default_int(settings, AMF_VCE_H264_PROFILE_LEVEL, -1);
+	/// Other
+	obs_data_set_default_int(settings, AMF_VCE_H264_MAX_LTR_FRAMES, -1);
+	obs_data_set_default_int(settings, AMF_VCE_H264_SCAN_TYPE, 0);
 
-	// Profile & Level
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PROFILE", -1);
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PROFILE_LEVEL", -1);
-
-	// Other
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MAX_LTR_FRAMES", -1);
-	obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_SCANTYPE", 0);
-
-	////////////////////////////////////////////////////////////////////////////
-	//// Dynamic Properties (Can be changed during Encoding)
-	////////////////////////////////////////////////////////////////////////////
+	// Dynamic Properties
 	//// Rate Control
 	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD", -1);
 	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME", -1);
@@ -198,10 +192,16 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 	obs_property_t* list;
 //	obs_property_t* p;
 
+	// Property Data
+	VCE_H264_PropertiesData* pdata = new VCE_H264_PropertiesData();
+	pdata->input = data;
+	obs_properties_set_param(props, pdata, &VCE_H264_PropertiesData::Destroy);
+
 	//////////////////////////////////////////////////////////////////////////
 	// Controls
 	//////////////////////////////////////////////////////////////////////////
-	obs_properties_add_button(props, AMF_VCE_H264_RESET, obs_module_text(AMF_VCE_H264_RESET), &reset_clicked);
+	obs_properties_add_button(props, AMF_VCE_H264_RESET, obs_module_text(AMF_VCE_H264_RESET),
+		&button_reset_callback);
 
 	//////////////////////////////////////////////////////////////////////////
 	// Static Properties (Can't be changed during Encoding)
@@ -209,21 +209,21 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 	// Usage & Quality Preset
 	/// Usage
 	list = obs_properties_add_list(props, AMF_VCE_H264_USAGE, obs_module_text(AMF_VCE_H264_USAGE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_USAGE2("Transcoding")), VCE_USAGE_TRANSCODING);
-	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_USAGE2("UltraLowLatency")), VCE_USAGE_ULTRA_LOW_LATENCY);
-	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_USAGE2("LowLatency")), VCE_USAGE_LOW_LATENCY);
-	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_USAGE2("WebCam")), VCE_USAGE_WEBCAM);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_USAGE_TRANSCODING), VCE_USAGE_TRANSCODING);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_USAGE_ULTRALOWLATENCY), VCE_USAGE_ULTRA_LOW_LATENCY);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_USAGE_LOWLATENCY), VCE_USAGE_LOW_LATENCY);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_USAGE_WEBCAM), VCE_USAGE_WEBCAM);
 
 	/// Quality Preset
 	list = obs_properties_add_list(props, AMF_VCE_H264_QUALITY_PRESET, obs_module_text(AMF_VCE_H264_QUALITY_PRESET), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_QUALITY_PRESET2("Speed")), VCE_QUALITY_PRESET_SPEED);
-	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_QUALITY_PRESET2("Balanced")), VCE_QUALITY_PRESET_BALANCED);
-	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_QUALITY_PRESET2("Quality")), VCE_QUALITY_PRESET_QUALITY);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_QUALITY_PRESET_SPEED), VCE_QUALITY_PRESET_SPEED);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_QUALITY_PRESET_BALANCED), VCE_QUALITY_PRESET_BALANCED);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_QUALITY_PRESET_QUALITY), VCE_QUALITY_PRESET_QUALITY);
 
 	// Profile & Level
 	/// h264 Profile
 	list = obs_properties_add_list(props, AMF_VCE_H264_PROFILE, obs_module_text(AMF_VCE_H264_PROFILE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE2("Default")), -1);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_DEFAULT), -1);
 	for (unsigned int i = 0; i < AMFEncoder::VCE_H264_Encoder::PROFILES::PROFILE_COUNT_MAX; i++) {
 		obs_property_list_add_int(list, obs_module_text(AMFEncoder::VCE_H264_Encoder::PROFILE_NAMES[i]), i);
 	}
@@ -241,8 +241,8 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 
 	/// Scan Type
 	list = obs_properties_add_list(props, AMF_VCE_H264_SCAN_TYPE, obs_module_text(AMF_VCE_H264_SCAN_TYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(list, AMF_VCE_H264_SCAN_TYPE2("Progressive"), VCE_SCANTYPE_PROGRESSIVE);
-	obs_property_list_add_int(list, AMF_VCE_H264_SCAN_TYPE2("Interlaced"), VCE_SCANTYPE_INTERLACED);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_SCAN_TYPE_PROGRESSIVE), VCE_SCANTYPE_PROGRESSIVE);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_SCAN_TYPE_INTERLACED), VCE_SCANTYPE_INTERLACED);
 
 	////////////////////////////////////////////////////////////////////////////
 	//// Dynamic Properties (Can be changed during Encoding)
@@ -328,8 +328,8 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 	return props;
 }
 
-bool AMFEncoder::VCE_H264_Encoder::reset_clicked(obs_properties* props, obs_property_t* property, void* data) {
-	return false;
+bool AMFEncoder::VCE_H264_Encoder::button_reset_callback(obs_properties* props, obs_property_t* property, void* data) {
+	return true;
 }
 
 bool AMFEncoder::VCE_H264_Encoder::update(void *data, obs_data_t *settings) {
@@ -342,35 +342,6 @@ void AMFEncoder::VCE_H264_Encoder::get_video_info(void *data, struct video_scale
 
 bool AMFEncoder::VCE_H264_Encoder::get_extra_data(void *data, uint8_t** extra_data, size_t* size) {
 	return static_cast<AMFEncoder::VCE_H264_Encoder*>(data)->get_extra_data(extra_data, size);
-}
-
-void AMFEncoder::VCE_H264_Encoder::wa_log_amf_error(AMF_RESULT amfResult, char* sMessage) {
-	std::vector<char> msgBuf(1024);
-	wcstombs(msgBuf.data(), amf::AMFGetResultText(amfResult), msgBuf.size());
-
-	AMF_LOG_ERROR("%s, error code %d: %s.", sMessage, amfResult, msgBuf.data());
-}
-void AMFEncoder::VCE_H264_Encoder::wa_log_property_int(AMF_RESULT amfResult, char* sProperty, int64_t value) {
-	char* format = "[AMFEncoder::h264] Attempted to set property '%s' to '%d', result: %s (%d).";
-
-	// Log AMF Error
-	char* amfErrorBuffer = new char[1024];
-	wcstombs(amfErrorBuffer, amf::AMFGetResultText(amfResult), 1024);
-
-	blog(LOG_INFO, format, sProperty, value, amfErrorBuffer, amfResult);// , args);
-
-	delete[] amfErrorBuffer;
-}
-void AMFEncoder::VCE_H264_Encoder::wa_log_property_bool(AMF_RESULT amfResult, char* sProperty, bool value) {
-	char* format = "[AMFEncoder::h264] Attempted to set property '%s' to '%s', result: %s (%d).";
-
-	// Log AMF Error
-	char* amfErrorBuffer = new char[1024];
-	wcstombs(amfErrorBuffer, amf::AMFGetResultText(amfResult), 1024);
-
-	blog(LOG_INFO, format, sProperty, value ? "true" : "false", amfErrorBuffer, amfResult);// , args);
-
-	delete[] amfErrorBuffer;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -661,4 +632,12 @@ bool AMFEncoder::VCE_H264_Encoder::update_properties(obs_data_t* settings) {
 	//}
 
 	return true;
+}
+
+AMFEncoder::VCE_H264_PropertiesData::VCE_H264_PropertiesData() {
+
+}
+
+AMFEncoder::VCE_H264_PropertiesData::~VCE_H264_PropertiesData() {
+
 }
