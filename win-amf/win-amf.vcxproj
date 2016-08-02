@@ -238,6 +238,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\locale\en-US.ini" />
+    <None Include="Resources\locale\es-ES.ini" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

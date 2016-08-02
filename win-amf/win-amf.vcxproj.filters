@@ -49,5 +49,8 @@
     <None Include="Resources\locale\en-US.ini">
       <Filter>Resource Files\locate</Filter>
     </None>
+    <None Include="Resources\locale\es-ES.ini">
+      <Filter>Resource Files\locate</Filter>
+    </None>
   </ItemGroup>
 </Project>
