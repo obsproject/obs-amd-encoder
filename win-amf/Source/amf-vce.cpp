@@ -565,6 +565,31 @@ std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameRate() {
 	return std::pair<uint32_t, uint32_t>(m_frameRate);
 }
 
+void AMFEncoder::VCE::SetRateControlMethod(VCE_Rate_Control_Method method) {
+	AMF_RESULT res = AMF_UNEXPECTED;
+	AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM methodToAMF[] = {
+		AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTRAINED_QP,
+		AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR,
+		AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR,
+		AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR
+	};
+	const char* methodToName[] = {
+		"Constrained QP",
+		"Constant Bitrate",
+		"Variable Bitrate (Peak Constrained)",
+		"Variable Bitrate (Latency Constrained)"
+	};
+	
+	// Set frame size
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, methodToAMF[method]);
+	if (res == AMF_OK) {
+		m_rateControlMethod = method;
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetRateControlMethod> Set to %s.", methodToName[method]);
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetRateControlMethod> Failed to set to %s, error %s (code %d).", methodToName[method], res);
+	}
+}
+
 void AMFEncoder::VCE::Start() {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {

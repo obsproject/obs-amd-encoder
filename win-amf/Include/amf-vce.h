@@ -112,6 +112,13 @@ namespace AMFEncoder {
 		VCE_SCANTYPE_INTERLACED
 	};
 
+	enum VCE_Rate_Control_Method {
+		VCE_RATE_CONTROL_CONSTRAINED_QP,			// Constrained QP, not to be mistaken with Constant QP (CQP)
+		VCE_RATE_CONTROL_CBR,						// Constant Bitrate
+		VCE_RATE_CONTROL_VBR_PEAK_CONSTRAINED,		// Variable Bitrate, Peak Constrained
+		VCE_RATE_CONTROL_VBR_LATENCY_CONSTRAINED	// Variable Bitrate, Latency Constrained
+	};
+
 	/**
 	* Class for the actual AMF Encoder.
 	*/
@@ -152,8 +159,12 @@ namespace AMFEncoder {
 		void SetFrameRate(std::pair<uint32_t, uint32_t>&);
 		std::pair<uint32_t, uint32_t> GetFrameRate();
 
-		// Post-Start Properties
-		///ToDo
+		// Dynamic Properties
+		/// Rate Control
+		void SetRateControlMethod(VCE_Rate_Control_Method);
+		VCE_Rate_Control_Method GetRateControlMethod();
+		void EnableFrameSkipping(bool);
+		bool FrameSkippingEnabled();
 
 		//////////////////////////////////////////////////////////////////////////
 		// Core Functions
@@ -186,6 +197,11 @@ namespace AMFEncoder {
 		/// Frame Size & Rate
 		std::pair<uint32_t, uint32_t> m_frameSize;
 		std::pair<uint32_t, uint32_t> m_frameRate;
+		
+		// Dynamic Properties
+		/// Rate Control Method
+		VCE_Rate_Control_Method m_rateControlMethod;
+		bool m_skipFrameEnabled;
 
 		// AMF
 		amf::AMFContextPtr m_AMFContext;
