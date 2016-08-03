@@ -54,17 +54,13 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // h264 Profiles
 const char* AMFEncoder::VCE_H264_Encoder::PROFILE_NAMES[AMFEncoder::VCE_H264_Encoder::PROFILES::PROFILE_COUNT_MAX] = {
-	AMF_VCE_H264_PROFILE_AVC_BASELINE,
-	AMF_VCE_H264_PROFILE_AVC_MAIN,
-	AMF_VCE_H264_PROFILE_AVC_HIGH,
-	AMF_VCE_H264_PROFILE_SVC_BASELINE,
-	AMF_VCE_H264_PROFILE_SVC_HIGH
+	AMF_VCE_H264_PROFILE_BASELINE,
+	AMF_VCE_H264_PROFILE_MAIN,
+	AMF_VCE_H264_PROFILE_HIGH,
 };
 const AMFEncoder::VCE_Profile AMFEncoder::VCE_H264_Encoder::PROFILE_VALUES[AMFEncoder::VCE_H264_Encoder::PROFILES::PROFILE_COUNT_MAX] = {
 	VCE_PROFILE_BASELINE,
 	VCE_PROFILE_MAIN,
-	VCE_PROFILE_HIGH,
-	VCE_PROFILE_BASELINE,
 	VCE_PROFILE_HIGH
 };
 
@@ -136,7 +132,8 @@ bool AMFEncoder::VCE_H264_Encoder::encode(void *data, struct encoder_frame *fram
 
 void AMFEncoder::VCE_H264_Encoder::get_defaults(obs_data_t *data) {
 	// Static Properties
-	/// Quality Preset & Usage
+	/// Type, Usage & Quality Preset
+	obs_data_set_default_int(data, AMF_VCE_H264_TYPE, VCE_ENCODER_TYPE_AVC);
 	obs_data_set_default_int(data, AMF_VCE_H264_USAGE, VCE_USAGE_TRANSCODING);
 	obs_data_set_default_int(data, AMF_VCE_H264_QUALITY_PRESET, VCE_QUALITY_PRESET_BALANCED);
 	/// Profile & Level
@@ -144,7 +141,7 @@ void AMFEncoder::VCE_H264_Encoder::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, AMF_VCE_H264_PROFILE_LEVEL, -1);
 	/// Other
 	obs_data_set_default_int(data, AMF_VCE_H264_MAX_LTR_FRAMES, -1);
-	obs_data_set_default_int(data, AMF_VCE_H264_SCAN_TYPE, 0);
+	obs_data_set_default_int(data, AMF_VCE_H264_SCAN_TYPE, -1);
 
 	// Dynamic Properties
 	//// Rate Control
@@ -201,13 +198,19 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 	//////////////////////////////////////////////////////////////////////////
 	// Controls
 	//////////////////////////////////////////////////////////////////////////
-	obs_properties_add_button(props, AMF_VCE_H264_RESET, obs_module_text(AMF_VCE_H264_RESET),
-		&button_reset_callback);
+	//obs_properties_add_button(props, AMF_VCE_H264_RESET, obs_module_text(AMF_VCE_H264_RESET),
+	//	&button_reset_callback);
 
 	//////////////////////////////////////////////////////////////////////////
 	// Static Properties (Can't be changed during Encoding)
 	//////////////////////////////////////////////////////////////////////////
-	// Usage & Quality Preset
+	// Type, Usage & Quality Preset
+	/// Type
+	list = obs_properties_add_list(props, AMF_VCE_H264_TYPE, obs_module_text(AMF_VCE_H264_TYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_TYPE_AVC), VCE_ENCODER_TYPE_AVC);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_TYPE_SVC), VCE_ENCODER_TYPE_SVC);
+	//obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_TYPE_HEVC), VCE_ENCODER_TYPE_HEVC);
+
 	/// Usage
 	list = obs_properties_add_list(props, AMF_VCE_H264_USAGE, obs_module_text(AMF_VCE_H264_USAGE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_USAGE_TRANSCODING), VCE_USAGE_TRANSCODING);
@@ -237,7 +240,7 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 	}
 
 	// Other
-	/// Maximum LTR Frames
+	/// Maximum Long-Term-Reference Frames
 	obs_properties_add_int_slider(props, AMF_VCE_H264_MAX_LTR_FRAMES, obs_module_text(AMF_VCE_H264_MAX_LTR_FRAMES), -1, 65535, 1);
 
 	/// Scan Type
@@ -330,7 +333,7 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 }
 
 bool AMFEncoder::VCE_H264_Encoder::button_reset_callback(obs_properties* props, obs_property_t* property, void* obj) {
-	// OBS doesn't expose a way to do this yet.
+	// Not exposed by OBS
 	return true;
 }
 
@@ -359,18 +362,9 @@ AMFEncoder::VCE_H264_Encoder::VCE_H264_Encoder(obs_data_t* settings, obs_encoder
 	m_cfgWidth = obs_encoder_get_width(encoder);
 	m_cfgHeight = obs_encoder_get_height(encoder);
 	m_cfgFPSnum = voi->fps_num; m_cfgFPSden = voi->fps_den;
-	int64_t t_profile = obs_data_get_int(settings, AMF_VCE_H264_PROFILE);
 	
 	// Encoder Component
-	switch (t_profile) {
-		case VCE_H264_Encoder::PROFILES::PROFILE_SVC_BP:
-		case VCE_H264_Encoder::PROFILES::PROFILE_SVC_HiP:
-			m_VCE = new AMFEncoder::VCE(VCE_ENCODER_TYPE_SVC);
-			break;
-		default:
-			m_VCE = new AMFEncoder::VCE(VCE_ENCODER_TYPE_AVC);
-			break;
-	}
+	m_VCE = new AMFEncoder::VCE((VCE_Encoder_Type)obs_data_get_int(settings, AMF_VCE_H264_TYPE));
 
 	//////////////////////////////////////////////////////////////////////////
 	// Static Properties (Can't be changed during Encoding)
@@ -385,11 +379,10 @@ AMFEncoder::VCE_H264_Encoder::VCE_H264_Encoder(obs_data_t* settings, obs_encoder
 
 	// Framesize & Framerate
 	m_VCE->SetFrameSize(std::pair<uint32_t, uint32_t>(m_cfgWidth, m_cfgHeight));
-	if (!(t_profile == PROFILE_SVC_BP || t_profile == PROFILE_SVC_HiP))
-		m_VCE->SetFrameRate(std::pair<uint32_t, uint32_t>(m_cfgFPSnum, m_cfgFPSden));
+	m_VCE->SetFrameRate(std::pair<uint32_t, uint32_t>(m_cfgFPSnum, m_cfgFPSden));
 
 	// Profile & Level
-	t_profile = obs_data_get_int(settings, AMF_VCE_H264_PROFILE);
+	int64_t t_profile = obs_data_get_int(settings, AMF_VCE_H264_PROFILE);
 	if (t_profile != -1)
 		m_VCE->SetProfile(PROFILE_VALUES[t_profile]);
 
