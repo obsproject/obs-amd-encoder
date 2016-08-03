@@ -145,45 +145,45 @@ void AMFEncoder::VCE_H264_Encoder::get_defaults(obs_data_t *data) {
 
 	// Dynamic Properties
 	/// Rate Control
-	obs_data_set_default_int(settings, AMF_VCE_H264_RATECONTROL_METHOD, -1);
-	obs_data_set_default_int(settings, AMF_VCE_H264_RATECONTROL_FRAME_SKIPPING, -1);
+	obs_data_set_default_int(data, AMF_VCE_H264_RATECONTROL_METHOD, -1);
+	obs_data_set_default_int(data, AMF_VCE_H264_RATECONTROL_FRAME_SKIPPING, -1);
 	/// Other
-	obs_data_set_default_int(settings, AMF_VCE_H264_FILLERDATA, -1);
-	obs_data_set_default_int(settings, AMF_VCE_H264_ENFORCEHRD, -1);
+	obs_data_set_default_int(data, AMF_VCE_H264_FILLERDATA, -1);
+	obs_data_set_default_int(data, AMF_VCE_H264_ENFORCEHRD, -1);
 	
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_GOP_SIZE", -1);
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", -1);
-	//obs_data_set_default_double(settings, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS", 1.0);
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MAX_AU_SIZE", -1);
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_B_PIC_DELTA_QP", -1);
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_GOP_SIZE", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", -1);
+	//obs_data_set_default_double(data, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS", 1.0);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_MAX_AU_SIZE", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_B_PIC_DELTA_QP", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP", -1);
 
 	//// Rate Control: Constrained QP
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MIN_QP", -1);
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_MAX_QP", -1);
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_I", -1);
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_P", -1);
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_QP_B", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_MIN_QP", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_MAX_QP", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_QP_I", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_QP_P", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_QP_B", -1);
 
 	//// Rate Control:  CBR, VBR
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_TARGET_BITRATE", -1);
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_PEAK_BITRATE", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_TARGET_BITRATE", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_PEAK_BITRATE", -1);
 
 	//// Picture Control Properties
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING", -1);
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_B_PIC_PATTERN", -1);
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER", -1);
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE", -1);
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_IDR_PERIOD", -1);
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT", -1);
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_SLICES_PER_FRAME", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_B_PIC_PATTERN", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_IDR_PERIOD", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_SLICES_PER_FRAME", -1);
 
 	//// Motion Estimation
-	//obs_data_set_default_bool(settings, "AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL", true);
-	//obs_data_set_default_bool(settings, "AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL", true);
+	//obs_data_set_default_bool(data, "AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL", true);
+	//obs_data_set_default_bool(data, "AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL", true);
 
 	//// SVC (Scalable Profiles)
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS", -1);
+	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS", -1);
 }
 
 obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
@@ -240,7 +240,7 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 
 	// Other
 	/// Maximum Long-Term-Reference Frames
-	obs_properties_add_int_slider(props, AMF_VCE_H264_MAX_LTR_FRAMES, obs_module_text(AMF_VCE_H264_MAX_LTR_FRAMES), -1, 65535, 1);
+	obs_properties_add_int_slider(props, AMF_VCE_H264_MAX_LTR_FRAMES, obs_module_text(AMF_VCE_H264_MAX_LTR_FRAMES), -1, 255, 1);
 	/// Scan Type
 	list = obs_properties_add_list(props, AMF_VCE_H264_SCAN_TYPE, obs_module_text(AMF_VCE_H264_SCAN_TYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_SCAN_TYPE_DEFAULT), -1);
