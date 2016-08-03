@@ -15,7 +15,7 @@ AMF support for OBS via plugins
 1. Clone to your Disk
 2. Create a soft link (directory junction) to the AMD Media SDK root as /#ThirdParty/AMD-Media-SDK.  
 Example: AMD-Media-SDK -> C:\SDKs\AMD\AMD Media SDK
-3. Create a soft link (directory junction) to the OBS Studio Source Code as /#ThirdParty/OBS-Studio.
+3. Create a soft link (directory junction) to the OBS Studio Source Code as /#ThirdParty/OBS-Studio.  
 3.1 Build OBS Studio with the same Visual Studio version if you didn't yet.
 4. Open the Solution and build the Solution.
 5. Binaries should be located in /#Build/$(Configuration)/
