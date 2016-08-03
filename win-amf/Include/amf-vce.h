@@ -113,7 +113,7 @@ namespace AMFEncoder {
 	};
 
 	enum VCE_Rate_Control_Method {
-		VCE_RATE_CONTROL_CONSTRAINED_QP,			// Constrained QP, not to be mistaken with Constant QP (CQP)
+		VCE_RATE_CONTROL_CQP,						// Constrained QP, not to be mistaken with Constant QP (CQP)
 		VCE_RATE_CONTROL_CBR,						// Constant Bitrate
 		VCE_RATE_CONTROL_VBR_PEAK_CONSTRAINED,		// Variable Bitrate, Peak Constrained
 		VCE_RATE_CONTROL_VBR_LATENCY_CONSTRAINED	// Variable Bitrate, Latency Constrained
@@ -163,11 +163,11 @@ namespace AMFEncoder {
 		/// Rate Control
 		void SetRateControlMethod(VCE_Rate_Control_Method);
 		VCE_Rate_Control_Method GetRateControlMethod();
-		void EnableFrameSkipping(bool);
+		void SetFrameSkippingEnabled(bool);
 		bool IsFrameSkippingEnabled();
-		void EnableEnforceHRD(bool);
+		void SetEnforceHRDEnabled(bool);
 		bool IsEnforceHRDEnabled();
-		void EnableFillerData(bool);
+		void SetFillerDataEnabled(bool);
 		bool IsFillerDataEnabled();
 
 		//////////////////////////////////////////////////////////////////////////

@@ -594,7 +594,7 @@ AMFEncoder::VCE_Rate_Control_Method AMFEncoder::VCE::GetRateControlMethod() {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFVariant variant;
 	VCE_Rate_Control_Method amfToMethod[] = {
-		VCE_RATE_CONTROL_CONSTRAINED_QP,
+		VCE_RATE_CONTROL_CQP,
 		VCE_RATE_CONTROL_CBR,
 		VCE_RATE_CONTROL_VBR_PEAK_CONSTRAINED,
 		VCE_RATE_CONTROL_VBR_LATENCY_CONSTRAINED
@@ -609,7 +609,7 @@ AMFEncoder::VCE_Rate_Control_Method AMFEncoder::VCE::GetRateControlMethod() {
 	}
 }
 
-void AMFEncoder::VCE::EnableFrameSkipping(bool enable) {
+void AMFEncoder::VCE::SetFrameSkippingEnabled(bool enable) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	
 	// Set Frame Skipping
@@ -635,7 +635,7 @@ bool AMFEncoder::VCE::IsFrameSkippingEnabled() {
 	}
 }
 
-void AMFEncoder::VCE::EnableEnforceHRD(bool force) {
+void AMFEncoder::VCE::SetEnforceHRDEnabled(bool force) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Set Frame Skipping
@@ -661,7 +661,7 @@ bool AMFEncoder::VCE::IsEnforceHRDEnabled() {
 	}
 }
 
-void AMFEncoder::VCE::EnableFillerData(bool enable) {
+void AMFEncoder::VCE::SetFillerDataEnabled(bool enable) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Set Frame Skipping
