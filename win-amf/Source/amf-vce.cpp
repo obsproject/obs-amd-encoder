@@ -579,7 +579,7 @@ void AMFEncoder::VCE::SetRateControlMethod(VCE_Rate_Control_Method method) {
 		"Variable Bitrate (Peak Constrained)",
 		"Variable Bitrate (Latency Constrained)"
 	};
-	
+
 	// Set frame size
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, methodToAMF[method]);
 	if (res == AMF_OK) {
@@ -603,15 +603,15 @@ AMFEncoder::VCE_Rate_Control_Method AMFEncoder::VCE::GetRateControlMethod() {
 	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, &variant);
 	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
 		m_rateControlMethod = amfToMethod[variant.ToInt64()];
-		return m_rateControlMethod;
 	} else {
 		throwAMFError("<AMFEncoder::VCE::GetRateControlMethod> Failed to retrieve, error %s (code %d).", res);
 	}
+	return m_rateControlMethod;
 }
 
 void AMFEncoder::VCE::SetFrameSkippingEnabled(bool enable) {
 	AMF_RESULT res = AMF_UNEXPECTED;
-	
+
 	// Set Frame Skipping
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, enable);
 	if (res == AMF_OK) {
@@ -625,14 +625,14 @@ void AMFEncoder::VCE::SetFrameSkippingEnabled(bool enable) {
 bool AMFEncoder::VCE::IsFrameSkippingEnabled() {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFVariant variant;
-	
+
 	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, &variant);
 	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_BOOL) {
 		m_skipFrameEnabled = variant.ToBool();
-		return m_skipFrameEnabled;
 	} else {
 		throwAMFError("<AMFEncoder::VCE::IsFrameSkippingEnabled> Failed to retrieve, error %s (code %d).", res);
 	}
+	return m_skipFrameEnabled;
 }
 
 void AMFEncoder::VCE::SetFillerDataEnabled(bool enable) {
@@ -655,10 +655,10 @@ bool AMFEncoder::VCE::IsFillerDataEnabled() {
 	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, &variant);
 	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_BOOL) {
 		m_fillerDataEnabled = variant.ToBool();
-		return m_fillerDataEnabled;
 	} else {
 		throwAMFError("<AMFEncoder::VCE::IsFillerDataEnabled> Failed to retrieve, error %s (code %d).", res);
 	}
+	return m_fillerDataEnabled;
 }
 
 void AMFEncoder::VCE::SetEnforceHRDEnabled(bool force) {
@@ -681,10 +681,10 @@ bool AMFEncoder::VCE::IsEnforceHRDEnabled() {
 	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, &variant);
 	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_BOOL) {
 		m_enforceHRDEnabled = variant.ToBool();
-		return m_enforceHRDEnabled;
 	} else {
 		throwAMFError("<AMFEncoder::VCE::IsEnforceHRDEnabled> Failed to retrieve, error %s (code %d).", res);
 	}
+	return m_enforceHRDEnabled;
 }
 
 void AMFEncoder::VCE::Start() {
@@ -789,7 +789,7 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 				std::memcpy(m_FrameDataBuffer.data() + (frame->linesize[0] * m_cfgHeight), frame->data[1], frame->linesize[0] * (m_cfgHeight >> 1));
 				#endif
 				break;
-					}
+			}
 			case VCE_SURFACE_FORMAT_I420:
 			{	// YUV 4:2:0, Y, subsampled U, subsampled V
 				#ifndef USE_CreateSurfaceFromHostNative
@@ -818,7 +818,7 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 				std::memcpy(m_FrameDataBuffer.data() + (fullFrame + halfFrame), frame->data[2], frame->linesize[2] * halfHeight);
 				#endif
 				break;
-					}
+			}
 			case VCE_SURFACE_FORMAT_I444:
 			{
 				break;
@@ -844,18 +844,17 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 				std::memcpy(m_FrameDataBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
 				#endif
 				break;
-					}
+			}
 
 		}
 		#ifdef USE_CreateSurfaceFromHostNative
 		res = m_AMFContext->CreateSurfaceFromHostNative(m_AMFSurfaceFormat, m_cfgWidth, m_cfgHeight, m_cfgWidth, m_cfgHeight, myFrame->surfaceBuffer.data(), &surfaceIn, NULL);
 		#endif
-				}
+	}
 	if (res != AMF_OK) // Unable to create Surface
 		throwAMFError("<AMFEncoder::VCE::SendInput> Unable to create AMFSurface, error %s (code %d).", res);
 
-	pSurface->SetPts(frame->pts * 10000);
-
+	pSurface->SetPts(frame->pts * OBS_PTS_TO_AMF_PTS);
 	res = m_AMFEncoder->SubmitInput(pSurface);
 	if (res != AMF_OK) {// Unable to submit Surface
 		std::vector<char> msgBuf(1024);
@@ -866,7 +865,7 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 	}
 
 	return true;
-			}
+}
 
 void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_packet) {
 	AMF_RESULT res = AMF_UNEXPECTED;
@@ -894,13 +893,33 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 		packet->data = m_PacketDataBuffer.data();
 		packet->type = OBS_ENCODER_VIDEO;
 		packet->size = pBuffer->GetSize();
-		packet->pts = pData->GetPts() / 10000; // Fix by jackun
-		packet->dts = pData->GetPts() / 10000; // Question: Should actually be calculated here?
+		packet->pts = pData->GetPts() / OBS_PTS_TO_AMF_PTS; // Fix by jackun
+		packet->dts = packet->pts;
 		{ // If it is a Keyframe or not, the light will tell you... the light being this integer here.
 			int t_frameDataType = -1;
 			pBuffer->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &t_frameDataType);
-			packet->keyframe = (t_frameDataType == AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR);
+
+			switch (t_frameDataType) {
+				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR:
+					packet->keyframe = (t_frameDataType == AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR);
+					packet->priority = 3;
+					packet->drop_priority = 3;
+					break;
+				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_I:
+					packet->priority = 2;
+					packet->drop_priority = 2;
+					break;
+				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_P:
+					packet->priority = 1;
+					packet->drop_priority = 1;
+					break;
+				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_B:
+					packet->priority = 0;
+					packet->drop_priority = 1; // B-Frames need either the last B-,P- or I- frame. Since we don't know the stream position, wait until P-Frame or better.
+					break;
+			}
 		}
+
 		*received_packet = true;
 	}
 }
