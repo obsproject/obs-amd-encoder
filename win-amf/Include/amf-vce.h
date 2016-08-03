@@ -165,8 +165,8 @@ namespace AMFEncoder {
 		VCE_Rate_Control_Method GetRateControlMethod();
 		void EnableFrameSkipping(bool);
 		bool IsFrameSkippingEnabled();
-		void ForceHRD(bool);
-		bool IsHRDForced();
+		void EnableEnforceHRD(bool);
+		bool IsEnforceHRDEnabled();
 		void EnableFillerData(bool);
 		bool IsFillerDataEnabled();
 
@@ -206,6 +206,7 @@ namespace AMFEncoder {
 		/// Rate Control Method
 		VCE_Rate_Control_Method m_rateControlMethod;
 		bool m_skipFrameEnabled;
+		bool m_enforceHRDEnabled;
 
 		// AMF
 		amf::AMFContextPtr m_AMFContext;
@@ -223,8 +224,8 @@ namespace AMFEncoder {
 		static void formatAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res);
 
 		template<typename _T>
-		void AMFEncoder::VCE::formatAMFErrorAdvanced(std::vector<char>* buffer, const char* format, _T other, AMF_RESULT res);
+		static void formatAMFErrorAdvanced(std::vector<char>* buffer, const char* format, _T other, AMF_RESULT res);
 		template<typename _T>
-		void AMFEncoder::VCE::throwAMFErrorAdvanced(const char* errorMsg, _T other, AMF_RESULT res);
+		static void throwAMFErrorAdvanced(const char* errorMsg, _T other, AMF_RESULT res);
 	};
 }
