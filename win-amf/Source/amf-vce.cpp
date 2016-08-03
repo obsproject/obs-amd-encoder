@@ -900,22 +900,22 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 			pBuffer->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &t_frameDataType);
 
 			switch (t_frameDataType) {
-				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR:
-					packet->keyframe = (t_frameDataType == AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR);
-					packet->priority = 3;
-					packet->drop_priority = 3;
+				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR://
+					packet->keyframe = true;				// IDR-Frames are Keyframes that contain a lot of information.
+					packet->priority = 3;					// Highest priority, always continue streaming with these.
+					packet->drop_priority = 3;				// Dropped IDR-Frames can only be replaced by the next IDR-Frame.
 					break;
-				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_I:
-					packet->priority = 2;
-					packet->drop_priority = 2;
+				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_I:	// I-Frames need only a previous I- or IDR-Frame.
+					packet->priority = 2;					// I- and IDR-Frames will most likely be present.
+					packet->drop_priority = 2;				// So we can continue with a I-Frame when streaming.
 					break;
-				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_P:
-					packet->priority = 1;
-					packet->drop_priority = 1;
+				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_P:	// P-Frames need either a previous P-, I- or IDR-Frame.
+					packet->priority = 1;					// We can safely assume that at least one of these is present.
+					packet->drop_priority = 1;				// So we can continue with a P-Frame when streaming.
 					break;
-				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_B:
-					packet->priority = 0;
-					packet->drop_priority = 1; // B-Frames need either the last B-,P- or I- frame. Since we don't know the stream position, wait until P-Frame or better.
+				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_B:	// B-Frames need either a parent B-, P-, I- or IDR-Frame.
+					packet->priority = 0;					// We don't know if the last non-dropped frame was a B-Frame.
+					packet->drop_priority = 1;				// So require a P-Frame or better to continue streaming.
 					break;
 			}
 		}
