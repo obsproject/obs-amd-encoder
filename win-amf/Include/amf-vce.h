@@ -52,7 +52,7 @@ SOFTWARE.
 namespace AMFEncoder {
 	enum VCE_Encoder_Type {
 		VCE_ENCODER_TYPE_AVC, // Advanced Video Coding
-		VCE_ENCODER_TYPE_SVC, // Scalable Video Coding (Broken: ->Start() throws AMF_FAIL)
+		VCE_ENCODER_TYPE_SVC, // Scalable Video Coding (Broken: ->SetFrameRate() won't work)
 		VCE_ENCODER_TYPE_HEVC, // High-Efficiency Video Coding (Experimental)
 	};
 

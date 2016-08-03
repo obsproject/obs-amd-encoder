@@ -178,13 +178,6 @@ void AMFEncoder::VCE::SetUsage(VCE_Usage usage) {
 		throw std::exception(error);
 	}
 
-	// Early-Exception if setting a different usage with scalable mode. (Found in PipelineEncoder)
-	if (m_encoderType == VCE_ENCODER_TYPE_SVC && usage != VCE_USAGE_WEBCAM) {
-		const char* error = "<AMFEncoder::VCE::SetUsage> Scalable Video Coding only supports Webcam Usage.";
-		AMF_LOG_ERROR("%s", error);
-		throw std::exception(error);
-	}
-
 	// Set usage
 	switch (usage) {
 		case VCE_USAGE_WEBCAM:
