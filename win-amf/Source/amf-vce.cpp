@@ -892,7 +892,7 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 
 		packet->data = m_PacketDataBuffer.data();
 		packet->type = OBS_ENCODER_VIDEO;
-		packet->size = pBuffer->GetSize();
+		packet->size = bufferSize;
 		packet->pts = pData->GetPts() / OBS_PTS_TO_AMF_PTS; // Fix by jackun
 		packet->dts = packet->pts;
 		{ // If it is a Keyframe or not, the light will tell you... the light being this integer here.
