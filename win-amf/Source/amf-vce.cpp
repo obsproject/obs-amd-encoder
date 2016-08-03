@@ -635,32 +635,6 @@ bool AMFEncoder::VCE::IsFrameSkippingEnabled() {
 	}
 }
 
-void AMFEncoder::VCE::SetEnforceHRDEnabled(bool force) {
-	AMF_RESULT res = AMF_UNEXPECTED;
-
-	// Set Frame Skipping
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, force);
-	if (res == AMF_OK) {
-		m_enforceHRDEnabled = force;
-		AMF_LOG_INFO("<AMFEncoder::VCE::EnableEnforceHRD> Set to %s.", force ? "Enabled" : "Disabled");
-	} else { // Not OK? Then throw an error instead.
-		throwAMFErrorAdvanced("<AMFEncoder::VCE::EnableEnforceHRD> Failed to set to %s, error %s (code %d).", force ? "Enabled" : "Disabled", res);
-	}
-}
-
-bool AMFEncoder::VCE::IsEnforceHRDEnabled() {
-	AMF_RESULT res = AMF_UNEXPECTED;
-	amf::AMFVariant variant;
-
-	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, &variant);
-	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_BOOL) {
-		m_enforceHRDEnabled = variant.ToBool();
-		return m_enforceHRDEnabled;
-	} else {
-		throwAMFError("<AMFEncoder::VCE::IsEnforceHRDEnabled> Failed to retrieve, error %s (code %d).", res);
-	}
-}
-
 void AMFEncoder::VCE::SetFillerDataEnabled(bool enable) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
@@ -684,6 +658,32 @@ bool AMFEncoder::VCE::IsFillerDataEnabled() {
 		return m_fillerDataEnabled;
 	} else {
 		throwAMFError("<AMFEncoder::VCE::IsFillerDataEnabled> Failed to retrieve, error %s (code %d).", res);
+	}
+}
+
+void AMFEncoder::VCE::SetEnforceHRDEnabled(bool force) {
+	AMF_RESULT res = AMF_UNEXPECTED;
+
+	// Set Frame Skipping
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, force);
+	if (res == AMF_OK) {
+		m_enforceHRDEnabled = force;
+		AMF_LOG_INFO("<AMFEncoder::VCE::EnableEnforceHRD> Set to %s.", force ? "Enabled" : "Disabled");
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::EnableEnforceHRD> Failed to set to %s, error %s (code %d).", force ? "Enabled" : "Disabled", res);
+	}
+}
+
+bool AMFEncoder::VCE::IsEnforceHRDEnabled() {
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFVariant variant;
+
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_BOOL) {
+		m_enforceHRDEnabled = variant.ToBool();
+		return m_enforceHRDEnabled;
+	} else {
+		throwAMFError("<AMFEncoder::VCE::IsEnforceHRDEnabled> Failed to retrieve, error %s (code %d).", res);
 	}
 }
 
