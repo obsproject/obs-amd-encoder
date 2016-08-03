@@ -207,6 +207,7 @@ namespace AMFEncoder {
 		VCE_Rate_Control_Method m_rateControlMethod;
 		bool m_skipFrameEnabled;
 		bool m_enforceHRDEnabled;
+		bool m_fillerDataEnabled;
 
 		// AMF
 		amf::AMFContextPtr m_AMFContext;

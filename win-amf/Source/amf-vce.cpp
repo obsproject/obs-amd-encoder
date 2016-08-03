@@ -662,11 +662,29 @@ bool AMFEncoder::VCE::IsEnforceHRDEnabled() {
 }
 
 void AMFEncoder::VCE::EnableFillerData(bool enable) {
+	AMF_RESULT res = AMF_UNEXPECTED;
 
+	// Set Frame Skipping
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, enable);
+	if (res == AMF_OK) {
+		m_fillerDataEnabled = enable;
+		AMF_LOG_INFO("<AMFEncoder::VCE::EnableFillerData> Set to %s.", enable ? "Enabled" : "Disabled");
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::EnableFillerData> Failed to set to %s, error %s (code %d).", enable ? "Enabled" : "Disabled", res);
+	}
 }
 
 bool AMFEncoder::VCE::IsFillerDataEnabled() {
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFVariant variant;
 
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_BOOL) {
+		m_fillerDataEnabled = variant.ToBool();
+		return m_fillerDataEnabled;
+	} else {
+		throwAMFError("<AMFEncoder::VCE::IsFillerDataEnabled> Failed to retrieve, error %s (code %d).", res);
+	}
 }
 
 void AMFEncoder::VCE::Start() {
