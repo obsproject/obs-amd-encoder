@@ -609,6 +609,30 @@ AMFEncoder::VCE_Rate_Control_Method AMFEncoder::VCE::GetRateControlMethod() {
 	}
 }
 
+void AMFEncoder::VCE::EnableFrameSkipping(bool enable) {
+
+}
+
+bool AMFEncoder::VCE::IsFrameSkippingEnabled() {
+
+}
+
+void AMFEncoder::VCE::ForceHRD(bool force) {
+
+}
+
+bool AMFEncoder::VCE::IsHRDForced() {
+
+}
+
+void AMFEncoder::VCE::EnableFillerData(bool enable) {
+
+}
+
+bool AMFEncoder::VCE::IsFillerDataEnabled() {
+
+}
+
 void AMFEncoder::VCE::Start() {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
