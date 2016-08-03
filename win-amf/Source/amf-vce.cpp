@@ -610,11 +610,29 @@ AMFEncoder::VCE_Rate_Control_Method AMFEncoder::VCE::GetRateControlMethod() {
 }
 
 void AMFEncoder::VCE::EnableFrameSkipping(bool enable) {
-
+	AMF_RESULT res = AMF_UNEXPECTED;
+	
+	// Set Frame Skipping
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, enable);
+	if (res == AMF_OK) {
+		m_skipFrameEnabled = enable;
+		AMF_LOG_INFO("<AMFEncoder::VCE::EnableFrameSkipping> Set to %s.", enable ? "Enabled" : "Disabled");
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::EnableFrameSkipping> Failed to set to %s, error %s (code %d).", enable ? "Enabled" : "Disabled", res);
+	}
 }
 
 bool AMFEncoder::VCE::IsFrameSkippingEnabled() {
-
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFVariant variant;
+	
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_BOOL) {
+		m_skipFrameEnabled = variant.ToBool();
+		return m_skipFrameEnabled;
+	} else {
+		throwAMFError("<AMFEncoder::VCE::IsFrameSkippingEnabled> Failed to retrieve, error %s (code %d).", res);
+	}
 }
 
 void AMFEncoder::VCE::ForceHRD(bool force) {
