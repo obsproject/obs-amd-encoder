@@ -551,7 +551,7 @@ void AMFEncoder::VCE::SetFrameRate(std::pair<uint32_t, uint32_t>& framerate) {
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetFrameRate> Set to %d/%d.", m_frameRate.first, m_frameRate.second);
 	} else { // Not OK? Then throw an error instead.
 		std::vector<char> sizebuf(96);
-		sprintf(sizebuf.data(), "%d/%d", m_frameRate.first, m_frameRate.second);
+		sprintf(sizebuf.data(), "%d/%d", framerate.first, framerate.second);
 		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetFrameRate> Failed to set to %s, error %s (code %d).", sizebuf.data(), res);
 	}
 }
