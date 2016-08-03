@@ -88,19 +88,21 @@ AMFEncoder::VCE::VCE(VCE_Encoder_Type encoderType) {
 		throwAMFError("<AMFEncoder::VCE::H264> AMFCreateComponent failed, error %s (code %d).", res);
 	} else {
 		// Apply Defaults
-		SetUsage(VCE_USAGE_TRANSCODING);
-		SetQualityPreset(VCE_QUALITY_PRESET_BALANCED);
+		if (m_encoderType == VCE_ENCODER_TYPE_SVC)
+			SetUsage(VCE_USAGE_WEBCAM); // PipelineEncoder Example has this
+		else
+			SetUsage(VCE_USAGE_TRANSCODING);
+		//SetQualityPreset(VCE_QUALITY_PRESET_BALANCED);
 
 		// Gather Information from Encoder
-		GetUsage();
-		GetQualityPreset();
+		/*GetUsage();
+		GetQualityPreset();*/
 		GetProfile();
 		GetProfileLevel();
 		GetMaxLTRFrames();
 		GetScanType();
-		GetFrameSize();
-		if (m_encoderType != VCE_ENCODER_TYPE_SVC)
-			GetFrameRate();
+		/*GetFrameSize();
+		GetFrameRate();*/
 	}
 }
 
@@ -172,6 +174,13 @@ void AMFEncoder::VCE::SetUsage(VCE_Usage usage) {
 	// Early-Exception if encoding.
 	if (m_isStarted) {
 		const char* error = "<AMFEncoder::VCE::SetUsage> Attempted to change while encoding.";
+		AMF_LOG_ERROR("%s", error);
+		throw std::exception(error);
+	}
+
+	// Early-Exception if setting a different usage with scalable mode. (Found in PipelineEncoder)
+	if (m_encoderType == VCE_ENCODER_TYPE_SVC && usage != VCE_USAGE_WEBCAM) {
+		const char* error = "<AMFEncoder::VCE::SetUsage> Scalable Video Coding only supports Webcam Usage.";
 		AMF_LOG_ERROR("%s", error);
 		throw std::exception(error);
 	}
@@ -534,13 +543,6 @@ void AMFEncoder::VCE::SetFrameRate(std::pair<uint32_t, uint32_t>& framerate) {
 		throw std::exception(error);
 	}
 
-	// Early-Exception if setting framerate with scalable mode.
-	if (m_encoderType == VCE_ENCODER_TYPE_SVC) {
-		const char* error = "<AMFEncoder::VCE::SetFrameRate> Frame Rate is not supported for Scalable Video Coding.";
-		AMF_LOG_ERROR("%s", error);
-		throw std::exception(error);
-	}
-
 	// Set frame size
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FRAMERATE, ::AMFConstructRate(framerate.first, framerate.second));
 	if (res == AMF_OK) {
@@ -557,13 +559,6 @@ void AMFEncoder::VCE::SetFrameRate(std::pair<uint32_t, uint32_t>& framerate) {
 std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameRate() {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFVariant variant;
-
-	// Early-Exception if setting framerate with scalable mode.
-	if (m_encoderType == VCE_ENCODER_TYPE_SVC) {
-		const char* error = "<AMFEncoder::VCE::GetFrameRate> Frame Rate is not supported for Scalable Video Coding.";
-		AMF_LOG_ERROR("%s", error);
-		throw std::exception(error);
-	}
 
 	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FRAMERATE, &variant);
 	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_RATE) {
@@ -679,7 +674,7 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 				std::memcpy(m_FrameDataBuffer.data() + (frame->linesize[0] * m_cfgHeight), frame->data[1], frame->linesize[0] * (m_cfgHeight >> 1));
 				#endif
 				break;
-			}
+					}
 			case VCE_SURFACE_FORMAT_I420:
 			{	// YUV 4:2:0, Y, subsampled U, subsampled V
 				#ifndef USE_CreateSurfaceFromHostNative
@@ -708,7 +703,7 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 				std::memcpy(m_FrameDataBuffer.data() + (fullFrame + halfFrame), frame->data[2], frame->linesize[2] * halfHeight);
 				#endif
 				break;
-			}
+					}
 			case VCE_SURFACE_FORMAT_I444:
 			{
 				break;
@@ -734,13 +729,13 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 				std::memcpy(m_FrameDataBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
 				#endif
 				break;
-			}
+					}
 
 		}
 		#ifdef USE_CreateSurfaceFromHostNative
 		res = m_AMFContext->CreateSurfaceFromHostNative(m_AMFSurfaceFormat, m_cfgWidth, m_cfgHeight, m_cfgWidth, m_cfgHeight, myFrame->surfaceBuffer.data(), &surfaceIn, NULL);
 		#endif
-	}
+				}
 	if (res != AMF_OK) // Unable to create Surface
 		throwAMFError("<AMFEncoder::VCE::SendInput> Unable to create AMFSurface, error %s (code %d).", res);
 
@@ -756,7 +751,7 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 	}
 
 	return true;
-}
+			}
 
 void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_packet) {
 	AMF_RESULT res = AMF_UNEXPECTED;
@@ -811,7 +806,7 @@ bool AMFEncoder::VCE::GetExtraData(uint8_t**& extra_data, size_t*& extra_data_si
 		m_ExtraDataBuffer.resize(*extra_data_size);
 		std::memcpy(m_ExtraDataBuffer.data(), buf->GetNative(), *extra_data_size);
 		*extra_data = m_ExtraDataBuffer.data();
-		
+
 		buf->Release();
 
 		return true;
