@@ -144,11 +144,13 @@ void AMFEncoder::VCE_H264_Encoder::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, AMF_VCE_H264_SCAN_TYPE, -1);
 
 	// Dynamic Properties
-	//// Rate Control
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD", -1);
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME", -1);
-	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_ENFORCE_HRD", -1);
-	//obs_data_set_default_bool(settings, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE", false);
+	/// Rate Control
+	obs_data_set_default_int(settings, AMF_VCE_H264_RATECONTROL_METHOD, -1);
+	obs_data_set_default_int(settings, AMF_VCE_H264_RATECONTROL_FRAME_SKIPPING, -1);
+	/// Other
+	obs_data_set_default_int(settings, AMF_VCE_H264_FILLERDATA, -1);
+	obs_data_set_default_int(settings, AMF_VCE_H264_ENFORCEHRD, -1);
+	
 	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_GOP_SIZE", -1);
 	//obs_data_set_default_int(settings, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", -1);
 	//obs_data_set_default_double(settings, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS", 1.0);
@@ -405,7 +407,7 @@ AMFEncoder::VCE_H264_Encoder::VCE_H264_Encoder(obs_data_t* settings, obs_encoder
 	////////////////////////////////////////////////////////////////////////////
 	//// Dynamic Properties (Can be changed during Encoding)
 	////////////////////////////////////////////////////////////////////////////
-	//update_properties(settings);
+	update_properties(settings);
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize (locks static properties)
@@ -443,37 +445,32 @@ bool AMFEncoder::VCE_H264_Encoder::get_extra_data(uint8_t** extra_data, size_t* 
 }
 
 bool AMFEncoder::VCE_H264_Encoder::update_properties(obs_data_t* settings) {
-	//AMF_RESULT res;
-	//int64_t value;
+	AMF_RESULT res;
+	int64_t value;
 
-	////////////////////////////////////////////////////////////////////////////
-	//// Dynamic Properties (Can be changed during Encoding)
-	////////////////////////////////////////////////////////////////////////////
-	//// Rate Control
-	///// Method
-	//int64_t t_rateControl = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD");
-	//if (t_rateControl != -1) {
-	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, t_rateControl);
-	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD", t_rateControl);
-	//}
-	///// Enable Skip Frame
-	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE");
-	//if (value != -1) {
-	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, value == 1);
-	//	wa_log_property_bool(res, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE", value == 1);
-	//}
-	///// Enforce HRD
-	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_ENFORCE_HRD");
-	//if (value != -1) {
-	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, value == 1);
-	//	wa_log_property_bool(res, "AMF_VIDEO_ENCODER_ENFORCE_HRD", value == 1);
-	//}
-	///// Enable Filler Data
-	//{
-	//	value = obs_data_get_bool(settings, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE");
-	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, value == 1);
-	//	wa_log_property_bool(res, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE", value == 1);
-	//}
+	//////////////////////////////////////////////////////////////////////////
+	// Dynamic Properties (Can be changed during Encoding)
+	//////////////////////////////////////////////////////////////////////////
+	// Rate Control
+	/// Method
+	value = obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL_METHOD);
+	if (value != -1)
+		m_VCE->SetRateControlMethod((VCE_Rate_Control_Method)value);
+	/// Frame Skipping
+	value = obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL_FRAME_SKIPPING);
+	if (value != -1)
+		m_VCE->SetFrameSkippingEnabled(value == 1);
+
+	// Other
+	/// Enable Filler Data
+	value = obs_data_get_int(settings, AMF_VCE_H264_FILLERDATA);
+	if (value != -1)
+		m_VCE->SetFillerDataEnabled(value == 1);
+	/// Enforce HRD
+	value = obs_data_get_int(settings, AMF_VCE_H264_ENFORCEHRD);
+	if (value != -1)
+		m_VCE->SetEnforceHRDEnabled(value == 1);
+
 	///// GOP Size
 	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_GOP_SIZE");
 	//if (value != -1) {
