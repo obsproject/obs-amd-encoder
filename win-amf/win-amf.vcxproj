@@ -101,42 +101,42 @@
     <SourcePath>$(ProjectDir)Source;$(VC_SourcePath)</SourcePath>
     <LibraryPath>$(SolutionDir)#ThirdParty\OBS-Studio\build64\libobs\$(Configuration)\;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\lib\amf\x86_64\$(Configuration)\vs12;$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\</OutDir>
-    <IntDir>$(ProjectDir)\#Intermediate\$(PlatformShortName)-$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)#Intermediate\$(Configuration)\$(PlatformArchitecture)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-noAllocSurface|x64'">
     <IncludePath>$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf\components;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf\core;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc;$(SolutionDir)#ThirdParty;$(ProjectDir)Include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <SourcePath>$(ProjectDir)Source;$(VC_SourcePath)</SourcePath>
     <LibraryPath>$(SolutionDir)#ThirdParty\OBS-Studio\build64\libobs\Release\;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\lib\amf\x86_64\Release\vs12;$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\</OutDir>
-    <IntDir>$(ProjectDir)\#Intermediate\$(PlatformShortName)-$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)#Intermediate\$(Configuration)\$(PlatformArchitecture)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf\components;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf\core;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc;$(SolutionDir)#ThirdParty;$(ProjectDir)Include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <SourcePath>$(ProjectDir)Source;$(VC_SourcePath)</SourcePath>
     <LibraryPath>$(SolutionDir)#ThirdParty\OBS-Studio\build64\libobs\Release\;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\lib\amf\x86_64\Release\vs12;$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\</OutDir>
-    <IntDir>$(ProjectDir)\#Intermediate\$(PlatformShortName)-$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)#Intermediate\$(Configuration)\$(PlatformArchitecture)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf\components;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf\core;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc;$(SolutionDir)#ThirdParty;$(ProjectDir)Include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <SourcePath>$(ProjectDir)Source;$(VC_SourcePath)</SourcePath>
     <LibraryPath>$(SolutionDir)#ThirdParty\OBS-Studio\build32\libobs\$(Configuration)\;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\lib\amf\x86\$(Configuration)\vs12;$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\</OutDir>
-    <IntDir>$(ProjectDir)\#Intermediate\$(PlatformShortName)-$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)#Intermediate\$(Configuration)\$(PlatformArchitecture)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-noAllocSurface|Win32'">
     <IncludePath>$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf\components;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf\core;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc;$(SolutionDir)#ThirdParty;$(ProjectDir)Include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <SourcePath>$(ProjectDir)Source;$(VC_SourcePath)</SourcePath>
     <LibraryPath>$(SolutionDir)#ThirdParty\OBS-Studio\build32\libobs\Release\;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\lib\amf\x86\Release\vs12;$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\</OutDir>
-    <IntDir>$(ProjectDir)\#Intermediate\$(PlatformShortName)-$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)#Intermediate\$(Configuration)\$(PlatformArchitecture)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf\components;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf\core;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc\amf;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\inc;$(SolutionDir)#ThirdParty;$(ProjectDir)Include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <SourcePath>$(ProjectDir)Source;$(VC_SourcePath)</SourcePath>
     <LibraryPath>$(SolutionDir)#ThirdParty\OBS-Studio\build32\libobs\Release\;$(SolutionDir)#ThirdParty\AMD-Media-SDK\1.1\lib\amf\x86\Release\vs12;$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\</OutDir>
-    <IntDir>$(ProjectDir)\#Intermediate\$(PlatformShortName)-$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)#Intermediate\$(Configuration)\$(PlatformArchitecture)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
