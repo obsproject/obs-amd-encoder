@@ -245,6 +245,7 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 
 	/// Scan Type
 	list = obs_properties_add_list(props, AMF_VCE_H264_SCAN_TYPE, obs_module_text(AMF_VCE_H264_SCAN_TYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_SCAN_TYPE_DEFAULT), -1);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_SCAN_TYPE_PROGRESSIVE), VCE_SCANTYPE_PROGRESSIVE);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_SCAN_TYPE_INTERLACED), VCE_SCANTYPE_INTERLACED);
 
@@ -356,24 +357,23 @@ AMFEncoder::VCE_H264_Encoder::VCE_H264_Encoder(obs_data_t* settings, obs_encoder
 	AMF_LOG_INFO("Create: Initialization Request...");
 
 	// OBS Settings
-	video_t *video = obs_encoder_video(encoder);
-	const struct video_output_info *voi = video_output_get_info(video);
-
 	m_cfgWidth = obs_encoder_get_width(encoder);
 	m_cfgHeight = obs_encoder_get_height(encoder);
-	m_cfgFPSnum = voi->fps_num; m_cfgFPSden = voi->fps_den;
+	video_t *video = obs_encoder_video(encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+	m_cfgFPSnum = voi->fps_num;
+	m_cfgFPSden = voi->fps_den;
 	
-	// Encoder Component
-	m_VCE = new AMFEncoder::VCE((VCE_Encoder_Type)obs_data_get_int(settings, AMF_VCE_H264_TYPE));
-
 	//////////////////////////////////////////////////////////////////////////
 	// Static Properties (Can't be changed during Encoding)
 	//////////////////////////////////////////////////////////////////////////
-	// Memory Type & Surface Format
+	// Type, Memory Type, Surface Format
+	/// Type
+	m_VCE = new AMFEncoder::VCE((VCE_Encoder_Type)obs_data_get_int(settings, AMF_VCE_H264_TYPE));
+	/// Memory Type & Surface Format
 	m_VCE->SetMemoryType(VCE_MEMORY_TYPE_HOST);
 	m_VCE->SetSurfaceFormat(VCE_SURFACE_FORMAT_NV12);
-
-	// Quality Preset & Usage
+ 	/// Quality Preset & Usage
 	m_VCE->SetUsage((VCE_Usage)obs_data_get_int(settings, AMF_VCE_H264_USAGE));
 	m_VCE->SetQualityPreset((VCE_Quality_Preset)obs_data_get_int(settings, AMF_VCE_H264_QUALITY_PRESET));
 
@@ -382,19 +382,21 @@ AMFEncoder::VCE_H264_Encoder::VCE_H264_Encoder(obs_data_t* settings, obs_encoder
 	m_VCE->SetFrameRate(std::pair<uint32_t, uint32_t>(m_cfgFPSnum, m_cfgFPSden));
 
 	// Profile & Level
+	/// Profile
 	int64_t t_profile = obs_data_get_int(settings, AMF_VCE_H264_PROFILE);
 	if (t_profile != -1)
 		m_VCE->SetProfile(PROFILE_VALUES[t_profile]);
-
+	/// Profile Level
 	int64_t t_profileLevel = obs_data_get_int(settings, AMF_VCE_H264_PROFILE_LEVEL);
 	if (t_profileLevel != -1)
 		m_VCE->SetProfileLevel(LEVEL_VALUES[t_profileLevel]);
 
 	// Other
+	/// Maximum Long-Term-Reference Frames
 	int64_t t_maxLTRFrames = obs_data_get_int(settings, AMF_VCE_H264_MAX_LTR_FRAMES);
 	if (t_maxLTRFrames != -1)
 		m_VCE->SetMaxLTRFrames((uint32_t)t_maxLTRFrames);
-
+	/// Scan Type
 	int64_t t_scanType = obs_data_get_int(settings, AMF_VCE_H264_SCAN_TYPE);
 	if (t_scanType != -1)
 		m_VCE->SetScanType((VCE_ScanType)t_scanType);
