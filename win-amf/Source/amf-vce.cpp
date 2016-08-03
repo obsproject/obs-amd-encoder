@@ -590,6 +590,25 @@ void AMFEncoder::VCE::SetRateControlMethod(VCE_Rate_Control_Method method) {
 	}
 }
 
+AMFEncoder::VCE_Rate_Control_Method AMFEncoder::VCE::GetRateControlMethod() {
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFVariant variant;
+	VCE_Rate_Control_Method amfToMethod[] = {
+		VCE_RATE_CONTROL_CONSTRAINED_QP,
+		VCE_RATE_CONTROL_CBR,
+		VCE_RATE_CONTROL_VBR_PEAK_CONSTRAINED,
+		VCE_RATE_CONTROL_VBR_LATENCY_CONSTRAINED
+	};
+
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		m_rateControlMethod = amfToMethod[variant.ToInt64()];
+		return m_rateControlMethod;
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetRateControlMethod> Failed to retrieve, error %s (code %d).", res);
+	}
+}
+
 void AMFEncoder::VCE::Start() {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {

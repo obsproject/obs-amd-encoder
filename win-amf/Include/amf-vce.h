@@ -164,7 +164,11 @@ namespace AMFEncoder {
 		void SetRateControlMethod(VCE_Rate_Control_Method);
 		VCE_Rate_Control_Method GetRateControlMethod();
 		void EnableFrameSkipping(bool);
-		bool FrameSkippingEnabled();
+		bool IsFrameSkippingEnabled();
+		void ForceHRD(bool);
+		bool IsHRDForced();
+		void EnableFillerData(bool);
+		bool IsFillerDataEnabled();
 
 		//////////////////////////////////////////////////////////////////////////
 		// Core Functions
