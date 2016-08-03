@@ -210,14 +210,12 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_TYPE_AVC), VCE_ENCODER_TYPE_AVC);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_TYPE_SVC), VCE_ENCODER_TYPE_SVC);
 	//obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_TYPE_HEVC), VCE_ENCODER_TYPE_HEVC);
-
 	/// Usage
 	list = obs_properties_add_list(props, AMF_VCE_H264_USAGE, obs_module_text(AMF_VCE_H264_USAGE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_USAGE_TRANSCODING), VCE_USAGE_TRANSCODING);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_USAGE_ULTRALOWLATENCY), VCE_USAGE_ULTRA_LOW_LATENCY);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_USAGE_LOWLATENCY), VCE_USAGE_LOW_LATENCY);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_USAGE_WEBCAM), VCE_USAGE_WEBCAM);
-
 	/// Quality Preset
 	list = obs_properties_add_list(props, AMF_VCE_H264_QUALITY_PRESET, obs_module_text(AMF_VCE_H264_QUALITY_PRESET), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_QUALITY_PRESET_SPEED), VCE_QUALITY_PRESET_SPEED);
@@ -231,7 +229,6 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 	for (unsigned int i = 0; i < AMFEncoder::VCE_H264_Encoder::PROFILES::PROFILE_COUNT_MAX; i++) {
 		obs_property_list_add_int(list, obs_module_text(AMFEncoder::VCE_H264_Encoder::PROFILE_NAMES[i]), i);
 	}
-
 	/// h264 Profile Level
 	list = obs_properties_add_list(props, AMF_VCE_H264_PROFILE_LEVEL, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2("Default")), -1);
@@ -242,7 +239,6 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 	// Other
 	/// Maximum Long-Term-Reference Frames
 	obs_properties_add_int_slider(props, AMF_VCE_H264_MAX_LTR_FRAMES, obs_module_text(AMF_VCE_H264_MAX_LTR_FRAMES), -1, 65535, 1);
-
 	/// Scan Type
 	list = obs_properties_add_list(props, AMF_VCE_H264_SCAN_TYPE, obs_module_text(AMF_VCE_H264_SCAN_TYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_SCAN_TYPE_DEFAULT), -1);
@@ -252,24 +248,24 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 	////////////////////////////////////////////////////////////////////////////
 	//// Dynamic Properties (Can be changed during Encoding)
 	////////////////////////////////////////////////////////////////////////////
-	//// Rate Control
-	///// Method
-	//list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD", AMF_TEXT_H264_T("RATE_CONTROL"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	//obs_property_list_add_int(list, AMF_TEXT_H264_T("RATE_CONTROL.DEFAULT"), -1);
-	//obs_property_list_add_int(list, AMF_TEXT_H264_T("RATE_CONTROL.CONSTRAINEDQP"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTRAINED_QP);
-	//obs_property_list_add_int(list, AMF_TEXT_H264_T("RATE_CONTROL.CBR"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR);
-	//obs_property_list_add_int(list, AMF_TEXT_H264_T("RATE_CONTROL.PEAK_CONSTRAINED_VBR"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR);
-	//obs_property_list_add_int(list, AMF_TEXT_H264_T("RATE_CONTROL.LATENCY_CONSTRAINED_VBR"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR);
-	///// Skip Frames if necessary
-	//list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME", AMF_TEXT_H264_T("SKIP_FRAME"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	//obs_property_list_add_int(list, AMF_TEXT_H264_T("SKIP_FRAME.DEFAULT"), -1);
-	//obs_property_list_add_int(list, AMF_TEXT_H264_T("SKIP_FRAME.DISABLE"), 0);
-	//obs_property_list_add_int(list, AMF_TEXT_H264_T("SKIP_FRAME.ENABLE"), 1);
-	///// Enforce HRD (?)
-	//list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_ENFORCE_HRD", AMF_TEXT_H264_T("ENFORCE_HRD"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	//obs_property_list_add_int(list, AMF_TEXT_H264_T("ENFORCE_HRD.DEFAULT"), -1);
-	//obs_property_list_add_int(list, AMF_TEXT_H264_T("ENFORCE_HRD.DISABLE"), 0);
-	//obs_property_list_add_int(list, AMF_TEXT_H264_T("ENFORCE_HRD.ENABLE"), 1);
+	// Rate Control
+	/// Method
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD", AMF_TEXT_H264_T("RATE_CONTROL"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, AMF_TEXT_H264_T("RATE_CONTROL.DEFAULT"), -1);
+	obs_property_list_add_int(list, AMF_TEXT_H264_T("RATE_CONTROL.CONSTRAINEDQP"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTRAINED_QP);
+	obs_property_list_add_int(list, AMF_TEXT_H264_T("RATE_CONTROL.CBR"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR);
+	obs_property_list_add_int(list, AMF_TEXT_H264_T("RATE_CONTROL.PEAK_CONSTRAINED_VBR"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR);
+	obs_property_list_add_int(list, AMF_TEXT_H264_T("RATE_CONTROL.LATENCY_CONSTRAINED_VBR"), AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR);
+	/// Skip Frames if necessary
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME", AMF_TEXT_H264_T("SKIP_FRAME"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, AMF_TEXT_H264_T("SKIP_FRAME.DEFAULT"), -1);
+	obs_property_list_add_int(list, AMF_TEXT_H264_T("SKIP_FRAME.DISABLE"), 0);
+	obs_property_list_add_int(list, AMF_TEXT_H264_T("SKIP_FRAME.ENABLE"), 1);
+	/// Enforce Hyptohecial Reference Decoder Compatability
+	list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_ENFORCE_HRD", AMF_TEXT_H264_T("ENFORCE_HRD"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, AMF_TEXT_H264_T("ENFORCE_HRD.DEFAULT"), -1);
+	obs_property_list_add_int(list, AMF_TEXT_H264_T("ENFORCE_HRD.DISABLE"), 0);
+	obs_property_list_add_int(list, AMF_TEXT_H264_T("ENFORCE_HRD.ENABLE"), 1);
 	///// Filler Data
 	//obs_properties_add_bool(props, "AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE", AMF_TEXT_H264_T("FILLER_DATA"));
 	///// GOP Size
