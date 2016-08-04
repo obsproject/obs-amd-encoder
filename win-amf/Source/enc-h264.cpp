@@ -275,63 +275,60 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_ENFORCEHRD_DISABLED), 0);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_ENFORCEHRD_ENABLED), 1);
 
-	///// GOP Size
+	/// GOP Size
 	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_GOP_SIZE", AMF_TEXT_H264_T("GOP_SIZE"), -1, 8192, 1);
-	///// VBV Buffer
+	/// VBV Buffer
 	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", AMF_TEXT_H264_T("VBV_BUFFER_SIZE"), -1, INT_MAX, 1);
 	//obs_properties_add_float_slider(props, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS", AMF_TEXT_H264_T("INITIAL_VBV_BUFFER_FULLNESS"), 0.0, 1.0, 0.015625);
-	///// Max AU Size
+	/// Max AU Size
 	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_MAX_AU_SIZE", AMF_TEXT_H264_T("MAX_AU_SIZE"), -1, 1024, 1);
-	///// B-Picture Delta QP
+	/// B-Picture Delta QP
 	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_B_PIC_DELTA_QP", AMF_TEXT_H264_T("B_PIC_DELTA_QP"), -1, 51, 1);
-	///// Reference B-Picture Delta QP
+	/// Reference B-Picture Delta QP
 	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP", AMF_TEXT_H264_T("REF_B_PIC_DELTA_QP"), -1, 51, 1);
 
-	//// Rate Control: Constrained QP
+	// Rate Control: Constrained QP
 	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_MIN_QP", AMF_TEXT_H264_T("QP.MIN"), -1, 51, 1);
 	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_MAX_QP", AMF_TEXT_H264_T("QP.MAX"), -1, 51, 1);
 	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_QP_I", AMF_TEXT_H264_T("QP.I"), -1, 51, 1);
 	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_QP_P", AMF_TEXT_H264_T("QP.P"), -1, 51, 1);
 	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_QP_B", AMF_TEXT_H264_T("QP.B"), -1, 51, 1);
 
-	//// Rate Control: CBR, VBR
+	// Rate Control: CBR, VBR
 	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_TARGET_BITRATE", AMF_TEXT_H264_T("BITRATE.TARGET"), -1, INT_MAX, 1);
 	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_PEAK_BITRATE", AMF_TEXT_H264_T("BITRATE.PEAK"), -1, INT_MAX, 1);
 
-	//// Picture Control Properties
-	///// Header Insertion Spacing
+	// Picture Control Properties
+	/// Header Insertion Spacing
 	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING", AMF_TEXT_H264_T("HEADER_INSERTION_SPACING"), -1, 1000, 1);
-	///// B-Pictures Pattern
+	/// B-Pictures Pattern
 	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_B_PIC_PATTERN", AMF_TEXT_H264_T("B_PIC_PATTERN"), -1, 16, 1);
-	///// De-Blocking Filter
+	/// De-Blocking Filter
 	//list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER", AMF_TEXT_H264_T("DEBLOCKINGFILTER"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	//obs_property_list_add_int(list, AMF_TEXT_H264_T("DEBLOCKINGFILTER.DEFAULT"), -1);
 	//obs_property_list_add_int(list, AMF_TEXT_H264_T("DEBLOCKINGFILTER.DISABLE"), 0);
 	//obs_property_list_add_int(list, AMF_TEXT_H264_T("DEBLOCKINGFILTER.ENABLE"), 1);
-	///// Enable Reference to B-Frames (2nd Generation GCN and newer)
+	/// Enable Reference to B-Frames (2nd Generation GCN and newer)
 	//list = obs_properties_add_list(props, "AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE", AMF_TEXT_H264_T("BREFERENCE"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	//obs_property_list_add_int(list, AMF_TEXT_H264_T("BREFERENCE.DEFAULT"), -1);
 	//obs_property_list_add_int(list, AMF_TEXT_H264_T("BREFERENCE.DISABLE"), 0);
 	//obs_property_list_add_int(list, AMF_TEXT_H264_T("BREFERENCE.ENABLE"), 1);
-	///// IDR Period (Is this Keyframe distance?)
+	/// IDR Period (Is this Keyframe distance?)
 	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_IDR_PERIOD", AMF_TEXT_H264_T("IDR_PERIOD"), -1, 1000, 1);
-	///// Intra Refresh MBs Number Per Slot in Macroblocks
+	/// Intra Refresh MBs Number Per Slot in Macroblocks
 	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT", AMF_TEXT_H264_T("INTRA_REFRESH_NUM_MBS_PER_SLOT"), -1, 1024, 1);
-	///// Number of slices Per Frame 
+	/// Number of slices Per Frame 
 	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_SLICES_PER_FRAME", AMF_TEXT_H264_T("SLICES_PER_FRAME"), -1, 1000, 1);
 
-	//// Motion Estimation
-	///// Half Pixel 
+	// Motion Estimation
+	/// Half Pixel 
 	//obs_properties_add_bool(props, "AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL", AMF_TEXT_H264_T("MOTION_HALF_PIXEL"));
-	///// Quarter Pixel
+	/// Quarter Pixel
 	//obs_properties_add_bool(props, "AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL", AMF_TEXT_H264_T("MOTION_QUARTER_PIXEL"));
 
-	//// SVC (Scalable Profiles)
-	///// Number of Temporal Enhancment Layers (SVC)
+	// SVC (Scalable Profiles)
+	/// Number of Temporal Enhancment Layers (SVC)
 	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS", AMF_TEXT_H264_T("NUM_TEMPORAL_ENHANCEMENT_LAYERS"), -1, 1024, 1);
-
-	////
-	///// ToDo: Option to override requested Surface Format? Allows for a lot more recording types, including Grayscale.
 
 	return props;
 }
