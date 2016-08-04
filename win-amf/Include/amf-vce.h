@@ -47,7 +47,7 @@ SOFTWARE.
 #define AMF_VCE_T(x) obs_module_text(AMF_TEXT(x))
 
 #define MICRO_TO_NANOSECONDS	1000
-#define OBS_PTS_TO_AMF_PTS		100000 // amf_pts is in 100ns, so convert from ms to ns
+#define OBS_PTS_TO_AMF_PTS		10000 // amf_pts is in 100ns, so convert from ms to ns
 
 //////////////////////////////////////////////////////////////////////////
 // Code
