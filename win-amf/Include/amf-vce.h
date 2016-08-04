@@ -168,10 +168,41 @@ namespace AMFEncoder {
 		VCE_Rate_Control_Method GetRateControlMethod();
 		void SetFrameSkippingEnabled(bool);
 		bool IsFrameSkippingEnabled();
+		/// Other
 		void SetFillerDataEnabled(bool);
 		bool IsFillerDataEnabled();
-		void SetEnforceHRDEnabled(bool);
-		bool IsEnforceHRDEnabled();
+		void SetEnforceHRDEnabled(bool); // Hierarchical Reference Decoder
+		bool IsEnforceHRDEnabled(); // Hierarchical Reference Decoder
+		/// Video Coding Settings
+		void SetGOPSize(uint32_t); // Group of Pictures
+		uint32_t GetGOPSize(); // Group of Pictures
+		void SetVBVBufferSize(uint32_t); // Video Buffering Verifier Buffer
+		uint32_t GetVBVBufferSize(); // Video Buffering Verifier Buffer
+		void SetInitialVBVBufferFullness(double_t); // Video Buffering Verifier Buffer Fullness
+		double_t GetInitialVBVBufferFullness(); // Video Buffering Verifier Buffer Fullness
+		void SetMaximumAccessUnitSize(uint32_t);
+		uint32_t GetMaximumAccessUnitSize();
+		/// B-Picture Stuff
+		void SetBPictureDeltaQP(uint8_t);
+		uint8_t GetBPictureDeltaQP();
+		void SetReferenceBPictureDeltaQP(uint8_t);
+		uint8_t GetReferenceBPictureDeltaQP();
+		/// Rate Control: CQP
+		void SetMinimumQP(uint8_t);
+		uint8_t GetMinimumQP();
+		void SetMaximumQP(uint8_t);
+		uint8_t GetMaximumQP();
+		void SetIFrameQP(uint8_t);
+		uint8_t GetIFrameQP();
+		void SetPFrameQP(uint8_t);
+		uint8_t GetPFrameQP();
+		void SetBFrameQP(uint8_t);
+		uint8_t GetBFrameQP();
+		/// Rate Control: CBR, VBR
+		void SetTargetBitrate(uint32_t);
+		uint32_t GetTargetBitrate();
+		void SetPeakBitrate(uint32_t);
+		uint32_t GetPeakBitrate();
 
 		//////////////////////////////////////////////////////////////////////////
 		// Core Functions
