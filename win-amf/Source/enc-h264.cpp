@@ -351,7 +351,7 @@ bool AMFEncoder::VCE_H264_Encoder::get_extra_data(void *data, uint8_t** extra_da
 // Module Code
 //////////////////////////////////////////////////////////////////////////
 AMFEncoder::VCE_H264_Encoder::VCE_H264_Encoder(obs_data_t* settings, obs_encoder_t* encoder) {
-	AMF_LOG_INFO("Create: Initialization Request...");
+	AMF_LOG_INFO("<AMFEncoder::VCE_H264_Encoder::VCE_H264_Encoder> Initializing...");
 
 	// OBS Settings
 	m_cfgWidth = obs_encoder_get_width(encoder);
@@ -408,12 +408,14 @@ AMFEncoder::VCE_H264_Encoder::VCE_H264_Encoder(obs_data_t* settings, obs_encoder
 	//////////////////////////////////////////////////////////////////////////
 	m_VCE->Start();
 
-	AMF_LOG_INFO("Create: Request completed.");
+	AMF_LOG_INFO("<AMFEncoder::VCE_H264_Encoder::VCE_H264_Encoder> Complete.");
 }
 
 AMFEncoder::VCE_H264_Encoder::~VCE_H264_Encoder() {
+	AMF_LOG_INFO("<AMFEncoder::VCE_H264_Encoder::~VCE_H264_Encoder> Finalizing...");
 	m_VCE->Stop();
 	delete m_VCE;
+	AMF_LOG_INFO("<AMFEncoder::VCE_H264_Encoder::~VCE_H264_Encoder> Complete.");
 }
 
 bool AMFEncoder::VCE_H264_Encoder::update(obs_data_t* settings) {
