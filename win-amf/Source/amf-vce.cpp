@@ -687,6 +687,32 @@ bool AMFEncoder::VCE::IsEnforceHRDEnabled() {
 	return m_enforceHRDEnabled;
 }
 
+void AMFEncoder::VCE::SetGOPSize(uint32_t GOPSize) {
+	AMF_RESULT res = AMF_UNEXPECTED;
+
+	// Set Frame Skipping
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_GOP_SIZE, GOPSize);
+	if (res == AMF_OK) {
+		m_GOPSize = GOPSize;
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetGOPSize> Set to %d.", GOPSize);
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetGOPSize> Failed to set to %d, error %s (code %d).", GOPSize, res);
+	}
+}
+
+uint32_t AMFEncoder::VCE::GetGOPSize() {
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFVariant variant;
+
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_GOP_SIZE, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		m_GOPSize = variant.ToInt64();
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetGOPSize> Failed to retrieve, error %s (code %d).", res);
+	}
+	return m_GOPSize;
+}
+
 void AMFEncoder::VCE::Start() {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
@@ -854,7 +880,11 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 	if (res != AMF_OK) // Unable to create Surface
 		throwAMFError("<AMFEncoder::VCE::SendInput> Unable to create AMFSurface, error %s (code %d).", res);
 
+	// ToDo: This needs to be in converted time (frame index to amf_pts) - conversion varies.
+	//  Otherwise Low Latency, Ultra Low Latency and Latency Constrained VBR are completely broken
+	//  and will not output the expected bitstream.
 	pSurface->SetPts(frame->pts * OBS_PTS_TO_AMF_PTS);
+	pSurface->SetProperty(AMFVCE_PROPERTY_FRAME, frame->pts);
 	res = m_AMFEncoder->SubmitInput(pSurface);
 	if (res != AMF_OK) {// Unable to submit Surface
 		std::vector<char> msgBuf(1024);
@@ -890,11 +920,12 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 		if ((bufferSize > 0) && (m_PacketDataBuffer.data()))
 			std::memcpy(m_PacketDataBuffer.data(), pBuffer->GetNative(), bufferSize);
 
-		packet->data = m_PacketDataBuffer.data();
 		packet->type = OBS_ENCODER_VIDEO;
 		packet->size = bufferSize;
-		packet->pts = pData->GetPts() / OBS_PTS_TO_AMF_PTS; // Fix by jackun
-		packet->dts = packet->pts;
+		packet->data = m_PacketDataBuffer.data();
+		if (pBuffer->GetProperty(AMFVCE_PROPERTY_FRAME, &packet->pts) == AMF_OK) {
+			packet->dts = packet->pts;
+		}
 		{ // If it is a Keyframe or not, the light will tell you... the light being this integer here.
 			int t_frameDataType = -1;
 			pBuffer->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &t_frameDataType);
