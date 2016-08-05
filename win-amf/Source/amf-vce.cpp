@@ -1064,7 +1064,7 @@ uint32_t AMFEncoder::VCE::GetPeakBitrate() {
 	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
 		m_peakBitrate = variant.ToUInt32();
 	} else {
-		throwAMFError("<AMFEncoder::VCE::GetReferenceBPictureDeltaQP> Failed to retrieve, error %s (code %d).", res);
+		throwAMFError("<AMFEncoder::VCE::GetPeakBitrate> Failed to retrieve, error %s (code %d).", res);
 	}
 	return m_peakBitrate;
 }
