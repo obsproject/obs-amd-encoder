@@ -118,10 +118,10 @@ namespace AMFEncoder {
 	};
 
 	enum VCE_Rate_Control_Method {
-		VCE_RATE_CONTROL_CQP,						// Constrained QP, not to be mistaken with Constant QP (CQP)
-		VCE_RATE_CONTROL_CBR,						// Constant Bitrate
-		VCE_RATE_CONTROL_VBR_PEAK_CONSTRAINED,		// Variable Bitrate, Peak Constrained
-		VCE_RATE_CONTROL_VBR_LATENCY_CONSTRAINED	// Variable Bitrate, Latency Constrained
+		VCE_RATE_CONTROL_CONSTRAINED_QUANTIZATION_PARAMETER,	// Constrained Quantization Parameter
+		VCE_RATE_CONTROL_CONSTANT_BITRATE,						// Constant Bitrate
+		VCE_RATE_CONTROL_VARIABLE_BITRATE_PEAK_CONSTRAINED,		// Variable Bitrate, Peak Constrained
+		VCE_RATE_CONTROL_VARIABLE_BITRATE_LATENCY_CONSTRAINED	// Variable Bitrate, Latency Constrained
 	};
 
 	/**

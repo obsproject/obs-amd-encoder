@@ -594,10 +594,10 @@ AMFEncoder::VCE_Rate_Control_Method AMFEncoder::VCE::GetRateControlMethod() {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFVariant variant;
 	VCE_Rate_Control_Method amfToMethod[] = {
-		VCE_RATE_CONTROL_CQP,
-		VCE_RATE_CONTROL_CBR,
-		VCE_RATE_CONTROL_VBR_PEAK_CONSTRAINED,
-		VCE_RATE_CONTROL_VBR_LATENCY_CONSTRAINED
+		VCE_RATE_CONTROL_CONSTRAINED_QUANTIZATION_PARAMETER,
+		VCE_RATE_CONTROL_CONSTANT_BITRATE,
+		VCE_RATE_CONTROL_VARIABLE_BITRATE_PEAK_CONSTRAINED,
+		VCE_RATE_CONTROL_VARIABLE_BITRATE_LATENCY_CONSTRAINED
 	};
 
 	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, &variant);
@@ -841,6 +841,166 @@ uint8_t AMFEncoder::VCE::GetReferenceBPictureDeltaQP() {
 		throwAMFError("<AMFEncoder::VCE::GetReferenceBPictureDeltaQP> Failed to retrieve, error %s (code %d).", res);
 	}
 	return m_refBPictureDeltaQP;
+}
+
+void AMFEncoder::VCE::SetMinimumQP(uint8_t qp) {
+	AMF_RESULT res = AMF_UNEXPECTED;
+
+	// Validate Input
+	if (qp > 51) { // Warn and limit
+		AMF_LOG_WARNING("<AMFEncoder::VCE::SetMaximumQP> QP value %d is out of range, limiting to 0 - 51...", qp);
+		qp = 51;
+	}
+
+	// Set Frame Skipping
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MIN_QP, qp);
+	if (res == AMF_OK) {
+		m_minimumQP = qp;
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetMinimumQP> Set to %d.", qp);
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetMinimumQP> Failed to set to %d, error %s (code %d).", qp, res);
+	}
+}
+
+uint8_t AMFEncoder::VCE::GetMinimumQP() {
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFVariant variant;
+
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MIN_QP, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		m_minimumQP = variant.ToUInt32();
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetMinimumQP> Failed to retrieve, error %s (code %d).", res);
+	}
+	return m_minimumQP;
+}
+
+void AMFEncoder::VCE::SetMaximumQP(uint8_t qp) {
+	AMF_RESULT res = AMF_UNEXPECTED;
+
+	// Validate Input
+	if (qp > 51) { // Warn and limit
+		AMF_LOG_WARNING("<AMFEncoder::VCE::SetMaximumQP> QP value %d is out of range, limiting to 0 - 51...", qp);
+		qp = 51;
+	}
+
+	// Set Frame Skipping
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_QP, qp);
+	if (res == AMF_OK) {
+		m_maximumQP = qp;
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetMaximumQP> Set to %d.", qp);
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetMaximumQP> Failed to set to %d, error %s (code %d).", qp, res);
+	}
+}
+
+uint8_t AMFEncoder::VCE::GetMaximumQP() {
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFVariant variant;
+
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_QP, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		m_maximumQP = variant.ToUInt32();
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetMaximumQP> Failed to retrieve, error %s (code %d).", res);
+	}
+	return m_maximumQP;
+}
+
+void AMFEncoder::VCE::SetIFrameQP(uint8_t qp) {
+	AMF_RESULT res = AMF_UNEXPECTED;
+
+	// Validate Input
+	if (qp > 51) { // Warn and limit
+		AMF_LOG_WARNING("<AMFEncoder::VCE::SetIFrameQP> QP value %d is out of range, limiting to 0 - 51...", qp);
+		qp = 51;
+	}
+
+	// Set Frame Skipping
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_I, qp);
+	if (res == AMF_OK) {
+		m_IFrameQP = qp;
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetIFrameQP> Set to %d.", qp);
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetIFrameQP> Failed to set to %d, error %s (code %d).", qp, res);
+	}
+}
+
+uint8_t AMFEncoder::VCE::GetIFrameQP() {
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFVariant variant;
+
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QP_I, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		m_IFrameQP = variant.ToUInt32();
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetIFrameQP> Failed to retrieve, error %s (code %d).", res);
+	}
+	return m_IFrameQP;
+}
+
+void AMFEncoder::VCE::SetPFrameQP(uint8_t qp) {
+	AMF_RESULT res = AMF_UNEXPECTED;
+
+	// Validate Input
+	if (qp > 51) { // Warn and limit
+		AMF_LOG_WARNING("<AMFEncoder::VCE::SetPFrameQP> QP value %d is out of range, limiting to 0 - 51...", qp);
+		qp = 51;
+	}
+
+	// Set Frame Skipping
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_P, qp);
+	if (res == AMF_OK) {
+		m_PFrameQP = qp;
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetPFrameQP> Set to %d.", qp);
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetPFrameQP> Failed to set to %d, error %s (code %d).", qp, res);
+	}
+}
+
+uint8_t AMFEncoder::VCE::GetPFrameQP() {
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFVariant variant;
+
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QP_P, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		m_PFrameQP = variant.ToUInt32();
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetPFrameQP> Failed to retrieve, error %s (code %d).", res);
+	}
+	return m_PFrameQP;
+}
+
+void AMFEncoder::VCE::SetBFrameQP(uint8_t qp) {
+	AMF_RESULT res = AMF_UNEXPECTED;
+
+	// Validate Input
+	if (qp > 51) { // Warn and limit
+		AMF_LOG_WARNING("<AMFEncoder::VCE::SetBFrameQP> QP value %d is out of range, limiting to 0 - 51...", qp);
+		qp = 51;
+	}
+
+	// Set Frame Skipping
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_B, qp);
+	if (res == AMF_OK) {
+		m_BFrameQP = qp;
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetBFrameQP> Set to %d.", qp);
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetBFrameQP> Failed to set to %d, error %s (code %d).", qp, res);
+	}
+}
+
+uint8_t AMFEncoder::VCE::GetBFrameQP() {
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFVariant variant;
+
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QP_B, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		m_BFrameQP = variant.ToUInt32();
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetReferenceBPictureDeltaQP> Failed to retrieve, error %s (code %d).", res);
+	}
+	return m_BFrameQP;
 }
 
 void AMFEncoder::VCE::Start() {
