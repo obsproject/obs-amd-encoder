@@ -706,7 +706,7 @@ uint32_t AMFEncoder::VCE::GetGOPSize() {
 
 	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_GOP_SIZE, &variant);
 	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
-		m_GOPSize = variant.ToInt64();
+		m_GOPSize = variant.ToUInt32();
 	} else {
 		throwAMFError("<AMFEncoder::VCE::GetGOPSize> Failed to retrieve, error %s (code %d).", res);
 	}
@@ -722,7 +722,7 @@ void AMFEncoder::VCE::SetVBVBufferSize(uint32_t VBVBufferSize) {
 		m_VBVBufferSize = VBVBufferSize;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetVBVBufferSize> Set to %d.", VBVBufferSize);
 	} else { // Not OK? Then throw an error instead.
-		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetVBVBufferSize> Failed to set to %d, error %s (code %d).", GOPSize, res);
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetVBVBufferSize> Failed to set to %d, error %s (code %d).", VBVBufferSize, res);
 	}
 }
 
@@ -732,11 +732,37 @@ uint32_t AMFEncoder::VCE::GetVBVBufferSize() {
 
 	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, &variant);
 	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
-		m_VBVBufferSize = variant.ToInt64();
+		m_VBVBufferSize = variant.ToUInt32();
 	} else {
 		throwAMFError("<AMFEncoder::VCE::GetVBVBufferSize> Failed to retrieve, error %s (code %d).", res);
 	}
 	return m_VBVBufferSize;
+}
+
+void AMFEncoder::VCE::SetInitialVBVBufferFullness(double_t initialVBVBufferFullness) {
+	AMF_RESULT res = AMF_UNEXPECTED;
+
+	// Set Frame Skipping
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, (int32_t)(initialVBVBufferFullness * 64));
+	if (res == AMF_OK) {
+		m_initalVBVBufferFullness = initialVBVBufferFullness;
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetInitialVBVBufferFullness> Set to %f.", initialVBVBufferFullness);
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetInitialVBVBufferFullness> Failed to set to %f, error %s (code %d).", initialVBVBufferFullness, res);
+	}
+}
+
+double_t AMFEncoder::VCE::GetInitialVBVBufferFullness() {
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFVariant variant;
+
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		m_initalVBVBufferFullness = (variant.ToInt64() / 1.0);
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetInitialVBVBufferFullness> Failed to retrieve, error %s (code %d).", res);
+	}
+	return m_initalVBVBufferFullness;
 }
 
 void AMFEncoder::VCE::Start() {
