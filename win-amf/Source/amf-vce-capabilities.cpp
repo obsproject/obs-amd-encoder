@@ -133,3 +133,16 @@ bool AMFEncoder::VCE_Capabilities::refreshCapabilities() {
 	return true;
 }
 
+AMFEncoder::VCE_Capabilities::EncoderCaps* AMFEncoder::VCE_Capabilities::getEncoderCaps(VCE_Encoder_Type type) {
+	EncoderCaps* caps[2] = { &m_AVCCaps, &m_SVCCaps };
+	return caps[type];
+}
+
+AMFEncoder::VCE_Capabilities::EncoderCaps::IOCaps* AMFEncoder::VCE_Capabilities::getIOCaps(VCE_Encoder_Type type, bool output) {
+	EncoderCaps* caps[2] = { &m_AVCCaps, &m_SVCCaps };
+	if (output)
+		return &caps[type]->output;
+	else
+		return &caps[type]->input;
+}
+

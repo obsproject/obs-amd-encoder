@@ -33,6 +33,9 @@ SOFTWARE.
 // AMF
 #include "AMD-Media-SDK/1.1/inc/amf/components/ComponentCaps.h"
 
+// Plugin
+#include "amf-vce.h"
+
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
@@ -50,11 +53,6 @@ namespace AMFEncoder {
 		// Class
 		//////////////////////////////////////////////////////////////////////////
 		public:
-		VCE_Capabilities();
-		~VCE_Capabilities();
-
-		bool refreshCapabilities();
-
 		// Structure
 		struct EncoderCaps {
 			amf::AMF_ACCELERATION_TYPE acceleration_type;
@@ -72,5 +70,13 @@ namespace AMFEncoder {
 				std::vector<std::pair<amf::AMF_MEMORY_TYPE, bool>> memoryTypes;
 			} input, output;
 		} m_AVCCaps, m_SVCCaps;
+
+
+		VCE_Capabilities();
+		~VCE_Capabilities();
+
+		bool refreshCapabilities();
+		EncoderCaps* getEncoderCaps(VCE_Encoder_Type);
+		EncoderCaps::IOCaps* getIOCaps(VCE_Encoder_Type, bool output);
 	};
 }
