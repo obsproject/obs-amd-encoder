@@ -765,6 +765,32 @@ double_t AMFEncoder::VCE::GetInitialVBVBufferFullness() {
 	return m_initalVBVBufferFullness;
 }
 
+void AMFEncoder::VCE::SetMaximumAccessUnitSize(uint32_t maximumAccessUnitSize) {
+	AMF_RESULT res = AMF_UNEXPECTED;
+
+	// Set Frame Skipping
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, maximumAccessUnitSize);
+	if (res == AMF_OK) {
+		m_maximumAccessUnitSize = maximumAccessUnitSize;
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetMaximumAccessUnitSize> Set to %d.", maximumAccessUnitSize);
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetMaximumAccessUnitSize> Failed to set to %d, error %s (code %d).", maximumAccessUnitSize, res);
+	}
+}
+
+uint32_t AMFEncoder::VCE::GetMaximumAccessUnitSize() {
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFVariant variant;
+
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		m_maximumAccessUnitSize = variant.ToUInt32();
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetMaximumAccessUnitSize> Failed to retrieve, error %s (code %d).", res);
+	}
+	return m_maximumAccessUnitSize;
+}
+
 void AMFEncoder::VCE::Start() {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
