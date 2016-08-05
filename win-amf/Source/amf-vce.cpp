@@ -713,6 +713,32 @@ uint32_t AMFEncoder::VCE::GetGOPSize() {
 	return m_GOPSize;
 }
 
+void AMFEncoder::VCE::SetVBVBufferSize(uint32_t VBVBufferSize) {
+	AMF_RESULT res = AMF_UNEXPECTED;
+
+	// Set Frame Skipping
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, VBVBufferSize);
+	if (res == AMF_OK) {
+		m_VBVBufferSize = VBVBufferSize;
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetVBVBufferSize> Set to %d.", VBVBufferSize);
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetVBVBufferSize> Failed to set to %d, error %s (code %d).", GOPSize, res);
+	}
+}
+
+uint32_t AMFEncoder::VCE::GetVBVBufferSize() {
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFVariant variant;
+
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		m_VBVBufferSize = variant.ToInt64();
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetVBVBufferSize> Failed to retrieve, error %s (code %d).", res);
+	}
+	return m_VBVBufferSize;
+}
+
 void AMFEncoder::VCE::Start() {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
