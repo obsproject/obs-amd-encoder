@@ -48,6 +48,7 @@ SOFTWARE.
 // Plugin
 #include "win-amf.h"
 #include "amf-vce.h"
+#include "amf-vce-capabilities.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -150,24 +151,23 @@ void AMFEncoder::VCE_H264_Encoder::get_defaults(obs_data_t *data) {
 	/// Other
 	obs_data_set_default_int(data, AMF_VCE_H264_FILLERDATA, -1);
 	obs_data_set_default_int(data, AMF_VCE_H264_ENFORCEHRD, -1);
-	
-	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_GOP_SIZE", -1);
-	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", -1);
-	//obs_data_set_default_double(data, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS", 1.0);
-	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_MAX_AU_SIZE", -1);
-	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_B_PIC_DELTA_QP", -1);
-	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP", -1);
-
-	//// Rate Control: Constrained QP
-	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_MIN_QP", -1);
-	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_MAX_QP", -1);
-	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_QP_I", -1);
-	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_QP_P", -1);
-	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_QP_B", -1);
-
-	//// Rate Control:  CBR, VBR
-	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_TARGET_BITRATE", -1);
-	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_PEAK_BITRATE", -1);
+	/// Video Coding Settings
+	obs_data_set_default_int(data, AMF_VCE_H264_GOP_SIZE, -1);
+	obs_data_set_default_int(data, AMF_VCE_H264_VBVBUFFER_SIZE, -1);
+	obs_data_set_default_double(data, AMF_VCE_H264_VBVBUFFER_FULLNESS, 1.0);
+	obs_data_set_default_int(data, AMF_VCE_H264_MAX_AU_SIZE, -1);
+	/// B-Picture Stuff
+	obs_data_set_default_int(data, AMF_VCE_H264_BPIC_DELTA_QP, -1);
+	obs_data_set_default_int(data, AMF_VCE_H264_REF_BPIC_DELTA_QP, -1);
+	/// Rate Control: Constrained QP
+	obs_data_set_default_int(data, AMF_VCE_H264_QP_MINIMUM, -1);
+	obs_data_set_default_int(data, AMF_VCE_H264_QP_MAXIMUM, -1);
+	obs_data_set_default_int(data, AMF_VCE_H264_QP_IFRAME, -1);
+	obs_data_set_default_int(data, AMF_VCE_H264_QP_PFRAME, -1);
+	obs_data_set_default_int(data, AMF_VCE_H264_QP_BFRAME, -1);
+	/// Rate Control:  CBR, VBR
+	obs_data_set_default_int(data, AMF_VCE_H264_BITRATE_TARGET, -1);
+	obs_data_set_default_int(data, AMF_VCE_H264_BITRATE_PEAK, -1);
 
 	//// Picture Control Properties
 	//obs_data_set_default_int(data, "AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING", -1);
@@ -263,7 +263,7 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_FRAME_SKIPPING_DEFAULT), -1);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_FRAME_SKIPPING_DISABLED), 0);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_FRAME_SKIPPING_ENABLED), 1);
-	// More Stuff?
+	// Rate Control - Other
 	/// Filler Data
 	list = obs_properties_add_list(props, AMF_VCE_H264_FILLERDATA, obs_module_text(AMF_VCE_H264_FILLERDATA), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_FILLERDATA_DEFAULT), -1);
@@ -274,29 +274,26 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_ENFORCEHRD_DEFAULT), -1);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_ENFORCEHRD_DISABLED), 0);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_ENFORCEHRD_ENABLED), 1);
-
+	// Video Coding Settings
 	/// GOP Size
-	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_GOP_SIZE", AMF_TEXT_H264_T("GOP_SIZE"), -1, 8192, 1);
+	obs_properties_add_int_slider(props, AMF_VCE_H264_GOP_SIZE, obs_module_text(AMF_VCE_H264_GOP_SIZE), -1, 8192, 1);
 	/// VBV Buffer
-	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", AMF_TEXT_H264_T("VBV_BUFFER_SIZE"), -1, INT_MAX, 1);
-	//obs_properties_add_float_slider(props, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS", AMF_TEXT_H264_T("INITIAL_VBV_BUFFER_FULLNESS"), 0.0, 1.0, 0.015625);
+	obs_properties_add_int_slider(props, AMF_VCE_H264_VBVBUFFER_SIZE, obs_module_text(AMF_VCE_H264_VBVBUFFER_SIZE), -1, VCE_Capabilities::getInstance()->getEncoderCaps(VCE_ENCODER_TYPE_AVC)->maxBitrate, 1);
+	obs_properties_add_float_slider(props, AMF_VCE_H264_VBVBUFFER_FULLNESS, obs_module_text(AMF_VCE_H264_VBVBUFFER_FULLNESS), 0.0, 1.0, 0.015625);
 	/// Max AU Size
-	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_MAX_AU_SIZE", AMF_TEXT_H264_T("MAX_AU_SIZE"), -1, 1024, 1);
-	/// B-Picture Delta QP
-	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_B_PIC_DELTA_QP", AMF_TEXT_H264_T("B_PIC_DELTA_QP"), -1, 51, 1);
-	/// Reference B-Picture Delta QP
-	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP", AMF_TEXT_H264_T("REF_B_PIC_DELTA_QP"), -1, 51, 1);
-
+	obs_properties_add_int_slider(props, AMF_VCE_H264_MAX_AU_SIZE, obs_module_text(AMF_VCE_H264_MAX_AU_SIZE), -1, 1024, 1);
+	/// B-Picture Related
+	obs_properties_add_int_slider(props, AMF_VCE_H264_BPIC_DELTA_QP, obs_module_text(AMF_VCE_H264_BPIC_DELTA_QP), -1, 51, 1);
+	obs_properties_add_int_slider(props, AMF_VCE_H264_REF_BPIC_DELTA_QP, obs_module_text(AMF_VCE_H264_REF_BPIC_DELTA_QP), -1, 51, 1);
 	// Rate Control: Constrained QP
-	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_MIN_QP", AMF_TEXT_H264_T("QP.MIN"), -1, 51, 1);
-	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_MAX_QP", AMF_TEXT_H264_T("QP.MAX"), -1, 51, 1);
-	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_QP_I", AMF_TEXT_H264_T("QP.I"), -1, 51, 1);
-	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_QP_P", AMF_TEXT_H264_T("QP.P"), -1, 51, 1);
-	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_QP_B", AMF_TEXT_H264_T("QP.B"), -1, 51, 1);
-
+	obs_properties_add_int_slider(props, AMF_VCE_H264_QP_MINIMUM, obs_module_text(AMF_VCE_H264_QP_MINIMUM), -1, 51, 1);
+	obs_properties_add_int_slider(props, AMF_VCE_H264_QP_MAXIMUM, obs_module_text(AMF_VCE_H264_QP_MAXIMUM), -1, 51, 1);
+	obs_properties_add_int_slider(props, AMF_VCE_H264_QP_IFRAME, obs_module_text(AMF_VCE_H264_QP_IFRAME), -1, 51, 1);
+	obs_properties_add_int_slider(props, AMF_VCE_H264_QP_PFRAME, obs_module_text(AMF_VCE_H264_QP_PFRAME), -1, 51, 1);
+	obs_properties_add_int_slider(props, AMF_VCE_H264_QP_BFRAME, obs_module_text(AMF_VCE_H264_QP_BFRAME), -1, 51, 1);
 	// Rate Control: CBR, VBR
-	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_TARGET_BITRATE", AMF_TEXT_H264_T("BITRATE.TARGET"), -1, INT_MAX, 1);
-	//obs_properties_add_int_slider(props, "AMF_VIDEO_ENCODER_PEAK_BITRATE", AMF_TEXT_H264_T("BITRATE.PEAK"), -1, INT_MAX, 1);
+	obs_properties_add_int_slider(props, AMF_VCE_H264_BITRATE_TARGET, obs_module_text(AMF_VCE_H264_BITRATE_TARGET), -1, VCE_Capabilities::getInstance()->getEncoderCaps(VCE_ENCODER_TYPE_AVC)->maxBitrate, 1);
+	obs_properties_add_int_slider(props, AMF_VCE_H264_BITRATE_PEAK, obs_module_text(AMF_VCE_H264_BITRATE_PEAK), -1, VCE_Capabilities::getInstance()->getEncoderCaps(VCE_ENCODER_TYPE_AVC)->maxBitrate, 1);
 
 	// Picture Control Properties
 	/// Header Insertion Spacing
@@ -442,8 +439,7 @@ bool AMFEncoder::VCE_H264_Encoder::get_extra_data(uint8_t** extra_data, size_t* 
 }
 
 bool AMFEncoder::VCE_H264_Encoder::update_properties(obs_data_t* settings) {
-	AMF_RESULT res;
-	int64_t value;
+	int64_t value; double_t valued;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Dynamic Properties (Can be changed during Encoding)
@@ -458,7 +454,7 @@ bool AMFEncoder::VCE_H264_Encoder::update_properties(obs_data_t* settings) {
 	if (value != -1)
 		m_VCE->SetFrameSkippingEnabled(value == 1);
 
-	// Other
+	// Rate Control - Other
 	/// Enable Filler Data
 	value = obs_data_get_int(settings, AMF_VCE_H264_FILLERDATA);
 	if (value != -1)
@@ -468,96 +464,60 @@ bool AMFEncoder::VCE_H264_Encoder::update_properties(obs_data_t* settings) {
 	if (value != -1)
 		m_VCE->SetEnforceHRDEnabled(value == 1);
 
-	///// GOP Size
-	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_GOP_SIZE");
-	//if (value != -1) {
-	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_GOP_SIZE, value);
-	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_GOP_SIZE", value);
-	//}
-	///// VBV Buffer Size
-	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE");
-	//if (value != -1) {
-	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, value);
-	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE", value);
-	//}
-	///// Initial VBV Buffer Fullnes
-	//value = (int64_t)ceil(obs_data_get_double(settings, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS") * 64);
-	//{
-	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, value);
-	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS", value);
-	//}
-	///// Max AU Size
-	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_MAX_AU_SIZE");
-	//if (value != -1) {
-	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, value);
-	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_MAX_AU_SIZE", value);
-	//}
-	///// B-Picture Delta QP
-	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_B_PIC_DELTA_QP");
-	//if (value != -1) {
-	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, value);
-	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_B_PIC_DELTA_QP", value);
-	//}
-	///// Ref B-Picture Delta QP
-	//value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP");
-	//if (value != -1) {
-	//	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, value);
-	//	wa_log_property_int(res, "AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP", value);
-	//}
+	// Video Coding Settings
+	/// GOP Size
+	value = obs_data_get_int(settings, AMF_VCE_H264_GOP_SIZE);
+	if (value != -1)
+		m_VCE->SetGOPSize((uint32_t)value);
+	/// VBV Buffer Size
+	value = obs_data_get_int(settings, AMF_VCE_H264_VBVBUFFER_SIZE);
+	if (value != -1)
+		m_VCE->SetVBVBufferSize((uint32_t)value);
+	/// Initial VBV Buffer Fullnes
+	valued = obs_data_get_double(settings, AMF_VCE_H264_VBVBUFFER_FULLNESS);
+	if (valued != 1.0)
+		m_VCE->SetInitialVBVBufferFullness(valued);
+	/// Max AU Size
+	value = obs_data_get_int(settings, AMF_VCE_H264_MAX_AU_SIZE);
+	if (value != -1)
+		m_VCE->SetMaximumAccessUnitSize((uint32_t)value);
+	/// B-Picture Delta QP
+	value = obs_data_get_int(settings, AMF_VCE_H264_BPIC_DELTA_QP);
+	if (value != -1)
+		m_VCE->SetBPictureDeltaQP((uint8_t)value);
+	/// Ref B-Picture Delta QP
+	value = obs_data_get_int(settings, AMF_VCE_H264_REF_BPIC_DELTA_QP);
+	if (value != -1)
+		m_VCE->SetReferenceBPictureDeltaQP((uint8_t)value);
 
-	//// Rate Control Parameters
-	//switch (t_rateControl) {
-	//	case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTRAINED_QP:
-	//	{
-	//		/// Constrained QP
-	//		value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_MIN_QP");
-	//		if (value != -1) {
-	//			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MIN_QP, value);
-	//			wa_log_property_int(res, "AMF_VIDEO_ENCODER_MIN_QP", value);
-	//		}
-	//		value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_MAX_QP");
-	//		if (value != -1) {
-	//			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_QP, value);
-	//			wa_log_property_int(res, "AMF_VIDEO_ENCODER_MAX_QP", value);
-	//		}
-	//		value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QP_I");
-	//		if (value != -1) {
-	//			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_I, value);
-	//			wa_log_property_int(res, "AMF_VIDEO_ENCODER_QP_I", value);
-	//		}
-	//		value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QP_P");
-	//		if (value != -1) {
-	//			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_P, value);
-	//			wa_log_property_int(res, "AMF_VIDEO_ENCODER_QP_P", value);
-	//		}
-	//		value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_QP_B");
-	//		if (value != -1) {
-	//			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_B, value);
-	//			wa_log_property_int(res, "AMF_VIDEO_ENCODER_QP_B", value);
-	//		}
-	//		break;
-	//	}
-	//	case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR:
-	//	case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR:
-	//	{
-	//		/// Peak Bitrate
-	//		value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_PEAK_BITRATE");
-	//		if (value != -1) {
-	//			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, value);
-	//			wa_log_property_int(res, "AMF_VIDEO_ENCODER_PEAK_BITRATE", value);
-	//		}
-	//	}
-	//	case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR:
-	//	{
-	//		/// Target Bitrate
-	//		value = obs_data_get_int(settings, "AMF_VIDEO_ENCODER_TARGET_BITRATE");
-	//		if (value != -1) {
-	//			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, value);
-	//			wa_log_property_int(res, "AMF_VIDEO_ENCODER_TARGET_BITRATE", value);
-	//		}
-	//		break;
-	//	}
-	//}
+	// Rate Control: CQP
+	/// Minimum & Maximum QP
+	value = obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM);
+	if (value != -1)
+		m_VCE->SetMinimumQP((uint8_t)value);
+	value = obs_data_get_int(settings, AMF_VCE_H264_QP_MAXIMUM);
+	if (value != -1)
+		m_VCE->SetMaximumQP((uint8_t)value);
+	/// I-, P-, B-Frame QP
+	value = obs_data_get_int(settings, AMF_VCE_H264_QP_IFRAME);
+	if (value != -1)
+		m_VCE->SetIFrameQP((uint8_t)value);
+	value = obs_data_get_int(settings, AMF_VCE_H264_QP_PFRAME);
+	if (value != -1)
+		m_VCE->SetPFrameQP((uint8_t)value);
+	value = obs_data_get_int(settings, AMF_VCE_H264_QP_BFRAME);
+	if (value != -1)
+		m_VCE->SetBFrameQP((uint8_t)value);
+
+	// Rate Control: CBR, VBR
+	/// Target Bitrate
+	value = obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET);
+	if (value != -1)
+		m_VCE->SetTargetBitrate((uint32_t)value);
+	/// Peak Bitrate
+	value = obs_data_get_int(settings, AMF_VCE_H264_BITRATE_PEAK);
+	if (value != -1)
+		m_VCE->SetPeakBitrate((uint32_t)value);
 
 	//// Picture Control Properties
 	///// Header Insertion Spacing
