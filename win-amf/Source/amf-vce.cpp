@@ -1003,6 +1003,72 @@ uint8_t AMFEncoder::VCE::GetBFrameQP() {
 	return m_BFrameQP;
 }
 
+void AMFEncoder::VCE::SetTargetBitrate(uint32_t bitrate) {
+	AMF_RESULT res = AMF_UNEXPECTED;
+
+	// Validate Input
+	uint32_t maxBitrate = VCE_Capabilities::getInstance()->getEncoderCaps(m_encoderType)->maxBitrate;
+	if (bitrate > maxBitrate) { // Warn and limit
+		AMF_LOG_WARNING("<AMFEncoder::VCE::SetTargetBitrate> Bitrate value %d is out of range, limiting to 0 - %d...", maxBitrate);
+		bitrate = maxBitrate;
+	}
+
+	// Set Frame Skipping
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, bitrate);
+	if (res == AMF_OK) {
+		m_targetBitrate = bitrate;
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetTargetBitrate> Set to %d.", bitrate);
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetTargetBitrate> Failed to set to %d, error %s (code %d).", bitrate, res);
+	}
+}
+
+uint32_t AMFEncoder::VCE::GetTargetBitrate() {
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFVariant variant;
+
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		m_targetBitrate = variant.ToUInt32();
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetTargetBitrate> Failed to retrieve, error %s (code %d).", res);
+	}
+	return m_targetBitrate;
+}
+
+void AMFEncoder::VCE::SetPeakBitrate(uint32_t bitrate) {
+	AMF_RESULT res = AMF_UNEXPECTED;
+
+	// Validate Input
+	uint32_t maxBitrate = VCE_Capabilities::getInstance()->getEncoderCaps(m_encoderType)->maxBitrate;
+	if (bitrate > maxBitrate) { // Warn and limit
+		AMF_LOG_WARNING("<AMFEncoder::VCE::SetPeakBitrate> Bitrate value %d is out of range, limiting to 0 - %d...", maxBitrate);
+		bitrate = maxBitrate;
+	}
+
+	// Set Frame Skipping
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, bitrate);
+	if (res == AMF_OK) {
+		m_peakBitrate = bitrate;
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetTargetBitrate> Set to %d.", bitrate);
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetPeakBitrate> Failed to set to %d, error %s (code %d).", bitrate, res);
+	}
+}
+
+uint32_t AMFEncoder::VCE::GetPeakBitrate() {
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFVariant variant;
+
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		m_peakBitrate = variant.ToUInt32();
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetReferenceBPictureDeltaQP> Failed to retrieve, error %s (code %d).", res);
+	}
+	return m_peakBitrate;
+}
+
 void AMFEncoder::VCE::Start() {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {

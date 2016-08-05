@@ -257,7 +257,7 @@ namespace AMFEncoder {
 		uint8_t m_minimumQP, m_maximumQP;
 		uint8_t m_IFrameQP, m_PFrameQP, m_BFrameQP;
 		/// Rate Control: CBR, VBR
-		uint32_t m_bitrateTarget, m_bitratePeak;
+		uint32_t m_targetBitrate, m_peakBitrate;
 
 		// AMF
 		amf::AMFContextPtr m_AMFContext;
