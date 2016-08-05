@@ -791,6 +791,32 @@ uint32_t AMFEncoder::VCE::GetMaximumAccessUnitSize() {
 	return m_maximumAccessUnitSize;
 }
 
+void AMFEncoder::VCE::SetBPictureDeltaQP(uint8_t BPictureDeltaQP) {
+	AMF_RESULT res = AMF_UNEXPECTED;
+
+	// Set Frame Skipping
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, BPictureDeltaQP);
+	if (res == AMF_OK) {
+		m_BPictureDeltaQP = BPictureDeltaQP;
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetBPictureDeltaQP> Set to %d.", BPictureDeltaQP);
+	} else { // Not OK? Then throw an error instead.
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetBPictureDeltaQP> Failed to set to %d, error %s (code %d).", BPictureDeltaQP, res);
+	}
+}
+
+uint8_t AMFEncoder::VCE::GetBPictureDeltaQP() {
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFVariant variant;
+
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, &variant);
+	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+		m_BPictureDeltaQP = variant.ToUInt32();
+	} else {
+		throwAMFError("<AMFEncoder::VCE::GetBPictureDeltaQP> Failed to retrieve, error %s (code %d).", res);
+	}
+	return m_BPictureDeltaQP;
+}
+
 void AMFEncoder::VCE::Start() {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
