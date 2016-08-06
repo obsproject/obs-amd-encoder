@@ -55,6 +55,7 @@ SOFTWARE.
 #define AMF_VCE_H264_USAGE_LOWLATENCY									AMF_TEXT_H264("Usage.LowLatency")
 #define AMF_VCE_H264_USAGE_WEBCAM										AMF_TEXT_H264("Usage.Webcam")
 #define AMF_VCE_H264_QUALITY_PRESET										AMF_TEXT_H264("QualityPreset")
+#define AMF_VCE_H264_QUALITY_PRESET_NONE								AMF_TEXT_H264("QualityPreset.None")
 #define AMF_VCE_H264_QUALITY_PRESET_SPEED								AMF_TEXT_H264("QualityPreset.Speed")
 #define AMF_VCE_H264_QUALITY_PRESET_BALANCED							AMF_TEXT_H264("QualityPreset.Balanced")
 #define AMF_VCE_H264_QUALITY_PRESET_QUALITY								AMF_TEXT_H264("QualityPreset.Quality")
@@ -145,7 +146,7 @@ namespace AMFEncoder {
 		static const char* get_name(void* type_data);
 		static void get_defaults(obs_data_t *settings);
 		static obs_properties_t* get_properties(void* data);
-		static bool button_reset_callback(obs_properties* props, obs_property_t* property, void* data);
+		static bool usage_preset_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *settings);
 
 		static void* create(obs_data_t* settings, obs_encoder_t* encoder);
 		static void destroy(void* data);
