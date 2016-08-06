@@ -205,6 +205,29 @@ namespace AMFEncoder {
 		uint32_t GetTargetBitrate();
 		void SetPeakBitrate(uint32_t);
 		uint32_t GetPeakBitrate();
+		/// Picture Control Properties
+		void SetHeaderInsertionSpacing(uint16_t);
+		uint16_t GetHeaderInsertionSpacing();
+		void SetNumberOfBPictures(uint8_t);
+		uint8_t GetNumberOfBPictures();
+		void SetDeblockingFilterEnabled(bool);
+		bool IsDeblockingFilterEnabled();
+		void SetReferenceToBFrameEnabled(bool);
+		bool IsReferenceToBFrameEnabled();
+		void SetIDRPeriod(uint32_t);
+		uint32_t GetIDRPeriod();
+		void SetInfraRefreshMBsPerSlotInMacroblocks(uint32_t);
+		uint32_t GetInfraRefreshMBsPerSlotInMacroblocks();
+		void SetNumberOfSlicesPerFrame(uint32_t);
+		uint32_t GetNumberOfSlicesPerFrame();
+		/// Motion Estimation
+		void SetHalfPixelMotionEstimationEnabled(bool);
+		bool GetHalfPixelMotionEstimationEnabled();
+		void SetQuarterPixelMotionEstimationEnabled(bool);
+		bool GetQuarterPixelMotionEstimationEnabled();
+		/// Other
+		void SetNumberOfTemporalEnhancementLayers(uint32_t);
+		uint32_t GetNumberOfTemporalEnhancementLayers();
 
 		//////////////////////////////////////////////////////////////////////////
 		// Core Functions
@@ -258,6 +281,20 @@ namespace AMFEncoder {
 		uint8_t m_IFrameQP, m_PFrameQP, m_BFrameQP;
 		/// Rate Control: CBR, VBR
 		uint32_t m_targetBitrate, m_peakBitrate;
+		/// Picture Control Properties
+		uint16_t m_headerInsertionSpacing;
+		uint8_t m_numberOfBPictures;
+		bool m_deblockingFilterEnabled;
+		bool m_referenceToBFrameEnabled;
+		uint32_t m_IDRPeriod;
+		uint32_t m_intraRefreshMBPerSlotInMacrobocks;
+		uint32_t m_numberOfSlicesPerFrame;
+		/// Motion Estimation
+		bool m_halfPixelMotionEstimationEnabled;
+		bool m_quarterPixelMotionEstimationEnabled;
+		/// Other
+		uint32_t m_numberOfTemporalEnhancementLayers;
+
 
 		// AMF
 		amf::AMFContextPtr m_AMFContext;
