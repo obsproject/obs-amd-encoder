@@ -32,6 +32,8 @@ SOFTWARE.
 
 // AMF
 #include "AMD-Media-SDK/1.1/inc/amf/components/ComponentCaps.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderCaps.h"
+#include "AMD-Media-SDK/1.1/inc/amf/components/VideoEncoderVCECaps.h"
 
 // Plugin
 #include "amf-vce.h"
@@ -56,15 +58,27 @@ namespace AMFEncoder {
 		// Structure
 		struct EncoderCaps {
 			amf::AMF_ACCELERATION_TYPE acceleration_type;
-			int32_t maxStreamCount;
+			uint32_t maxStreamCount;
 			uint32_t maxBitrate;
 
+			struct H264 {
+				uint32_t maxNumOfTemporalLayers;
+				amf::H264EncoderJobPriority maxSupportedJobPriority;
+				bool isBPictureSupported;
+				bool isFixedByteSliceModeSupported;
+				bool canOutput3D;
+				uint32_t minReferenceFrames, maxReferenceFrames;
+
+				std::vector<AMF_VIDEO_ENCODER_PROFILE_ENUM> profiles;
+				std::vector<uint32_t> levels;
+				std::vector<AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM> rateControlMethods;
+			} h264;
 
 			struct IOCaps {
 				int32_t minWidth, maxWidth;
 				int32_t minHeight, maxHeight;
 				bool isInterlacedSupported;
-				int32_t verticalAlignment;
+				uint32_t verticalAlignment;
 
 				std::vector<std::pair<amf::AMF_SURFACE_FORMAT,bool>> formats;
 				std::vector<std::pair<amf::AMF_MEMORY_TYPE, bool>> memoryTypes;

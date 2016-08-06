@@ -91,6 +91,38 @@ bool AMFEncoder::VCE_Capabilities::refreshCapabilities() {
 		caps[capsIndex]->maxStreamCount = encCaps->GetMaxNumOfStreams();
 		caps[capsIndex]->maxBitrate = encCaps->GetMaxBitrate();
 
+		// H264 Capabilities
+		amf::H264EncoderCapsPtr encH264Caps = (amf::H264EncoderCapsPtr)encCaps;
+		if (encH264Caps) {
+			caps[capsIndex]->h264.isBPictureSupported = encH264Caps->IsBPictureSupported();
+			caps[capsIndex]->h264.isFixedByteSliceModeSupported = encH264Caps->IsFixedByteSliceModeSupported();
+			caps[capsIndex]->h264.canOutput3D = encH264Caps->CanOutput3D();
+			caps[capsIndex]->h264.maxNumOfTemporalLayers = encH264Caps->GetMaxNumOfTemporalLayers();
+			caps[capsIndex]->h264.maxSupportedJobPriority = encH264Caps->GetMaxSupportedJobPriority();
+			encH264Caps->GetNumOfReferenceFrames(&(caps[capsIndex]->h264.minReferenceFrames), &(caps[capsIndex]->h264.maxReferenceFrames));
+
+			// Profiles
+			uint32_t numProfiles = encH264Caps->GetNumOfSupportedProfiles();
+			caps[capsIndex]->h264.profiles.resize(numProfiles);
+			for (uint32_t i = 0; i < numProfiles; i++) {
+				caps[capsIndex]->h264.profiles[i] = encH264Caps->GetProfile(i);
+			}
+
+			// Profile Levels
+			uint32_t numLevels = encH264Caps->GetNumOfSupportedLevels();
+			caps[capsIndex]->h264.levels.resize(numLevels);
+			for (uint32_t i = 0; i < numLevels; i++) {
+				caps[capsIndex]->h264.levels[i] = encH264Caps->GetLevel(i);
+			}
+
+			// Rate Control Methods
+			uint32_t numRCM = encH264Caps->GetNumOfRateControlMethods();
+			caps[capsIndex]->h264.rateControlMethods.resize(numRCM);
+			for (uint32_t i = 0; i < numRCM; i++) {
+				caps[capsIndex]->h264.rateControlMethods[i] = encH264Caps->GetRateControlMethod(i);
+			}
+		}
+
 		// Input Capabilities
 		amf::AMFIOCapsPtr capsIO[2];
 		EncoderCaps::IOCaps* capsIOS[2] = { &caps[capsIndex]->input, &caps[capsIndex]->output };
