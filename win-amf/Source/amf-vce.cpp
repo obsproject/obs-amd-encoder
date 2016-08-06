@@ -329,9 +329,9 @@ void AMFEncoder::VCE::SetProfileLevel(VCE_Profile_Level value) {
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, (int64_t)profileToAMF[value]);
 	if (res == AMF_OK) {
 		m_profileLevel = value;
-		AMF_LOG_INFO("<AMFEncoder::VCE::SetProfile> Set to %s.", profiles[m_profileLevel]);
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetProfile> Set to %s.", profiles[value]);
 	} else { // Not OK? Then throw an error instead.
-		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetProfile> Failed to set to %s, error %s (code %d).", profiles[m_profileLevel], res);
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetProfile> Failed to set to %s, error %s (code %d).", profiles[value], res);
 	}
 }
 
@@ -1355,7 +1355,7 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 	packet->size = bufferSize;
 	packet->data = m_PacketDataBuffer.data();
 	pData->GetProperty(AMFVCE_PROPERTY_FRAME, &packet->pts);
-	packet->dts = pData->GetPts();
+	packet->dts = packet->pts;
 	{
 		amf::AMFVariant variant;
 		res = pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &variant);
