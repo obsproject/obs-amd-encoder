@@ -45,6 +45,7 @@ SOFTWARE.
 
 #define AMF_VCE_H264_NAME												AMF_TEXT_H264("Name")
 #define AMF_VCE_H264_RESET												AMF_TEXT_H264("Reset")
+#define AMF_VCE_H264_UPDATE												AMF_TEXT_H264("Update")
 #define AMF_VCE_H264_TYPE												AMF_TEXT_H264("Type")
 #define AMF_VCE_H264_TYPE_AVC											AMF_TEXT_H264("Type.AVC")
 #define AMF_VCE_H264_TYPE_SVC											AMF_TEXT_H264("Type.SVC")
@@ -146,7 +147,8 @@ namespace AMFEncoder {
 		static const char* get_name(void* type_data);
 		static void get_defaults(obs_data_t *settings);
 		static obs_properties_t* get_properties(void* data);
-		static bool usage_preset_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *settings);
+		static bool reset_callback(obs_properties_t *props, obs_property_t *property, obs_data_t *settings);
+		static bool update_from_amf(obs_properties_t *props, obs_property_t *property, obs_data_t *settings);
 
 		static void* create(obs_data_t* settings, obs_encoder_t* encoder);
 		static void destroy(void* data);
@@ -193,17 +195,5 @@ namespace AMFEncoder {
 
 		// Encoder
 		AMFEncoder::VCE* m_VCE;
-	};
-
-	class VCE_H264_PropertiesData {
-		public:
-		VCE_H264_PropertiesData();
-		~VCE_H264_PropertiesData();
-
-		void* input;
-
-		static void Destroy(void *data) {
-			delete reinterpret_cast<VCE_H264_PropertiesData*>(data);
-		}
 	};
 }
