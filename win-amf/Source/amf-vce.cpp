@@ -171,12 +171,12 @@ void AMFEncoder::VCE::SetUsage(VCE_Usage value) {
 		"Webcam"
 	};
 
-	// Early-Exception if encoding.
-	if (m_isStarted) {
-		const char* error = "<AMFEncoder::VCE::SetUsage> Attempted to change while encoding.";
-		AMF_LOG_ERROR("%s", error);
-		throw std::exception(error);
-	}
+	//// Early-Exception if encoding.
+	//if (m_isStarted) {
+	//	const char* error = "<AMFEncoder::VCE::SetUsage> Attempted to change while encoding.";
+	//	AMF_LOG_ERROR("%s", error);
+	//	throw std::exception(error);
+	//}
 
 	// Set
 	switch (value) {
@@ -236,12 +236,12 @@ void AMFEncoder::VCE::SetQualityPreset(VCE_Quality_Preset value) {
 		"Quality"
 	};
 
-	// Early-Exception if encoding.
-	if (m_isStarted) {
-		const char* error = "<AMFEncoder::VCE::SetQualityPreset> Attempted to change while encoding.";
-		AMF_LOG_ERROR("%s", error);
-		throw std::exception(error);
-	}
+	//// Early-Exception if encoding.
+	//if (m_isStarted) {
+	//	const char* error = "<AMFEncoder::VCE::SetQualityPreset> Attempted to change while encoding.";
+	//	AMF_LOG_ERROR("%s", error);
+	//	throw std::exception(error);
+	//}
 
 	// Set
 	switch (value) {
@@ -295,12 +295,12 @@ void AMFEncoder::VCE::SetProfile(VCE_Profile value) {
 		"High"
 	};
 
-	// Early-Exception if encoding.
-	if (m_isStarted) {
-		const char* error = "<AMFEncoder::VCE::SetProfile> Attempted to change while encoding.";
-		AMF_LOG_ERROR("%s", error);
-		throw std::exception(error);
-	}
+	//// Early-Exception if encoding.
+	//if (m_isStarted) {
+	//	const char* error = "<AMFEncoder::VCE::SetProfile> Attempted to change while encoding.";
+	//	AMF_LOG_ERROR("%s", error);
+	//	throw std::exception(error);
+	//}
 
 	// Set
 	switch (value) {
@@ -363,12 +363,12 @@ void AMFEncoder::VCE::SetProfileLevel(VCE_Profile_Level value) {
 		50, 51, 52
 	};
 
-	// Early-Exception if encoding.
-	if (m_isStarted) {
-		const char* error = "<AMFEncoder::VCE::SetProfileLevel> Attempted to change while encoding.";
-		AMF_LOG_ERROR("%s", error);
-		throw std::exception(error);
-	}
+	//// Early-Exception if encoding.
+	//if (m_isStarted) {
+	//	const char* error = "<AMFEncoder::VCE::SetProfileLevel> Attempted to change while encoding.";
+	//	AMF_LOG_ERROR("%s", error);
+	//	throw std::exception(error);
+	//}
 
 	// Set
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileToAMF[value]);
@@ -416,12 +416,12 @@ AMFEncoder::VCE_Profile_Level AMFEncoder::VCE::GetProfileLevel() {
 void AMFEncoder::VCE::SetMaxLTRFrames(uint32_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	// Early-Exception if encoding.
-	if (m_isStarted) {
-		const char* error = "<AMFEncoder::VCE::SetMaxOfLTRFrames> Attempted to change while encoding.";
-		AMF_LOG_ERROR("%s", error);
-		throw std::exception(error);
-	}
+	//// Early-Exception if encoding.
+	//if (m_isStarted) {
+	//	const char* error = "<AMFEncoder::VCE::SetMaxOfLTRFrames> Attempted to change while encoding.";
+	//	AMF_LOG_ERROR("%s", error);
+	//	throw std::exception(error);
+	//}
 
 	// Set
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, value);
@@ -454,12 +454,12 @@ void AMFEncoder::VCE::SetScanType(VCE_ScanType value) {
 		"Interlaced"
 	};
 
-	// Early-Exception if encoding.
-	if (m_isStarted) {
-		const char* error = "<AMFEncoder::VCE::SetScanType> Attempted to change while encoding.";
-		AMF_LOG_ERROR("%s", error);
-		throw std::exception(error);
-	}
+	//// Early-Exception if encoding.
+	//if (m_isStarted) {
+	//	const char* error = "<AMFEncoder::VCE::SetScanType> Attempted to change while encoding.";
+	//	AMF_LOG_ERROR("%s", error);
+	//	throw std::exception(error);
+	//}
 
 	// Set
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SCANTYPE, value);
@@ -488,12 +488,12 @@ AMFEncoder::VCE_ScanType AMFEncoder::VCE::GetScanType() {
 void AMFEncoder::VCE::SetFrameSize(std::pair<uint32_t, uint32_t>& value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	// Early-Exception if encoding.
-	if (m_isStarted) {
-		const char* error = "<AMFEncoder::VCE::SetFrameSize> Attempted to change while encoding.";
-		AMF_LOG_ERROR("%s", error);
-		throw std::exception(error);
-	}
+	//// Early-Exception if encoding.
+	//if (m_isStarted) {
+	//	const char* error = "<AMFEncoder::VCE::SetFrameSize> Attempted to change while encoding.";
+	//	AMF_LOG_ERROR("%s", error);
+	//	throw std::exception(error);
+	//}
 
 	// ToDo: Verify with Capabilities.
 
@@ -529,12 +529,12 @@ std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameSize() {
 void AMFEncoder::VCE::SetFrameRate(std::pair<uint32_t, uint32_t>& value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	// Early-Exception if encoding.
-	if (m_isStarted) {
-		const char* error = "<AMFEncoder::VCE::SetFrameRate> Attempted to change while encoding.";
-		AMF_LOG_ERROR("%s", error);
-		throw std::exception(error);
-	}
+	//// Early-Exception if encoding.
+	//if (m_isStarted) {
+	//	const char* error = "<AMFEncoder::VCE::SetFrameRate> Attempted to change while encoding.";
+	//	AMF_LOG_ERROR("%s", error);
+	//	throw std::exception(error);
+	//}
 
 	// Set
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FRAMERATE, ::AMFConstructRate(value.first, value.second));
