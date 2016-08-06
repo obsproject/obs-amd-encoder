@@ -95,14 +95,14 @@ AMFEncoder::VCE::VCE(VCE_Encoder_Type encoderType) {
 		//SetQualityPreset(VCE_QUALITY_PRESET_BALANCED);
 
 		// Gather Information from Encoder
-		/*GetUsage();
-		GetQualityPreset();*/
-		GetProfile();
-		GetProfileLevel();
-		GetMaxLTRFrames();
-		GetScanType();
-		/*GetFrameSize();
-		GetFrameRate();*/
+		//GetUsage();
+		//GetQualityPreset();
+		//GetProfile();
+		//GetProfileLevel();
+		//GetMaxLTRFrames();
+		//GetScanType();
+		//GetFrameSize();
+		//GetFrameRate();
 	}
 }
 
@@ -245,17 +245,14 @@ void AMFEncoder::VCE::SetQualityPreset(VCE_Quality_Preset qualityPreset) {
 
 	// Set usage
 	switch (qualityPreset) {
-		case VCE_USAGE_WEBCAM:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, AMF_VIDEO_ENCODER_USAGE_WEBCAM);
+		case VCE_QUALITY_PRESET_BALANCED:
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED);
 			break;
-		case VCE_USAGE_ULTRA_LOW_LATENCY:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, AMF_VIDEO_ENCODER_USAGE_ULTRA_LOW_LATENCY);
+		case VCE_QUALITY_PRESET_SPEED:
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED);
 			break;
-		case VCE_USAGE_LOW_LATENCY:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY);
-			break;
-		case VCE_USAGE_TRANSCODING:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCONDING);
+		case VCE_QUALITY_PRESET_QUALITY:
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY);
 			break;
 	}
 	if (res == AMF_OK) {
