@@ -623,7 +623,7 @@ bool AMFEncoder::VCE::IsFrameSkippingEnabled() {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFVariant variant;
 
-	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, &variant);
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, &variant);
 	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_BOOL) {
 		m_skipFrameEnabled = variant.ToBool();
 	} else {
