@@ -755,7 +755,7 @@ double_t AMFEncoder::VCE::GetInitialVBVBufferFullness() {
 
 	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, &variant);
 	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
-		m_initalVBVBufferFullness = (variant.ToInt64() / 1.0);
+		m_initalVBVBufferFullness = (variant.ToInt64() / 64.0);
 	} else {
 		throwAMFError("<AMFEncoder::VCE::GetInitialVBVBufferFullness> Failed to retrieve, error %s (code %d).", res);
 	}
