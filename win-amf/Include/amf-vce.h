@@ -29,6 +29,7 @@ SOFTWARE.
 #include <stdint.h>
 #include <inttypes.h>
 #include <vector>
+#include <queue>
 
 // AMF
 #include "AMD-Media-SDK/1.1/inc/ErrorCodes.h"
@@ -46,7 +47,6 @@ SOFTWARE.
 #define AMF_H264(x) ("AMF." ## x)
 #define AMF_VCE_T(x) obs_module_text(AMF_TEXT(x))
 
-#define MICRO_TO_NANOSECONDS	1000
 #define OBS_PTS_TO_AMF_PTS		10000 // amf_pts is in 100ns, so convert from ms to ns
 
 #define AMFVCE_PROPERTY_FRAME	L"OBSFrameIndex"
@@ -243,6 +243,9 @@ namespace AMFEncoder {
 		// Internal-only, do not expose.
 		//////////////////////////////////////////////////////////////////////////
 		private:
+		amf::AMFSurfacePtr CreateSurfaceFromFrame(struct encoder_frame*& frame);
+
+		// Internal
 		bool m_isStarted;
 
 		// Static Properties
@@ -294,8 +297,7 @@ namespace AMFEncoder {
 		bool m_quarterPixelMotionEstimationEnabled;
 		/// Other
 		uint32_t m_numberOfTemporalEnhancementLayers;
-
-
+		
 		// AMF
 		amf::AMFContextPtr m_AMFContext;
 		amf::AMFComponentPtr m_AMFEncoder;

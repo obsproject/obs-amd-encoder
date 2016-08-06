@@ -1366,139 +1366,22 @@ void AMFEncoder::VCE::Stop() {
 bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFSurfacePtr pSurface;
-	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
-		amf::AMF_SURFACE_NV12,
-		amf::AMF_SURFACE_YUV420P,
-		(amf::AMF_SURFACE_FORMAT)(amf::AMF_SURFACE_LAST + 1), // YUV444, but missing from SDK. (Experimental)
-		amf::AMF_SURFACE_RGBA
-	};
-	amf::AMF_MEMORY_TYPE memoryTypeToAMF[] = {
-		amf::AMF_MEMORY_HOST,
-		amf::AMF_MEMORY_DX11,
-		amf::AMF_MEMORY_OPENGL
-	};
 
-	// Early-Exception if encoding.
+	// Early-Exception if not encoding.
 	if (!m_isStarted) {
 		const char* error = "<AMFEncoder::VCE::SendInput> Attempted to send input while not running.";
 		AMF_LOG_ERROR("%s", error);
 		throw std::exception(error);
 	}
 
-	// Memory Type: Host
-	#ifdef USE_CreateSurfaceFromHostNative
-	m_FrameDataBuffer.resize((frame->linesize[0] * m_frameSize.second) << 1); // Fits all supported formats, I believe.
-	#endif
-	if (m_memoryType == VCE_MEMORY_TYPE_HOST) {
-		#ifndef USE_CreateSurfaceFromHostNative
-		res = m_AMFContext->AllocSurface(
-			memoryTypeToAMF[m_memoryType], surfaceFormatToAMF[m_surfaceFormat],
-			m_frameSize.first, m_frameSize.second,
-			&pSurface);
-		#endif
-
-		switch (m_surfaceFormat) {
-			case VCE_SURFACE_FORMAT_NV12:
-			{ // NV12, Y:U+V, Two Plane
-				#ifndef USE_CreateSurfaceFromHostNative
-				size_t iMax = pSurface->GetPlanesCount();
-				#pragma loop(hint_parallel(2))
-				for (uint8_t i = 0; i < iMax; i++) {
-					amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
-					void* plane_nat = plane->GetNative();
-					int32_t height = plane->GetHeight();
-					size_t hpitch = plane->GetHPitch();
-
-					#pragma loop(hint_parallel(4))
-					for (int32_t py = 0; py < height; py++) {
-						size_t plane_off = py * hpitch;
-						size_t frame_off = py * frame->linesize[i];
-						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
-					}
-				}
-				#else
-				std::memcpy(m_FrameDataBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
-				std::memcpy(m_FrameDataBuffer.data() + (frame->linesize[0] * m_cfgHeight), frame->data[1], frame->linesize[0] * (m_cfgHeight >> 1));
-				#endif
-				break;
-			}
-			case VCE_SURFACE_FORMAT_I420:
-			{	// YUV 4:2:0, Y, subsampled U, subsampled V
-				#ifndef USE_CreateSurfaceFromHostNative
-				size_t iMax = pSurface->GetPlanesCount();
-				#pragma loop(hint_parallel(3))
-				for (uint8_t i = 0; i < iMax; i++) {
-					amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
-					void* plane_nat = plane->GetNative();
-					int32_t height = plane->GetHeight();
-					size_t hpitch = plane->GetHPitch();
-
-					#pragma loop(hint_parallel(8))
-					for (int32_t py = 0; py < height; py++) {
-						size_t plane_off = py * hpitch;
-						size_t frame_off = py * frame->linesize[i];
-						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
-					}
-				}
-				#else
-				size_t halfHeight = m_cfgHeight >> 1;
-				size_t fullFrame = (frame->linesize[0] * m_cfgHeight);
-				size_t halfFrame = frame->linesize[1] * halfHeight;
-
-				std::memcpy(m_FrameDataBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
-				std::memcpy(m_FrameDataBuffer.data() + fullFrame, frame->data[1], frame->linesize[1] * halfHeight);
-				std::memcpy(m_FrameDataBuffer.data() + (fullFrame + halfFrame), frame->data[2], frame->linesize[2] * halfHeight);
-				#endif
-				break;
-			}
-			case VCE_SURFACE_FORMAT_I444:
-			{
-				break;
-			}
-			case VCE_SURFACE_FORMAT_RGB:
-			{ // RGBA, Single Plane
-				#ifndef USE_CreateSurfaceFromHostNative
-				size_t iMax = pSurface->GetPlanesCount();
-				for (uint8_t i = 0; i < iMax; i++) {
-					amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
-					void* plane_nat = plane->GetNative();
-					int32_t height = plane->GetHeight();
-					size_t hpitch = plane->GetHPitch();
-
-					#pragma loop(hint_parallel(8))
-					for (int32_t py = 0; py < height; py++) {
-						size_t plane_off = py * hpitch;
-						size_t frame_off = py * frame->linesize[i];
-						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
-					}
-				}
-				#else
-				std::memcpy(m_FrameDataBuffer.data(), frame->data[0], frame->linesize[0] * m_cfgHeight);
-				#endif
-				break;
-			}
-
-		}
-		#ifdef USE_CreateSurfaceFromHostNative
-		res = m_AMFContext->CreateSurfaceFromHostNative(m_AMFSurfaceFormat, m_cfgWidth, m_cfgHeight, m_cfgWidth, m_cfgHeight, myFrame->surfaceBuffer.data(), &surfaceIn, NULL);
-		#endif
-	}
-	if (res != AMF_OK) // Unable to create Surface
-		throwAMFError("<AMFEncoder::VCE::SendInput> Unable to create AMFSurface, error %s (code %d).", res);
-
-	// ToDo: This needs to be in converted time (frame index to amf_pts) - conversion varies.
-	//  Otherwise Low Latency, Ultra Low Latency and Latency Constrained VBR are completely broken
-	//  and will not output the expected bitstream.
-	amf_pts amfPts = (int64_t)ceil((frame->pts / ((double_t)m_frameRate.first / (double_t)m_frameRate.second)) * 10000000l);//(1 * 1000 * 1000 * 10)
-	pSurface->SetPts(amfPts);
-	pSurface->SetProperty(AMFVCE_PROPERTY_FRAME, frame->pts);
+	// Submit Input
+	pSurface = CreateSurfaceFromFrame(frame);
 	res = m_AMFEncoder->SubmitInput(pSurface);
 	if (res != AMF_OK) {// Unable to submit Surface
 		std::vector<char> msgBuf(1024);
 		formatAMFError(&msgBuf, "<AMFEncoder::VCE::SendInput> Unable to submit input, error %s (code %d).", res);
 		AMF_LOG_ERROR("%s", msgBuf.data());
 		return false;
-		//throwAMFError("<AMFEncoder::VCE::SendInput> Unable to submit AMFSurface, error %s (code %d).", res);
 	}
 
 	return true;
@@ -1508,36 +1391,50 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFDataPtr pData;
 
+	// Early-Exception if not encoding.
+	if (!m_isStarted) {
+		const char* error = "<AMFEncoder::VCE::SendInput> Attempted to send input while not running.";
+		AMF_LOG_ERROR("%s", error);
+		throw std::exception(error);
+	}
+	
+	// Query Output
 	res = m_AMFEncoder->QueryOutput(&pData);
 	if (res != AMF_OK) {
 		std::vector<char> msgBuf(1024);
 		formatAMFError(&msgBuf, "<AMFEncoder::VCE::GetOutput> Unable to query output, error %s (code %d).", res);
 		AMF_LOG_ERROR("%s", msgBuf.data());
-	} else {
-		amf::AMFBufferPtr pBuffer(pData);
+		*received_packet = false;
+		return;
+	}
+	
+	// Send to OBS
+	amf::AMFBufferPtr buffer(pData);
 
-		size_t bufferSize = pBuffer->GetSize();
-		if (m_PacketDataBuffer.size() < bufferSize) {
-			size_t newSize = (size_t)exp2(ceil(log2(bufferSize)));
-			m_PacketDataBuffer.resize(newSize);
-			std::vector<char> msgBuf(1024);
-			formatAMFError(&msgBuf, "<AMFEncoder::VCE::GetOutput> Resized Packet Buffer, error %s (code %d).", res);
-			AMF_LOG_WARNING("%s", msgBuf.data());
-		}
-		if ((bufferSize > 0) && (m_PacketDataBuffer.data()))
-			std::memcpy(m_PacketDataBuffer.data(), pBuffer->GetNative(), bufferSize);
+	/// Copy to Static Buffer
+	size_t bufferSize = buffer->GetSize();
+	if (m_PacketDataBuffer.size() < bufferSize) {
+		size_t newSize = (size_t)exp2(ceil(log2(bufferSize)));
+		m_PacketDataBuffer.resize(newSize);
+		std::vector<char> msgBuf(1024);
+		formatAMFError(&msgBuf, "<AMFEncoder::VCE::GetOutput> Resized Packet Buffer, error %s (code %d).", res);
+		AMF_LOG_WARNING("%s", msgBuf.data());
+	}
+	if ((bufferSize > 0) && (m_PacketDataBuffer.data()))
+		std::memcpy(m_PacketDataBuffer.data(), buffer->GetNative(), bufferSize);
 
-		packet->type = OBS_ENCODER_VIDEO;
-		packet->size = bufferSize;
-		packet->data = m_PacketDataBuffer.data();
-		if (pBuffer->GetProperty(AMFVCE_PROPERTY_FRAME, &packet->pts) == AMF_OK) {
-			packet->dts = packet->pts;
-		}
-		{ // If it is a Keyframe or not, the light will tell you... the light being this integer here.
-			int t_frameDataType = -1;
-			pBuffer->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &t_frameDataType);
-
-			switch (t_frameDataType) {
+	/// Set up Packet Information
+	packet->type = OBS_ENCODER_VIDEO;
+	packet->size = bufferSize;
+	packet->data = m_PacketDataBuffer.data();
+	pData->GetProperty(AMFVCE_PROPERTY_FRAME, &packet->pts);
+	packet->dts = pData->GetPts();
+	{
+		amf::AMFVariant variant;
+		res = pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &variant);
+		if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+			AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM dataType = (AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)variant.ToUInt64();
+			switch (dataType) {
 				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR://
 					packet->keyframe = true;				// IDR-Frames are Keyframes that contain a lot of information.
 					packet->priority = 3;					// Highest priority, always continue streaming with these.
@@ -1557,9 +1454,9 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 					break;
 			}
 		}
-
-		*received_packet = true;
 	}
+
+	*received_packet = true;
 }
 
 bool AMFEncoder::VCE::GetExtraData(uint8_t**& extra_data, size_t*& extra_data_size) {
@@ -1601,6 +1498,103 @@ void AMFEncoder::VCE::GetVideoInfo(struct video_scale_info*& info) {
 			info->format = VIDEO_FORMAT_RGBA;
 			break;
 	}
+	info->range = VIDEO_RANGE_PARTIAL;
+}
+
+amf::AMFSurfacePtr AMFEncoder::VCE::CreateSurfaceFromFrame(struct encoder_frame*& frame) {
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFSurfacePtr pSurface = nullptr;
+	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
+		amf::AMF_SURFACE_NV12,
+		amf::AMF_SURFACE_YUV420P,
+		(amf::AMF_SURFACE_FORMAT)(amf::AMF_SURFACE_LAST + 1), // YUV444, but missing from SDK. (Experimental)
+		amf::AMF_SURFACE_RGBA
+	};
+	amf::AMF_MEMORY_TYPE memoryTypeToAMF[] = {
+		amf::AMF_MEMORY_HOST,
+		amf::AMF_MEMORY_DX11,
+		amf::AMF_MEMORY_OPENGL
+	};
+
+	if (m_memoryType == VCE_MEMORY_TYPE_HOST) {
+		#pragma region Host Memory Type
+		res = m_AMFContext->AllocSurface(
+			memoryTypeToAMF[m_memoryType], surfaceFormatToAMF[m_surfaceFormat],
+			m_frameSize.first, m_frameSize.second,
+			&pSurface);
+
+		switch (m_surfaceFormat) {
+			case VCE_SURFACE_FORMAT_NV12:
+			{ // NV12, Y:U+V, Two Plane
+				size_t iMax = pSurface->GetPlanesCount();
+				#pragma loop(hint_parallel(2))
+				for (uint8_t i = 0; i < iMax; i++) {
+					amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
+					void* plane_nat = plane->GetNative();
+					int32_t height = plane->GetHeight();
+					size_t hpitch = plane->GetHPitch();
+
+					#pragma loop(hint_parallel(4))
+					for (int32_t py = 0; py < height; py++) {
+						size_t plane_off = py * hpitch;
+						size_t frame_off = py * frame->linesize[i];
+						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+					}
+				}
+				break;
+			}
+			case VCE_SURFACE_FORMAT_I420:
+			{	// YUV 4:2:0, Y, subsampled U, subsampled V
+				size_t iMax = pSurface->GetPlanesCount();
+				#pragma loop(hint_parallel(3))
+				for (uint8_t i = 0; i < iMax; i++) {
+					amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
+					void* plane_nat = plane->GetNative();
+					int32_t height = plane->GetHeight();
+					size_t hpitch = plane->GetHPitch();
+
+					#pragma loop(hint_parallel(8))
+					for (int32_t py = 0; py < height; py++) {
+						size_t plane_off = py * hpitch;
+						size_t frame_off = py * frame->linesize[i];
+						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+					}
+				}
+				break;
+			}
+			case VCE_SURFACE_FORMAT_I444:
+			{
+				break;
+			}
+			case VCE_SURFACE_FORMAT_RGB:
+			{ // RGBA, Single Plane
+				size_t iMax = pSurface->GetPlanesCount();
+				for (uint8_t i = 0; i < iMax; i++) {
+					amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
+					void* plane_nat = plane->GetNative();
+					int32_t height = plane->GetHeight();
+					size_t hpitch = plane->GetHPitch();
+
+					#pragma loop(hint_parallel(8))
+					for (int32_t py = 0; py < height; py++) {
+						size_t plane_off = py * hpitch;
+						size_t frame_off = py * frame->linesize[i];
+						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+					}
+				}
+				break;
+			}
+		}
+		#pragma endregion Host Memory Type
+	}
+	if (res != AMF_OK) // Unable to create Surface
+		throwAMFError("<AMFEncoder::VCE::SendInput> Unable to create AMFSurface, error %s (code %d).", res);
+
+	amf_pts amfPts = (int64_t)ceil((frame->pts / ((double_t)m_frameRate.first / (double_t)m_frameRate.second)) * 10000000l);//(1 * 1000 * 1000 * 10)
+	pSurface->SetPts(amfPts);
+	pSurface->SetProperty(AMFVCE_PROPERTY_FRAME, frame->pts);
+
+	return pSurface;
 }
 
 void AMFEncoder::VCE::throwAMFError(const char* errorMsg, AMF_RESULT res) {
@@ -1630,4 +1624,3 @@ void AMFEncoder::VCE::throwAMFErrorAdvanced(const char* errorMsg, _T other, AMF_
 	AMF_LOG_ERROR("%s", msgBuf.data());
 	throw std::exception(msgBuf.data());
 }
-
