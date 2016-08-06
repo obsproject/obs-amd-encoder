@@ -124,9 +124,6 @@ SOFTWARE.
 #define AMF_VCE_H264_MOTIONESTIMATION_BOTH								AMF_TEXT_H264("MotionEstimation.Both")
 #define AMF_VCE_H264_NUMBEROFTEMPORALENHANCEMENTLAYERS					AMF_TEXT_H264("NumberOfTemporalEnhancementLayers")
 
-//#define AMF_VCE_H264_FRAMESIZE			AMF_TEXT_H264("FrameSize")
-//#define AMF_VCE_H264_FRAMERATE			AMF_TEXT_H264("FrameRate")
-
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////

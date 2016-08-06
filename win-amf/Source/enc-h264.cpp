@@ -162,8 +162,8 @@ void AMFEncoder::VCE_H264_Encoder::get_defaults(obs_data_t *data) {
 	obs_data_set_default_double(data, AMF_VCE_H264_VBVBUFFER_FULLNESS, 1.0);
 	obs_data_set_default_int(data, AMF_VCE_H264_MAX_AU_SIZE, -1);
 	/// B-Picture Stuff
-	obs_data_set_default_int(data, AMF_VCE_H264_BPIC_DELTA_QP, -1);
-	obs_data_set_default_int(data, AMF_VCE_H264_REF_BPIC_DELTA_QP, -1);
+	obs_data_set_default_int(data, AMF_VCE_H264_BPIC_DELTA_QP, -11);
+	obs_data_set_default_int(data, AMF_VCE_H264_REF_BPIC_DELTA_QP, -11);
 	/// Rate Control: Constrained QP
 	obs_data_set_default_int(data, AMF_VCE_H264_QP_MINIMUM, -1);
 	obs_data_set_default_int(data, AMF_VCE_H264_QP_MAXIMUM, -1);
@@ -282,10 +282,10 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 	obs_properties_add_int_slider(props, AMF_VCE_H264_VBVBUFFER_SIZE, obs_module_text(AMF_VCE_H264_VBVBUFFER_SIZE), -1, VCE_Capabilities::getInstance()->getEncoderCaps(VCE_ENCODER_TYPE_AVC)->maxBitrate, 1);
 	obs_properties_add_float_slider(props, AMF_VCE_H264_VBVBUFFER_FULLNESS, obs_module_text(AMF_VCE_H264_VBVBUFFER_FULLNESS), 0.0, 1.0, 0.015625);
 	/// Max AU Size
-	obs_properties_add_int_slider(props, AMF_VCE_H264_MAX_AU_SIZE, obs_module_text(AMF_VCE_H264_MAX_AU_SIZE), -1, 1024, 1);
+	obs_properties_add_int_slider(props, AMF_VCE_H264_MAX_AU_SIZE, obs_module_text(AMF_VCE_H264_MAX_AU_SIZE), -1, 100000000, 1);
 	/// B-Picture Related
-	obs_properties_add_int_slider(props, AMF_VCE_H264_BPIC_DELTA_QP, obs_module_text(AMF_VCE_H264_BPIC_DELTA_QP), -1, 51, 1);
-	obs_properties_add_int_slider(props, AMF_VCE_H264_REF_BPIC_DELTA_QP, obs_module_text(AMF_VCE_H264_REF_BPIC_DELTA_QP), -1, 51, 1);
+	obs_properties_add_int_slider(props, AMF_VCE_H264_BPIC_DELTA_QP, obs_module_text(AMF_VCE_H264_BPIC_DELTA_QP), -11, 10, 1);
+	obs_properties_add_int_slider(props, AMF_VCE_H264_REF_BPIC_DELTA_QP, obs_module_text(AMF_VCE_H264_REF_BPIC_DELTA_QP), -11, 10, 1);
 	// Rate Control: Constrained QP
 	obs_properties_add_int_slider(props, AMF_VCE_H264_QP_MINIMUM, obs_module_text(AMF_VCE_H264_QP_MINIMUM), -1, 51, 1);
 	obs_properties_add_int_slider(props, AMF_VCE_H264_QP_MAXIMUM, obs_module_text(AMF_VCE_H264_QP_MAXIMUM), -1, 51, 1);
@@ -312,7 +312,7 @@ obs_properties_t* AMFEncoder::VCE_H264_Encoder::get_properties(void* data) {
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_BREFERENCE_DISABLED), 0);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_BREFERENCE_ENABLED), 1);
 	/// IDR Period (Is this Keyframe distance?)
-	obs_properties_add_int_slider(props, AMF_VCE_H264_IDR_PERIOD, obs_module_text(AMF_VCE_H264_IDR_PERIOD), -1, 1440, 1);
+	obs_properties_add_int_slider(props, AMF_VCE_H264_IDR_PERIOD, obs_module_text(AMF_VCE_H264_IDR_PERIOD), -1, 1000, 1);
 	/// Intra Refresh MBs Number Per Slot in Macroblocks
 	obs_properties_add_int_slider(props, AMF_VCE_H264_INTRAREFRESHNUMMBPERSLOT, obs_module_text(AMF_VCE_H264_INTRAREFRESHNUMMBPERSLOT), -1, 1024, 1);
 	/// Number of slices Per Frame 
@@ -462,9 +462,9 @@ bool AMFEncoder::VCE_H264_Encoder::update_from_amf(obs_properties_t *props, obs_
 		if (obs_data_get_int(settings, AMF_VCE_H264_MAX_AU_SIZE) == -1)
 			obs_data_set_int(settings, AMF_VCE_H264_MAX_AU_SIZE, vce->GetMaximumAccessUnitSize());
 		/// B-Picture Related
-		if (obs_data_get_int(settings, AMF_VCE_H264_BPIC_DELTA_QP) == -1)
+		if (obs_data_get_int(settings, AMF_VCE_H264_BPIC_DELTA_QP) == -11)
 			obs_data_set_int(settings, AMF_VCE_H264_BPIC_DELTA_QP, vce->GetBPictureDeltaQP());
-		if (obs_data_get_int(settings, AMF_VCE_H264_REF_BPIC_DELTA_QP) == -1)
+		if (obs_data_get_int(settings, AMF_VCE_H264_REF_BPIC_DELTA_QP) == -11)
 			obs_data_set_int(settings, AMF_VCE_H264_REF_BPIC_DELTA_QP, vce->GetReferenceBPictureDeltaQP());
 		// Rate Control: Constrained QP
 		if (obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM) == -1)
@@ -551,25 +551,12 @@ AMFEncoder::VCE_H264_Encoder::VCE_H264_Encoder(obs_data_t* settings, obs_encoder
 	/// Memory Type & Surface Format
 	m_VCE->SetMemoryType(VCE_MEMORY_TYPE_HOST);
 	m_VCE->SetSurfaceFormat(VCE_SURFACE_FORMAT_NV12);
-	/// Quality Preset & Usage
+	/// Usage & Quality Preset
 	m_VCE->SetUsage((VCE_Usage)obs_data_get_int(settings, AMF_VCE_H264_USAGE));
-	value = obs_data_get_int(settings, AMF_VCE_H264_QUALITY_PRESET);
-	if (value != -1)
-		m_VCE->SetQualityPreset((VCE_Quality_Preset)value);
 
 	// Framesize & Framerate
 	m_VCE->SetFrameSize(std::pair<uint32_t, uint32_t>(m_cfgWidth, m_cfgHeight));
 	m_VCE->SetFrameRate(std::pair<uint32_t, uint32_t>(m_cfgFPSnum, m_cfgFPSden));
-
-	// Profile & Level
-	/// Profile
-	value = obs_data_get_int(settings, AMF_VCE_H264_PROFILE);
-	if (value != -1)
-		m_VCE->SetProfile(PROFILE_VALUES[value]);
-	/// Profile Level
-	value = obs_data_get_int(settings, AMF_VCE_H264_PROFILE_LEVEL);
-	if (value != -1)
-		m_VCE->SetProfileLevel(LEVEL_VALUES[value]);
 
 	// Other
 	/// Maximum Long-Term-Reference Frames
@@ -585,6 +572,20 @@ AMFEncoder::VCE_H264_Encoder::VCE_H264_Encoder(obs_data_t* settings, obs_encoder
 	//// Dynamic Properties (Can be changed during Encoding)
 	////////////////////////////////////////////////////////////////////////////
 	update_properties(settings);
+	
+	// Test: AMF Examples have these here
+	value = obs_data_get_int(settings, AMF_VCE_H264_QUALITY_PRESET);
+	if (value != -1)
+		m_VCE->SetQualityPreset((VCE_Quality_Preset)value);
+	// Profile & Level
+	/// Profile
+	value = obs_data_get_int(settings, AMF_VCE_H264_PROFILE);
+	if (value != -1)
+		m_VCE->SetProfile(PROFILE_VALUES[value]);
+	/// Profile Level
+	value = obs_data_get_int(settings, AMF_VCE_H264_PROFILE_LEVEL);
+	if (value != -1)
+		m_VCE->SetProfileLevel(LEVEL_VALUES[value]);
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize (locks static properties)
@@ -667,12 +668,12 @@ bool AMFEncoder::VCE_H264_Encoder::update_properties(obs_data_t* settings) {
 		m_VCE->SetMaximumAccessUnitSize((uint32_t)value);
 	/// B-Picture Delta QP
 	value = obs_data_get_int(settings, AMF_VCE_H264_BPIC_DELTA_QP);
-	if (value != -1)
-		m_VCE->SetBPictureDeltaQP((uint8_t)value);
+	if (value != -11)
+		m_VCE->SetBPictureDeltaQP((int8_t)value);
 	/// Ref B-Picture Delta QP
 	value = obs_data_get_int(settings, AMF_VCE_H264_REF_BPIC_DELTA_QP);
-	if (value != -1)
-		m_VCE->SetReferenceBPictureDeltaQP((uint8_t)value);
+	if (value != -11)
+		m_VCE->SetReferenceBPictureDeltaQP((int8_t)value);
 
 	// Rate Control: CQP
 	/// Minimum & Maximum QP
