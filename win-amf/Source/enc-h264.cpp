@@ -715,7 +715,7 @@ bool AMFEncoder::VCE_H264_Encoder::update_properties(obs_data_t* settings) {
 	/// De-Blocking Filter
 	value = obs_data_get_int(settings, AMF_VCE_H264_DEBLOCKING_FILTER);
 	if (value != -1)
-		m_VCE->SetNumberOfBPictures(value == 1);
+		m_VCE->SetDeblockingFilterEnabled(value == 1);
 	/// Enable Reference to B-Frames (2nd Generation GCN and newer)
 	value = obs_data_get_int(settings, AMF_VCE_H264_BREFERENCE);
 	if (value != -1)
