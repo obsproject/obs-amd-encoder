@@ -1489,7 +1489,8 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 	// ToDo: This needs to be in converted time (frame index to amf_pts) - conversion varies.
 	//  Otherwise Low Latency, Ultra Low Latency and Latency Constrained VBR are completely broken
 	//  and will not output the expected bitstream.
-	pSurface->SetPts(frame->pts * OBS_PTS_TO_AMF_PTS);
+	amf_pts amfPts = (int64_t)ceil((frame->pts / ((double_t)m_frameRate.first / (double_t)m_frameRate.second)) * 10000000l);//(1 * 1000 * 1000 * 10)
+	pSurface->SetPts(amfPts);
 	pSurface->SetProperty(AMFVCE_PROPERTY_FRAME, frame->pts);
 	res = m_AMFEncoder->SubmitInput(pSurface);
 	if (res != AMF_OK) {// Unable to submit Surface
