@@ -231,8 +231,8 @@ AMFEncoder::VCE_Usage AMFEncoder::VCE::GetUsage() {
 void AMFEncoder::VCE::SetQualityPreset(VCE_Quality_Preset qualityPreset) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	char* qualities[] = {
-		"Speed",
 		"Balanced",
+		"Speed",
 		"Quality"
 	};
 
