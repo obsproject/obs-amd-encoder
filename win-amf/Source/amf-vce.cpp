@@ -86,23 +86,6 @@ AMFEncoder::VCE::VCE(VCE_Encoder_Type type) {
 	if (res != AMF_OK) {
 		m_AMFContext->Terminate();
 		throwAMFError("<AMFEncoder::VCE::H264> AMFCreateComponent failed, error %s (code %d).", res);
-	} else {
-		// Apply Defaults
-		if (m_encoderType == VCE_ENCODER_TYPE_SVC)
-			SetUsage(VCE_USAGE_WEBCAM); // PipelineEncoder Example has this
-		else
-			SetUsage(VCE_USAGE_TRANSCODING);
-		//SetQualityPreset(VCE_QUALITY_PRESET_BALANCED);
-
-		// Gather Information from Encoder
-		//GetUsage();
-		//GetQualityPreset();
-		//GetProfile();
-		//GetProfileLevel();
-		//GetMaxLTRFrames();
-		//GetScanType();
-		//GetFrameSize();
-		//GetFrameRate();
 	}
 }
 
@@ -171,13 +154,6 @@ void AMFEncoder::VCE::SetUsage(VCE_Usage value) {
 		"Webcam"
 	};
 
-	//// Early-Exception if encoding.
-	//if (m_isStarted) {
-	//	const char* error = "<AMFEncoder::VCE::SetUsage> Attempted to change while encoding.";
-	//	AMF_LOG_ERROR("%s", error);
-	//	throw std::exception(error);
-	//}
-
 	// Set
 	switch (value) {
 		case VCE_USAGE_TRANSCODING:
@@ -236,13 +212,6 @@ void AMFEncoder::VCE::SetQualityPreset(VCE_Quality_Preset value) {
 		"Quality"
 	};
 
-	//// Early-Exception if encoding.
-	//if (m_isStarted) {
-	//	const char* error = "<AMFEncoder::VCE::SetQualityPreset> Attempted to change while encoding.";
-	//	AMF_LOG_ERROR("%s", error);
-	//	throw std::exception(error);
-	//}
-
 	// Set
 	switch (value) {
 		case VCE_QUALITY_PRESET_BALANCED:
@@ -294,13 +263,6 @@ void AMFEncoder::VCE::SetProfile(VCE_Profile value) {
 		"Main",
 		"High"
 	};
-
-	//// Early-Exception if encoding.
-	//if (m_isStarted) {
-	//	const char* error = "<AMFEncoder::VCE::SetProfile> Attempted to change while encoding.";
-	//	AMF_LOG_ERROR("%s", error);
-	//	throw std::exception(error);
-	//}
 
 	// Set
 	switch (value) {
@@ -363,13 +325,6 @@ void AMFEncoder::VCE::SetProfileLevel(VCE_Profile_Level value) {
 		50, 51, 52
 	};
 
-	//// Early-Exception if encoding.
-	//if (m_isStarted) {
-	//	const char* error = "<AMFEncoder::VCE::SetProfileLevel> Attempted to change while encoding.";
-	//	AMF_LOG_ERROR("%s", error);
-	//	throw std::exception(error);
-	//}
-
 	// Set
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileToAMF[value]);
 	if (res == AMF_OK) {
@@ -416,13 +371,6 @@ AMFEncoder::VCE_Profile_Level AMFEncoder::VCE::GetProfileLevel() {
 void AMFEncoder::VCE::SetMaxLTRFrames(uint32_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	//// Early-Exception if encoding.
-	//if (m_isStarted) {
-	//	const char* error = "<AMFEncoder::VCE::SetMaxOfLTRFrames> Attempted to change while encoding.";
-	//	AMF_LOG_ERROR("%s", error);
-	//	throw std::exception(error);
-	//}
-
 	// Set
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, value);
 	if (res == AMF_OK) {
@@ -454,13 +402,6 @@ void AMFEncoder::VCE::SetScanType(VCE_ScanType value) {
 		"Interlaced"
 	};
 
-	//// Early-Exception if encoding.
-	//if (m_isStarted) {
-	//	const char* error = "<AMFEncoder::VCE::SetScanType> Attempted to change while encoding.";
-	//	AMF_LOG_ERROR("%s", error);
-	//	throw std::exception(error);
-	//}
-
 	// Set
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SCANTYPE, value);
 	if (res == AMF_OK) {
@@ -487,13 +428,6 @@ AMFEncoder::VCE_ScanType AMFEncoder::VCE::GetScanType() {
 
 void AMFEncoder::VCE::SetFrameSize(std::pair<uint32_t, uint32_t>& value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
-
-	//// Early-Exception if encoding.
-	//if (m_isStarted) {
-	//	const char* error = "<AMFEncoder::VCE::SetFrameSize> Attempted to change while encoding.";
-	//	AMF_LOG_ERROR("%s", error);
-	//	throw std::exception(error);
-	//}
 
 	// ToDo: Verify with Capabilities.
 
@@ -528,14 +462,7 @@ std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameSize() {
 
 void AMFEncoder::VCE::SetFrameRate(std::pair<uint32_t, uint32_t>& value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
-
-	//// Early-Exception if encoding.
-	//if (m_isStarted) {
-	//	const char* error = "<AMFEncoder::VCE::SetFrameRate> Attempted to change while encoding.";
-	//	AMF_LOG_ERROR("%s", error);
-	//	throw std::exception(error);
-	//}
-
+	
 	// Set
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FRAMERATE, ::AMFConstructRate(value.first, value.second));
 	if (res == AMF_OK) {
@@ -1100,9 +1027,9 @@ void AMFEncoder::VCE::SetNumberOfBPictures(uint8_t value) {
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, value);
 	if (res == AMF_OK) {
 		m_numberOfBPictures = value;
-		AMF_LOG_INFO("<AMFEncoder::VCE::SetNumberOfBPictures> Set to %d.", value);
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetNumberOfBPictures> Set to %s.", value ? "Enabled" : "Disabled");
 	} else { // Not OK? Then throw an error instead.
-		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetNumberOfBPictures> Failed to set to %d, error %s (code %d).", value, res);
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetNumberOfBPictures> Failed to set to %s, error %s (code %d).", value ? "Enabled" : "Disabled", res);
 	}
 }
 
@@ -1125,9 +1052,9 @@ void AMFEncoder::VCE::SetDeblockingFilterEnabled(bool value) {
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER, value);
 	if (res == AMF_OK) {
 		m_deblockingFilterEnabled = value;
-		AMF_LOG_INFO("<AMFEncoder::VCE::SetDeblockingFilterEnabled> Set to %d.", value);
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetDeblockingFilterEnabled> Set to %s.", value ? "Enabled" : "Disabled");
 	} else { // Not OK? Then throw an error instead.
-		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetDeblockingFilterEnabled> Failed to set to %d, error %s (code %d).", value, res);
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetDeblockingFilterEnabled> Failed to set to %s, error %s (code %d).", value ? "Enabled" : "Disabled", res);
 	}
 }
 
@@ -1150,9 +1077,9 @@ void AMFEncoder::VCE::SetReferenceToBFrameEnabled(bool value) {
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, value);
 	if (res == AMF_OK) {
 		m_referenceToBFrameEnabled = value;
-		AMF_LOG_INFO("<AMFEncoder::VCE::SetReferenceToBFrameEnabled> Set to %d.", value);
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetReferenceToBFrameEnabled> Set to %s.", value ? "Enabled" : "Disabled");
 	} else { // Not OK? Then throw an error instead.
-		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetReferenceToBFrameEnabled> Failed to set to %d, error %s (code %d).", value, res);
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetReferenceToBFrameEnabled> Failed to set to %s, error %s (code %d).", value ? "Enabled" : "Disabled", res);
 	}
 }
 
@@ -1250,9 +1177,9 @@ void AMFEncoder::VCE::SetHalfPixelMotionEstimationEnabled(bool value) {
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, value);
 	if (res == AMF_OK) {
 		m_halfPixelMotionEstimationEnabled = value;
-		AMF_LOG_INFO("<AMFEncoder::VCE::SetHalfPixelMotionEstimationEnabled> Set to %d.", value);
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetHalfPixelMotionEstimationEnabled> Set to %s.", value ? "Enabled" : "Disabled");
 	} else { // Not OK? Then throw an error instead.
-		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetHalfPixelMotionEstimationEnabled> Failed to set to %d, error %s (code %d).", value, res);
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetHalfPixelMotionEstimationEnabled> Failed to set to %s, error %s (code %d).", value ? "Enabled" : "Disabled", res);
 	}
 }
 
@@ -1275,9 +1202,9 @@ void AMFEncoder::VCE::SetQuarterPixelMotionEstimationEnabled(bool value) {
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL, value);
 	if (res == AMF_OK) {
 		m_quarterPixelMotionEstimationEnabled = value;
-		AMF_LOG_INFO("<AMFEncoder::VCE::SetQuarterPixelMotionEstimationEnabled> Set to %d.", value);
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetQuarterPixelMotionEstimationEnabled> Set to %s.", value ? "Enabled" : "Disabled");
 	} else { // Not OK? Then throw an error instead.
-		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetQuarterPixelMotionEstimationEnabled> Failed to set to %d, error %s (code %d).", value, res);
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetQuarterPixelMotionEstimationEnabled> Failed to set to %s, error %s (code %d).", value ? "Enabled" : "Disabled", res);
 	}
 }
 
