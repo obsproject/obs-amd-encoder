@@ -326,7 +326,7 @@ void AMFEncoder::VCE::SetProfileLevel(VCE_Profile_Level value) {
 	};
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, profileToAMF[value]);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, (int64_t)profileToAMF[value]);
 	if (res == AMF_OK) {
 		m_profileLevel = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetProfile> Set to %s.", profiles[m_profileLevel]);
@@ -372,7 +372,7 @@ void AMFEncoder::VCE::SetMaxLTRFrames(uint32_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, (int64_t)value);
 	if (res == AMF_OK) {
 		m_maxLTRFrames = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetMaxOfLTRFrames> Set to %d.", value);
@@ -403,7 +403,7 @@ void AMFEncoder::VCE::SetScanType(VCE_ScanType value) {
 	};
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SCANTYPE, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SCANTYPE, (int64_t)value);
 	if (res == AMF_OK) {
 		m_scanType = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetScanType> Set to %s.", scanTypes[value]);
@@ -508,7 +508,7 @@ void AMFEncoder::VCE::SetRateControlMethod(VCE_Rate_Control_Method value) {
 	};
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, methodToAMF[value]);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, (int64_t)methodToAMF[value]);
 	if (res == AMF_OK) {
 		m_rateControlMethod = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetRateControlMethod> Set to %s.", methodToName[value]);
@@ -592,7 +592,7 @@ void AMFEncoder::VCE::SetEnforceHRDEnabled(bool value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, (int64_t)value);
 	if (res == AMF_OK) {
 		m_enforceHRDEnabled = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::EnableEnforceHRD> Set to %s.", value ? "Enabled" : "Disabled");
@@ -618,7 +618,7 @@ void AMFEncoder::VCE::SetGOPSize(uint32_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_GOP_SIZE, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_GOP_SIZE, (int64_t)value);
 	if (res == AMF_OK) {
 		m_GOPSize = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetGOPSize> Set to %d.", value);
@@ -644,7 +644,7 @@ void AMFEncoder::VCE::SetVBVBufferSize(uint32_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, (int64_t)value);
 	if (res == AMF_OK) {
 		m_VBVBufferSize = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetVBVBufferSize> Set to %d.", value);
@@ -670,7 +670,7 @@ void AMFEncoder::VCE::SetInitialVBVBufferFullness(double_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, (int32_t)(value * 64));
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, (int64_t)(value * 64));
 	if (res == AMF_OK) {
 		m_initalVBVBufferFullness = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetInitialVBVBufferFullness> Set to %f.", value);
@@ -696,7 +696,7 @@ void AMFEncoder::VCE::SetMaximumAccessUnitSize(uint32_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, (int64_t)value);
 	if (res == AMF_OK) {
 		m_maximumAccessUnitSize = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetMaximumAccessUnitSize> Set to %d.", value);
@@ -718,11 +718,11 @@ uint32_t AMFEncoder::VCE::GetMaximumAccessUnitSize() {
 	return m_maximumAccessUnitSize;
 }
 
-void AMFEncoder::VCE::SetBPictureDeltaQP(uint8_t value) {
+void AMFEncoder::VCE::SetBPictureDeltaQP(int8_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, (int64_t)value);
 	if (res == AMF_OK) {
 		m_BPictureDeltaQP = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetBPictureDeltaQP> Set to %d.", value);
@@ -731,7 +731,7 @@ void AMFEncoder::VCE::SetBPictureDeltaQP(uint8_t value) {
 	}
 }
 
-uint8_t AMFEncoder::VCE::GetBPictureDeltaQP() {
+int8_t AMFEncoder::VCE::GetBPictureDeltaQP() {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFVariant variant;
 
@@ -744,11 +744,11 @@ uint8_t AMFEncoder::VCE::GetBPictureDeltaQP() {
 	return m_BPictureDeltaQP;
 }
 
-void AMFEncoder::VCE::SetReferenceBPictureDeltaQP(uint8_t value) {
+void AMFEncoder::VCE::SetReferenceBPictureDeltaQP(int8_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, (int64_t)value);
 	if (res == AMF_OK) {
 		m_refBPictureDeltaQP = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetReferenceBPictureDeltaQP> Set to %d.", value);
@@ -757,7 +757,7 @@ void AMFEncoder::VCE::SetReferenceBPictureDeltaQP(uint8_t value) {
 	}
 }
 
-uint8_t AMFEncoder::VCE::GetReferenceBPictureDeltaQP() {
+int8_t AMFEncoder::VCE::GetReferenceBPictureDeltaQP() {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFVariant variant;
 
@@ -780,7 +780,7 @@ void AMFEncoder::VCE::SetMinimumQP(uint8_t value) {
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MIN_QP, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MIN_QP, (int64_t)value);
 	if (res == AMF_OK) {
 		m_minimumQP = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetMinimumQP> Set to %d.", value);
@@ -812,7 +812,7 @@ void AMFEncoder::VCE::SetMaximumQP(uint8_t value) {
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_QP, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_QP, (int64_t)value);
 	if (res == AMF_OK) {
 		m_maximumQP = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetMaximumQP> Set to %d.", value);
@@ -844,7 +844,7 @@ void AMFEncoder::VCE::SetIFrameQP(uint8_t value) {
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_I, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_I, (int64_t)value);
 	if (res == AMF_OK) {
 		m_IFrameQP = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetIFrameQP> Set to %d.", value);
@@ -876,7 +876,7 @@ void AMFEncoder::VCE::SetPFrameQP(uint8_t value) {
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_P, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_P, (int64_t)value);
 	if (res == AMF_OK) {
 		m_PFrameQP = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetPFrameQP> Set to %d.", value);
@@ -908,7 +908,7 @@ void AMFEncoder::VCE::SetBFrameQP(uint8_t value) {
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_B, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_B, (int64_t)value);
 	if (res == AMF_OK) {
 		m_BFrameQP = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetBFrameQP> Set to %d.", value);
@@ -941,7 +941,7 @@ void AMFEncoder::VCE::SetTargetBitrate(uint32_t value) {
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, (int64_t)value);
 	if (res == AMF_OK) {
 		m_targetBitrate = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetTargetBitrate> Set to %d.", value);
@@ -974,7 +974,7 @@ void AMFEncoder::VCE::SetPeakBitrate(uint32_t value) {
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, (int64_t)value);
 	if (res == AMF_OK) {
 		m_peakBitrate = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetTargetBitrate> Set to %d.", value);
@@ -999,7 +999,7 @@ uint32_t AMFEncoder::VCE::GetPeakBitrate() {
 void AMFEncoder::VCE::SetHeaderInsertionSpacing(uint16_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING, (int64_t)value);
 	if (res == AMF_OK) {
 		m_headerInsertionSpacing = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetHeaderInsertionSpacing> Set to %d.", value);
@@ -1024,7 +1024,7 @@ uint16_t AMFEncoder::VCE::GetHeaderInsertionSpacing() {
 void AMFEncoder::VCE::SetNumberOfBPictures(uint8_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, (int64_t)value);
 	if (res == AMF_OK) {
 		m_numberOfBPictures = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetNumberOfBPictures> Set to %s.", value ? "Enabled" : "Disabled");
@@ -1099,7 +1099,7 @@ bool AMFEncoder::VCE::IsReferenceToBFrameEnabled() {
 void AMFEncoder::VCE::SetIDRPeriod(uint32_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, (int64_t)value);
 	if (res == AMF_OK) {
 		m_IDRPeriod = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetIDRPeriod> Set to %d.", value);
@@ -1124,7 +1124,7 @@ uint32_t AMFEncoder::VCE::GetIDRPeriod() {
 void AMFEncoder::VCE::SetInfraRefreshMBsPerSlotInMacroblocks(uint32_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, (int64_t)value);
 	if (res == AMF_OK) {
 		m_intraRefreshMBPerSlotInMacrobocks = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetInfraRefreshMBsPerSlotInMacroblocks> Set to %d.", value);
@@ -1149,7 +1149,7 @@ uint32_t AMFEncoder::VCE::GetInfraRefreshMBsPerSlotInMacroblocks() {
 void AMFEncoder::VCE::SetNumberOfSlicesPerFrame(uint32_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, (int64_t)value);
 	if (res == AMF_OK) {
 		m_numberOfSlicesPerFrame = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetNumberOfSlicesPerFrame> Set to %d.", value);
@@ -1224,7 +1224,7 @@ bool AMFEncoder::VCE::GetQuarterPixelMotionEstimationEnabled() {
 void AMFEncoder::VCE::SetNumberOfTemporalEnhancementLayers(uint32_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS, (int64_t)value);
 	if (res == AMF_OK) {
 		m_numberOfTemporalEnhancementLayers = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetNumberOfTemporalEnhancementLayers> Set to %d.", value);
@@ -1281,7 +1281,7 @@ void AMFEncoder::VCE::Stop() {
 		throw std::exception(error);
 	}
 
-	//ToDo: Support for ReInit at different Framesize? How does that even work?
+	//ToDo: Support for ReInit at different FrameSize? How does that even work?
 	res = m_AMFEncoder->Terminate();
 	if (res != AMF_OK) {
 		throwAMFError("<AMFEncoder::VCE::Stop> Unable to stop, error %s (code %d).", res);
@@ -1382,7 +1382,7 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 			}
 		}
 	}
-
+	
 	*received_packet = true;
 }
 
@@ -1411,6 +1411,12 @@ bool AMFEncoder::VCE::GetExtraData(uint8_t**& extra_data, size_t*& extra_data_si
 }
 
 void AMFEncoder::VCE::GetVideoInfo(struct video_scale_info*& info) {
+	if (!m_AMFContext || !m_AMFEncoder)
+		throw std::exception("<AMFEncoder::VCE::GetVideoInfo> Called while not initialized.");
+
+	if (!m_isStarted)
+		throw std::exception("<AMFEncoder::VCE::GetVideoInfo> Called while not encoding.");
+
 	switch (m_surfaceFormat) {
 		case VCE_SURFACE_FORMAT_NV12:
 			info->format = VIDEO_FORMAT_NV12;

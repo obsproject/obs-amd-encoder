@@ -185,10 +185,10 @@ namespace AMFEncoder {
 		void SetMaximumAccessUnitSize(uint32_t);
 		uint32_t GetMaximumAccessUnitSize();
 		/// B-Picture Stuff
-		void SetBPictureDeltaQP(uint8_t);
-		uint8_t GetBPictureDeltaQP();
-		void SetReferenceBPictureDeltaQP(uint8_t);
-		uint8_t GetReferenceBPictureDeltaQP();
+		void SetBPictureDeltaQP(int8_t);
+		int8_t GetBPictureDeltaQP();
+		void SetReferenceBPictureDeltaQP(int8_t);
+		int8_t GetReferenceBPictureDeltaQP();
 		/// Rate Control: CQP
 		void SetMinimumQP(uint8_t);
 		uint8_t GetMinimumQP();
