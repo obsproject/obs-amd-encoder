@@ -97,8 +97,8 @@ MODULE_EXPORT bool obs_module_load(void) {
 		AMF_LOG_INFO("			Max Supported Job Priority: %d", capsEnc[i]->h264.maxSupportedJobPriority);
 		AMF_LOG_INFO("			Num of Reference Frames: %d - %d (min - max)", capsEnc[i]->h264.minReferenceFrames, capsEnc[i]->h264.maxReferenceFrames);
 		AMF_LOG_INFO("			Profiles:");
-		for (uint32_t i = 0; i < capsEnc[i]->h264.profiles.size(); i++) {
-			switch (capsEnc[i]->h264.profiles[i]) {
+		for (uint32_t j = 0; j < capsEnc[i]->h264.profiles.size(); j++) {
+			switch (capsEnc[i]->h264.profiles[j]) {
 				case AMF_VIDEO_ENCODER_PROFILE_BASELINE:
 					AMF_LOG_INFO("				Baseline");
 					break;
@@ -109,17 +109,17 @@ MODULE_EXPORT bool obs_module_load(void) {
 					AMF_LOG_INFO("				High");
 					break;
 				default:
-					AMF_LOG_INFO("				Unknown (%d)", capsEnc[i]->h264.profiles[i]);
+					AMF_LOG_INFO("				Unknown (%d)", capsEnc[i]->h264.profiles[j]);
 					break;
 			}
 		}
 		AMF_LOG_INFO("			Levels:");
-		for (uint32_t i = 0; i < capsEnc[i]->h264.levels.size(); i++) {
-			AMF_LOG_INFO("				%d", capsEnc[i]->h264.levels[i]);
+		for (uint32_t j = 0; j < capsEnc[i]->h264.levels.size(); j++) {
+			AMF_LOG_INFO("				%d", capsEnc[i]->h264.levels[j]);
 		}
 		AMF_LOG_INFO("			Rate Control Methods:");
-		for (uint32_t i = 0; i < capsEnc[i]->h264.rateControlMethods.size(); i++) {
-			switch (capsEnc[i]->h264.rateControlMethods[i]) {
+		for (uint32_t j = 0; j < capsEnc[i]->h264.rateControlMethods.size(); j++) {
+			switch (capsEnc[i]->h264.rateControlMethods[j]) {
 				case AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTRAINED_QP:
 					AMF_LOG_INFO("				Costrained QP");
 					break;
@@ -133,22 +133,22 @@ MODULE_EXPORT bool obs_module_load(void) {
 					AMF_LOG_INFO("				VBR (Latency Constrained)");
 					break;
 				default:
-					AMF_LOG_INFO("				Unknown (%d)", capsEnc[i]->h264.rateControlMethods[i]);
+					AMF_LOG_INFO("				Unknown (%d)", capsEnc[i]->h264.rateControlMethods[j]);
 					break;
 			}
 		}
 
 		VCE_Capabilities::EncoderCaps::IOCaps* capsIO[2] = { &capsEnc[i]->input, &capsEnc[i]->output };
-		for (uint8_t i = 0; i < 2; i++) {
-			if (i == 0)
+		for (uint8_t j = 0; j < 2; j++) {
+			if (j == 0)
 				AMF_LOG_INFO("		Input:");
 			else
 				AMF_LOG_INFO("		Output:");
 
-			AMF_LOG_INFO("			Width Range: %d, %d", capsIO[i]->minWidth, capsIO[i]->maxWidth);
-			AMF_LOG_INFO("			Height Range: %d, %d", capsIO[i]->minHeight, capsIO[i]->maxHeight);
-			AMF_LOG_INFO("			Supports Interlaced: %s", capsIO[i]->isInterlacedSupported ? "Yes" : "No");
-			AMF_LOG_INFO("			Vertical Buffer Alignment: %d bytes", capsIO[i]->verticalAlignment);
+			AMF_LOG_INFO("			Width Range: %d, %d", capsIO[j]->minWidth, capsIO[j]->maxWidth);
+			AMF_LOG_INFO("			Height Range: %d, %d", capsIO[j]->minHeight, capsIO[j]->maxHeight);
+			AMF_LOG_INFO("			Supports Interlaced: %s", capsIO[j]->isInterlacedSupported ? "Yes" : "No");
+			AMF_LOG_INFO("			Vertical Buffer Alignment: %d bytes", capsIO[j]->verticalAlignment);
 
 			char* surfaceFormat[] = {
 				"Unknown",
@@ -163,8 +163,8 @@ MODULE_EXPORT bool obs_module_load(void) {
 				"YUY2"
 			};
 			AMF_LOG_INFO("			Surface Formats:");
-			for (uint32_t i2 = 0; i2 < capsIO[i]->formats.size(); i2++) {
-				AMF_LOG_INFO("			- %s%s", surfaceFormat[capsIO[i]->formats[i2].first], capsIO[i]->formats[i2].second ? " (Native)" : "");
+			for (uint32_t k = 0; k < capsIO[j]->formats.size(); k++) {
+				AMF_LOG_INFO("			- %s%s", surfaceFormat[capsIO[j]->formats[k].first], capsIO[j]->formats[k].second ? " (Native)" : "");
 			}
 
 			char * memoryTypes[] = {
@@ -178,8 +178,8 @@ MODULE_EXPORT bool obs_module_load(void) {
 				"GrAlloc"
 			};
 			AMF_LOG_INFO("			Memory Types:");
-			for (uint32_t i2 = 0; i2 < capsIO[i]->memoryTypes.size(); i2++) {
-				AMF_LOG_INFO("			- %s%s", memoryTypes[capsIO[i]->memoryTypes[i2].first], capsIO[i]->memoryTypes[i2].second ? " (Native)" : "");
+			for (uint32_t k = 0; k < capsIO[j]->memoryTypes.size(); k++) {
+				AMF_LOG_INFO("			- %s%s", memoryTypes[capsIO[j]->memoryTypes[k].first], capsIO[j]->memoryTypes[k].second ? " (Native)" : "");
 			}
 		}
 	}
