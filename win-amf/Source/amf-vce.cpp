@@ -32,6 +32,7 @@ SOFTWARE.
 #include <exception>
 #include <stdexcept>
 #include <vector>
+#include <chrono>
 
 // AMF
 #include "AMD-Media-SDK/1.1/inc/ErrorCodes.h"
@@ -1305,8 +1306,16 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 	}
 
 	// Submit Input
+	std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
 	pSurface = CreateSurfaceFromFrame(frame);
+	std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> dur = end - start;
+	AMF_LOG_INFO("Surface Creation time: %f", dur);
+	start = std::chrono::high_resolution_clock::now();
 	res = m_AMFEncoder->SubmitInput(pSurface);
+	end = std::chrono::high_resolution_clock::now();
+	dur = end - start;
+	AMF_LOG_INFO("Surface Submission time: %f", dur);
 	if (res != AMF_OK) {// Unable to submit Surface
 		std::vector<char> msgBuf(1024);
 		formatAMFError(&msgBuf, "<AMFEncoder::VCE::SendInput> Unable to submit input, error %s (code %d).", res);
@@ -1434,7 +1443,7 @@ void AMFEncoder::VCE::GetVideoInfo(struct video_scale_info*& info) {
 			info->format = VIDEO_FORMAT_RGBA;
 			break;
 	}
-	info->range = VIDEO_RANGE_PARTIAL;
+	//info->range = VIDEO_RANGE_PARTIAL;
 }
 
 amf::AMFSurfacePtr inline AMFEncoder::VCE::CreateSurfaceFromFrame(struct encoder_frame*& frame) {
@@ -1458,19 +1467,18 @@ amf::AMFSurfacePtr inline AMFEncoder::VCE::CreateSurfaceFromFrame(struct encoder
 			memoryTypeToAMF[m_memoryType], surfaceFormatToAMF[m_surfaceFormat],
 			m_frameSize.first, m_frameSize.second,
 			&pSurface);
+		size_t planeCount = pSurface->GetPlanesCount();
 
 		switch (m_surfaceFormat) {
 			case VCE_SURFACE_FORMAT_NV12:
 			{ // NV12, Y:U+V, Two Plane
-				size_t iMax = pSurface->GetPlanesCount();
 				#pragma loop(hint_parallel(2))
-				for (uint8_t i = 0; i < iMax; i++) {
+				for (uint8_t i = 0; i < planeCount; i++) {
 					amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
 					void* plane_nat = plane->GetNative();
 					int32_t height = plane->GetHeight();
 					size_t hpitch = plane->GetHPitch();
 
-					#pragma loop(hint_parallel(4))
 					for (int32_t py = 0; py < height; py++) {
 						size_t plane_off = py * hpitch;
 						size_t frame_off = py * frame->linesize[i];
@@ -1481,15 +1489,13 @@ amf::AMFSurfacePtr inline AMFEncoder::VCE::CreateSurfaceFromFrame(struct encoder
 			}
 			case VCE_SURFACE_FORMAT_I420:
 			{	// YUV 4:2:0, Y, subsampled U, subsampled V
-				size_t iMax = pSurface->GetPlanesCount();
-				//#pragma loop(hint_parallel(3))
-				for (uint8_t i = 0; i < iMax; i++) {
+				#pragma loop(hint_parallel(3))
+				for (uint8_t i = 0; i < planeCount; i++) {
 					amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
 					void* plane_nat = plane->GetNative();
 					int32_t height = plane->GetHeight();
 					size_t hpitch = plane->GetHPitch();
 
-					#pragma loop(hint_parallel(8))
 					for (int32_t py = 0; py < height; py++) {
 						size_t plane_off = py * hpitch;
 						size_t frame_off = py * frame->linesize[i];
@@ -1504,14 +1510,13 @@ amf::AMFSurfacePtr inline AMFEncoder::VCE::CreateSurfaceFromFrame(struct encoder
 			}
 			case VCE_SURFACE_FORMAT_RGB:
 			{ // RGBA, Single Plane
-				size_t iMax = pSurface->GetPlanesCount();
-				for (uint8_t i = 0; i < iMax; i++) {
+				for (uint8_t i = 0; i < planeCount; i++) {
 					amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
 					void* plane_nat = plane->GetNative();
 					int32_t height = plane->GetHeight();
 					size_t hpitch = plane->GetHPitch();
 
-					#pragma loop(hint_parallel(8))
+					#pragma loop(hint_parallel(4))
 					for (int32_t py = 0; py < height; py++) {
 						size_t plane_off = py * hpitch;
 						size_t frame_off = py * frame->linesize[i];
