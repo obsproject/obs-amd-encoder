@@ -550,7 +550,20 @@ AMFEncoder::VCE_H264_Encoder::VCE_H264_Encoder(obs_data_t* settings, obs_encoder
 	m_VCE = new AMFEncoder::VCE((VCE_Encoder_Type)obs_data_get_int(settings, AMF_VCE_H264_TYPE));
 	/// Memory Type & Surface Format
 	m_VCE->SetMemoryType(VCE_MEMORY_TYPE_HOST);
-	m_VCE->SetSurfaceFormat(VCE_SURFACE_FORMAT_NV12);
+	switch (voi->format) {
+		case VIDEO_FORMAT_NV12:
+			m_VCE->SetSurfaceFormat(VCE_SURFACE_FORMAT_NV12);
+			break;
+		case VIDEO_FORMAT_I420:
+			m_VCE->SetSurfaceFormat(VCE_SURFACE_FORMAT_I420);
+			break;
+		case VIDEO_FORMAT_I444:
+			m_VCE->SetSurfaceFormat(VCE_SURFACE_FORMAT_I444);
+			break;
+		case VIDEO_FORMAT_RGBA:
+			m_VCE->SetSurfaceFormat(VCE_SURFACE_FORMAT_RGB);
+			break;
+	}
 	/// Usage & Quality Preset
 	m_VCE->SetUsage((VCE_Usage)obs_data_get_int(settings, AMF_VCE_H264_USAGE));
 
