@@ -981,7 +981,7 @@ void AMFEncoder::VCE::SetPeakBitrate(uint32_t value) {
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, (int64_t)value);
 	if (res == AMF_OK) {
 		m_peakBitrate = value;
-		AMF_LOG_INFO("<AMFEncoder::VCE::SetTargetBitrate> Set to %d.", value);
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetPeakBitrate> Set to %d.", value);
 	} else { // Not OK? Then throw an error instead.
 		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetPeakBitrate> Failed to set to %d, error %s (code %d).", value, res);
 	}
@@ -1031,9 +1031,9 @@ void AMFEncoder::VCE::SetNumberOfBPictures(uint8_t value) {
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, (int64_t)value);
 	if (res == AMF_OK) {
 		m_numberOfBPictures = value;
-		AMF_LOG_INFO("<AMFEncoder::VCE::SetNumberOfBPictures> Set to %s.", value ? "Enabled" : "Disabled");
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetNumberOfBPictures> Set to %d.", value);
 	} else { // Not OK? Then throw an error instead.
-		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetNumberOfBPictures> Failed to set to %s, error %s (code %d).", value ? "Enabled" : "Disabled", res);
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetNumberOfBPictures> Failed to set to %d, error %s (code %d).", value, res);
 	}
 }
 
@@ -1306,16 +1306,16 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 	}
 
 	// Submit Input
-	std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
+	//std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
 	pSurface = CreateSurfaceFromFrame(frame);
-	std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
+	/*std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> dur = end - start;
 	AMF_LOG_INFO("Surface Creation time: %f", dur);
-	start = std::chrono::high_resolution_clock::now();
+	start = std::chrono::high_resolution_clock::now();*/
 	res = m_AMFEncoder->SubmitInput(pSurface);
-	end = std::chrono::high_resolution_clock::now();
+	/*end = std::chrono::high_resolution_clock::now();
 	dur = end - start;
-	AMF_LOG_INFO("Surface Submission time: %f", dur);
+	AMF_LOG_INFO("Surface Submission time: %f", dur);*/
 	if (res != AMF_OK) {// Unable to submit Surface
 		std::vector<char> msgBuf(1024);
 		formatAMFError(&msgBuf, "<AMFEncoder::VCE::SendInput> Unable to submit input, error %s (code %d).", res);
