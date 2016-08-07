@@ -41,6 +41,28 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 namespace AMFEncoder {
 	class VCE_H264_Simple_Encoder {
+		// h264 Profiles
+		enum PROFILES {
+			PROFILE_Baseline,
+			PROFILE_Main,
+			PROFILE_High,
+			PROFILE_COUNT_MAX
+		};
+		static const char* PROFILE_NAMES[PROFILES::PROFILE_COUNT_MAX];
+		static const VCE_Profile PROFILE_VALUES[PROFILES::PROFILE_COUNT_MAX];
+
+		// h264 Levels
+		enum LEVELS {
+			LEVEL_1, LEVEL_1_1, LEVEL_1_2, LEVEL_1_3,
+			LEVEL_2, LEVEL_2_1, LEVEL_2_2,
+			LEVEL_3, LEVEL_3_1, LEVEL_3_2,
+			LEVEL_4, LEVEL_4_1, LEVEL_4_2,
+			LEVEL_5, LEVEL_5_1, LEVEL_5_2,
+			LEVEL_COUNT_MAX
+		};
+		static const char* LEVEL_NAMES[LEVELS::LEVEL_COUNT_MAX];
+		static const VCE_Profile_Level LEVEL_VALUES[LEVELS::LEVEL_COUNT_MAX];
+
 		//////////////////////////////////////////////////////////////////////////
 		// Static Code
 		//////////////////////////////////////////////////////////////////////////
@@ -51,6 +73,7 @@ namespace AMFEncoder {
 		static const char* get_name(void* type_data);
 		static void get_defaults(obs_data_t *settings);
 		static obs_properties_t* get_properties(void* data);
+		static bool ratecontrolmethod_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *settings);
 
 		static void* create(obs_data_t* settings, obs_encoder_t* encoder);
 		static void destroy(void* data);
