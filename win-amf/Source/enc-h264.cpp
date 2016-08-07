@@ -180,7 +180,7 @@ void AMFEncoder::VCE_H264_Encoder::encoder_register() {
 	if (!AMFEncoder::VCE_H264_Encoder::encoder_info) {
 		AMFEncoder::VCE_H264_Encoder::encoder_info = new obs_encoder_info();
 		std::memset(AMFEncoder::VCE_H264_Encoder::encoder_info, 0, sizeof(obs_encoder_info));
-		
+
 		AMFEncoder::VCE_H264_Encoder::encoder_info->id = encoderName;
 		AMFEncoder::VCE_H264_Encoder::encoder_info->type = obs_encoder_type::OBS_ENCODER_VIDEO;
 		AMFEncoder::VCE_H264_Encoder::encoder_info->codec = encoderCodec;
@@ -505,98 +505,158 @@ bool AMFEncoder::VCE_H264_Encoder::update_from_amf(obs_properties_t *props, obs_
 		// Usage & Quality Preset
 		int64_t usage = obs_data_get_int(settings, AMF_VCE_H264_USAGE);
 		vce->SetUsage((VCE_Usage)usage);
-		int64_t preset = obs_data_get_int(settings, AMF_VCE_H264_QUALITY_PRESET);
-		if (preset == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_QUALITY_PRESET, vce->GetQualityPreset());
-		else
-			vce->SetQualityPreset((VCE_Quality_Preset)preset);
+		try {
+			int64_t preset = obs_data_get_int(settings, AMF_VCE_H264_QUALITY_PRESET);
+			if (preset == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_QUALITY_PRESET, vce->GetQualityPreset());
+			else
+				vce->SetQualityPreset((VCE_Quality_Preset)preset);
+		} catch (...) {}
 
 		// Profile & Level
-		if (obs_data_get_int(settings, AMF_VCE_H264_PROFILE) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_PROFILE, vce->GetProfile());
-		if (obs_data_get_int(settings, AMF_VCE_H264_PROFILE_LEVEL) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_PROFILE_LEVEL, vce->GetProfileLevel());
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_PROFILE) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_PROFILE, vce->GetProfile());
+		} catch (...) {}
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_PROFILE_LEVEL) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_PROFILE_LEVEL, vce->GetProfileLevel());
+		} catch (...) {}
 
-		// Other
-		if (obs_data_get_int(settings, AMF_VCE_H264_MAX_LTR_FRAMES) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_MAX_LTR_FRAMES, vce->GetMaxLTRFrames());
-		if (obs_data_get_int(settings, AMF_VCE_H264_SCAN_TYPE) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_SCAN_TYPE, vce->GetScanType());
+				// Other
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_MAX_LTR_FRAMES) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_MAX_LTR_FRAMES, vce->GetMaxLTRFrames());
+		} catch (...) {}
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_SCAN_TYPE) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_SCAN_TYPE, vce->GetScanType());
+		} catch (...) {}
 
 		//////////////////////////////////////////////////////////////////////////
 		// Dynamic Properties (Can be changed during Encoding)
 		//////////////////////////////////////////////////////////////////////////
 		// Rate Control
 		/// Method
-		if (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL_METHOD) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_RATECONTROL_METHOD, vce->GetRateControlMethod());
-		/// Skip Frames if necessary
-		if (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL_FRAME_SKIPPING) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_RATECONTROL_FRAME_SKIPPING, vce->IsFrameSkippingEnabled() ? 1 : 0);
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL_METHOD) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_RATECONTROL_METHOD, vce->GetRateControlMethod());
+		} catch (...) {}
+			/// Skip Frames if necessary
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL_FRAME_SKIPPING) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_RATECONTROL_FRAME_SKIPPING, vce->IsFrameSkippingEnabled() ? 1 : 0);
+		} catch (...) {}
 		// Rate Control - Other
 		/// Filler Data
-		if (obs_data_get_int(settings, AMF_VCE_H264_FILLERDATA) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_FILLERDATA, vce->IsFillerDataEnabled() ? 1 : 0);
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_FILLERDATA) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_FILLERDATA, vce->IsFillerDataEnabled() ? 1 : 0);
+		} catch (...) {}
 		/// Enforce Hyptohecial Reference Decoder Compatability
-		if (obs_data_get_int(settings, AMF_VCE_H264_ENFORCEHRD) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_ENFORCEHRD, vce->IsEnforceHRDEnabled() ? 1 : 0);
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_ENFORCEHRD) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_ENFORCEHRD, vce->IsEnforceHRDEnabled() ? 1 : 0);
+		} catch (...) {}
 		// Video Coding Settings
 		/// GOP Size
-		if (obs_data_get_int(settings, AMF_VCE_H264_GOP_SIZE) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_GOP_SIZE, vce->GetGOPSize());
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_GOP_SIZE) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_GOP_SIZE, vce->GetGOPSize());
+		} catch (...) {}
 		/// VBV Buffer
-		if (obs_data_get_int(settings, AMF_VCE_H264_VBVBUFFER_SIZE) == -1) {
-			obs_data_set_int(settings, AMF_VCE_H264_VBVBUFFER_SIZE, vce->GetVBVBufferSize());
-			obs_data_set_double(settings, AMF_VCE_H264_VBVBUFFER_FULLNESS, vce->GetInitialVBVBufferFullness());
-		}
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_VBVBUFFER_SIZE) == -1) {
+				obs_data_set_int(settings, AMF_VCE_H264_VBVBUFFER_SIZE, vce->GetVBVBufferSize());
+				obs_data_set_double(settings, AMF_VCE_H264_VBVBUFFER_FULLNESS, vce->GetInitialVBVBufferFullness());
+			}
+		} catch (...) {}
 		/// Max AU Size
-		if (obs_data_get_int(settings, AMF_VCE_H264_MAX_AU_SIZE) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_MAX_AU_SIZE, vce->GetMaximumAccessUnitSize());
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_MAX_AU_SIZE) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_MAX_AU_SIZE, vce->GetMaximumAccessUnitSize());
+		} catch (...) {}
 		/// B-Picture Related
-		if (obs_data_get_int(settings, AMF_VCE_H264_BPIC_DELTA_QP) == -11)
-			obs_data_set_int(settings, AMF_VCE_H264_BPIC_DELTA_QP, vce->GetBPictureDeltaQP());
-		if (obs_data_get_int(settings, AMF_VCE_H264_REF_BPIC_DELTA_QP) == -11)
-			obs_data_set_int(settings, AMF_VCE_H264_REF_BPIC_DELTA_QP, vce->GetReferenceBPictureDeltaQP());
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_BPIC_DELTA_QP) == -11)
+				obs_data_set_int(settings, AMF_VCE_H264_BPIC_DELTA_QP, vce->GetBPictureDeltaQP());
+		} catch (...) {}
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_REF_BPIC_DELTA_QP) == -11)
+				obs_data_set_int(settings, AMF_VCE_H264_REF_BPIC_DELTA_QP, vce->GetReferenceBPictureDeltaQP());
+		} catch (...) {}
 		// Rate Control: Constrained QP
-		if (obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_QP_MINIMUM, vce->GetMinimumQP());
-		if (obs_data_get_int(settings, AMF_VCE_H264_QP_MAXIMUM) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_QP_MAXIMUM, vce->GetMaximumQP());
-		if (obs_data_get_int(settings, AMF_VCE_H264_QP_IFRAME) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_QP_IFRAME, vce->GetIFrameQP());
-		if (obs_data_get_int(settings, AMF_VCE_H264_QP_PFRAME) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_QP_PFRAME, vce->GetPFrameQP());
-		if (obs_data_get_int(settings, AMF_VCE_H264_QP_BFRAME) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_QP_BFRAME, vce->GetBFrameQP());
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_QP_MINIMUM, vce->GetMinimumQP());
+		} catch (...) {}
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_QP_MAXIMUM) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_QP_MAXIMUM, vce->GetMaximumQP());
+		} catch (...) {}
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_QP_IFRAME) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_QP_IFRAME, vce->GetIFrameQP());
+		} catch (...) {}
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_QP_PFRAME) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_QP_PFRAME, vce->GetPFrameQP());
+		} catch (...) {}
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_QP_BFRAME) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_QP_BFRAME, vce->GetBFrameQP());
+		} catch (...) {}
 		// Rate Control: CBR, VBR
-		if (obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_BITRATE_TARGET, vce->GetTargetBitrate());
-		if (obs_data_get_int(settings, AMF_VCE_H264_BITRATE_PEAK) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_BITRATE_PEAK, vce->GetPeakBitrate());
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_BITRATE_TARGET, vce->GetTargetBitrate());
+		} catch (...) {}
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_BITRATE_PEAK) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_BITRATE_PEAK, vce->GetPeakBitrate());
+		} catch (...) {}
 
 		// Picture Control Properties
-		if (obs_data_get_int(settings, AMF_VCE_H264_HEADER_INSERTION_SPACING) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_HEADER_INSERTION_SPACING, vce->GetHeaderInsertionSpacing());
-		if (obs_data_get_int(settings, AMF_VCE_H264_NUMBER_OF_BPICTURES) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_NUMBER_OF_BPICTURES, vce->GetNumberOfBPictures());
-		if (obs_data_get_int(settings, AMF_VCE_H264_DEBLOCKING_FILTER) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_DEBLOCKING_FILTER, vce->IsDeblockingFilterEnabled() ? 1 : 0);
-		if (obs_data_get_int(settings, AMF_VCE_H264_BREFERENCE) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_BREFERENCE, vce->IsReferenceToBFrameEnabled() ? 1 : 0);
-		if (obs_data_get_int(settings, AMF_VCE_H264_IDR_PERIOD) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_IDR_PERIOD, vce->GetIDRPeriod());
-		if (obs_data_get_int(settings, AMF_VCE_H264_INTRAREFRESHNUMMBPERSLOT) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_INTRAREFRESHNUMMBPERSLOT, vce->GetInfraRefreshMBsPerSlotInMacroblocks());
-		if (obs_data_get_int(settings, AMF_VCE_H264_SLICESPERFRAME) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_SLICESPERFRAME, vce->GetNumberOfSlicesPerFrame());
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_HEADER_INSERTION_SPACING) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_HEADER_INSERTION_SPACING, vce->GetHeaderInsertionSpacing());
+		} catch (...) {}
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_NUMBER_OF_BPICTURES) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_NUMBER_OF_BPICTURES, vce->GetNumberOfBPictures());
+		} catch (...) {}
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_DEBLOCKING_FILTER) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_DEBLOCKING_FILTER, vce->IsDeblockingFilterEnabled() ? 1 : 0);
+		} catch (...) {}
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_BREFERENCE) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_BREFERENCE, vce->IsReferenceToBFrameEnabled() ? 1 : 0);
+		} catch (...) {}
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_IDR_PERIOD) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_IDR_PERIOD, vce->GetIDRPeriod());
+		} catch (...) {}
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_INTRAREFRESHNUMMBPERSLOT) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_INTRAREFRESHNUMMBPERSLOT, vce->GetInfraRefreshMBsPerSlotInMacroblocks());
+		} catch (...) {}
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_SLICESPERFRAME) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_SLICESPERFRAME, vce->GetNumberOfSlicesPerFrame());
+		} catch (...) {}
 
 		// Motion Estimation
-		if (obs_data_get_int(settings, AMF_VCE_H264_MOTIONESTIMATION) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_MOTIONESTIMATION, (vce->GetHalfPixelMotionEstimationEnabled() ? 1 : 0) + (vce->GetQuarterPixelMotionEstimationEnabled() ? 2 : 0));
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_MOTIONESTIMATION) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_MOTIONESTIMATION, (vce->GetHalfPixelMotionEstimationEnabled() ? 1 : 0) + (vce->GetQuarterPixelMotionEstimationEnabled() ? 2 : 0));
+		} catch (...) {}
 
 		// Other
-		if (obs_data_get_int(settings, AMF_VCE_H264_NUMBEROFTEMPORALENHANCEMENTLAYERS) == -1)
-			obs_data_set_int(settings, AMF_VCE_H264_NUMBEROFTEMPORALENHANCEMENTLAYERS, vce->GetNumberOfTemporalEnhancementLayers());
+		try {
+			if (obs_data_get_int(settings, AMF_VCE_H264_NUMBEROFTEMPORALENHANCEMENTLAYERS) == -1)
+				obs_data_set_int(settings, AMF_VCE_H264_NUMBEROFTEMPORALENHANCEMENTLAYERS, vce->GetNumberOfTemporalEnhancementLayers());
+		} catch (...) {}
 
 		// Remove Instance again.
 		delete vce;
