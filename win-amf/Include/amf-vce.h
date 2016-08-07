@@ -243,7 +243,7 @@ namespace AMFEncoder {
 		// Internal-only, do not expose.
 		//////////////////////////////////////////////////////////////////////////
 		private:
-		amf::AMFSurfacePtr CreateSurfaceFromFrame(struct encoder_frame*& frame);
+		amf::AMFSurfacePtr inline CreateSurfaceFromFrame(struct encoder_frame*& frame);
 
 		// Internal
 		bool m_isStarted;

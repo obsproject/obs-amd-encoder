@@ -49,7 +49,10 @@ AMFEncoder::VCE::VCE(VCE_Encoder_Type type) {
 	AMF_RESULT res;
 	VCE_Capabilities::EncoderCaps* encoderCaps;
 
-		// Set Encoder Type
+	// Initialize Class members
+	m_isStarted = false;
+
+	// Set Encoder Type
 	m_encoderType = type;
 
 	// Create AMF Context
@@ -329,9 +332,9 @@ void AMFEncoder::VCE::SetProfileLevel(VCE_Profile_Level value) {
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, (int64_t)profileToAMF[value]);
 	if (res == AMF_OK) {
 		m_profileLevel = value;
-		AMF_LOG_INFO("<AMFEncoder::VCE::SetProfile> Set to %s.", profiles[value]);
+		AMF_LOG_INFO("<AMFEncoder::VCE::SetProfileLevel> Set to %s.", profiles[value]);
 	} else { // Not OK? Then throw an error instead.
-		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetProfile> Failed to set to %s, error %s (code %d).", profiles[value], res);
+		throwAMFErrorAdvanced("<AMFEncoder::VCE::SetProfileLevel> Failed to set to %s, error %s (code %d).", profiles[value], res);
 	}
 }
 
@@ -1434,7 +1437,7 @@ void AMFEncoder::VCE::GetVideoInfo(struct video_scale_info*& info) {
 	info->range = VIDEO_RANGE_PARTIAL;
 }
 
-amf::AMFSurfacePtr AMFEncoder::VCE::CreateSurfaceFromFrame(struct encoder_frame*& frame) {
+amf::AMFSurfacePtr inline AMFEncoder::VCE::CreateSurfaceFromFrame(struct encoder_frame*& frame) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFSurfacePtr pSurface = nullptr;
 	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
@@ -1479,7 +1482,7 @@ amf::AMFSurfacePtr AMFEncoder::VCE::CreateSurfaceFromFrame(struct encoder_frame*
 			case VCE_SURFACE_FORMAT_I420:
 			{	// YUV 4:2:0, Y, subsampled U, subsampled V
 				size_t iMax = pSurface->GetPlanesCount();
-				#pragma loop(hint_parallel(3))
+				//#pragma loop(hint_parallel(3))
 				for (uint8_t i = 0; i < iMax; i++) {
 					amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
 					void* plane_nat = plane->GetNative();
