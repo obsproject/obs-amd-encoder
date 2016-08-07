@@ -173,24 +173,28 @@ const AMFEncoder::VCE_Profile_Level AMFEncoder::VCE_H264_Encoder::LEVEL_VALUES[L
 // Static Code
 //////////////////////////////////////////////////////////////////////////
 obs_encoder_info* AMFEncoder::VCE_H264_Encoder::encoder_info;
+const char* encoderName = "amf_h264_encoder";
+const char* encoderCodec = "h264";
 
 void AMFEncoder::VCE_H264_Encoder::encoder_register() {
 	if (!AMFEncoder::VCE_H264_Encoder::encoder_info) {
 		AMFEncoder::VCE_H264_Encoder::encoder_info = new obs_encoder_info();
-		AMFEncoder::VCE_H264_Encoder::encoder_info->id = "amf_h264_encoder";
+		std::memset(AMFEncoder::VCE_H264_Encoder::encoder_info, 0, sizeof(obs_encoder_info));
+		
+		AMFEncoder::VCE_H264_Encoder::encoder_info->id = encoderName;
 		AMFEncoder::VCE_H264_Encoder::encoder_info->type = obs_encoder_type::OBS_ENCODER_VIDEO;
-		AMFEncoder::VCE_H264_Encoder::encoder_info->codec = "h264";
+		AMFEncoder::VCE_H264_Encoder::encoder_info->codec = encoderCodec;
 
 		// Functions
-		AMFEncoder::VCE_H264_Encoder::encoder_info->get_name = &AMFEncoder::VCE_H264_Encoder::get_name;
-		AMFEncoder::VCE_H264_Encoder::encoder_info->get_defaults = &AMFEncoder::VCE_H264_Encoder::get_defaults;
-		AMFEncoder::VCE_H264_Encoder::encoder_info->get_properties = &AMFEncoder::VCE_H264_Encoder::get_properties;
-		AMFEncoder::VCE_H264_Encoder::encoder_info->create = &AMFEncoder::VCE_H264_Encoder::create;
-		AMFEncoder::VCE_H264_Encoder::encoder_info->destroy = &AMFEncoder::VCE_H264_Encoder::destroy;
-		AMFEncoder::VCE_H264_Encoder::encoder_info->encode = &AMFEncoder::VCE_H264_Encoder::encode;
-		AMFEncoder::VCE_H264_Encoder::encoder_info->update = &AMFEncoder::VCE_H264_Encoder::update;
-		AMFEncoder::VCE_H264_Encoder::encoder_info->get_video_info = &AMFEncoder::VCE_H264_Encoder::get_video_info;
-		AMFEncoder::VCE_H264_Encoder::encoder_info->get_extra_data = &AMFEncoder::VCE_H264_Encoder::get_extra_data;
+		AMFEncoder::VCE_H264_Encoder::encoder_info->get_name = &get_name;
+		AMFEncoder::VCE_H264_Encoder::encoder_info->get_defaults = &get_defaults;
+		AMFEncoder::VCE_H264_Encoder::encoder_info->get_properties = &get_properties;
+		AMFEncoder::VCE_H264_Encoder::encoder_info->create = &create;
+		AMFEncoder::VCE_H264_Encoder::encoder_info->destroy = &destroy;
+		AMFEncoder::VCE_H264_Encoder::encoder_info->encode = &encode;
+		AMFEncoder::VCE_H264_Encoder::encoder_info->update = &update;
+		AMFEncoder::VCE_H264_Encoder::encoder_info->get_video_info = &get_video_info;
+		AMFEncoder::VCE_H264_Encoder::encoder_info->get_extra_data = &get_extra_data;
 
 		obs_register_encoder(AMFEncoder::VCE_H264_Encoder::encoder_info);
 	}
@@ -672,11 +676,12 @@ AMFEncoder::VCE_H264_Encoder::VCE_H264_Encoder(obs_data_t* settings, obs_encoder
 	//// Dynamic Properties (Can be changed during Encoding)
 	////////////////////////////////////////////////////////////////////////////
 	update_properties(settings);
-	
+
 	// Test: AMF Examples have these here
 	value = obs_data_get_int(settings, AMF_VCE_H264_QUALITY_PRESET);
 	if (value != -1)
 		m_VCE->SetQualityPreset((VCE_Quality_Preset)value);
+
 	// Profile & Level
 	/// Profile
 	value = obs_data_get_int(settings, AMF_VCE_H264_PROFILE);
