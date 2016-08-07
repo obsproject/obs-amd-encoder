@@ -227,16 +227,19 @@
   <ItemGroup>
     <ClInclude Include="Include\amf-vce-capabilities.h" />
     <ClInclude Include="Include\amf-vce.h" />
+    <ClInclude Include="Include\enc-h264-simple.h" />
     <ClInclude Include="Include\enc-h264.h" />
     <ClInclude Include="Include\win-amf.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\amf-vce-capabilities.cpp" />
     <ClCompile Include="Source\amf-vce.cpp" />
+    <ClCompile Include="Source\enc-h264-simple.cpp" />
     <ClCompile Include="Source\enc-h264.cpp" />
     <ClCompile Include="Source\win-amf.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\locale\da-DK.ini" />
     <None Include="Resources\locale\en-US.ini" />
     <None Include="Resources\locale\es-ES.ini" />
   </ItemGroup>

@@ -30,6 +30,9 @@
     <ClInclude Include="Include\amf-vce-capabilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Include\enc-h264-simple.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\win-amf.cpp">
@@ -44,12 +47,18 @@
     <ClCompile Include="Source\amf-vce-capabilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\enc-h264-simple.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\locale\en-US.ini">
       <Filter>Resource Files\locate</Filter>
     </None>
     <None Include="Resources\locale\es-ES.ini">
+      <Filter>Resource Files\locate</Filter>
+    </None>
+    <None Include="Resources\locale\da-DK.ini">
       <Filter>Resource Files\locate</Filter>
     </None>
   </ItemGroup>
