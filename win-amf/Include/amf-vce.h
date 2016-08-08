@@ -30,6 +30,9 @@ SOFTWARE.
 #include <inttypes.h>
 #include <vector>
 #include <queue>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 // AMF
 #include "AMD-Media-SDK/1.1/inc/ErrorCodes.h"
@@ -244,7 +247,7 @@ namespace AMFEncoder {
 		//////////////////////////////////////////////////////////////////////////
 		private:
 		amf::AMFSurfacePtr inline CreateSurfaceFromFrame(struct encoder_frame*& frame);
-
+		
 		// Internal
 		bool m_isStarted;
 
@@ -298,7 +301,7 @@ namespace AMFEncoder {
 		/// Other
 		uint32_t m_numberOfTemporalEnhancementLayers;
 		
-		// AMF
+		// Binding: AMF
 		amf::AMFContextPtr m_AMFContext;
 		amf::AMFComponentPtr m_AMFEncoder;
 
@@ -306,7 +309,15 @@ namespace AMFEncoder {
 		std::vector<uint8_t> m_FrameDataBuffer;
 		std::vector<uint8_t> m_PacketDataBuffer;
 		std::vector<uint8_t> m_ExtraDataBuffer;
-		
+
+		// Threading: Input & Output
+		std::queue<void*> m_InputQueue, m_OutputQueue;
+		std::condition_variable m_InputCondVar, m_OutputCondVar;
+		std::mutex m_InputMutex, m_OutputMutex;
+		std::thread m_InputThread, m_OutputThread;
+		void InputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue);
+		void OutputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue);
+
 		//////////////////////////////////////////////////////////////////////////
 		// Logging & Exception Helpers
 		//////////////////////////////////////////////////////////////////////////

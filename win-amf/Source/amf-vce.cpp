@@ -50,19 +50,70 @@ AMFEncoder::VCE::VCE(VCE_Encoder_Type type) {
 	AMF_RESULT res;
 	VCE_Capabilities::EncoderCaps* encoderCaps;
 
-	// Initialize Class members
+	// Initialize Class Members to Defaults
+	/// For future readers, if you're wondering why this is here, Visual
+	///  Studio likes to skip the initial memset when using maximal speed
+	///  optimization - even though it shouldn't hurt, we'll see the ef-
+	///  fects further down the executation path.
 	m_isStarted = false;
-
-	// Set Encoder Type
+	/// Static Properties
 	m_encoderType = type;
+	m_memoryType = VCE_MEMORY_TYPE_HOST;
+	m_surfaceFormat = VCE_SURFACE_FORMAT_NV12;
+	m_usage = VCE_USAGE_TRANSCODING;
+	m_qualityPreset = VCE_QUALITY_PRESET_BALANCED;
+	m_profile = VCE_PROFILE_MAIN;
+	m_profileLevel = VCE_PROFILE_LEVEL_42;
+	m_maxLTRFrames = 0;
+	m_scanType = VCE_SCANTYPE_PROGRESSIVE;
+	m_frameSize = std::pair<uint32_t, uint32_t>(1280, 720);
+	m_frameRate = std::pair<uint32_t, uint32_t>(1, 60);
+	/// Dynamic Properties
+	m_rateControlMethod = VCE_RATE_CONTROL_VARIABLE_BITRATE_PEAK_CONSTRAINED;
+	m_skipFrameEnabled = false;
+	m_fillerDataEnabled = false;
+	m_enforceHRDEnabled = false;
+	m_GOPSize = m_frameRate.second;
+	m_VBVBufferSize = 20000000;
+	m_initalVBVBufferFullness = 1.0;
+	m_maximumAccessUnitSize = 0;
+	m_BPictureDeltaQP = 4;
+	m_refBPictureDeltaQP = 2;
+	m_minimumQP = 18;
+	m_maximumQP = 51;
+	m_IFrameQP = 22;
+	m_PFrameQP = 22;
+	m_BFrameQP = 22;
+	m_targetBitrate = 20000000;
+	m_peakBitrate = 20000000;
+	m_headerInsertionSpacing = 0;
+	m_numberOfBPictures = 0; // AMF Default is 3.
+	m_deblockingFilterEnabled = true;
+	m_referenceToBFrameEnabled = false; // AMF Default is true.
+	m_IDRPeriod = m_frameRate.second >> 1;
+	m_intraRefreshMBPerSlotInMacrobocks = 0;
+	m_numberOfSlicesPerFrame = 1;
+	m_halfPixelMotionEstimationEnabled = true;
+	m_quarterPixelMotionEstimationEnabled = true;
+	m_numberOfTemporalEnhancementLayers = 0;
+	/// Binding: AMF
+	m_AMFContext = nullptr;
+	m_AMFEncoder = nullptr;
+	/// Threading: Input & Output
+	//m_InputCondVar = std::condition_variable();
+	//m_InputMutex = std::mutex();
+	m_InputQueue = std::queue<void*>();
+	m_InputThread = std::thread(&InputThreadMain, std::ref(m_InputCondVar), std::ref(m_InputMutex), std::ref(m_InputQueue));
+	m_OutputQueue = std::queue<void*>();
+	m_OutputThread = std::thread(&OutputThreadMain, std::ref(m_InputCondVar), std::ref(m_InputMutex), std::ref(m_InputQueue));
 
-	// Create AMF Context
+	// Attempt to create an AMF Context
 	res = AMFCreateContext(&m_AMFContext);
 	if (res != AMF_OK)
 		throwAMFError("<AMFEncoder::VCE::H264> AMFCreateContext failed, error %s (code %d).", res);
 
-	// Create AMF VCE Component depending on Type.
-	switch (m_encoderType) {
+	// Create Video Coding Engine Component
+	switch (m_encoderType) { // Depending on given type.
 		case VCE_ENCODER_TYPE_AVC:
 			AMF_LOG_INFO("<AMFEncoder::VCE::H264> Attempting to create AVC Encoder...");
 			encoderCaps = &(VCE_Capabilities::getInstance()->m_AVCCaps);
