@@ -316,8 +316,8 @@ namespace AMFEncoder {
 		std::mutex m_InputMutex, m_OutputMutex;
 		std::thread m_InputThread, m_OutputThread;
 		bool m_InputShouldEnd, m_OutputShouldEnd;
-		void InputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue, bool& shouldEnd);
-		void OutputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue, bool& shouldEnd);
+		static void InputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue, bool& shouldEnd, amf::AMFComponentPtr& amfEncoder);
+		static void OutputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue, bool& shouldEnd, amf::AMFComponentPtr& amfEncoder);
 
 		//////////////////////////////////////////////////////////////////////////
 		// Logging & Exception Helpers

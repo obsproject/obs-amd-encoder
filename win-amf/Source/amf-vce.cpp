@@ -104,9 +104,9 @@ AMFEncoder::VCE::VCE(VCE_Encoder_Type type) {
 	//m_InputCondVar = std::condition_variable();
 	//m_InputMutex = std::mutex();
 	m_InputQueue = std::queue<void*>();
-	m_InputThread = std::thread(&InputThreadMain, std::ref(m_InputCondVar), std::ref(m_InputMutex), std::ref(m_InputQueue));
+	m_InputThread = std::thread(InputThreadMain, std::ref(m_InputCondVar), std::ref(m_InputMutex), std::ref(m_InputQueue), std::ref(m_AMFEncoder));
 	m_OutputQueue = std::queue<void*>();
-	m_OutputThread = std::thread(&OutputThreadMain, std::ref(m_InputCondVar), std::ref(m_InputMutex), std::ref(m_InputQueue));
+	m_OutputThread = std::thread(OutputThreadMain, std::ref(m_InputCondVar), std::ref(m_InputMutex), std::ref(m_InputQueue), std::ref(m_AMFEncoder));
 
 	// Attempt to create an AMF Context
 	res = AMFCreateContext(&m_AMFContext);
@@ -1400,10 +1400,10 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 	}
 
 	// Send to OBS
-	amf::AMFBufferPtr buffer(pData);
+	amf::AMFBufferPtr pBuffer(pData);
 
 	/// Copy to Static Buffer
-	size_t bufferSize = buffer->GetSize();
+	size_t bufferSize = pBuffer->GetSize();
 	if (m_PacketDataBuffer.size() < bufferSize) {
 		size_t newSize = (size_t)exp2(ceil(log2(bufferSize)));
 		m_PacketDataBuffer.resize(newSize);
@@ -1412,7 +1412,7 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 		AMF_LOG_WARNING("%s", msgBuf.data());
 	}
 	if ((bufferSize > 0) && (m_PacketDataBuffer.data()))
-		std::memcpy(m_PacketDataBuffer.data(), buffer->GetNative(), bufferSize);
+		std::memcpy(m_PacketDataBuffer.data(), pBuffer->GetNative(), bufferSize);
 
 	/// Set up Packet Information
 	packet->type = OBS_ENCODER_VIDEO;
@@ -1446,6 +1446,16 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 			}
 		}
 	}
+
+	#ifdef DEBUG
+	AMF_LOG_INFO("Frame Debug Info:");
+	AMF_LOG_INFO("	Priority: %d", packet->priority);
+	AMF_LOG_INFO("	Drop Priority: %d", packet->drop_priority);
+	AMF_LOG_INFO("	Size: %d", packet->size);
+	AMF_LOG_INFO("	PTS: %d", packet->pts);
+	AMF_LOG_INFO("	PTS (from Data): %d", pData->GetPts());
+	AMF_LOG_INFO("	PTS (from Buffer): %d", pBuffer->GetPts());
+	#endif
 
 	*received_packet = true;
 }
@@ -1590,7 +1600,7 @@ amf::AMFSurfacePtr inline AMFEncoder::VCE::CreateSurfaceFromFrame(struct encoder
 	return pSurface;
 }
 
-void AMFEncoder::VCE::InputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue, bool& shouldEnd) {
+void AMFEncoder::VCE::InputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue, bool& shouldEnd, amf::AMFComponentPtr& amfEncoder) {
 	std::unique_lock<std::mutex> lock(myMutex);
 	size_t queueSize;
 	do {
@@ -1600,7 +1610,7 @@ void AMFEncoder::VCE::InputThreadMain(std::condition_variable& myCondVar, std::m
 			void* task = myQueue.front();
 			amf::AMFSurfacePtr surface = static_cast<amf::AMFSurfacePtr>(task);
 
-			AMF_RESULT res = m_AMFEncoder->SubmitInput(surface);
+			AMF_RESULT res = amfEncoder->SubmitInput(surface);
 			if (res == AMF_OK) {
 				myQueue.pop();
 			} else {
@@ -1612,14 +1622,14 @@ void AMFEncoder::VCE::InputThreadMain(std::condition_variable& myCondVar, std::m
 	} while (!shouldEnd);
 }
 
-void AMFEncoder::VCE::OutputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue, bool& shouldEnd) {
+void AMFEncoder::VCE::OutputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue, bool& shouldEnd, amf::AMFComponentPtr& amfEncoder) {
 	std::unique_lock<std::mutex> lock(myMutex);
 	size_t queueSize;
 	do {
 		myCondVar.wait(lock);
 		if (!shouldEnd) {
 			amf::AMFDataPtr pData;
-			AMF_RESULT res = m_AMFEncoder->QueryOutput(&pData);
+			AMF_RESULT res = amfEncoder->QueryOutput(&pData);
 			if (res == AMF_OK) {
 				myQueue.push(static_cast<void*>(pData));
 			} else {
