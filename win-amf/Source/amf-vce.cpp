@@ -392,7 +392,7 @@ AMFEncoder::VCE_Profile_Level AMFEncoder::VCE::GetProfileLevel() {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFVariant variant;
 
-	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PROFILE, &variant);
+	res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, &variant);
 	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
 		switch (variant.ToInt64()) {
 			case 10:case 11:case 12:case 13:
@@ -411,6 +411,7 @@ AMFEncoder::VCE_Profile_Level AMFEncoder::VCE::GetProfileLevel() {
 				m_profileLevel = (VCE_Profile_Level)(variant.ToInt64() - 50 + VCE_PROFILE_LEVEL_50);
 				break;
 			default:
+				AMF_LOG_WARNING("<AMFEncoder::VCE::GetProfileLevel> Unknown Profile Level %d", variant.ToInt64());
 				m_profileLevel = VCE_PROFILE_LEVEL_42; // Determined by leaving at default and looking at the output.
 				break;
 		}
@@ -663,6 +664,7 @@ bool AMFEncoder::VCE::IsEnforceHRDEnabled() {
 	if (res == AMF_OK && variant.type == amf::AMF_VARIANT_BOOL) {
 		m_enforceHRDEnabled = variant.ToBool();
 	} else {
+		AMF_LOG_INFO("%d", variant.type);
 		throwAMFError("<AMFEncoder::VCE::IsEnforceHRDEnabled> Failed to retrieve, error %s (code %d).", res);
 	}
 	return m_enforceHRDEnabled;
@@ -1435,8 +1437,6 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 	packet->data = m_PacketDataBuffer.data();
 	packet->pts = int64_t(pData->GetPts() * m_frameRateDiv / 1e7);
 	packet->dts = packet->pts;
-	//pData->GetProperty(AMFVCE_PROPERTY_FRAME, &packet->pts);
-	//packet->dts = pData->GetPts() / 10;
 	{
 		amf::AMFVariant variant;
 		res = pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &variant);
