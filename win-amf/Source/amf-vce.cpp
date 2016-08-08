@@ -42,6 +42,7 @@ SOFTWARE.
 // Plugin
 #include "win-amf.h"
 #include "amf-vce-capabilities.h"
+#include <mutex>
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -517,7 +518,7 @@ std::pair<uint32_t, uint32_t> AMFEncoder::VCE::GetFrameSize() {
 
 void AMFEncoder::VCE::SetFrameRate(std::pair<uint32_t, uint32_t>& value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
-	
+
 	// Set
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FRAMERATE, ::AMFConstructRate(value.first, value.second));
 	if (res == AMF_OK) {
@@ -1387,7 +1388,7 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 		AMF_LOG_ERROR("%s", error);
 		throw std::exception(error);
 	}
-	
+
 	// Query Output
 	res = m_AMFEncoder->QueryOutput(&pData);
 	if (res != AMF_OK) {
@@ -1397,7 +1398,7 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 		*received_packet = false;
 		return;
 	}
-	
+
 	// Send to OBS
 	amf::AMFBufferPtr buffer(pData);
 
@@ -1445,7 +1446,7 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 			}
 		}
 	}
-	
+
 	*received_packet = true;
 }
 
@@ -1587,6 +1588,47 @@ amf::AMFSurfacePtr inline AMFEncoder::VCE::CreateSurfaceFromFrame(struct encoder
 	pSurface->SetProperty(AMFVCE_PROPERTY_FRAME, frame->pts);
 
 	return pSurface;
+}
+
+void AMFEncoder::VCE::InputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue, bool& shouldEnd) {
+	std::unique_lock<std::mutex> lock(myMutex);
+	size_t queueSize;
+	do {
+		myCondVar.wait(lock);
+		queueSize = myQueue.size();
+		if (!shouldEnd && (queueSize > 0)) {
+			void* task = myQueue.front();
+			amf::AMFSurfacePtr surface = static_cast<amf::AMFSurfacePtr>(task);
+
+			AMF_RESULT res = m_AMFEncoder->SubmitInput(surface);
+			if (res == AMF_OK) {
+				myQueue.pop();
+			} else {
+				std::vector<char> msgBuf(128);
+				formatAMFError(&msgBuf, "%s (code %d)", res);
+				AMF_LOG_WARNING("<AMFENcoder::VCE::InputThreadMain> SubmitInput failed with error %s.", msgBuf.data());
+			}
+		}
+	} while (!shouldEnd);
+}
+
+void AMFEncoder::VCE::OutputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue, bool& shouldEnd) {
+	std::unique_lock<std::mutex> lock(myMutex);
+	size_t queueSize;
+	do {
+		myCondVar.wait(lock);
+		if (!shouldEnd) {
+			amf::AMFDataPtr pData;
+			AMF_RESULT res = m_AMFEncoder->QueryOutput(&pData);
+			if (res == AMF_OK) {
+				myQueue.push(static_cast<void*>(pData));
+			} else {
+				std::vector<char> msgBuf(128);
+				formatAMFError(&msgBuf, "%s (code %d)", res);
+				AMF_LOG_WARNING("<AMFENcoder::VCE::InputThreadMain> SubmitInput failed with error %s.", msgBuf.data());
+			}
+		}
+	} while (!shouldEnd);
 }
 
 void AMFEncoder::VCE::throwAMFError(const char* errorMsg, AMF_RESULT res) {

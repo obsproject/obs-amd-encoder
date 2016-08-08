@@ -315,8 +315,9 @@ namespace AMFEncoder {
 		std::condition_variable m_InputCondVar, m_OutputCondVar;
 		std::mutex m_InputMutex, m_OutputMutex;
 		std::thread m_InputThread, m_OutputThread;
-		void InputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue);
-		void OutputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue);
+		bool m_InputShouldEnd, m_OutputShouldEnd;
+		void InputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue, bool& shouldEnd);
+		void OutputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue, bool& shouldEnd);
 
 		//////////////////////////////////////////////////////////////////////////
 		// Logging & Exception Helpers
