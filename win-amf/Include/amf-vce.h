@@ -290,6 +290,7 @@ namespace AMFEncoder {
 		/// Frame Size & Rate
 		std::pair<uint32_t, uint32_t> m_frameSize;
 		std::pair<uint32_t, uint32_t> m_frameRate;
+		double_t m_frameRateDiv;
 
 		// Dynamic Properties
 		/// Rate Control Method
@@ -334,7 +335,7 @@ namespace AMFEncoder {
 		std::vector<uint8_t> m_PacketDataBuffer;
 		std::vector<uint8_t> m_ExtraDataBuffer;
 
-		// Threading: Input & Output
+		#ifdef THREADED // Threading: Input & Output
 		ThreadDataInput m_InputThreadData;
 		ThreadDataOutput m_OutputThreadData;
 
@@ -346,6 +347,7 @@ namespace AMFEncoder {
 		bool m_InputShouldEnd, m_OutputShouldEnd;
 		static void InputThreadMain(ThreadDataInput* data);
 		static void OutputThreadMain(ThreadDataOutput* data);
+		#endif
 
 		//////////////////////////////////////////////////////////////////////////
 		// Logging & Exception Helpers

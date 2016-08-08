@@ -100,9 +100,10 @@ AMFEncoder::VCE::VCE(VCE_Encoder_Type type) {
 	/// Binding: AMF
 	m_AMFContext = nullptr;
 	m_AMFEncoder = nullptr;
-	/// Threading: Input & Output
+	#ifdef THREADED /// Threading: Input & Output
 	m_InputThreadData.m_encoder = m_AMFEncoder;
 	m_OutputThreadData.m_encoder = m_AMFEncoder;
+	#endif
 
 	// Attempt to create an AMF Context
 	res = AMFCreateContext(&m_AMFContext);
@@ -520,6 +521,7 @@ void AMFEncoder::VCE::SetFrameRate(std::pair<uint32_t, uint32_t>& value) {
 	if (res == AMF_OK) {
 		m_frameRate.first = value.first;
 		m_frameRate.second = value.second;
+		m_frameRateDiv = (double_t)m_frameRate.first / (double_t)m_frameRate.second; //avoid re-calc
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetFrameRate> Set to %d/%d.", m_frameRate.first, m_frameRate.second);
 	} else { // Not OK? Then throw an error instead.
 		std::vector<char> sizebuf(96);
@@ -1320,15 +1322,14 @@ void AMFEncoder::VCE::Start() {
 		throwAMFError("<AMFEncoder::VCE::Start> Unable to start, error %s (code %d).", res);
 	} else {
 		m_isStarted = true;
-		
-		// Threading Stuff
+		#ifdef THREADED // Threading
 		m_InputThreadData.m_encoder = m_AMFEncoder;
 		m_InputThreadData.m_shouldEnd = false;
+		m_InputThread = std::thread(&InputThreadMain, &m_InputThreadData);
 		m_OutputThreadData.m_encoder = m_AMFEncoder;
 		m_OutputThreadData.m_shouldEnd = false;
-
-		m_InputThread = std::thread(&InputThreadMain, &m_InputThreadData);
 		m_OutputThread = std::thread(&OutputThreadMain, &m_OutputThreadData);
+		#endif
 	}
 }
 
@@ -1341,6 +1342,15 @@ void AMFEncoder::VCE::Stop() {
 		AMF_LOG_ERROR("%s", error);
 		throw std::exception(error);
 	}
+
+	#ifdef THREADED // Threading
+	m_InputThreadData.m_shouldEnd = true;
+	m_InputThreadData.m_condVar.notify_all();
+	m_InputThread.join();
+	m_OutputThreadData.m_shouldEnd = true;
+	m_OutputThreadData.m_condVar.notify_all();
+	m_OutputThread.join();
+	#endif
 
 	//ToDo: Support for ReInit at different FrameSize? How does that even work?
 	res = m_AMFEncoder->Terminate();
@@ -1423,8 +1433,10 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 	packet->type = OBS_ENCODER_VIDEO;
 	packet->size = bufferSize;
 	packet->data = m_PacketDataBuffer.data();
-	pData->GetProperty(AMFVCE_PROPERTY_FRAME, &packet->pts);
+	packet->pts = int64_t(pData->GetPts() * m_frameRateDiv / 1e7);
 	packet->dts = packet->pts;
+	//pData->GetProperty(AMFVCE_PROPERTY_FRAME, &packet->pts);
+	//packet->dts = pData->GetPts() / 10;
 	{
 		amf::AMFVariant variant;
 		res = pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &variant);
@@ -1457,9 +1469,9 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 	AMF_LOG_INFO("	Priority: %d", packet->priority);
 	AMF_LOG_INFO("	Drop Priority: %d", packet->drop_priority);
 	AMF_LOG_INFO("	Size: %d", packet->size);
-	AMF_LOG_INFO("	PTS: %d", packet->pts);
-	AMF_LOG_INFO("	PTS (from Data): %d", pData->GetPts());
-	AMF_LOG_INFO("	PTS (from Buffer): %d", pBuffer->GetPts());
+	AMF_LOG_INFO("	PTS in Frames: %f", (double_t)pData->GetPts() * m_frameRateDiv / (double_t)1e7);
+	AMF_LOG_INFO("	PTS in Frames: %d", int64_t(pData->GetPts() * m_frameRateDiv / 1e7));
+	AMF_LOG_INFO("	PTS (Property): %d", packet->pts);
 	#endif
 
 	*received_packet = true;
@@ -1605,6 +1617,7 @@ amf::AMFSurfacePtr inline AMFEncoder::VCE::CreateSurfaceFromFrame(struct encoder
 	return pSurface;
 }
 
+#ifdef THREADED // Threading
 void AMFEncoder::VCE::InputThreadMain(ThreadDataInput* data) {
 	std::unique_lock<std::mutex> lock(data->m_mutex);
 	do {
@@ -1642,6 +1655,7 @@ void AMFEncoder::VCE::OutputThreadMain(ThreadDataOutput* data) {
 		}
 	} while (!data->m_shouldEnd);
 }
+#endif
 
 void AMFEncoder::VCE::throwAMFError(const char* errorMsg, AMF_RESULT res) {
 	std::vector<char> msgBuf(1024);
