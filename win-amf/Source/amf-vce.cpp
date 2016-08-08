@@ -101,12 +101,8 @@ AMFEncoder::VCE::VCE(VCE_Encoder_Type type) {
 	m_AMFContext = nullptr;
 	m_AMFEncoder = nullptr;
 	/// Threading: Input & Output
-	//m_InputCondVar = std::condition_variable();
-	//m_InputMutex = std::mutex();
-	m_InputQueue = std::queue<void*>();
-	m_InputThread = std::thread(InputThreadMain, std::ref(m_InputCondVar), std::ref(m_InputMutex), std::ref(m_InputQueue), std::ref(m_AMFEncoder));
-	m_OutputQueue = std::queue<void*>();
-	m_OutputThread = std::thread(OutputThreadMain, std::ref(m_InputCondVar), std::ref(m_InputMutex), std::ref(m_InputQueue), std::ref(m_AMFEncoder));
+	m_InputThreadData.m_encoder = m_AMFEncoder;
+	m_OutputThreadData.m_encoder = m_AMFEncoder;
 
 	// Attempt to create an AMF Context
 	res = AMFCreateContext(&m_AMFContext);
@@ -1324,6 +1320,15 @@ void AMFEncoder::VCE::Start() {
 		throwAMFError("<AMFEncoder::VCE::Start> Unable to start, error %s (code %d).", res);
 	} else {
 		m_isStarted = true;
+		
+		// Threading Stuff
+		m_InputThreadData.m_encoder = m_AMFEncoder;
+		m_InputThreadData.m_shouldEnd = false;
+		m_OutputThreadData.m_encoder = m_AMFEncoder;
+		m_OutputThreadData.m_shouldEnd = false;
+
+		m_InputThread = std::thread(&InputThreadMain, &m_InputThreadData);
+		m_OutputThread = std::thread(&OutputThreadMain, &m_OutputThreadData);
 	}
 }
 
@@ -1600,45 +1605,42 @@ amf::AMFSurfacePtr inline AMFEncoder::VCE::CreateSurfaceFromFrame(struct encoder
 	return pSurface;
 }
 
-void AMFEncoder::VCE::InputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue, bool& shouldEnd, amf::AMFComponentPtr& amfEncoder) {
-	std::unique_lock<std::mutex> lock(myMutex);
-	size_t queueSize;
+void AMFEncoder::VCE::InputThreadMain(ThreadDataInput* data) {
+	std::unique_lock<std::mutex> lock(data->m_mutex);
 	do {
-		myCondVar.wait(lock);
-		queueSize = myQueue.size();
-		if (!shouldEnd && (queueSize > 0)) {
-			void* task = myQueue.front();
-			amf::AMFSurfacePtr surface = static_cast<amf::AMFSurfacePtr>(task);
+		data->m_condVar.wait(lock);
+		size_t queueSize = data->m_queue.size();
+		if (!data->m_shouldEnd && (queueSize > 0)) {
+			amf::AMFSurfacePtr surface = data->m_queue.front();
 
-			AMF_RESULT res = amfEncoder->SubmitInput(surface);
+			AMF_RESULT res = data->m_encoder->SubmitInput(surface);
 			if (res == AMF_OK) {
-				myQueue.pop();
+				data->m_queue.pop();
 			} else {
 				std::vector<char> msgBuf(128);
 				formatAMFError(&msgBuf, "%s (code %d)", res);
 				AMF_LOG_WARNING("<AMFENcoder::VCE::InputThreadMain> SubmitInput failed with error %s.", msgBuf.data());
 			}
 		}
-	} while (!shouldEnd);
+	} while (!data->m_shouldEnd);
 }
 
-void AMFEncoder::VCE::OutputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue, bool& shouldEnd, amf::AMFComponentPtr& amfEncoder) {
-	std::unique_lock<std::mutex> lock(myMutex);
-	size_t queueSize;
+void AMFEncoder::VCE::OutputThreadMain(ThreadDataOutput* data) {
+	std::unique_lock<std::mutex> lock(data->m_mutex);
 	do {
-		myCondVar.wait(lock);
-		if (!shouldEnd) {
+		data->m_condVar.wait(lock);
+		if (!data->m_shouldEnd) {
 			amf::AMFDataPtr pData;
-			AMF_RESULT res = amfEncoder->QueryOutput(&pData);
+			AMF_RESULT res = data->m_encoder->QueryOutput(&pData);
 			if (res == AMF_OK) {
-				myQueue.push(static_cast<void*>(pData));
+				data->m_queue.push(pData);
 			} else {
 				std::vector<char> msgBuf(128);
 				formatAMFError(&msgBuf, "%s (code %d)", res);
-				AMF_LOG_WARNING("<AMFENcoder::VCE::InputThreadMain> SubmitInput failed with error %s.", msgBuf.data());
+				AMF_LOG_WARNING("<AMFENcoder::VCE::OutputThreadMain> QueryOutput failed with error %s.", msgBuf.data());
 			}
 		}
-	} while (!shouldEnd);
+	} while (!data->m_shouldEnd);
 }
 
 void AMFEncoder::VCE::throwAMFError(const char* errorMsg, AMF_RESULT res) {

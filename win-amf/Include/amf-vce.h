@@ -127,6 +127,30 @@ namespace AMFEncoder {
 		VCE_RATE_CONTROL_VARIABLE_BITRATE_LATENCY_CONSTRAINED	// Variable Bitrate, Latency Constrained
 	};
 
+	struct ThreadDataInput {
+		bool m_shouldEnd;
+		std::mutex m_mutex;
+		std::condition_variable m_condVar;
+		std::queue<amf::AMFSurfacePtr> m_queue;
+		amf::AMFComponentPtr m_encoder;
+
+		ThreadDataInput() {
+			m_shouldEnd = true;
+		}
+	};
+	struct ThreadDataOutput {
+		bool m_shouldEnd;
+		std::mutex m_mutex;
+		std::condition_variable m_condVar;
+		std::queue<amf::AMFDataPtr> m_queue;
+		amf::AMFComponentPtr m_encoder;
+
+		ThreadDataOutput() {
+			m_shouldEnd = true;
+		}
+	};
+
+
 	/**
 	* Class for the actual AMF Encoder.
 	*/
@@ -247,7 +271,7 @@ namespace AMFEncoder {
 		//////////////////////////////////////////////////////////////////////////
 		private:
 		amf::AMFSurfacePtr inline CreateSurfaceFromFrame(struct encoder_frame*& frame);
-		
+
 		// Internal
 		bool m_isStarted;
 
@@ -266,7 +290,7 @@ namespace AMFEncoder {
 		/// Frame Size & Rate
 		std::pair<uint32_t, uint32_t> m_frameSize;
 		std::pair<uint32_t, uint32_t> m_frameRate;
-		
+
 		// Dynamic Properties
 		/// Rate Control Method
 		VCE_Rate_Control_Method m_rateControlMethod;
@@ -300,7 +324,7 @@ namespace AMFEncoder {
 		bool m_quarterPixelMotionEstimationEnabled;
 		/// Other
 		uint32_t m_numberOfTemporalEnhancementLayers;
-		
+
 		// Binding: AMF
 		amf::AMFContextPtr m_AMFContext;
 		amf::AMFComponentPtr m_AMFEncoder;
@@ -311,13 +335,17 @@ namespace AMFEncoder {
 		std::vector<uint8_t> m_ExtraDataBuffer;
 
 		// Threading: Input & Output
-		std::queue<void*> m_InputQueue, m_OutputQueue;
+		ThreadDataInput m_InputThreadData;
+		ThreadDataOutput m_OutputThreadData;
+
+		std::queue<amf::AMFSurfacePtr> m_InputQueue;
+		std::queue<amf::AMFDataPtr> m_OutputQueue;
 		std::condition_variable m_InputCondVar, m_OutputCondVar;
 		std::mutex m_InputMutex, m_OutputMutex;
 		std::thread m_InputThread, m_OutputThread;
 		bool m_InputShouldEnd, m_OutputShouldEnd;
-		static void InputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue, bool& shouldEnd, amf::AMFComponentPtr& amfEncoder);
-		static void OutputThreadMain(std::condition_variable& myCondVar, std::mutex& myMutex, std::queue<void*>& myQueue, bool& shouldEnd, amf::AMFComponentPtr& amfEncoder);
+		static void InputThreadMain(ThreadDataInput* data);
+		static void OutputThreadMain(ThreadDataOutput* data);
 
 		//////////////////////////////////////////////////////////////////////////
 		// Logging & Exception Helpers
