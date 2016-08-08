@@ -215,7 +215,7 @@ void AMFEncoder::VCE_H264_Simple_Encoder::get_defaults(obs_data_t *settings) {
 obs_properties_t* AMFEncoder::VCE_H264_Simple_Encoder::get_properties(void* data) {
 	obs_properties* props = obs_properties_create();
 	obs_property_t* list;
-	obs_property_t* p;
+//	obs_property_t* p;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Static Properties (Can't be changed during Encoding)
