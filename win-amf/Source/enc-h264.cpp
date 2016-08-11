@@ -889,10 +889,12 @@ bool AMFEncoder::VCE_H264_Encoder::encode(struct encoder_frame * frame, struct e
 	if (!frame || !packet || !received_packet)
 		return false;
 
-	m_VCE->SendInput(frame);
+	bool retVal = true;
+
+	retVal = m_VCE->SendInput(frame);
 	m_VCE->GetOutput(packet, received_packet);
 
-	return true;
+	return retVal;
 }
 
 void AMFEncoder::VCE_H264_Encoder::get_video_info(struct video_scale_info* info) {
