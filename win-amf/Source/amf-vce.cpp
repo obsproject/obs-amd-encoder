@@ -100,10 +100,6 @@ AMFEncoder::VCE::VCE(VCE_Encoder_Type type) {
 	/// Binding: AMF
 	m_AMFContext = nullptr;
 	m_AMFEncoder = nullptr;
-	#ifdef THREADED /// Threading: Input & Output
-	m_InputThreadData.m_encoder = m_AMFEncoder;
-	m_OutputThreadData.m_encoder = m_AMFEncoder;
-	#endif
 
 	// Attempt to create an AMF Context
 	res = AMFCreateContext(&m_AMFContext);
@@ -1318,19 +1314,16 @@ void AMFEncoder::VCE::Start() {
 		throw std::exception(error);
 	}
 
-	//ToDo: Support for ReInit at different Framesize? How does that even work?
+	// Initialize AMF Encoder.
 	res = m_AMFEncoder->Init(surfaceFormatToAMF[m_surfaceFormat], m_frameSize.first, m_frameSize.second);
 	if (res != AMF_OK) {
 		throwAMFError("<AMFEncoder::VCE::Start> Unable to start, error %s (code %d).", res);
 	} else {
 		m_isStarted = true;
+
 		#ifdef THREADED // Threading
-		m_InputThreadData.m_encoder = m_AMFEncoder;
-		m_InputThreadData.m_shouldEnd = false;
-		m_InputThread = std::thread(&InputThreadMain, &m_InputThreadData);
-		m_OutputThreadData.m_encoder = m_AMFEncoder;
-		m_OutputThreadData.m_shouldEnd = false;
-		m_OutputThread = std::thread(&OutputThreadMain, &m_OutputThreadData);
+		m_InputThread = std::thread(&InputThreadMain, this);
+		m_OutputThread = std::thread(&OutputThreadMain, this);
 		#endif
 	}
 }
@@ -1345,22 +1338,22 @@ void AMFEncoder::VCE::Stop() {
 		throw std::exception(error);
 	}
 
+	// Reset Started State
+	m_isStarted = false;
+
 	#ifdef THREADED // Threading
-	m_InputThreadData.m_shouldEnd = true;
 	m_InputThreadData.m_condVar.notify_all();
 	m_InputThread.join();
-	m_OutputThreadData.m_shouldEnd = true;
 	m_OutputThreadData.m_condVar.notify_all();
 	m_OutputThread.join();
 	#endif
 
-	//ToDo: Support for ReInit at different FrameSize? How does that even work?
+	// Terminate AMF Encoder Session
 	res = m_AMFEncoder->Terminate();
 	if (res != AMF_OK) {
 		throwAMFError("<AMFEncoder::VCE::Stop> Unable to stop, error %s (code %d).", res);
-	} else {
-		m_isStarted = false;
 	}
+
 }
 
 bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
@@ -1375,22 +1368,34 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 	}
 
 	// Submit Input
-	//std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
 	pSurface = CreateSurfaceFromFrame(frame);
-	/*std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double, std::milli> dur = end - start;
-	AMF_LOG_INFO("Surface Creation time: %f", dur);
-	start = std::chrono::high_resolution_clock::now();*/
+	#ifdef THREADED
+	/// Signal Thread Wakeup
+	m_InputThreadData.m_condVar.notify_all();
+
+	/// Queue Frame 
+	{ /// Open a new Scope to quickly unlock the mutex again.
+		std::unique_lock<std::mutex> lock(m_InputThreadData.m_mutex);
+		if (m_InputThreadData.m_queue.size() < AMF_VCE_MAX_QUEUED_FRAMES) {
+			m_InputThreadData.m_queue.push(pSurface);
+		} else {
+			AMF_LOG_ERROR("<AMFEncoder::VCE::SendInput> Input Queue is full, aborting...");
+			return false;
+		}
+	}
+	#else
 	res = m_AMFEncoder->SubmitInput(pSurface);
-	/*end = std::chrono::high_resolution_clock::now();
-	dur = end - start;
-	AMF_LOG_INFO("Surface Submission time: %f", dur);*/
-	if (res != AMF_OK) {// Unable to submit Surface
+	if (res == AMF_INPUT_FULL) { // Input Queue is Full
+		std::vector<char> msgBuf(1024);
+		formatAMFError(&msgBuf, "<AMFEncoder::VCE::SendInput> Input Queue is full, error %s (code %d).", res);
+		AMF_LOG_ERROR("%s", msgBuf.data());
+	} else {// Unable to submit Surface
 		std::vector<char> msgBuf(1024);
 		formatAMFError(&msgBuf, "<AMFEncoder::VCE::SendInput> Unable to submit input, error %s (code %d).", res);
 		AMF_LOG_ERROR("%s", msgBuf.data());
 		return false;
 	}
+	#endif
 
 	return true;
 }
@@ -1406,6 +1411,61 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 		throw std::exception(error);
 	}
 
+	// Query Output
+	#ifdef THREADED // Use Threaded Model
+	// Signal Thread Wakeup
+	m_OutputThreadData.m_condVar.notify_all();
+
+	// Check Queue
+	{
+		std::unique_lock<std::mutex> lock(m_OutputThreadData.m_mutex);
+		if (m_OutputThreadData.m_queue.size() == 0) {
+			*received_packet = false;
+			return;
+		}
+
+		// Submit Packet to OBS
+		OutputThreadPacket pkt = m_OutputThreadData.m_queue.front();
+		/// Copy to Static Buffer
+		size_t bufferSize = pkt.data.size();
+		if (m_PacketDataBuffer.size() < bufferSize) {
+			size_t newSize = (size_t)exp2(ceil(log2(bufferSize)));
+			m_PacketDataBuffer.resize(newSize);
+			AMF_LOG_WARNING("<AMFEncoder::VCE::GetOutput> Resized Packet Buffer to %d.", newSize);
+		}
+		if ((bufferSize > 0) && (m_PacketDataBuffer.data()))
+			std::memcpy(m_PacketDataBuffer.data(), pkt.data.data(), bufferSize);
+
+		/// Set up Packet Information
+		packet->type = OBS_ENCODER_VIDEO;
+		packet->size = bufferSize;
+		packet->data = m_PacketDataBuffer.data();
+		packet->pts = pkt.frameIndex;
+		packet->dts = packet->pts;
+		switch (pkt.dataType) {
+			case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR://
+				packet->keyframe = true;				// IDR-Frames are Keyframes that contain a lot of information.
+				packet->priority = 3;					// Highest priority, always continue streaming with these.
+				packet->drop_priority = 3;				// Dropped IDR-Frames can only be replaced by the next IDR-Frame.
+				break;
+			case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_I:	// I-Frames need only a previous I- or IDR-Frame.
+				packet->priority = 2;					// I- and IDR-Frames will most likely be present.
+				packet->drop_priority = 2;				// So we can continue with a I-Frame when streaming.
+				break;
+			case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_P:	// P-Frames need either a previous P-, I- or IDR-Frame.
+				packet->priority = 1;					// We can safely assume that at least one of these is present.
+				packet->drop_priority = 1;				// So we can continue with a P-Frame when streaming.
+				break;
+			case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_B:	// B-Frames need either a parent B-, P-, I- or IDR-Frame.
+				packet->priority = 0;					// We don't know if the last non-dropped frame was a B-Frame.
+				packet->drop_priority = 0;				// So require a P-Frame or better to continue streaming.
+				break;
+		}
+
+		// Remove front() element.
+		m_OutputThreadData.m_queue.pop();
+	}
+	#else
 	// Query Output
 	res = m_AMFEncoder->QueryOutput(&pData);
 	if (res != AMF_OK) {
@@ -1458,20 +1518,19 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 					break;
 				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_B:	// B-Frames need either a parent B-, P-, I- or IDR-Frame.
 					packet->priority = 0;					// We don't know if the last non-dropped frame was a B-Frame.
-					packet->drop_priority = 1;				// So require a P-Frame or better to continue streaming.
+					packet->drop_priority = 0;				// So require a P-Frame or better to continue streaming.
 					break;
 			}
 		}
 	}
+	#endif
 
 	#ifdef DEBUG
-	AMF_LOG_INFO("Frame Debug Info:");
-	AMF_LOG_INFO("	Priority: %d", packet->priority);
+	AMF_LOG_INFO("Packet Debug Info:");
+	AMF_LOG_INFO("	Priority: %d (0=B, 1=P, 2=I, 3=IDR)", packet->priority);
 	AMF_LOG_INFO("	Drop Priority: %d", packet->drop_priority);
 	AMF_LOG_INFO("	Size: %d", packet->size);
-	AMF_LOG_INFO("	PTS in Frames: %f", (double_t)pData->GetPts() * m_frameRateDiv / (double_t)1e7);
-	AMF_LOG_INFO("	PTS in Frames: %d", int64_t(pData->GetPts() * m_frameRateDiv / 1e7));
-	AMF_LOG_INFO("	PTS (Property): %d", packet->pts);
+	AMF_LOG_INFO("	PTS: %d", packet->pts);
 	#endif
 
 	*received_packet = true;
@@ -1612,48 +1671,88 @@ amf::AMFSurfacePtr inline AMFEncoder::VCE::CreateSurfaceFromFrame(struct encoder
 
 	amf_pts amfPts = (int64_t)ceil((frame->pts / ((double_t)m_frameRate.first / (double_t)m_frameRate.second)) * 10000000l);//(1 * 1000 * 1000 * 10)
 	pSurface->SetPts(amfPts);
-	pSurface->SetProperty(AMFVCE_PROPERTY_FRAME, frame->pts);
+	pSurface->SetProperty(AMF_VCE_PROPERTY_FRAMEINDEX, frame->pts);
 
 	return pSurface;
 }
 
 #ifdef THREADED // Threading
-void AMFEncoder::VCE::InputThreadMain(ThreadDataInput* data) {
-	std::unique_lock<std::mutex> lock(data->m_mutex);
-	do {
-		data->m_condVar.wait(lock);
-		size_t queueSize = data->m_queue.size();
-		if (!data->m_shouldEnd && (queueSize > 0)) {
-			amf::AMFSurfacePtr surface = data->m_queue.front();
-
-			AMF_RESULT res = data->m_encoder->SubmitInput(surface);
-			if (res == AMF_OK) {
-				data->m_queue.pop();
-			} else {
-				std::vector<char> msgBuf(128);
-				formatAMFError(&msgBuf, "%s (code %d)", res);
-				AMF_LOG_WARNING("<AMFENcoder::VCE::InputThreadMain> SubmitInput failed with error %s.", msgBuf.data());
-			}
-		}
-	} while (!data->m_shouldEnd);
+void AMFEncoder::VCE::InputThreadMain(VCE* cls) {
+	cls->InputThreadMethod();
 }
 
-void AMFEncoder::VCE::OutputThreadMain(ThreadDataOutput* data) {
-	std::unique_lock<std::mutex> lock(data->m_mutex);
+void AMFEncoder::VCE::OutputThreadMain(VCE* cls) {
+	cls->OutputThreadMethod();
+}
+
+void AMFEncoder::VCE::InputThreadMethod() {
+	// Thread Loop that handles Surface Submission
+	std::unique_lock<std::mutex> lock(m_InputThreadData.m_mutex);
 	do {
-		data->m_condVar.wait(lock);
-		if (!data->m_shouldEnd) {
-			amf::AMFDataPtr pData;
-			AMF_RESULT res = data->m_encoder->QueryOutput(&pData);
+		m_InputThreadData.m_condVar.wait(lock);
+
+		// Skip to check if isStarted is false.
+		if (!m_isStarted)
+			continue;
+
+		// Skip to next wait if queue is empty.
+		AMF_RESULT res = AMF_OK;
+		while ((m_InputThreadData.m_queue.size() > 0) && res == AMF_OK) { // Repeat until impossible.
+			amf::AMFSurfacePtr surface = m_InputThreadData.m_queue.front();
+
+			AMF_RESULT res = m_AMFEncoder->SubmitInput(surface);
 			if (res == AMF_OK) {
-				data->m_queue.push(pData);
-			} else {
+				m_InputThreadData.m_queue.pop();
+			} else if (res != AMF_INPUT_FULL) {
 				std::vector<char> msgBuf(128);
 				formatAMFError(&msgBuf, "%s (code %d)", res);
-				AMF_LOG_WARNING("<AMFENcoder::VCE::OutputThreadMain> QueryOutput failed with error %s.", msgBuf.data());
+				AMF_LOG_WARNING("<AMFENcoder::VCE::InputThreadMethod> SubmitInput failed with error %s.", msgBuf.data());
+			}
+
+			if (m_InputThreadData.m_queue.size() > 0)
+				AMF_LOG_WARNING("<AMFENcoder::VCE::InputThreadMethod> Input Queue is filling up. (%d of %d)", m_InputThreadData.m_queue.size(), )
+		}
+	} while (m_isStarted);
+}
+
+void AMFEncoder::VCE::OutputThreadMethod() {
+	// Thread Loop that handles Querying
+	std::unique_lock<std::mutex> lock(m_InputThreadData.m_mutex);
+	do {
+		m_InputThreadData.m_condVar.wait(lock);
+
+		// Skip to check if isStarted is false.
+		if (!m_isStarted)
+			continue;
+
+		AMF_RESULT res = AMF_OK;
+		while (res == AMF_OK) { // Repeat until impossible.
+			amf::AMFDataPtr pData;
+
+			res = m_AMFEncoder->QueryOutput(&pData);
+			if (res == AMF_OK) {
+				amf::AMFBufferPtr pBuffer(pData);
+				amf::AMFVariant variant;
+				OutputThreadPacket pkt;
+
+				// Create a Packet
+				pkt.data.resize(pBuffer->GetSize());
+				std::memcpy(pkt.data.data(), pBuffer->GetNative(), pkt.data.size());
+				pkt.frameIndex = uint64_t(pData->GetPts() * (m_frameRateDiv / 1e7)); // Not sure what way around the accuracy is better.
+				AMF_RESULT res2 = pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &variant);
+				if (res2 == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
+					pkt.dataType = (AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)variant.ToUInt64();
+				}
+
+				// Queue
+				m_OutputThreadData.m_queue.push(pkt);
+			} else if (res != AMF_REPEAT) {
+				std::vector<char> msgBuf(128);
+				formatAMFError(&msgBuf, "%s (code %d)", res);
+				AMF_LOG_WARNING("<AMFENcoder::VCE::OutputThreadMethod> QueryOutput failed with error %s.", msgBuf.data());
 			}
 		}
-	} while (!data->m_shouldEnd);
+	} while (m_isStarted);
 }
 #endif
 

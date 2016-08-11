@@ -52,7 +52,8 @@ SOFTWARE.
 
 #define OBS_PTS_TO_AMF_PTS		10000 // amf_pts is in 100ns, so convert from ms to ns
 
-#define AMFVCE_PROPERTY_FRAME	L"OBSFrameIndex"
+#define AMF_VCE_PROPERTY_FRAMEINDEX	L"OBSFrameIndex"
+#define AMF_VCE_MAX_QUEUED_FRAMES	180
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -127,32 +128,20 @@ namespace AMFEncoder {
 		VCE_RATE_CONTROL_VARIABLE_BITRATE_LATENCY_CONSTRAINED	// Variable Bitrate, Latency Constrained
 	};
 
-	struct ThreadDataInput {
-		bool m_shouldEnd;
-		std::mutex m_mutex;
-		std::condition_variable m_condVar;
-		std::queue<amf::AMFSurfacePtr> m_queue;
-		amf::AMFComponentPtr m_encoder;
-
-		ThreadDataInput() {
-			m_shouldEnd = true;
-		}
+	#ifdef THREADED
+	struct BaseThreadedData {
+		std::vector<uint8_t> data;
+		uint64_t frameIndex;
 	};
-	struct ThreadDataOutput {
-		bool m_shouldEnd;
-		std::mutex m_mutex;
-		std::condition_variable m_condVar;
-		std::queue<amf::AMFDataPtr> m_queue;
-		amf::AMFComponentPtr m_encoder;
-
-		ThreadDataOutput() {
-			m_shouldEnd = true;
-		}
+	struct InputThreadFrame : public BaseThreadedData {};
+	struct OutputThreadPacket : public BaseThreadedData {
+		AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM dataType;
 	};
+	#endif
 
 	/**
-	* Class for the actual AMF Encoder.
-	*/
+	 * Class for the actual AMF Encoder.
+	 */
 	class VCE {
 		public:
 
@@ -163,8 +152,17 @@ namespace AMFEncoder {
 		~VCE();
 
 		//////////////////////////////////////////////////////////////////////////
-		// Properties
+		#pragma region Methods
 		//////////////////////////////////////////////////////////////////////////
+
+		// Core Methods
+		void Start();
+		void Stop();
+		bool SendInput(struct encoder_frame*&);
+		void GetOutput(struct encoder_packet*&, bool*&);
+		bool GetExtraData(uint8_t**&, size_t*&);
+		void GetVideoInfo(struct video_scale_info*&);
+
 		// Static Properties
 		/// Memory Type & Surface Format
 		void SetMemoryType(VCE_Memory_Type);
@@ -255,24 +253,58 @@ namespace AMFEncoder {
 		void SetNumberOfTemporalEnhancementLayers(uint32_t);
 		uint32_t GetNumberOfTemporalEnhancementLayers();
 
-		//////////////////////////////////////////////////////////////////////////
-		// Core Functions
-		//////////////////////////////////////////////////////////////////////////
-		void Start();
-		void Stop();
-		bool SendInput(struct encoder_frame*&);
-		void GetOutput(struct encoder_packet*&, bool*&);
-		bool GetExtraData(uint8_t**&, size_t*&);
-		void GetVideoInfo(struct video_scale_info*&);
-
-		//////////////////////////////////////////////////////////////////////////
-		// Internal-only, do not expose.
-		//////////////////////////////////////////////////////////////////////////
+		// Utility Methods
 		private:
 		amf::AMFSurfacePtr inline CreateSurfaceFromFrame(struct encoder_frame*& frame);
 
-		// Internal
+		// Threading
+		#ifdef THREADED
+		static void InputThreadMain(VCE* cls);
+		static void OutputThreadMain(VCE* cls);
+		void InputThreadMethod();
+		void OutputThreadMethod();
+		#endif
+
+		// Logging & Exception Helpers
+		static void formatAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res);
+		template<typename _T> static void formatAMFErrorAdvanced(std::vector<char>* buffer, const char* format, _T other, AMF_RESULT res);
+		static void throwAMFError(const char* errorMsg, AMF_RESULT res);
+		template<typename _T> static void throwAMFErrorAdvanced(const char* errorMsg, _T other, AMF_RESULT res);
+
+		#pragma endregion Methods
+		//////////////////////////////////////////////////////////////////////////
+
+		//////////////////////////////////////////////////////////////////////////
+		#pragma region Members
+		//////////////////////////////////////////////////////////////////////////
+		
+		// Flags
 		bool m_isStarted;
+
+		// Buffers
+		std::vector<uint8_t> m_FrameDataBuffer;
+		std::vector<uint8_t> m_PacketDataBuffer;
+		std::vector<uint8_t> m_ExtraDataBuffer;
+
+		// Binding: AMF
+		amf::AMFContextPtr m_AMFContext;
+		amf::AMFComponentPtr m_AMFEncoder;
+
+		// Threading
+		#ifdef THREADED
+		std::thread m_InputThread, m_OutputThread;
+		struct InputThreadData {
+			std::mutex m_mutex;
+			std::condition_variable m_condVar;
+			std::queue<amf::AMFSurfacePtr> m_queue;
+		} m_InputThreadData;
+
+		struct OutputThreadData {
+			std::mutex m_mutex;
+			std::condition_variable m_condVar;
+			std::queue<OutputThreadPacket> m_queue;
+		} m_OutputThreadData;
+		#endif
 
 		// Static Properties
 		/// Encoder Type, Memory Type & Surface Format
@@ -325,38 +357,7 @@ namespace AMFEncoder {
 		/// Other
 		uint32_t m_numberOfTemporalEnhancementLayers;
 
-		// Binding: AMF
-		amf::AMFContextPtr m_AMFContext;
-		amf::AMFComponentPtr m_AMFEncoder;
-
-		// Buffers
-		std::vector<uint8_t> m_FrameDataBuffer;
-		std::vector<uint8_t> m_PacketDataBuffer;
-		std::vector<uint8_t> m_ExtraDataBuffer;
-
-		#ifdef THREADED // Threading: Input & Output
-		ThreadDataInput m_InputThreadData;
-		ThreadDataOutput m_OutputThreadData;
-
-		std::queue<amf::AMFSurfacePtr> m_InputQueue;
-		std::queue<amf::AMFDataPtr> m_OutputQueue;
-		std::condition_variable m_InputCondVar, m_OutputCondVar;
-		std::mutex m_InputMutex, m_OutputMutex;
-		std::thread m_InputThread, m_OutputThread;
-		bool m_InputShouldEnd, m_OutputShouldEnd;
-		static void InputThreadMain(ThreadDataInput* data);
-		static void OutputThreadMain(ThreadDataOutput* data);
-		#endif
-
+		#pragma endregion Members
 		//////////////////////////////////////////////////////////////////////////
-		// Logging & Exception Helpers
-		//////////////////////////////////////////////////////////////////////////
-		static void throwAMFError(const char* errorMsg, AMF_RESULT res);
-		static void formatAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res);
-
-		template<typename _T>
-		static void formatAMFErrorAdvanced(std::vector<char>* buffer, const char* format, _T other, AMF_RESULT res);
-		template<typename _T>
-		static void throwAMFErrorAdvanced(const char* errorMsg, _T other, AMF_RESULT res);
 	};
 }
