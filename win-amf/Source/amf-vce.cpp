@@ -1526,11 +1526,7 @@ void AMFEncoder::VCE::GetOutput(struct encoder_packet*& packet, bool*& received_
 	#endif
 
 	#ifdef DEBUG
-	AMF_LOG_INFO("Packet Debug Info:");
-	AMF_LOG_INFO("	Priority: %d (0=B, 1=P, 2=I, 3=IDR)", packet->priority);
-	AMF_LOG_INFO("	Drop Priority: %d", packet->drop_priority);
-	AMF_LOG_INFO("	Size: %d", packet->size);
-	AMF_LOG_INFO("	PTS: %d", packet->pts);
+	AMF_LOG_INFO("Packet: Priority(%d), DropPriority(%d), PTS(%d), Size(%d)", packet->priority, packet->drop_priority, packet->pts, packet->size);
 	#endif
 
 	*received_packet = true;
@@ -1710,13 +1706,15 @@ void AMFEncoder::VCE::InputThreadMethod() {
 			}
 
 			if (m_InputThreadData.m_queue.size() > 0)
-				AMF_LOG_WARNING("<AMFENcoder::VCE::InputThreadMethod> Input Queue is filling up. (%d of %d)", m_InputThreadData.m_queue.size(), )
+				AMF_LOG_WARNING("<AMFENcoder::VCE::InputThreadMethod> Input Queue is filling up. (%d of %d)", m_InputThreadData.m_queue.size(), AMF_VCE_MAX_QUEUED_FRAMES);
 		}
 	} while (m_isStarted);
 }
 
 void AMFEncoder::VCE::OutputThreadMethod() {
 	// Thread Loop that handles Querying
+	uint64_t lastFrameIndex = 0;
+
 	std::unique_lock<std::mutex> lock(m_InputThreadData.m_mutex);
 	do {
 		m_InputThreadData.m_condVar.wait(lock);
@@ -1743,7 +1741,10 @@ void AMFEncoder::VCE::OutputThreadMethod() {
 				if (res2 == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
 					pkt.dataType = (AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)variant.ToUInt64();
 				}
-
+				if (lastFrameIndex >= pkt.frameIndex)
+					AMF_LOG_ERROR("<AMFENcoder::VCE::OutputThreadMethod> Detected out of order packet. Frame Index is %d, expected %d.", pkt.frameIndex, lastFrameIndex+1);
+				lastFrameIndex = pkt.frameIndex;
+				
 				// Queue
 				m_OutputThreadData.m_queue.push(pkt);
 			} else if (res != AMF_REPEAT) {

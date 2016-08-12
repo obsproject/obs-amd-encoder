@@ -270,3 +270,4 @@ ModelManifest.xml
 *.exe
 *.out
 *.app
+/#Resources/InnoSetup/Output

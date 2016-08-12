@@ -50,8 +50,6 @@ SOFTWARE.
 #define AMF_H264(x) ("AMF." ## x)
 #define AMF_VCE_T(x) obs_module_text(AMF_TEXT(x))
 
-#define OBS_PTS_TO_AMF_PTS		10000 // amf_pts is in 100ns, so convert from ms to ns
-
 #define AMF_VCE_PROPERTY_FRAMEINDEX	L"OBSFrameIndex"
 #define AMF_VCE_MAX_QUEUED_FRAMES	180
 
@@ -163,6 +161,24 @@ namespace AMFEncoder {
 		bool GetExtraData(uint8_t**&, size_t*&);
 		void GetVideoInfo(struct video_scale_info*&);
 
+		// Utility Methods
+		private:
+		amf::AMFSurfacePtr inline CreateSurfaceFromFrame(struct encoder_frame*& frame);
+
+		// Threading
+		#ifdef THREADED
+		static void InputThreadMain(VCE* cls);
+		static void OutputThreadMain(VCE* cls);
+		void InputThreadMethod();
+		void OutputThreadMethod();
+		#endif
+
+		// Logging & Exception Helpers
+		static void formatAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res);
+		template<typename _T> static void formatAMFErrorAdvanced(std::vector<char>* buffer, const char* format, _T other, AMF_RESULT res);
+		static void throwAMFError(const char* errorMsg, AMF_RESULT res);
+		template<typename _T> static void throwAMFErrorAdvanced(const char* errorMsg, _T other, AMF_RESULT res);
+
 		// Static Properties
 		/// Memory Type & Surface Format
 		void SetMemoryType(VCE_Memory_Type);
@@ -252,24 +268,6 @@ namespace AMFEncoder {
 		/// Other
 		void SetNumberOfTemporalEnhancementLayers(uint32_t);
 		uint32_t GetNumberOfTemporalEnhancementLayers();
-
-		// Utility Methods
-		private:
-		amf::AMFSurfacePtr inline CreateSurfaceFromFrame(struct encoder_frame*& frame);
-
-		// Threading
-		#ifdef THREADED
-		static void InputThreadMain(VCE* cls);
-		static void OutputThreadMain(VCE* cls);
-		void InputThreadMethod();
-		void OutputThreadMethod();
-		#endif
-
-		// Logging & Exception Helpers
-		static void formatAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res);
-		template<typename _T> static void formatAMFErrorAdvanced(std::vector<char>* buffer, const char* format, _T other, AMF_RESULT res);
-		static void throwAMFError(const char* errorMsg, AMF_RESULT res);
-		template<typename _T> static void throwAMFErrorAdvanced(const char* errorMsg, _T other, AMF_RESULT res);
 
 		#pragma endregion Methods
 		//////////////////////////////////////////////////////////////////////////
