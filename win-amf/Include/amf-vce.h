@@ -180,6 +180,7 @@ namespace AMFEncoder {
 		template<typename _T> static void throwAMFErrorAdvanced(const char* errorMsg, _T other, AMF_RESULT res);
 
 		// Static Properties
+		public:
 		/// Memory Type & Surface Format
 		void SetMemoryType(VCE_Memory_Type);
 		VCE_Memory_Type GetMemoryType();
@@ -289,6 +290,7 @@ namespace AMFEncoder {
 		amf::AMFComponentPtr m_AMFEncoder;
 
 		// Threading
+		std::mutex m_AMFMutex;
 		#ifdef THREADED
 		std::thread m_InputThread, m_OutputThread;
 		struct InputThreadData {

@@ -1595,79 +1595,82 @@ amf::AMFSurfacePtr inline AMFEncoder::VCE::CreateSurfaceFromFrame(struct encoder
 		amf::AMF_MEMORY_OPENGL
 	};
 
-	if (m_memoryType == VCE_MEMORY_TYPE_HOST) {
-		#pragma region Host Memory Type
-		res = m_AMFContext->AllocSurface(
-			memoryTypeToAMF[m_memoryType], surfaceFormatToAMF[m_surfaceFormat],
-			m_frameSize.first, m_frameSize.second,
-			&pSurface);
-		size_t planeCount = pSurface->GetPlanesCount();
+	{ // Test if AMF Submission and Query needs to be synced.
+		std::unique_lock<std::mutex> tempLock(m_AMFMutex);
+		if (m_memoryType == VCE_MEMORY_TYPE_HOST) {
+			#pragma region Host Memory Type
+			res = m_AMFContext->AllocSurface(
+				memoryTypeToAMF[m_memoryType], surfaceFormatToAMF[m_surfaceFormat],
+				m_frameSize.first, m_frameSize.second,
+				&pSurface);
+			size_t planeCount = pSurface->GetPlanesCount();
 
-		switch (m_surfaceFormat) {
-			case VCE_SURFACE_FORMAT_NV12:
-			{ // NV12, Y:U+V, Two Plane
-				#pragma loop(hint_parallel(2))
-				for (uint8_t i = 0; i < planeCount; i++) {
-					amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
-					void* plane_nat = plane->GetNative();
-					int32_t height = plane->GetHeight();
-					size_t hpitch = plane->GetHPitch();
+			switch (m_surfaceFormat) {
+				case VCE_SURFACE_FORMAT_NV12:
+				{ // NV12, Y:U+V, Two Plane
+					#pragma loop(hint_parallel(2))
+					for (uint8_t i = 0; i < planeCount; i++) {
+						amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
+						void* plane_nat = plane->GetNative();
+						int32_t height = plane->GetHeight();
+						size_t hpitch = plane->GetHPitch();
 
-					for (int32_t py = 0; py < height; py++) {
-						size_t plane_off = py * hpitch;
-						size_t frame_off = py * frame->linesize[i];
-						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+						for (int32_t py = 0; py < height; py++) {
+							size_t plane_off = py * hpitch;
+							size_t frame_off = py * frame->linesize[i];
+							std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+						}
 					}
+					break;
 				}
-				break;
-			}
-			case VCE_SURFACE_FORMAT_I420:
-			{	// YUV 4:2:0, Y, subsampled U, subsampled V
-				#pragma loop(hint_parallel(3))
-				for (uint8_t i = 0; i < planeCount; i++) {
-					amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
-					void* plane_nat = plane->GetNative();
-					int32_t height = plane->GetHeight();
-					size_t hpitch = plane->GetHPitch();
+				case VCE_SURFACE_FORMAT_I420:
+				{	// YUV 4:2:0, Y, subsampled U, subsampled V
+					#pragma loop(hint_parallel(3))
+					for (uint8_t i = 0; i < planeCount; i++) {
+						amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
+						void* plane_nat = plane->GetNative();
+						int32_t height = plane->GetHeight();
+						size_t hpitch = plane->GetHPitch();
 
-					for (int32_t py = 0; py < height; py++) {
-						size_t plane_off = py * hpitch;
-						size_t frame_off = py * frame->linesize[i];
-						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+						for (int32_t py = 0; py < height; py++) {
+							size_t plane_off = py * hpitch;
+							size_t frame_off = py * frame->linesize[i];
+							std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+						}
 					}
+					break;
 				}
-				break;
-			}
-			case VCE_SURFACE_FORMAT_I444:
-			{
-				break;
-			}
-			case VCE_SURFACE_FORMAT_RGB:
-			{ // RGBA, Single Plane
-				for (uint8_t i = 0; i < planeCount; i++) {
-					amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
-					void* plane_nat = plane->GetNative();
-					int32_t height = plane->GetHeight();
-					size_t hpitch = plane->GetHPitch();
+				case VCE_SURFACE_FORMAT_I444:
+				{
+					break;
+				}
+				case VCE_SURFACE_FORMAT_RGB:
+				{ // RGBA, Single Plane
+					for (uint8_t i = 0; i < planeCount; i++) {
+						amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
+						void* plane_nat = plane->GetNative();
+						int32_t height = plane->GetHeight();
+						size_t hpitch = plane->GetHPitch();
 
-					#pragma loop(hint_parallel(4))
-					for (int32_t py = 0; py < height; py++) {
-						size_t plane_off = py * hpitch;
-						size_t frame_off = py * frame->linesize[i];
-						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+						#pragma loop(hint_parallel(4))
+						for (int32_t py = 0; py < height; py++) {
+							size_t plane_off = py * hpitch;
+							size_t frame_off = py * frame->linesize[i];
+							std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+						}
 					}
+					break;
 				}
-				break;
 			}
+			#pragma endregion Host Memory Type
 		}
-		#pragma endregion Host Memory Type
-	}
-	if (res != AMF_OK) // Unable to create Surface
-		throwAMFError("<AMFEncoder::VCE::SendInput> Unable to create AMFSurface, error %s (code %d).", res);
+		if (res != AMF_OK) // Unable to create Surface
+			throwAMFError("<AMFEncoder::VCE::SendInput> Unable to create AMFSurface, error %s (code %d).", res);
 
-	amf_pts amfPts = (int64_t)ceil((frame->pts / ((double_t)m_frameRate.first / (double_t)m_frameRate.second)) * 10000000l);//(1 * 1000 * 1000 * 10)
-	pSurface->SetPts(amfPts);
-	pSurface->SetProperty(AMF_VCE_PROPERTY_FRAMEINDEX, frame->pts);
+		amf_pts amfPts = (int64_t)ceil((frame->pts / ((double_t)m_frameRate.first / (double_t)m_frameRate.second)) * 10000000l);//(1 * 1000 * 1000 * 10)
+		pSurface->SetPts(amfPts);
+		pSurface->SetProperty(AMF_VCE_PROPERTY_FRAMEINDEX, frame->pts);
+	}
 
 	return pSurface;
 }
@@ -1696,7 +1699,10 @@ void AMFEncoder::VCE::InputThreadMethod() {
 		while ((m_InputThreadData.m_queue.size() > 0) && res == AMF_OK) { // Repeat until impossible.
 			amf::AMFSurfacePtr surface = m_InputThreadData.m_queue.front();
 
-			AMF_RESULT res = m_AMFEncoder->SubmitInput(surface);
+			{ // Test if AMF Submission and Query needs to be synced.
+				std::unique_lock<std::mutex> tempLock(m_AMFMutex);
+				AMF_RESULT res = m_AMFEncoder->SubmitInput(surface);
+			}
 			if (res == AMF_OK) {
 				m_InputThreadData.m_queue.pop();
 			} else if (res != AMF_INPUT_FULL) {
@@ -1705,7 +1711,7 @@ void AMFEncoder::VCE::InputThreadMethod() {
 				AMF_LOG_WARNING("<AMFENcoder::VCE::InputThreadMethod> SubmitInput failed with error %s.", msgBuf.data());
 			}
 
-			if (m_InputThreadData.m_queue.size() > 0)
+			if (m_InputThreadData.m_queue.size() > 10) // Magic number for now.
 				AMF_LOG_WARNING("<AMFENcoder::VCE::InputThreadMethod> Input Queue is filling up. (%d of %d)", m_InputThreadData.m_queue.size(), AMF_VCE_MAX_QUEUED_FRAMES);
 		}
 	} while (m_isStarted);
@@ -1713,11 +1719,13 @@ void AMFEncoder::VCE::InputThreadMethod() {
 
 void AMFEncoder::VCE::OutputThreadMethod() {
 	// Thread Loop that handles Querying
-	uint64_t lastFrameIndex = 0;
+	uint64_t lastFrameIndex = -1;
 
 	std::unique_lock<std::mutex> lock(m_InputThreadData.m_mutex);
 	do {
+		AMF_LOG_INFO("Output: Waiting for Signal...");
 		m_InputThreadData.m_condVar.wait(lock);
+		AMF_LOG_INFO("Output: Signal received!");
 
 		// Skip to check if isStarted is false.
 		if (!m_isStarted)
@@ -1727,11 +1735,17 @@ void AMFEncoder::VCE::OutputThreadMethod() {
 		while (res == AMF_OK) { // Repeat until impossible.
 			amf::AMFDataPtr pData;
 
-			res = m_AMFEncoder->QueryOutput(&pData);
+			AMF_LOG_INFO("Output: Querying AMF...");
+			{ // Test if AMF Submission and Query needs to be synced.
+				std::unique_lock<std::mutex> tempLock(m_AMFMutex);
+				res = m_AMFEncoder->QueryOutput(&pData);
+			}
 			if (res == AMF_OK) {
 				amf::AMFBufferPtr pBuffer(pData);
 				amf::AMFVariant variant;
 				OutputThreadPacket pkt;
+
+				AMF_LOG_INFO("Output: AMF has Data for us!");
 
 				// Create a Packet
 				pkt.data.resize(pBuffer->GetSize());
@@ -1742,9 +1756,11 @@ void AMFEncoder::VCE::OutputThreadMethod() {
 					pkt.dataType = (AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)variant.ToUInt64();
 				}
 				if (lastFrameIndex >= pkt.frameIndex)
-					AMF_LOG_ERROR("<AMFENcoder::VCE::OutputThreadMethod> Detected out of order packet. Frame Index is %d, expected %d.", pkt.frameIndex, lastFrameIndex+1);
+					AMF_LOG_ERROR("<AMFENcoder::VCE::OutputThreadMethod> Detected out of order packet. Frame Index is %d, expected %d.", pkt.frameIndex, lastFrameIndex + 1);
 				lastFrameIndex = pkt.frameIndex;
-				
+
+				AMF_LOG_INFO("Output: Packet has been queue");
+
 				// Queue
 				m_OutputThreadData.m_queue.push(pkt);
 			} else if (res != AMF_REPEAT) {
