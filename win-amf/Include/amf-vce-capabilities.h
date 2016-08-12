@@ -50,6 +50,7 @@ namespace AMFEncoder {
 
 		public:
 		static VCE_Capabilities* getInstance();
+		static void reportCapabilities();
 
 		//////////////////////////////////////////////////////////////////////////
 		// Class
