@@ -23,7 +23,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 LicenseFile=..\InstallerLicense.txt
 OutputDir=.\Output
-OutputBaseFilename=OBS-AMF-Installer
+OutputBaseFilename=OBS-AMD-Media-Framework_Installer
 Compression=lzma
 SolidCompression=yes
 
