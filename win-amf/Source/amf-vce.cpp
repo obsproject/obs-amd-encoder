@@ -695,6 +695,13 @@ uint32_t AMFEncoder::VCE::GetGOPSize() {
 void AMFEncoder::VCE::SetVBVBufferSize(uint32_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
+	// Validate Input
+	uint32_t maxBitrate = VCE_Capabilities::getInstance()->getEncoderCaps(m_encoderType)->maxBitrate;
+	if (value > maxBitrate) { // Warn and limit
+		AMF_LOG_WARNING("<AMFEncoder::VCE::SetTargetBitrate> Bitrate value %d is out of range, limiting to 0 - %d...", maxBitrate);
+		value = maxBitrate;
+	}
+
 	// Set
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, (int64_t)value);
 	if (res == AMF_OK) {
@@ -720,6 +727,15 @@ uint32_t AMFEncoder::VCE::GetVBVBufferSize() {
 
 void AMFEncoder::VCE::SetInitialVBVBufferFullness(double_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
+
+	// Limit value
+	if (value < 0) {
+		value = 0;
+		AMF_LOG_WARNING("<AMFEncoder::VCE::SetInitialVBVBufferFullness> QP value %f is out of range, limiting to 0 - 1...", value);
+	} else if (value > 1) {
+		value = 1;
+		AMF_LOG_WARNING("<AMFEncoder::VCE::SetInitialVBVBufferFullness> QP value %f is out of range, limiting to 0 - 1...", value);
+	}
 
 	// Set
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, (int64_t)(value * 64));
@@ -747,6 +763,12 @@ double_t AMFEncoder::VCE::GetInitialVBVBufferFullness() {
 void AMFEncoder::VCE::SetMaximumAccessUnitSize(uint32_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
+	// Limit value
+	if (value > 1000) {
+		value = 1000;
+		AMF_LOG_WARNING("<AMFEncoder::VCE::SetMaximumAccessUnitSize> QP value %d is out of range, limiting to -10 - 10...", value);
+	}
+
 	// Set
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, (int64_t)value);
 	if (res == AMF_OK) {
@@ -773,6 +795,15 @@ uint32_t AMFEncoder::VCE::GetMaximumAccessUnitSize() {
 void AMFEncoder::VCE::SetBPictureDeltaQP(int8_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
+	// Limit value
+	if (value < -10) {
+		value = -10;
+		AMF_LOG_WARNING("<AMFEncoder::VCE::SetReferenceBPictureDeltaQP> QP value %d is out of range, limiting to -10 - 10...", value);
+	} else if (value > 10) {
+		value = 10;
+		AMF_LOG_WARNING("<AMFEncoder::VCE::SetReferenceBPictureDeltaQP> QP value %d is out of range, limiting to -10 - 10...", value);
+	}
+
 	// Set
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, (int64_t)value);
 	if (res == AMF_OK) {
@@ -798,6 +829,15 @@ int8_t AMFEncoder::VCE::GetBPictureDeltaQP() {
 
 void AMFEncoder::VCE::SetReferenceBPictureDeltaQP(int8_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
+
+	// Limit value
+	if (value < -10) {
+		value = -10;
+		AMF_LOG_WARNING("<AMFEncoder::VCE::SetReferenceBPictureDeltaQP> QP value %d is out of range, limiting to -10 - 10...", value);
+	} else if (value > 10) {
+		value = 10;
+		AMF_LOG_WARNING("<AMFEncoder::VCE::SetReferenceBPictureDeltaQP> QP value %d is out of range, limiting to -10 - 10...", value);
+	}
 
 	// Set
 	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, (int64_t)value);
