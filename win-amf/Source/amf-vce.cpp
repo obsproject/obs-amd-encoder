@@ -47,6 +47,15 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
+
+/**
+ * AMF Code Warning:
+ * - SetProperty does not do any Type Checking - 64-Bit Integers will be cut in half if retrieved as 32-Bit Integers by AMF.
+ * - SetProperty has different types for different values, exercise extreme caution - always try 32-bit size integers first.
+ * - Asynchronous access to AMF can cause unexpected crashes, synchronize whenever possible.
+ **/
+
+
 AMFEncoder::VCE::VCE(VCE_Encoder_Type type) {
 	AMF_RESULT res;
 	VCE_Capabilities::EncoderCaps* encoderCaps;
@@ -264,13 +273,13 @@ void AMFEncoder::VCE::SetQualityPreset(VCE_Quality_Preset value) {
 	// Set
 	switch (value) {
 		case VCE_QUALITY_PRESET_BALANCED:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED);
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, (int32_t)AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED);
 			break;
 		case VCE_QUALITY_PRESET_SPEED:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED);
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, (int32_t)AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED);
 			break;
 		case VCE_QUALITY_PRESET_QUALITY:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY);
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, (int32_t)AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY);
 			break;
 	}
 	if (res == AMF_OK) {
@@ -316,13 +325,13 @@ void AMFEncoder::VCE::SetProfile(VCE_Profile value) {
 	// Set
 	switch (value) {
 		case VCE_PROFILE_BASELINE:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMF_VIDEO_ENCODER_PROFILE_BASELINE);
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, (int32_t)AMF_VIDEO_ENCODER_PROFILE_BASELINE);
 			break;
 		case VCE_PROFILE_MAIN:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMF_VIDEO_ENCODER_PROFILE_MAIN);
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, (int32_t)AMF_VIDEO_ENCODER_PROFILE_MAIN);
 			break;
 		case VCE_PROFILE_HIGH:
-			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMF_VIDEO_ENCODER_PROFILE_HIGH);
+			res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, (int32_t)AMF_VIDEO_ENCODER_PROFILE_HIGH);
 			break;
 	}
 	if (res == AMF_OK) {
@@ -375,7 +384,7 @@ void AMFEncoder::VCE::SetProfileLevel(VCE_Profile_Level value) {
 	};
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, (int64_t)profileToAMF[value]);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, (int32_t)profileToAMF[value]);
 	if (res == AMF_OK) {
 		m_profileLevel = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetProfileLevel> Set to %s.", profiles[value]);
@@ -422,7 +431,7 @@ void AMFEncoder::VCE::SetMaxLTRFrames(uint32_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, (int32_t)value);
 	if (res == AMF_OK) {
 		m_maxLTRFrames = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetMaxOfLTRFrames> Set to %d.", value);
@@ -453,7 +462,7 @@ void AMFEncoder::VCE::SetScanType(VCE_ScanType value) {
 	};
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SCANTYPE, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SCANTYPE, (int32_t)value);
 	if (res == AMF_OK) {
 		m_scanType = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetScanType> Set to %s.", scanTypes[value]);
@@ -559,7 +568,7 @@ void AMFEncoder::VCE::SetRateControlMethod(VCE_Rate_Control_Method value) {
 	};
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, (int64_t)methodToAMF[value]);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, (int32_t)methodToAMF[value]);
 	if (res == AMF_OK) {
 		m_rateControlMethod = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetRateControlMethod> Set to %s.", methodToName[value]);
@@ -670,7 +679,7 @@ void AMFEncoder::VCE::SetGOPSize(uint32_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_GOP_SIZE, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_GOP_SIZE, (int32_t)value);
 	if (res == AMF_OK) {
 		m_GOPSize = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetGOPSize> Set to %d.", value);
@@ -703,7 +712,7 @@ void AMFEncoder::VCE::SetVBVBufferSize(uint32_t value) {
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, (int32_t)value);
 	if (res == AMF_OK) {
 		m_VBVBufferSize = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetVBVBufferSize> Set to %d.", value);
@@ -738,7 +747,7 @@ void AMFEncoder::VCE::SetInitialVBVBufferFullness(double_t value) {
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, (int64_t)(value * 64));
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, (int32_t)(value * 64));
 	if (res == AMF_OK) {
 		m_initalVBVBufferFullness = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetInitialVBVBufferFullness> Set to %f.", value);
@@ -766,11 +775,11 @@ void AMFEncoder::VCE::SetMaximumAccessUnitSize(uint32_t value) {
 	// Limit value
 	if (value > 1000) {
 		value = 1000;
-		AMF_LOG_WARNING("<AMFEncoder::VCE::SetMaximumAccessUnitSize> QP value %d is out of range, limiting to -10 - 10...", value);
+		AMF_LOG_WARNING("<AMFEncoder::VCE::SetMaximumAccessUnitSize> AU Size %d is out of range, limiting to 0 - 1000...", value);
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, (int32_t)value);
 	if (res == AMF_OK) {
 		m_maximumAccessUnitSize = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetMaximumAccessUnitSize> Set to %d.", value);
@@ -805,7 +814,7 @@ void AMFEncoder::VCE::SetBPictureDeltaQP(int8_t value) {
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, (int32_t)value);
 	if (res == AMF_OK) {
 		m_BPictureDeltaQP = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetBPictureDeltaQP> Set to %d.", value);
@@ -840,7 +849,7 @@ void AMFEncoder::VCE::SetReferenceBPictureDeltaQP(int8_t value) {
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, (int32_t)value);
 	if (res == AMF_OK) {
 		m_refBPictureDeltaQP = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetReferenceBPictureDeltaQP> Set to %d.", value);
@@ -872,7 +881,7 @@ void AMFEncoder::VCE::SetMinimumQP(uint8_t value) {
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MIN_QP, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MIN_QP, (int32_t)value);
 	if (res == AMF_OK) {
 		m_minimumQP = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetMinimumQP> Set to %d.", value);
@@ -904,7 +913,7 @@ void AMFEncoder::VCE::SetMaximumQP(uint8_t value) {
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_QP, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_QP, (int32_t)value);
 	if (res == AMF_OK) {
 		m_maximumQP = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetMaximumQP> Set to %d.", value);
@@ -936,7 +945,7 @@ void AMFEncoder::VCE::SetIFrameQP(uint8_t value) {
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_I, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_I, (int32_t)value);
 	if (res == AMF_OK) {
 		m_IFrameQP = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetIFrameQP> Set to %d.", value);
@@ -968,7 +977,7 @@ void AMFEncoder::VCE::SetPFrameQP(uint8_t value) {
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_P, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_P, (int32_t)value);
 	if (res == AMF_OK) {
 		m_PFrameQP = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetPFrameQP> Set to %d.", value);
@@ -1000,7 +1009,7 @@ void AMFEncoder::VCE::SetBFrameQP(uint8_t value) {
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_B, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_B, (int32_t)value);
 	if (res == AMF_OK) {
 		m_BFrameQP = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetBFrameQP> Set to %d.", value);
@@ -1033,7 +1042,7 @@ void AMFEncoder::VCE::SetTargetBitrate(uint32_t value) {
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, (uint32_t)value);
 	if (res == AMF_OK) {
 		m_targetBitrate = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetTargetBitrate> Set to %d.", value);
@@ -1066,7 +1075,7 @@ void AMFEncoder::VCE::SetPeakBitrate(uint32_t value) {
 	}
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, (uint32_t)value);
 	if (res == AMF_OK) {
 		m_peakBitrate = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetPeakBitrate> Set to %d.", value);
@@ -1091,7 +1100,7 @@ uint32_t AMFEncoder::VCE::GetPeakBitrate() {
 void AMFEncoder::VCE::SetHeaderInsertionSpacing(uint16_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING, (int32_t)value);
 	if (res == AMF_OK) {
 		m_headerInsertionSpacing = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetHeaderInsertionSpacing> Set to %d.", value);
@@ -1116,7 +1125,7 @@ uint16_t AMFEncoder::VCE::GetHeaderInsertionSpacing() {
 void AMFEncoder::VCE::SetNumberOfBPictures(uint8_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, (int32_t)value);
 	if (res == AMF_OK) {
 		m_numberOfBPictures = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetNumberOfBPictures> Set to %d.", value);
@@ -1191,7 +1200,9 @@ bool AMFEncoder::VCE::IsReferenceToBFrameEnabled() {
 void AMFEncoder::VCE::SetIDRPeriod(uint32_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, (int64_t)value);
+	// Up to 1000 according to AMF
+
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, (uint32_t)value);
 	if (res == AMF_OK) {
 		m_IDRPeriod = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetIDRPeriod> Set to %d.", value);
@@ -1216,7 +1227,7 @@ uint32_t AMFEncoder::VCE::GetIDRPeriod() {
 void AMFEncoder::VCE::SetInfraRefreshMBsPerSlotInMacroblocks(uint32_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, (int32_t)value);
 	if (res == AMF_OK) {
 		m_intraRefreshMBPerSlotInMacrobocks = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetInfraRefreshMBsPerSlotInMacroblocks> Set to %d.", value);
@@ -1241,7 +1252,7 @@ uint32_t AMFEncoder::VCE::GetInfraRefreshMBsPerSlotInMacroblocks() {
 void AMFEncoder::VCE::SetNumberOfSlicesPerFrame(uint32_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, (int32_t)value);
 	if (res == AMF_OK) {
 		m_numberOfSlicesPerFrame = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetNumberOfSlicesPerFrame> Set to %d.", value);
@@ -1316,7 +1327,7 @@ bool AMFEncoder::VCE::GetQuarterPixelMotionEstimationEnabled() {
 void AMFEncoder::VCE::SetNumberOfTemporalEnhancementLayers(uint32_t value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS, (int32_t)value);
 	if (res == AMF_OK) {
 		m_numberOfTemporalEnhancementLayers = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetNumberOfTemporalEnhancementLayers> Set to %d.", value);
@@ -1410,14 +1421,13 @@ bool AMFEncoder::VCE::SendInput(struct encoder_frame*& frame) {
 	// Submit Input
 	pSurface = CreateSurfaceFromFrame(frame);
 	#ifdef THREADED
-	/// Signal Thread Wakeup
-	m_InputThreadData.m_condVar.notify_all();
-
 	/// Queue Frame 
 	{ /// Open a new Scope to quickly unlock the mutex again.
 		std::unique_lock<std::mutex> lock(m_InputThreadData.m_mutex);
 		if (m_InputThreadData.m_queue.size() < AMF_VCE_MAX_QUEUED_FRAMES) {
 			m_InputThreadData.m_queue.push(pSurface);
+			/// Signal Thread Wakeup
+			m_InputThreadData.m_condVar.notify_all();
 		} else {
 			AMF_LOG_ERROR("<AMFEncoder::VCE::SendInput> Input Queue is full, aborting...");
 			return false;
@@ -1635,81 +1645,105 @@ amf::AMFSurfacePtr inline AMFEncoder::VCE::CreateSurfaceFromFrame(struct encoder
 		amf::AMF_MEMORY_OPENGL
 	};
 
-	{ // Test if AMF Submission and Query needs to be synced.
-		std::unique_lock<std::mutex> tempLock(m_AMFMutex);
-		if (m_memoryType == VCE_MEMORY_TYPE_HOST) {
-			#pragma region Host Memory Type
+	if (m_memoryType == VCE_MEMORY_TYPE_HOST) {
+		#pragma region Host Memory Type
+		size_t planeCount;
+
+		AMF_SYNC_LOCK(
 			res = m_AMFContext->AllocSurface(
 				memoryTypeToAMF[m_memoryType], surfaceFormatToAMF[m_surfaceFormat],
 				m_frameSize.first, m_frameSize.second,
 				&pSurface);
-			size_t planeCount = pSurface->GetPlanesCount();
+		planeCount = pSurface->GetPlanesCount();
+		);
 
-			switch (m_surfaceFormat) {
-				case VCE_SURFACE_FORMAT_NV12:
-				{ // NV12, Y:U+V, Two Plane
-					#pragma loop(hint_parallel(2))
-					for (uint8_t i = 0; i < planeCount; i++) {
-						amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
-						void* plane_nat = plane->GetNative();
-						int32_t height = plane->GetHeight();
-						size_t hpitch = plane->GetHPitch();
+		switch (m_surfaceFormat) {
+			case VCE_SURFACE_FORMAT_NV12:
+			{ // NV12, Y:U+V, Two Plane
+				#pragma loop(hint_parallel(2))
+				for (uint8_t i = 0; i < planeCount; i++) {
+					amf::AMFPlane* plane;
+					void* plane_nat;
+					int32_t height;
+					size_t hpitch;
 
-						for (int32_t py = 0; py < height; py++) {
-							size_t plane_off = py * hpitch;
-							size_t frame_off = py * frame->linesize[i];
-							std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
-						}
+					AMF_SYNC_LOCK(
+						plane = pSurface->GetPlaneAt(i);
+					plane_nat = plane->GetNative();
+					height = plane->GetHeight();
+					hpitch = plane->GetHPitch();
+					);
+
+					for (int32_t py = 0; py < height; py++) {
+						size_t plane_off = py * hpitch;
+						size_t frame_off = py * frame->linesize[i];
+						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
 					}
-					break;
 				}
-				case VCE_SURFACE_FORMAT_I420:
-				{	// YUV 4:2:0, Y, subsampled U, subsampled V
-					#pragma loop(hint_parallel(3))
-					for (uint8_t i = 0; i < planeCount; i++) {
-						amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
-						void* plane_nat = plane->GetNative();
-						int32_t height = plane->GetHeight();
-						size_t hpitch = plane->GetHPitch();
-
-						for (int32_t py = 0; py < height; py++) {
-							size_t plane_off = py * hpitch;
-							size_t frame_off = py * frame->linesize[i];
-							std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
-						}
-					}
-					break;
-				}
-				case VCE_SURFACE_FORMAT_I444:
-				{
-					break;
-				}
-				case VCE_SURFACE_FORMAT_RGB:
-				{ // RGBA, Single Plane
-					for (uint8_t i = 0; i < planeCount; i++) {
-						amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
-						void* plane_nat = plane->GetNative();
-						int32_t height = plane->GetHeight();
-						size_t hpitch = plane->GetHPitch();
-
-						#pragma loop(hint_parallel(4))
-						for (int32_t py = 0; py < height; py++) {
-							size_t plane_off = py * hpitch;
-							size_t frame_off = py * frame->linesize[i];
-							std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
-						}
-					}
-					break;
-				}
+				break;
 			}
-			#pragma endregion Host Memory Type
+			case VCE_SURFACE_FORMAT_I420:
+			{	// YUV 4:2:0, Y, subsampled U, subsampled V
+				#pragma loop(hint_parallel(3))
+				for (uint8_t i = 0; i < planeCount; i++) {
+					amf::AMFPlane* plane;
+					void* plane_nat;
+					int32_t height;
+					size_t hpitch;
+
+					AMF_SYNC_LOCK(
+						plane = pSurface->GetPlaneAt(i);
+					plane_nat = plane->GetNative();
+					height = plane->GetHeight();
+					hpitch = plane->GetHPitch();
+					);
+
+					for (int32_t py = 0; py < height; py++) {
+						size_t plane_off = py * hpitch;
+						size_t frame_off = py * frame->linesize[i];
+						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+					}
+				}
+				break;
+			}
+			case VCE_SURFACE_FORMAT_I444:
+			{
+				break;
+			}
+			case VCE_SURFACE_FORMAT_RGB:
+			{ // RGBA, Single Plane
+				for (uint8_t i = 0; i < planeCount; i++) {
+					amf::AMFPlane* plane;
+					void* plane_nat;
+					int32_t height;
+					size_t hpitch;
+
+					AMF_SYNC_LOCK(
+						plane = pSurface->GetPlaneAt(i);
+					plane_nat = plane->GetNative();
+					height = plane->GetHeight();
+					hpitch = plane->GetHPitch();
+					);
+
+					#pragma loop(hint_parallel(4))
+					for (int32_t py = 0; py < height; py++) {
+						size_t plane_off = py * hpitch;
+						size_t frame_off = py * frame->linesize[i];
+						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+					}
+				}
+				break;
+			}
 		}
+		#pragma endregion Host Memory Type
 		if (res != AMF_OK) // Unable to create Surface
 			throwAMFError("<AMFEncoder::VCE::SendInput> Unable to create AMFSurface, error %s (code %d).", res);
 
-		amf_pts amfPts = (int64_t)ceil((frame->pts / ((double_t)m_frameRate.first / (double_t)m_frameRate.second)) * 10000000l);//(1 * 1000 * 1000 * 10)
+		AMF_SYNC_LOCK(
+			amf_pts amfPts = (int64_t)ceil((frame->pts / ((double_t)m_frameRate.first / (double_t)m_frameRate.second)) * 10000000l);//(1 * 1000 * 1000 * 10)
 		pSurface->SetPts(amfPts);
 		pSurface->SetProperty(AMF_VCE_PROPERTY_FRAMEINDEX, frame->pts);
+		);
 	}
 
 	return pSurface;
@@ -1739,10 +1773,7 @@ void AMFEncoder::VCE::InputThreadMethod() {
 		while ((m_InputThreadData.m_queue.size() > 0) && res == AMF_OK) { // Repeat until impossible.
 			amf::AMFSurfacePtr surface = m_InputThreadData.m_queue.front();
 
-			{ // Test if AMF Submission and Query needs to be synced.
-				std::unique_lock<std::mutex> tempLock(m_AMFMutex);
-				AMF_RESULT res = m_AMFEncoder->SubmitInput(surface);
-			}
+			AMF_SYNC_LOCK(AMF_RESULT res = m_AMFEncoder->SubmitInput(surface););
 			if (res == AMF_OK) {
 				m_InputThreadData.m_queue.pop();
 			} else if (res != AMF_INPUT_FULL) {
@@ -1763,9 +1794,7 @@ void AMFEncoder::VCE::OutputThreadMethod() {
 
 	std::unique_lock<std::mutex> lock(m_InputThreadData.m_mutex);
 	do {
-		AMF_LOG_INFO("Output: Waiting for Signal...");
 		m_InputThreadData.m_condVar.wait(lock);
-		AMF_LOG_INFO("Output: Signal received!");
 
 		// Skip to check if isStarted is false.
 		if (!m_isStarted)
@@ -1775,31 +1804,23 @@ void AMFEncoder::VCE::OutputThreadMethod() {
 		while (res == AMF_OK) { // Repeat until impossible.
 			amf::AMFDataPtr pData;
 
-			AMF_LOG_INFO("Output: Querying AMF...");
-			{ // Test if AMF Submission and Query needs to be synced.
-				std::unique_lock<std::mutex> tempLock(m_AMFMutex);
-				res = m_AMFEncoder->QueryOutput(&pData);
-			}
+			AMF_SYNC_LOCK(res = m_AMFEncoder->QueryOutput(&pData););
 			if (res == AMF_OK) {
 				amf::AMFBufferPtr pBuffer(pData);
 				amf::AMFVariant variant;
 				OutputThreadPacket pkt;
 
-				AMF_LOG_INFO("Output: AMF has Data for us!");
-
 				// Create a Packet
 				pkt.data.resize(pBuffer->GetSize());
 				std::memcpy(pkt.data.data(), pBuffer->GetNative(), pkt.data.size());
 				pkt.frameIndex = uint64_t(pData->GetPts() * (m_frameRateDiv / 1e7)); // Not sure what way around the accuracy is better.
-				AMF_RESULT res2 = pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &variant);
+				AMF_SYNC_LOCK(AMF_RESULT res2 = pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &variant);
 				if (res2 == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
 					pkt.dataType = (AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)variant.ToUInt64();
-				}
+				});
 				if (lastFrameIndex >= pkt.frameIndex)
 					AMF_LOG_ERROR("<AMFENcoder::VCE::OutputThreadMethod> Detected out of order packet. Frame Index is %d, expected %d.", pkt.frameIndex, lastFrameIndex + 1);
 				lastFrameIndex = pkt.frameIndex;
-
-				AMF_LOG_INFO("Output: Packet has been queue");
 
 				// Queue
 				m_OutputThreadData.m_queue.push(pkt);

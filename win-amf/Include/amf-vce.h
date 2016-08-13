@@ -52,6 +52,7 @@ SOFTWARE.
 
 #define AMF_VCE_PROPERTY_FRAMEINDEX	L"OBSFrameIndex"
 #define AMF_VCE_MAX_QUEUED_FRAMES	180
+#define AMF_SYNC_LOCK(x) { std::unique_lock<std::mutex> amfSyncLock(m_AMFMutex); x; }
 
 //////////////////////////////////////////////////////////////////////////
 // Code
