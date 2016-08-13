@@ -751,7 +751,7 @@ AMFEncoder::VCE_H264_Encoder::VCE_H264_Encoder(obs_data_t* settings, obs_encoder
 	update_properties(settings);
 
 	// Verify
-	/*try {
+	try {
 		AMF_LOG_INFO("Verify Settings:");
 		try {
 			AMF_LOG_INFO("	Memory Type: %d", m_VCE->GetMemoryType());
@@ -864,7 +864,7 @@ AMFEncoder::VCE_H264_Encoder::VCE_H264_Encoder(obs_data_t* settings, obs_encoder
 		try {
 			AMF_LOG_INFO("	Temporal Enhancement Layers: %d", m_VCE->GetNumberOfTemporalEnhancementLayers());
 		} catch (...) {}
-	} catch (...) {}*/
+	} catch (...) {}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize (locks static properties)
