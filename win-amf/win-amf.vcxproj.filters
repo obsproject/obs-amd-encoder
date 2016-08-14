@@ -61,5 +61,14 @@
     <None Include="Resources\locale\da-DK.ini">
       <Filter>Resource Files\locate</Filter>
     </None>
+    <None Include="Resources\locale\hu-HU.ini">
+      <Filter>Resource Files\locate</Filter>
+    </None>
+    <None Include="Resources\locale\ru-RU.ini">
+      <Filter>Resource Files\locate</Filter>
+    </None>
+    <None Include="Resources\locale\vi-VN.ini">
+      <Filter>Resource Files\locate</Filter>
+    </None>
   </ItemGroup>
 </Project>

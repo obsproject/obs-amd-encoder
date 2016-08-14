@@ -275,6 +275,9 @@
     <None Include="Resources\locale\da-DK.ini" />
     <None Include="Resources\locale\en-US.ini" />
     <None Include="Resources\locale\es-ES.ini" />
+    <None Include="Resources\locale\hu-HU.ini" />
+    <None Include="Resources\locale\ru-RU.ini" />
+    <None Include="Resources\locale\vi-VN.ini" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
