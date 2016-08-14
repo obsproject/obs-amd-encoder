@@ -134,7 +134,7 @@ obs_properties_t* AMFEncoder::VCE_H264_Simple_Encoder::get_properties(void* data
 
 	// Main Properties
 	/// Keyframe Interval
-	obs_properties_add_int(props, AMF_VCE_H264_KEYFRAME_INTERVAL, obs_module_text(AMF_VCE_H264_KEYFRAME_INTERVAL), 0, 60, 1);
+	obs_properties_add_int(props, AMF_VCE_H264_KEYFRAME_INTERVAL, obs_module_text(AMF_VCE_H264_KEYFRAME_INTERVAL), 1, 60, 1);
 
 	/// Quality Preset
 	list = obs_properties_add_list(props, AMF_VCE_H264_QUALITY_PRESET, obs_module_text(AMF_VCE_H264_QUALITY_PRESET), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
@@ -143,11 +143,11 @@ obs_properties_t* AMFEncoder::VCE_H264_Simple_Encoder::get_properties(void* data
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_QUALITY_PRESET_QUALITY), VCE_QUALITY_PRESET_QUALITY);
 
 	/// Tuning
-	list = obs_properties_add_list(props, AMF_VCE_H264_TUNING, obs_module_text(AMF_VCE_H264_TUNING), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	/*list = obs_properties_add_list(props, AMF_VCE_H264_TUNING, obs_module_text(AMF_VCE_H264_TUNING), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_TUNING_DEFAULT), 0);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_TUNING_TWITCH), 1);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_TUNING_YOUTUBE), 2);
-	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_TUNING_RECORDING), 3);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_TUNING_RECORDING), 3);*/
 
 	/// Profile
 	list = obs_properties_add_list(props, AMF_VCE_H264_PROFILE, obs_module_text(AMF_VCE_H264_QUALITY_PRESET), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
@@ -210,7 +210,7 @@ bool AMFEncoder::VCE_H264_Simple_Encoder::ratecontrolmethod_modified(obs_propert
 			obs_property_set_visible(obs_properties_get(props, AMF_VCE_H264_BITRATE_TARGET), true);
 			break;
 	}
-return true;
+	return true;
 }
 
 bool AMFEncoder::VCE_H264_Simple_Encoder::custombuffer_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *settings) {
@@ -255,7 +255,7 @@ bool AMFEncoder::VCE_H264_Simple_Encoder::get_extra_data(void *data, uint8_t** e
 //////////////////////////////////////////////////////////////////////////
 AMFEncoder::VCE_H264_Simple_Encoder::VCE_H264_Simple_Encoder(obs_data_t* settings, obs_encoder_t* encoder) {
 	int32_t width, height, fpsNum, fpsDen;
-
+	
 	// OBS Settings
 	width = obs_encoder_get_width(encoder);
 	height = obs_encoder_get_height(encoder);
@@ -290,18 +290,59 @@ AMFEncoder::VCE_H264_Simple_Encoder::VCE_H264_Simple_Encoder(obs_data_t* setting
 	if (width > 1920)
 		m_VCE->SetProfileLevel(VCE_PROFILE_LEVEL_51);
 
+	/// Other
+	m_VCE->SetScanType(VCE_SCANTYPE_PROGRESSIVE);
+
 	/// Framesize and -rate
 	m_VCE->SetFrameSize(std::pair<uint32_t, uint32_t>(width, height));
 	m_VCE->SetFrameRate(std::pair<uint32_t, uint32_t>(fpsNum, fpsDen));
 
 	// Dynamic Properties
-	m_VCE->SetGOPSize((uint32_t)((double_t)fpsNum / (double_t)fpsDen));
+	/// Tuning
+	//switch (0) {
+	//	case 1: // Twitch
+	//		m_VCE->SetDeblockingFilterEnabled(true);
+	//		break;
+	//	case 2: // YouTube
+	//		m_VCE->SetDeblockingFilterEnabled(true);
+	//		break;
+	//	case 3: // Recording
+	//		m_VCE->SetDeblockingFilterEnabled(true);
+	//		break;
+	//	case 0:
+	//	default:
+	//		m_VCE->SetDeblockingFilterEnabled(false);
+	//		break;
+	//}
 
 	/// Rate Control
 	m_VCE->SetRateControlMethod((VCE_Rate_Control_Method)obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL));
 	m_VCE->SetFrameSkippingEnabled(obs_data_get_bool(settings, AMF_VCE_H264_FRAME_SKIPPING));
-	m_VCE->SetEnforceHRDEnabled(false);
-	int32_t bufferSize;
+	m_VCE->SetFillerDataEnabled(true);
+	m_VCE->SetEnforceHRDEnabled(true);
+
+	/// GOP & VBV Buffer
+	m_VCE->SetGOPSize((uint32_t)((double_t)fpsNum / (double_t)fpsDen));
+	if (obs_data_get_bool(settings, AMF_VCE_H264_USE_CUSTOM_BUFFER_SIZE)) {
+		m_VCE->SetVBVBufferSize((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_CUSTOM_BUFFER_SIZE) * 1000);
+	} else {
+		uint32_t bufferSize;
+		switch (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL)) {
+			case VCE_RATE_CONTROL_CONSTRAINED_QUANTIZATION_PARAMETER:
+				bufferSize = (uint32_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM) * 500; // Probably not optimal.
+				break;
+			case VCE_RATE_CONTROL_CONSTANT_BITRATE:
+				bufferSize = (uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET);
+				break;
+			case VCE_RATE_CONTROL_VARIABLE_BITRATE_PEAK_CONSTRAINED:
+			case VCE_RATE_CONTROL_VARIABLE_BITRATE_LATENCY_CONSTRAINED:
+				bufferSize = (uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_PEAK);
+				break;
+		}
+		m_VCE->SetVBVBufferSize(bufferSize * 1000);
+	}
+
+	/// Rate Control Parameters
 	switch (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL)) {
 		case VCE_RATE_CONTROL_CONSTRAINED_QUANTIZATION_PARAMETER:
 			m_VCE->SetMinimumQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
@@ -309,54 +350,28 @@ AMFEncoder::VCE_H264_Simple_Encoder::VCE_H264_Simple_Encoder(obs_data_t* setting
 			m_VCE->SetIFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
 			m_VCE->SetPFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
 			m_VCE->SetBFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-			bufferSize = (uint32_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM) * 500; // Probably not optimal.
 			break;
 		case VCE_RATE_CONTROL_CONSTANT_BITRATE:
-			bufferSize = (uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET);
-			m_VCE->SetTargetBitrate(bufferSize * 1000);
-			m_VCE->SetPeakBitrate(bufferSize * 1000);
-			m_VCE->SetFillerDataEnabled(true);
+			m_VCE->SetTargetBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) * 1000);
+			m_VCE->SetPeakBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) * 1000);
 			break;
 		case VCE_RATE_CONTROL_VARIABLE_BITRATE_PEAK_CONSTRAINED:
 		case VCE_RATE_CONTROL_VARIABLE_BITRATE_LATENCY_CONSTRAINED:
-			bufferSize = (uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET);
 			m_VCE->SetTargetBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) * 1000);
 			m_VCE->SetPeakBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_PEAK) * 1000);
 			break;
 	}
 
-	/// GOP & VBV Buffer
-	if (obs_data_get_bool(settings, AMF_VCE_H264_USE_CUSTOM_BUFFER_SIZE)) {
-		m_VCE->SetVBVBufferSize((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_CUSTOM_BUFFER_SIZE) * 1000);
-	} else {
-		m_VCE->SetVBVBufferSize(bufferSize * 1000);
-	}
-	
 	/// Other Settings
-	m_VCE->SetQuarterPixelMotionEstimationEnabled(true);
-	m_VCE->SetHalfPixelMotionEstimationEnabled(true);
 	m_VCE->SetNumberOfBPictures(0);
 	m_VCE->SetReferenceToBFrameEnabled(false);
 
 	/// Keyframe Interval
 	m_VCE->SetIDRPeriod((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_KEYFRAME_INTERVAL) * (uint32_t)((double_t)fpsNum / (double_t)fpsDen));
 
-	/// Tuning
-	switch (0) {
-		case 1: // Twitch
-			m_VCE->SetDeblockingFilterEnabled(true);
-			break;
-		case 2: // YouTube
-			m_VCE->SetDeblockingFilterEnabled(true);
-			break;
-		case 3: // Recording
-			m_VCE->SetDeblockingFilterEnabled(true);
-			break;
-		case 0:
-		default:
-			m_VCE->SetDeblockingFilterEnabled(false);
-			break;
-	}
+	/// Motion
+	m_VCE->SetQuarterPixelMotionEstimationEnabled(true);
+	m_VCE->SetHalfPixelMotionEstimationEnabled(true);
 
 	// Verify
 	try {
@@ -473,7 +488,6 @@ AMFEncoder::VCE_H264_Simple_Encoder::VCE_H264_Simple_Encoder(obs_data_t* setting
 			AMF_LOG_INFO("	Temporal Enhancement Layers: %d", m_VCE->GetNumberOfTemporalEnhancementLayers());
 		} catch (...) {}
 	} catch (...) {}
-
 
 	m_VCE->Start();
 }
