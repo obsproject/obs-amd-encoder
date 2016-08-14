@@ -600,7 +600,7 @@ void AMFEncoder::VCE::SetFrameSkippingEnabled(bool value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, value ? (int32_t)1 : (int32_t)0);
 	if (res == AMF_OK) {
 		m_skipFrameEnabled = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::EnableFrameSkipping> Set to %s.", value ? "Enabled" : "Disabled");
@@ -626,7 +626,7 @@ void AMFEncoder::VCE::SetFillerDataEnabled(bool value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, value ? (int32_t)1 : (int32_t)0);
 	if (res == AMF_OK) {
 		m_fillerDataEnabled = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::EnableFillerData> Set to %s.", value ? "Enabled" : "Disabled");
@@ -652,7 +652,7 @@ void AMFEncoder::VCE::SetEnforceHRDEnabled(bool value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, (int64_t)value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, value ? (int32_t)1 : (int32_t)0);
 	if (res == AMF_OK) {
 		m_enforceHRDEnabled = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::EnableEnforceHRD> Set to %s.", value ? "Enabled" : "Disabled");
@@ -1150,7 +1150,7 @@ uint8_t AMFEncoder::VCE::GetNumberOfBPictures() {
 void AMFEncoder::VCE::SetDeblockingFilterEnabled(bool value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER, value ? (int32_t)1 : (int32_t)0);
 	if (res == AMF_OK) {
 		m_deblockingFilterEnabled = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetDeblockingFilterEnabled> Set to %s.", value ? "Enabled" : "Disabled");
@@ -1175,7 +1175,7 @@ bool AMFEncoder::VCE::IsDeblockingFilterEnabled() {
 void AMFEncoder::VCE::SetReferenceToBFrameEnabled(bool value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, value ? (int32_t)1 : (int32_t)0);
 	if (res == AMF_OK) {
 		m_referenceToBFrameEnabled = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetReferenceToBFrameEnabled> Set to %s.", value ? "Enabled" : "Disabled");
@@ -1277,7 +1277,7 @@ uint32_t AMFEncoder::VCE::GetNumberOfSlicesPerFrame() {
 void AMFEncoder::VCE::SetHalfPixelMotionEstimationEnabled(bool value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, value ? (int32_t)1 : (int32_t)0);
 	if (res == AMF_OK) {
 		m_halfPixelMotionEstimationEnabled = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetHalfPixelMotionEstimationEnabled> Set to %s.", value ? "Enabled" : "Disabled");
@@ -1302,7 +1302,7 @@ bool AMFEncoder::VCE::GetHalfPixelMotionEstimationEnabled() {
 void AMFEncoder::VCE::SetQuarterPixelMotionEstimationEnabled(bool value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL, value);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL, value ? (int32_t)1 : (int32_t)0);
 	if (res == AMF_OK) {
 		m_quarterPixelMotionEstimationEnabled = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetQuarterPixelMotionEstimationEnabled> Set to %s.", value ? "Enabled" : "Disabled");
@@ -1649,95 +1649,35 @@ amf::AMFSurfacePtr inline AMFEncoder::VCE::CreateSurfaceFromFrame(struct encoder
 		#pragma region Host Memory Type
 		size_t planeCount;
 
-		AMF_SYNC_LOCK(
-			res = m_AMFContext->AllocSurface(
-				memoryTypeToAMF[m_memoryType], surfaceFormatToAMF[m_surfaceFormat],
-				m_frameSize.first, m_frameSize.second,
-				&pSurface);
+		AMF_SYNC_LOCK(res = m_AMFContext->AllocSurface(
+			memoryTypeToAMF[m_memoryType], surfaceFormatToAMF[m_surfaceFormat],
+			m_frameSize.first, m_frameSize.second,
+			&pSurface););
+		if (res != AMF_OK) // Unable to create Surface
+			throwAMFError("<AMFEncoder::VCE::SendInput> Unable to create AMFSurface, error %s (code %d).", res);
+		
 		planeCount = pSurface->GetPlanesCount();
-		);
 
-		switch (m_surfaceFormat) {
-			case VCE_SURFACE_FORMAT_NV12:
-			{ // NV12, Y:U+V, Two Plane
-				#pragma loop(hint_parallel(2))
-				for (uint8_t i = 0; i < planeCount; i++) {
-					amf::AMFPlane* plane;
-					void* plane_nat;
-					int32_t height;
-					size_t hpitch;
+		#pragma loop(hint_parallel(2))
+		for (uint8_t i = 0; i < planeCount; i++) {
+			amf::AMFPlane* plane;
+			void* plane_nat;
+			int32_t height;
+			size_t hpitch;
 
-					AMF_SYNC_LOCK(
-						plane = pSurface->GetPlaneAt(i);
-					plane_nat = plane->GetNative();
-					height = plane->GetHeight();
-					hpitch = plane->GetHPitch();
-					);
+			AMF_SYNC_LOCK(plane = pSurface->GetPlaneAt(i););
+			plane_nat = plane->GetNative();
+			height = plane->GetHeight();
+			hpitch = plane->GetHPitch();
 
-					for (int32_t py = 0; py < height; py++) {
-						size_t plane_off = py * hpitch;
-						size_t frame_off = py * frame->linesize[i];
-						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
-					}
-				}
-				break;
-			}
-			case VCE_SURFACE_FORMAT_I420:
-			{	// YUV 4:2:0, Y, subsampled U, subsampled V
-				#pragma loop(hint_parallel(3))
-				for (uint8_t i = 0; i < planeCount; i++) {
-					amf::AMFPlane* plane;
-					void* plane_nat;
-					int32_t height;
-					size_t hpitch;
-
-					AMF_SYNC_LOCK(
-						plane = pSurface->GetPlaneAt(i);
-					plane_nat = plane->GetNative();
-					height = plane->GetHeight();
-					hpitch = plane->GetHPitch();
-					);
-
-					for (int32_t py = 0; py < height; py++) {
-						size_t plane_off = py * hpitch;
-						size_t frame_off = py * frame->linesize[i];
-						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
-					}
-				}
-				break;
-			}
-			case VCE_SURFACE_FORMAT_I444:
-			{
-				break;
-			}
-			case VCE_SURFACE_FORMAT_RGB:
-			{ // RGBA, Single Plane
-				for (uint8_t i = 0; i < planeCount; i++) {
-					amf::AMFPlane* plane;
-					void* plane_nat;
-					int32_t height;
-					size_t hpitch;
-
-					AMF_SYNC_LOCK(
-						plane = pSurface->GetPlaneAt(i);
-					plane_nat = plane->GetNative();
-					height = plane->GetHeight();
-					hpitch = plane->GetHPitch();
-					);
-
-					#pragma loop(hint_parallel(4))
-					for (int32_t py = 0; py < height; py++) {
-						size_t plane_off = py * hpitch;
-						size_t frame_off = py * frame->linesize[i];
-						std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
-					}
-				}
-				break;
+			#pragma loop(hint_parallel(2))
+			for (int32_t py = 0; py < height; py++) {
+				size_t plane_off = py * hpitch;
+				size_t frame_off = py * frame->linesize[i];
+				std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
 			}
 		}
 		#pragma endregion Host Memory Type
-		if (res != AMF_OK) // Unable to create Surface
-			throwAMFError("<AMFEncoder::VCE::SendInput> Unable to create AMFSurface, error %s (code %d).", res);
 
 		AMF_SYNC_LOCK(
 			amf_pts amfPts = (int64_t)ceil((frame->pts / ((double_t)m_frameRate.first / (double_t)m_frameRate.second)) * 10000000l);//(1 * 1000 * 1000 * 10)
