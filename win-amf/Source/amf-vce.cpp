@@ -600,7 +600,7 @@ void AMFEncoder::VCE::SetFrameSkippingEnabled(bool value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, value ? (int32_t)1 : (int32_t)0);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, value);
 	if (res == AMF_OK) {
 		m_skipFrameEnabled = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::EnableFrameSkipping> Set to %s.", value ? "Enabled" : "Disabled");
@@ -626,7 +626,7 @@ void AMFEncoder::VCE::SetFillerDataEnabled(bool value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, value ? (int32_t)1 : (int32_t)0);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, value);
 	if (res == AMF_OK) {
 		m_fillerDataEnabled = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::EnableFillerData> Set to %s.", value ? "Enabled" : "Disabled");
@@ -652,7 +652,7 @@ void AMFEncoder::VCE::SetEnforceHRDEnabled(bool value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Set
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, value ? (int32_t)1 : (int32_t)0);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, value);
 	if (res == AMF_OK) {
 		m_enforceHRDEnabled = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::EnableEnforceHRD> Set to %s.", value ? "Enabled" : "Disabled");
@@ -1150,7 +1150,7 @@ uint8_t AMFEncoder::VCE::GetNumberOfBPictures() {
 void AMFEncoder::VCE::SetDeblockingFilterEnabled(bool value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER, value ? (int32_t)1 : (int32_t)0);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER, value);
 	if (res == AMF_OK) {
 		m_deblockingFilterEnabled = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetDeblockingFilterEnabled> Set to %s.", value ? "Enabled" : "Disabled");
@@ -1175,7 +1175,7 @@ bool AMFEncoder::VCE::IsDeblockingFilterEnabled() {
 void AMFEncoder::VCE::SetReferenceToBFrameEnabled(bool value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, value ? (int32_t)1 : (int32_t)0);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, value);
 	if (res == AMF_OK) {
 		m_referenceToBFrameEnabled = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetReferenceToBFrameEnabled> Set to %s.", value ? "Enabled" : "Disabled");
@@ -1277,7 +1277,7 @@ uint32_t AMFEncoder::VCE::GetNumberOfSlicesPerFrame() {
 void AMFEncoder::VCE::SetHalfPixelMotionEstimationEnabled(bool value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, value ? (int32_t)1 : (int32_t)0);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, value);
 	if (res == AMF_OK) {
 		m_halfPixelMotionEstimationEnabled = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetHalfPixelMotionEstimationEnabled> Set to %s.", value ? "Enabled" : "Disabled");
@@ -1302,7 +1302,7 @@ bool AMFEncoder::VCE::GetHalfPixelMotionEstimationEnabled() {
 void AMFEncoder::VCE::SetQuarterPixelMotionEstimationEnabled(bool value) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
-	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL, value ? (int32_t)1 : (int32_t)0);
+	res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL, value);
 	if (res == AMF_OK) {
 		m_quarterPixelMotionEstimationEnabled = value;
 		AMF_LOG_INFO("<AMFEncoder::VCE::SetQuarterPixelMotionEstimationEnabled> Set to %s.", value ? "Enabled" : "Disabled");
