@@ -266,7 +266,20 @@ AMFEncoder::VCE_H264_Simple_Encoder::VCE_H264_Simple_Encoder(obs_data_t* setting
 
 	m_VCE = new VCE(VCE_ENCODER_TYPE_AVC);
 	m_VCE->SetMemoryType(VCE_MEMORY_TYPE_HOST);
-	m_VCE->SetSurfaceFormat(VCE_SURFACE_FORMAT_NV12);
+	switch (voi->format) {
+		case VIDEO_FORMAT_NV12:
+			m_VCE->SetSurfaceFormat(VCE_SURFACE_FORMAT_NV12);
+			break;
+		case VIDEO_FORMAT_I420:
+			m_VCE->SetSurfaceFormat(VCE_SURFACE_FORMAT_I420);
+			break;
+		case VIDEO_FORMAT_I444:
+			m_VCE->SetSurfaceFormat(VCE_SURFACE_FORMAT_I444);
+			break;
+		case VIDEO_FORMAT_RGBA:
+			m_VCE->SetSurfaceFormat(VCE_SURFACE_FORMAT_RGB);
+			break;
+	}
 	m_VCE->SetUsage(VCE_USAGE_TRANSCODING);
 
 	/// Quality Preset
@@ -280,40 +293,41 @@ AMFEncoder::VCE_H264_Simple_Encoder::VCE_H264_Simple_Encoder(obs_data_t* setting
 	/// Framesize and -rate
 	m_VCE->SetFrameSize(std::pair<uint32_t, uint32_t>(width, height));
 	m_VCE->SetFrameRate(std::pair<uint32_t, uint32_t>(fpsNum, fpsDen));
-	m_VCE->SetGOPSize((double_t)(fpsNum / fpsDen));
 
-	/// Keyframe Interval
-	m_VCE->SetIDRPeriod(obs_data_get_int(settings, AMF_VCE_H264_KEYFRAME_INTERVAL) * (double_t)(fpsNum / fpsDen));
+	// Dynamic Properties
+	m_VCE->SetGOPSize((uint32_t)((double_t)fpsNum / (double_t)fpsDen));
 
 	/// Rate Control
 	m_VCE->SetRateControlMethod((VCE_Rate_Control_Method)obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL));
+	m_VCE->SetFrameSkippingEnabled(obs_data_get_bool(settings, AMF_VCE_H264_FRAME_SKIPPING));
+	m_VCE->SetEnforceHRDEnabled(false);
 	int32_t bufferSize;
 	switch (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL)) {
 		case VCE_RATE_CONTROL_CONSTRAINED_QUANTIZATION_PARAMETER:
-			m_VCE->SetMinimumQP(obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-			m_VCE->SetMaximumQP(obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-			m_VCE->SetIFrameQP(obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-			m_VCE->SetPFrameQP(obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-			m_VCE->SetBFrameQP(obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-			bufferSize = obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM) * 1000; // Probably not optimal.
+			m_VCE->SetMinimumQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
+			m_VCE->SetMaximumQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
+			m_VCE->SetIFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
+			m_VCE->SetPFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
+			m_VCE->SetBFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
+			bufferSize = (uint32_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM) * 500; // Probably not optimal.
 			break;
 		case VCE_RATE_CONTROL_CONSTANT_BITRATE:
-			bufferSize = obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET);
+			bufferSize = (uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET);
 			m_VCE->SetTargetBitrate(bufferSize * 1000);
 			m_VCE->SetPeakBitrate(bufferSize * 1000);
 			m_VCE->SetFillerDataEnabled(true);
 			break;
 		case VCE_RATE_CONTROL_VARIABLE_BITRATE_PEAK_CONSTRAINED:
 		case VCE_RATE_CONTROL_VARIABLE_BITRATE_LATENCY_CONSTRAINED:
-			bufferSize = obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET);
-			m_VCE->SetTargetBitrate(obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) * 1000);
-			m_VCE->SetPeakBitrate(obs_data_get_int(settings, AMF_VCE_H264_BITRATE_PEAK) * 1000);
+			bufferSize = (uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET);
+			m_VCE->SetTargetBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) * 1000);
+			m_VCE->SetPeakBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_PEAK) * 1000);
 			break;
 	}
 
-	/// VBV Buffer
+	/// GOP & VBV Buffer
 	if (obs_data_get_bool(settings, AMF_VCE_H264_USE_CUSTOM_BUFFER_SIZE)) {
-		m_VCE->SetVBVBufferSize(obs_data_get_int(settings, AMF_VCE_H264_CUSTOM_BUFFER_SIZE) * 1000);
+		m_VCE->SetVBVBufferSize((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_CUSTOM_BUFFER_SIZE) * 1000);
 	} else {
 		m_VCE->SetVBVBufferSize(bufferSize * 1000);
 	}
@@ -323,28 +337,143 @@ AMFEncoder::VCE_H264_Simple_Encoder::VCE_H264_Simple_Encoder(obs_data_t* setting
 	m_VCE->SetHalfPixelMotionEstimationEnabled(true);
 	m_VCE->SetNumberOfBPictures(0);
 	m_VCE->SetReferenceToBFrameEnabled(false);
-	m_VCE->SetFrameSkippingEnabled(obs_data_get_bool(settings, AMF_VCE_H264_FRAME_SKIPPING));
+
+	/// Keyframe Interval
+	m_VCE->SetIDRPeriod((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_KEYFRAME_INTERVAL) * (uint32_t)((double_t)fpsNum / (double_t)fpsDen));
 
 	/// Tuning
 	switch (0) {
 		case 1: // Twitch
-			m_VCE->SetEnforceHRDEnabled(true);
 			m_VCE->SetDeblockingFilterEnabled(true);
 			break;
 		case 2: // YouTube
-			m_VCE->SetEnforceHRDEnabled(true);
 			m_VCE->SetDeblockingFilterEnabled(true);
 			break;
 		case 3: // Recording
-			m_VCE->SetEnforceHRDEnabled(false);
 			m_VCE->SetDeblockingFilterEnabled(true);
 			break;
 		case 0:
 		default:
-			m_VCE->SetEnforceHRDEnabled(false);
 			m_VCE->SetDeblockingFilterEnabled(false);
 			break;
 	}
+
+	// Verify
+	try {
+		AMF_LOG_INFO("Verify Settings:");
+		try {
+			AMF_LOG_INFO("	Memory Type: %d", m_VCE->GetMemoryType());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Surface Format: %d", m_VCE->GetSurfaceFormat());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Usage: %d", m_VCE->GetUsage());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Quality Preset: %d", m_VCE->GetQualityPreset());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Profile: %d", m_VCE->GetProfile());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Profile Level: %d", m_VCE->GetProfileLevel());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Max LTR Frames: %d", m_VCE->GetMaxLTRFrames());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Scan Type: %d", m_VCE->GetScanType());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Frame Size: %dx%d", m_VCE->GetFrameSize().first, m_VCE->GetFrameSize().second);
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Frame Rate: %d/%d", m_VCE->GetFrameRate().first, m_VCE->GetFrameRate().second);
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Rate Control Method: %d", m_VCE->GetRateControlMethod());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Frame Skipping: %s", m_VCE->IsFrameSkippingEnabled() ? "Enabled" : "Disabled");
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Filler Data: %s", m_VCE->IsFillerDataEnabled() ? "Enabled" : "Disabled");
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Enforce HRD: %s", m_VCE->IsEnforceHRDEnabled() ? "Enabled" : "Disabled");
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	GOP Size: %d", m_VCE->GetGOPSize());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	VBV Buffer Size: %d", m_VCE->GetVBVBufferSize());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	VBV Buffer Fullness: %f", m_VCE->GetInitialVBVBufferFullness());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Max AU Size: %d", m_VCE->GetMaximumAccessUnitSize());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	BPic Delta QP: %d", m_VCE->GetBPictureDeltaQP());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Ref BPic Delta QP: %d", m_VCE->GetReferenceBPictureDeltaQP());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Min QP: %d", m_VCE->GetMinimumQP());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Max QP: %d", m_VCE->GetMaximumQP());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	I-QP: %d", m_VCE->GetIFrameQP());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	P-QP: %d", m_VCE->GetPFrameQP());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	B-QP: %d", m_VCE->GetBFrameQP());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Target Bitrate: %d", m_VCE->GetTargetBitrate());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Peak Bitrate: %d", m_VCE->GetPeakBitrate());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Header Insertion Spacing: %d", m_VCE->GetHeaderInsertionSpacing());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	BPic Count: %d", m_VCE->GetNumberOfBPictures());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Deblocking: %s", m_VCE->IsDeblockingFilterEnabled() ? "Enabled" : "Disabled");
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	B-Frame Reference: %s", m_VCE->IsReferenceToBFrameEnabled() ? "Enabled" : "Disabled");
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	IDR Period: %d", m_VCE->GetIDRPeriod());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Intra-REfresh MBs: %d", m_VCE->GetInfraRefreshMBsPerSlotInMacroblocks());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Slices per Frame: %d", m_VCE->GetNumberOfSlicesPerFrame());
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Half-Pixel Motion: %s", m_VCE->GetHalfPixelMotionEstimationEnabled() ? "Enabled" : "Disabled");
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Quarter-Pixel Motion: %s", m_VCE->GetQuarterPixelMotionEstimationEnabled() ? "Enabled" : "Disabled");
+		} catch (...) {}
+		try {
+			AMF_LOG_INFO("	Temporal Enhancement Layers: %d", m_VCE->GetNumberOfTemporalEnhancementLayers());
+		} catch (...) {}
+	} catch (...) {}
+
 
 	m_VCE->Start();
 }
