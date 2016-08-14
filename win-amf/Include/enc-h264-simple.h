@@ -74,5 +74,8 @@ namespace AMFEncoder {
 		void get_video_info(struct video_scale_info* info);
 		bool get_extra_data(uint8_t** extra_data, size_t* size);
 
+		private:
+		VCE* m_VCE;
+
 	};
 }
