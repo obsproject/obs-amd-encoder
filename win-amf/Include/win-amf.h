@@ -33,7 +33,12 @@
 //////////////////////////////////////////////////////////////////////////
 // Defines
 //////////////////////////////////////////////////////////////////////////
-#define PLUGIN_VERSION "1.2.0rc1"
+#define PLUGIN_VERSION_MAJOR		1
+#define PLUGIN_VERSION_MINOR		3
+#define PLUGIN_VERSION_UPDATE		0
+#define PLUGIN_VERSION_TYPE			"a"		// a = Alpha, b = Beta, p = Pre-Release, rc = Release-Candidate
+#define PLUGIN_VERSION_RELEASE		"1"		// Increment for each release of the same type.
+#define PLUGIN_VERSION				(PLUGIN_VERSION_MAJOR "." PLUGIN_VERSION_MINOR "." PLUGIN_VERSION_UPDATE PLUGIN_VERSION_TYPE PLUGIN_VERSION_RELEASE)
 
 #define AMF_LOG(level, format, ...) \
     blog(level, "[AMF Encoder v" PLUGIN_VERSION "] " format, ##__VA_ARGS__)
