@@ -3,6 +3,7 @@
 # Ignore Third-Party files.
 /#ThirdParty/AMD-Media-SDK
 /#ThirdParty/OBS-Studio
+/#ThirdParty/AMD-AMF-SDK
 
 # Ignore Intermediate and Build results.
 /Debug

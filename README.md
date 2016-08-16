@@ -5,19 +5,19 @@ AMF support for OBS via plugins
 
 ## Pre-requisites
 
-* Visual Studio 2015 Community (or similar)
-* Windows 10 SDK (Bundled with Visual Studio 2015)
-* [AMD Media SDK](http://developer.amd.com/tools-and-sdks/media-sdk/), Version 1.1
-* Newest [AMF Binaries](http://www.amd.com/en-us/innovations/software-technologies/enhanced-media)
+* AMD Radeon Software Crimson Edition 16.7.3 (16.30.2311) or newer
+* Windows® 7 (SP1 with the Platform Update), Windows® 8.1, or Windows® 10
+* Visual Studio® 2013 or Visual Studio® 2015 (Community or better)
+* Windows 10 SDK (Version 10586 or better)
+* [OBS Studio](https://github.com/jp9000/obs-studio)
+* [AMF SDK](https://github.com/GPUOpen-LibrariesAndSDKs/AMF)
 
 ## Getting Started
 
-1. Clone to your Disk
-2. Create a soft link (directory junction) to the AMD Media SDK root as /#ThirdParty/AMD-Media-SDK.  
-Example: AMD-Media-SDK -> C:\SDKs\AMD\AMD Media SDK
-3. Create a soft link (directory junction) to the OBS Studio Source Code as /#ThirdParty/OBS-Studio.  
-3.1 Build OBS Studio with the same Visual Studio version if you didn't yet.
-4. Open the Solution and build the Solution.
+1. Clone the Project to your Disk
+2. Set up any #ThirdParty directory junctions, see the README.md inside the folder for more info.
+3. Open the Solution
+4. Build the Solution (or Batch Build)
 5. Binaries should be located in /#Build/$(Configuration)/
 
 ## Coding Standard
