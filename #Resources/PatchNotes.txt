@@ -1,0 +1,26 @@
+1.2.0 - The Remaking
+
+With this version we're now using a different approach for the user-facing Encoders. Instead of directly interfacing with AMF (and risking a potential bad state until OBS is restarted), we now go through a shared encoder interface. This interface exposes everything the user-facing encoder needs to changed or see and provides easy and fast access to the individual functions.
+
+In addition to the above, a simple Encoder was added for those who don't want to spend a lot of time setting it up. It comes with predefined presets and a tiny bit of customization options.
+
+**Changelog:**
+
+* Changed: Encoders are now based on a shared class that interfaces with AMF to reduce duplicate code and be future proof.
+* Changed: Advanced Encoder is now called "H264 VCE Encoder [Advanced] \(AMD Media Framework)".
+* Changed: Encoder Type and Profile are now separate fields. [Advanced]
+* Changed: Motion Estimation is now a drop down instead of checkboxes. [Advanced]
+* Changed: IDR Period limit is now 1000. [Advanced]
+* Changed: B-Picture Delta QPs are now in the range -11 to 10, with -11 being 'Default'. [Advanced]
+* Changed: Bitrates are limited to the value returned by AMD Media Framework.
+* Changed: Shared Encoder Interface now uses a 180 frame queue to produce higher final image quality.
+* Changed: Shared Encoder Interface will now use two additional threads to handle frame submission and packet querying.
+* Fixed: Plugin will correctly show when it is overloaded.
+* Fixed: PTS Timestamp is now correct for both AMD Media Framework and OBS. Fixes both B-Frame issues as well as insane bitrates.
+* Fixed: Quality Preset, Profile and Profile Level are now applied last.
+* Fixed: Random settings would stop working starting with driver version 16.7.1, this has been partially fixed.
+* Added: Simple Encoder named "H264 VCE Encoder (AMD Media Framework)"
+* Added: The following languages have been added or updated: English, Spanish (Markitos), Danish (wazer), Hungarian (niteforce), Vietnamese (max20091), Russian (leporel).
+* Added: Advanced Encoder now has a Quality Preset option 'None'. [Advanced]
+* Added: Checkbox to Reset to Default and replace default values with values from AMD Media Framework. [Advanced]
+* Added: Capability logging at plugin start.
