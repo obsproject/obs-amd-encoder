@@ -50,9 +50,8 @@ std::shared_ptr<Plugin::AMD::AMF> Plugin::AMD::AMF::GetInstance() {
 
 Plugin::AMD::AMF::AMF() {
 	AMF_RESULT res;
-	amf::AMFFactory* pFactory;
 
-	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Loading Libraries...");
+	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Initializing...");
 
 	// Increase Timer precision.
 	m_TimerPeriod = 1;
@@ -61,19 +60,20 @@ Plugin::AMD::AMF::AMF() {
 	}
 
 	// Load Dynamic Library
-	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Loading Library...");
 	m_AMFModule = LoadLibraryW(AMF_DLL_NAME);
 	if (!m_AMFModule) {
 		DWORD error = GetLastError();
-		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> LoadLibrary(AMF_DLL_NAME) failed with error code %d.", error);
+		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Loading of '" str(AMF_DLL_NAME) "' failed with error code %d.", error);
 		throw;
+	} else {
+		AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Loaded '" str(AMF_DLL_NAME) "'.");
 	}
 
 	// Find Function: Query Version
 	AMFQueryVersion = (AMFQueryVersion_Fn)GetProcAddress(m_AMFModule, AMF_QUERY_VERSION_FUNCTION_NAME);
 	if (!AMFQueryVersion) {
 		DWORD error = GetLastError();
-		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> GetProcAddress(..., AMF_QUERY_VERSION_FUNCTION_NAME) failed with error code %d.", error);
+		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Finding Address of Function '" str(AMF_QUERY_VERSION_FUNCTION_NAME) "' failed with error code %d.", error);
 		throw;
 	}
 
@@ -81,16 +81,10 @@ Plugin::AMD::AMF::AMF() {
 	m_AMFVersion_Compiler = AMF_FULL_VERSION;
 	res = AMFQueryVersion(&m_AMFVersion_Runtime);
 	if (res != AMF_OK) {
-		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Unable to retrieve version with error code %d.", res);
+		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Querying Version failed with error code %d.", res);
 		throw;
 	}
-	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Version Information:");
-	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF>	Compile: %d.%d.%d.%d",
-		(m_AMFVersion_Compiler >> 48ull) & 0xFFFF,
-		(m_AMFVersion_Compiler >> 32ull) & 0xFFFF,
-		(m_AMFVersion_Compiler >> 16ull) & 0xFFFF,
-		(m_AMFVersion_Compiler & 0xFFFF));
-	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF>	Runtime: %d.%d.%d.%d", 
+	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Runtime is on Version %d.%d.%d.%d", 
 		(m_AMFVersion_Runtime >> 48ull) & 0xFFFF,
 		(m_AMFVersion_Runtime >> 32ull) & 0xFFFF,
 		(m_AMFVersion_Runtime >> 16ull) & 0xFFFF,
@@ -100,24 +94,34 @@ Plugin::AMD::AMF::AMF() {
 	AMFInit = (AMFInit_Fn)GetProcAddress(m_AMFModule, AMF_INIT_FUNCTION_NAME);
 	if (!AMFInit) {
 		DWORD error = GetLastError();
-		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> GetProcAddress(..., AMF_INIT_FUNCTION_NAME) failed with error code %d.", error);
+		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Finding Address of Function '" str(AMF_INIT_FUNCTION_NAME) "' failed with error code %d.", error);
 		throw;
 	}
 
 	// Initialize AMF Libraries
-	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Initializing AMF Library...");
-	res = AMFInit(m_AMFVersion_Runtime, &pFactory);
+	res = AMFInit(m_AMFVersion_Compiler, &m_AMFFactory);
 	if (res != AMF_OK) {
-		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Unable to retrieve version with error code %d.", res);
+		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Initializing AMF Library failed with error code %d.", res);
+		throw;
+	} else {
+		AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> AMF Library initialized.");
+	}
+
+	// Retrieve Trace Object
+	res = m_AMFFactory->GetTrace(&m_AMFTrace);
+	if (res != AMF_OK) {
+		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Retrieving Trace object failed with error code %d.", res);
 		throw;
 	}
-	m_AMFFactory = std::shared_ptr<amf::AMFFactory>(pFactory);
 
-	// Retrieve other Pointers
-	m_AMFTrace = m_AMFFactory->GetTrace();
-	m_AMFDebug = m_AMFFactory->GetDebug();
+	// Retrieve Debug Object
+	res = m_AMFFactory->GetDebug(&m_AMFDebug);
+	if (res != AMF_OK) {
+		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Retrieving Debug object failed with error code %d.", res);
+		throw;
+	}
 
-	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Loading successful!");
+	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Initialized.");
 }
 
 Plugin::AMD::AMF::~AMF() {
@@ -129,3 +133,14 @@ Plugin::AMD::AMF::~AMF() {
 	timeEndPeriod(m_TimerPeriod);
 }
 
+amf::AMFFactory* Plugin::AMD::AMF::GetFactory() {
+	return m_AMFFactory;
+}
+
+amf::AMFTrace* Plugin::AMD::AMF::GetTrace() {
+	return m_AMFTrace;
+}
+
+amf::AMFDebug* Plugin::AMD::AMF::GetDebug() {
+	return m_AMFDebug;
+}

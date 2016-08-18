@@ -57,25 +57,26 @@ namespace Plugin {
 			AMF();
 			~AMF();
 
-			std::shared_ptr<amf::AMFFactory> GetFactory();
-			std::shared_ptr<amf::AMFTrace> GetTrace();
-			std::shared_ptr<amf::AMFDebug> GetDebug();
+			amf::AMFFactory* GetFactory();
+			amf::AMFTrace* GetTrace();
+			amf::AMFDebug* GetDebug();
 
 			private:
+			uint32_t m_TimerPeriod; /// High-Precision Timer Accuracy (nanoseconds)
+			
+			/// AMF Values
 			HMODULE m_AMFModule;
-			AMFQueryVersion_Fn AMFQueryVersion;
-			AMFInit_Fn AMFInit;
-
 			uint64_t m_AMFVersion_Compiler;
 			uint64_t m_AMFVersion_Runtime;
 
+			/// AMF Functions
+			AMFQueryVersion_Fn AMFQueryVersion;
+			AMFInit_Fn AMFInit;
 
-			
-			uint32_t m_TimerPeriod;
-
-			std::shared_ptr<amf::AMFFactory> m_AMFFactory;
-			std::shared_ptr<amf::AMFTrace> m_AMFTrace;
-			std::shared_ptr<amf::AMFDebug> m_AMFDebug;
+			/// AMF Objects
+			amf::AMFFactory* m_AMFFactory;
+			amf::AMFTrace* m_AMFTrace;
+			amf::AMFDebug* m_AMFDebug;
 		};
 	}
 }
