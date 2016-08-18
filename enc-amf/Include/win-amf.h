@@ -26,29 +26,13 @@
 //////////////////////////////////////////////////////////////////////////
 // Includes
 //////////////////////////////////////////////////////////////////////////
-#include "windows.h"
+#include <windows.h>
 
+// Third Party
 #include "OBS-Studio/libobs/obs-module.h"
 
-//////////////////////////////////////////////////////////////////////////
-// Defines
-//////////////////////////////////////////////////////////////////////////
-#define PLUGIN_VERSION_MAJOR		1
-#define PLUGIN_VERSION_MINOR		3
-#define PLUGIN_VERSION_UPDATE		0
-#define PLUGIN_VERSION_TYPE			"a"		// a = Alpha, b = Beta, p = Pre-Release, rc = Release-Candidate
-#define PLUGIN_VERSION_RELEASE		"1"		// Increment for each release of the same type.
-#define PLUGIN_VERSION				(PLUGIN_VERSION_MAJOR "." PLUGIN_VERSION_MINOR "." PLUGIN_VERSION_UPDATE PLUGIN_VERSION_TYPE PLUGIN_VERSION_RELEASE)
-
-#define AMF_LOG(level, format, ...) \
-    blog(level, "[AMF Encoder v" PLUGIN_VERSION "] " format, ##__VA_ARGS__)
-#define AMF_LOG_ERROR(format, ...)   AMF_LOG(LOG_ERROR,   format, ##__VA_ARGS__)
-#define AMF_LOG_WARNING(format, ...) AMF_LOG(LOG_WARNING, format, ##__VA_ARGS__)
-#define AMF_LOG_INFO(format, ...)    AMF_LOG(LOG_INFO,    format, ##__VA_ARGS__)
-#define AMF_LOG_DEBUG(format, ...)   AMF_LOG(LOG_DEBUG,   format, ##__VA_ARGS__)
-
-#define AMF_TEXT(x) ("AMF." ## x)
-#define AMF_TEXT_T(x) obs_module_text(AMF_TEXT(x))
+// Plugin
+#include "plugin.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Code

@@ -29,15 +29,13 @@ SOFTWARE.
 #include "win-amf.h"
 
 // Plugin
-#include "amf-vce-capabilities.h"
-#include "enc-h264.h"
-#include "enc-h264-simple.h"
+//#include "amf-vce-capabilities.h"
+//#include "enc-h264.h"
+//#include "enc-h264-simple.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
-using namespace AMFEncoder;
-
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
 	return TRUE;
 }
@@ -55,12 +53,12 @@ OBS_MODULE_USE_DEFAULT_LOCALE("win-amf", "en-US");
 *                   false to indicate failure and unload the module
 */
 MODULE_EXPORT bool obs_module_load(void) {
-	// Log Capabilities
-	AMFEncoder::VCE_Capabilities::reportCapabilities();
+	//// Log Capabilities
+	//AMFEncoder::VCE_Capabilities::reportCapabilities();
 
-	// Register Encoder
-	AMFEncoder::VCE_H264_Encoder::encoder_register();
-	AMFEncoder::VCE_H264_Simple_Encoder::encoder_register();
+	//// Register Encoder
+	//AMFEncoder::VCE_H264_Encoder::encoder_register();
+	//AMFEncoder::VCE_H264_Simple_Encoder::encoder_register();
 
 	return true;
 }
