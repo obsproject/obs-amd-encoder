@@ -30,15 +30,18 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Defines
 //////////////////////////////////////////////////////////////////////////
-#define PLUGIN_VERSION_MAJOR		"1"
-#define PLUGIN_VERSION_MINOR		"3"
-#define PLUGIN_VERSION_UPDATE		"0"
-#define PLUGIN_VERSION_TYPE			"a"		// a = Alpha, b = Beta, p = Pre-Release, rc = Release-Candidate
-#define PLUGIN_VERSION_RELEASE		"1"		// Increment for each release of the same type.
-#define PLUGIN_VERSION				PLUGIN_VERSION_MAJOR "." PLUGIN_VERSION_MINOR "." PLUGIN_VERSION_UPDATE PLUGIN_VERSION_TYPE PLUGIN_VERSION_RELEASE
+
+#define vstr(s) str(s)
+#define str(s) #s
+
+#define PLUGIN_VERSION_MAJOR		1
+#define PLUGIN_VERSION_MINOR		3
+#define PLUGIN_VERSION_RELEASE		0
+#define PLUGIN_VERSION_FULL			(((uint64_t)PLUGIN_VERSION_MAJOR << 48ull) | ((uint64_t)PLUGIN_VERSION_MINOR << 16ull) | ((uint64_t)PLUGIN_VERSION_RELEASE))
+#define PLUGIN_VERSION_TEXT			vstr(PLUGIN_VERSION_MAJOR) "." vstr(PLUGIN_VERSION_MINOR) "." vstr(PLUGIN_VERSION_RELEASE) "-" vstr(AMF_VERSION_MAJOR) "." vstr(AMF_VERSION_MINOR) "." vstr(AMF_VERSION_RELEASE) "." vstr(AMF_VERSION_BUILD_NUM)
 
 #define AMF_LOG(level, format, ...) \
-    blog(level, "[AMF Encoder v" PLUGIN_VERSION "] " format, ##__VA_ARGS__)
+    blog(level, "[AMF Encoder] " format, ##__VA_ARGS__)
 #define AMF_LOG_ERROR(format, ...)   AMF_LOG(LOG_ERROR,   format, ##__VA_ARGS__)
 #define AMF_LOG_WARNING(format, ...) AMF_LOG(LOG_WARNING, format, ##__VA_ARGS__)
 #define AMF_LOG_INFO(format, ...)    AMF_LOG(LOG_INFO,    format, ##__VA_ARGS__)

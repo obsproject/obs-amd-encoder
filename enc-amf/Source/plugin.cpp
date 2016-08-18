@@ -30,6 +30,7 @@ SOFTWARE.
 
 // Plugin
 #include "plugin.h"
+#include "amd-amf.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -51,14 +52,18 @@ OBS_MODULE_USE_DEFAULT_LOCALE("win-amf", "en-US");
 *                   false to indicate failure and unload the module
 */
 MODULE_EXPORT bool obs_module_load(void) {
-	//// Log Capabilities
-	//AMFEncoder::VCE_Capabilities::reportCapabilities();
+	try {
+		AMF_LOG_INFO("Version " PLUGIN_VERSION_TEXT);
 
-	//// Register Encoder
-	//AMFEncoder::VCE_H264_Encoder::encoder_register();
-	//AMFEncoder::VCE_H264_Simple_Encoder::encoder_register();
+		// Attempt to load libraries
+		Plugin::AMD::AMF::GetInstance();
 
-	return true;
+
+
+		return true;
+	} catch(...) {
+		return false;
+	}
 }
 
 /** Optional: Called when the module is unloaded.  */
