@@ -31,6 +31,7 @@ SOFTWARE.
 // Plugin
 #include "plugin.h"
 #include "amd-amf.h"
+#include "enc-h264-simple.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -58,7 +59,8 @@ MODULE_EXPORT bool obs_module_load(void) {
 		// Attempt to load libraries
 		Plugin::AMD::AMF::GetInstance();
 
-
+		// Register Encoders
+		Plugin::Interface::H264Encoder_Simple::encoder_register();
 
 		return true;
 	} catch(...) {
