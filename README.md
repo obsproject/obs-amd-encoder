@@ -1,10 +1,25 @@
-# OBS-AMD-Media-Framework
-AMF support for OBS via plugins
+# AMD Advanced Media Framework Plugin for OBS Studio
+This is a Plugin for OBS Studio to enable native AMF integration.
+
+# Troubleshooting
+
+## Frequently Asked Questions
+These are common Questions that are repeatedly asked. If you see someone asking one of these questions, link them here.
+
+### Q: I can't find the Encoder!
+You need to select "Advanced" as the Output Mode for it to show up.
+
+### Q: There are two encoders called the same, what do I do?!
+Select the one that is called "H264 Encoder (AMD Advanced Media Framework)".
+
+### Reporting Issues
+
+Before reporting an Issue, please [read this first](https://github.com/Xaymar/OBS-AMD-Media-Framework/wiki/Reporting-Issues).
+You will not get help unless you include all necessary information listed on that page.
 
 # Contributing
 
 ## Pre-requisites
-
 * AMD Radeon Software Crimson Edition 16.7.3 (16.30.2311) or newer
 * Windows® 7 (SP1 with the Platform Update), Windows® 8.1, or Windows® 10
 * Visual Studio® 2013 or Visual Studio® 2015 (Community or better)
@@ -13,18 +28,11 @@ AMF support for OBS via plugins
 * [AMF SDK](https://github.com/GPUOpen-LibrariesAndSDKs/AMF)
 
 ## Getting Started
-
 1. Clone the Project to your Disk
 2. Set up any #ThirdParty directory junctions, see the README.md inside the folder for more info.
 3. Open the Solution
 4. Build the Solution (or Batch Build)
 5. Binaries should be located in /#Build/$(Configuration)/
-
-## Coding Standard
-
-The coding formatting is currently loosely based on [Googles C++ Style Guide](https://google.github.io/styleguide/cppguide.html).
-
-# Notes
 
 # License
 
