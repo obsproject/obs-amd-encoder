@@ -42,10 +42,10 @@ std::shared_ptr<Plugin::AMD::AMF> Plugin::AMD::AMF::__instance;
 
 std::shared_ptr<Plugin::AMD::AMF> Plugin::AMD::AMF::GetInstance() {
 	if (!__instance) {
-		__instance = std::shared_ptr<Plugin::AMD::AMF>(new AMF());
+		__instance = std::make_shared<Plugin::AMD::AMF>(AMF());
 	}
 
-	return std::shared_ptr<Plugin::AMD::AMF>(__instance);
+	return __instance;
 }
 
 Plugin::AMD::AMF::AMF() {
@@ -63,17 +63,17 @@ Plugin::AMD::AMF::AMF() {
 	m_AMFModule = LoadLibraryW(AMF_DLL_NAME);
 	if (!m_AMFModule) {
 		DWORD error = GetLastError();
-		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Loading of '" str(AMF_DLL_NAME) "' failed with error code %d.", error);
+		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Loading of '" vstr(AMF_DLL_NAME) "' failed with error code %d.", error);
 		throw;
 	} else {
-		AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Loaded '" str(AMF_DLL_NAME) "'.");
+		AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Loaded '" vstr(AMF_DLL_NAME) "'.");
 	}
 
 	// Find Function: Query Version
 	AMFQueryVersion = (AMFQueryVersion_Fn)GetProcAddress(m_AMFModule, AMF_QUERY_VERSION_FUNCTION_NAME);
 	if (!AMFQueryVersion) {
 		DWORD error = GetLastError();
-		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Finding Address of Function '" str(AMF_QUERY_VERSION_FUNCTION_NAME) "' failed with error code %d.", error);
+		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Finding Address of Function '" vstr(AMF_QUERY_VERSION_FUNCTION_NAME) "' failed with error code %d.", error);
 		throw;
 	}
 
@@ -94,7 +94,7 @@ Plugin::AMD::AMF::AMF() {
 	AMFInit = (AMFInit_Fn)GetProcAddress(m_AMFModule, AMF_INIT_FUNCTION_NAME);
 	if (!AMFInit) {
 		DWORD error = GetLastError();
-		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Finding Address of Function '" str(AMF_INIT_FUNCTION_NAME) "' failed with error code %d.", error);
+		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Finding Address of Function '" vstr(AMF_INIT_FUNCTION_NAME) "' failed with error code %d.", error);
 		throw;
 	}
 
