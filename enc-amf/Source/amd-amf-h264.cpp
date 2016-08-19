@@ -830,7 +830,7 @@ uint32_t Plugin::AMD::H264VideoEncoder::GetVBVBufferSize() {
 	return size;
 }
 
-void Plugin::AMD::H264VideoEncoder::SetVBVBufferFullness(double_t fullness) {
+void Plugin::AMD::H264VideoEncoder::SetInitialVBVBufferFullness(double_t fullness) {
 	// Clamp Value
 	fullness = max(min(fullness, 1), 0); // 0 to 100 %
 
@@ -841,7 +841,7 @@ void Plugin::AMD::H264VideoEncoder::SetVBVBufferFullness(double_t fullness) {
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetVBVBufferFullness> Set to %f%%.", fullness * 100);
 }
 
-double_t Plugin::AMD::H264VideoEncoder::GetVBVBufferFullness() {
+double_t Plugin::AMD::H264VideoEncoder::GetInitialVBVBufferFullness() {
 	uint32_t vbvBufferFullness;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, &vbvBufferFullness);
 	if (res != AMF_OK) {
@@ -869,7 +869,25 @@ bool Plugin::AMD::H264VideoEncoder::IsEnforceHRDRestrictionsEnabled() {
 	return enabled;
 }
 
-void Plugin::AMD::H264VideoEncoder::SetMaxAUSize(uint32_t size) {
+void Plugin::AMD::H264VideoEncoder::SetFillerDataEnabled(bool enabled) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, enabled);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetFillerDataEnabled> Setting to %s failed with error %s (code %d).", enabled ? "Enabled" : "Disabled", res);
+	}
+	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetFillerDataEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
+}
+
+bool Plugin::AMD::H264VideoEncoder::IsFillerDataEnabled() {
+	bool enabled;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, &enabled);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::IsFillerDataEnabled> Retrieving Property failed with error %s (code %d).", res);
+	}
+	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::IsFillerDataEnabled> Retrieved Property, Value is %s.", enabled ? "Enabled" : "Disabled");
+	return enabled;
+}
+
+void Plugin::AMD::H264VideoEncoder::SetMaximumAccessUnitSize(uint32_t size) {
 	// Clamp Value
 	size = max(min(size, 100000000), 0); // 1kbit to 100mbit.
 
@@ -880,7 +898,7 @@ void Plugin::AMD::H264VideoEncoder::SetMaxAUSize(uint32_t size) {
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetMaxAUSize> Set to %d bits.", size);
 }
 
-uint32_t Plugin::AMD::H264VideoEncoder::GetMaxAUSize() {
+uint32_t Plugin::AMD::H264VideoEncoder::GetMaximumAccessUnitSize() {
 	uint32_t size;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, &size);
 	if (res != AMF_OK) {
@@ -1167,6 +1185,26 @@ bool Plugin::AMD::H264VideoEncoder::IsQuarterPixelMotionEstimationEnabled() {
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::IsQuarterPixelMotionEstimationEnabled> Retrieved Property, Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
+}
+
+void Plugin::AMD::H264VideoEncoder::SetNumberOfTemporalEnhancementLayers(uint32_t layers) {
+	layers = min(layers, 2);
+
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS, layers);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetNumberOfTemporalEnhancementLayers> Setting to %d failed with error %s (code %d).", layers, res);
+	}
+	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetNumberOfTemporalEnhancementLayers> Set to %d.", layers);
+}
+
+uint32_t Plugin::AMD::H264VideoEncoder::GetNumberOfTemporalEnhancementLayers() {
+	uint32_t layers;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS, &layers);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetNumberOfTemporalEnhancementLayers> Retrieving Property failed with error %s (code %d).", res);
+	}
+	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetNumberOfTemporalEnhancementLayers> Retrieved Property, Value is %d.", layers);
+	return layers;
 }
 
 void Plugin::AMD::H264VideoEncoder::InputThreadLogic() {

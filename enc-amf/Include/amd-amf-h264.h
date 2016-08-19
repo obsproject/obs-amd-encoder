@@ -238,14 +238,17 @@ namespace Plugin {
 			void SetVBVBufferSize(uint32_t size);
 			uint32_t GetVBVBufferSize();
 			/*	Sets the initial VBV Buffer Fullness */
-			void SetVBVBufferFullness(double_t fullness);
-			double_t GetVBVBufferFullness();
+			void SetInitialVBVBufferFullness(double_t fullness);
+			double_t GetInitialVBVBufferFullness();
 			/*	Enables/Disables contraints on QP variation within a picture to meet HRD requirement(s) */
 			void SetEnforceHRDRestrictionsEnabled(bool enforce);
 			bool IsEnforceHRDRestrictionsEnabled();
+			/*	Enables/Disables filler data */
+			void SetFillerDataEnabled(bool enabled);
+			bool IsFillerDataEnabled();
 			/*	Sets Maximum AU Size in bits */
-			void SetMaxAUSize(uint32_t size);
-			uint32_t GetMaxAUSize();
+			void SetMaximumAccessUnitSize(uint32_t size);
+			uint32_t GetMaximumAccessUnitSize();
 			/*	Selects the delta QP of non-reference B pictures with respect to I pictures */
 			void SetBPictureDeltaQP(int8_t qp);
 			int8_t GetBPictureDeltaQP();
