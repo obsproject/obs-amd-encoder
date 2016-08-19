@@ -13,15 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Resource Files\locate">
+    <Filter Include="Resource Files\locale">
       <UniqueIdentifier>{da92c87c-c5fd-4c93-a09c-af3071784a7c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\enc-h264.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\amf-vce.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\amf-vce-capabilities.h">
@@ -44,9 +41,6 @@
     <ClCompile Include="Source\enc-h264.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\amf-vce.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\amf-vce-capabilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -65,22 +59,22 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\locale\en-US.ini">
-      <Filter>Resource Files\locate</Filter>
+      <Filter>Resource Files\locale</Filter>
     </None>
     <None Include="Resources\locale\es-ES.ini">
-      <Filter>Resource Files\locate</Filter>
+      <Filter>Resource Files\locale</Filter>
     </None>
     <None Include="Resources\locale\da-DK.ini">
-      <Filter>Resource Files\locate</Filter>
+      <Filter>Resource Files\locale</Filter>
     </None>
     <None Include="Resources\locale\hu-HU.ini">
-      <Filter>Resource Files\locate</Filter>
+      <Filter>Resource Files\locale</Filter>
     </None>
     <None Include="Resources\locale\ru-RU.ini">
-      <Filter>Resource Files\locate</Filter>
+      <Filter>Resource Files\locale</Filter>
     </None>
     <None Include="Resources\locale\vi-VN.ini">
-      <Filter>Resource Files\locate</Filter>
+      <Filter>Resource Files\locale</Filter>
     </None>
   </ItemGroup>
 </Project>
