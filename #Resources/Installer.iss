@@ -21,7 +21,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={code:GetDirName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
-LicenseFile=..\InstallerLicense.txt
+LicenseFile=.\InstallerLicense.txt
 OutputDir=.\Output
 OutputBaseFilename=OBS-AMF-Plugin-Installer
 Compression=lzma
@@ -31,7 +31,7 @@ SolidCompression=yes
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "..\..\enc-amf\#Build\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\enc-amf\#Build\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
