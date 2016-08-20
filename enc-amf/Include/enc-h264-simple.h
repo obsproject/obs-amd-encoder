@@ -47,8 +47,6 @@ namespace Plugin {
 			// Static Code
 			//////////////////////////////////////////////////////////////////////////
 			public:
-
-			static obs_encoder_info* encoder_info;
 			static void encoder_register();
 			static const char* get_name(void* type_data);
 			static void get_defaults(obs_data_t *settings);

@@ -71,28 +71,24 @@ using namespace Plugin;
 using namespace Plugin::AMD;
 using namespace Plugin::Interface;
 
-obs_encoder_info* Plugin::Interface::H264Encoder_Simple::encoder_info;
-
 void Plugin::Interface::H264Encoder_Simple::encoder_register() {
-	if (!Plugin::Interface::H264Encoder_Simple::encoder_info) {
-		Plugin::Interface::H264Encoder_Simple::encoder_info = new obs_encoder_info();
-		Plugin::Interface::H264Encoder_Simple::encoder_info->id = "amf_h264_simple_encoder";
-		Plugin::Interface::H264Encoder_Simple::encoder_info->type = obs_encoder_type::OBS_ENCODER_VIDEO;
-		Plugin::Interface::H264Encoder_Simple::encoder_info->codec = "h264";
+	static obs_encoder_info* encoder_info = new obs_encoder_info();
+	encoder_info->id = "amf_h264_simple_encoder";
+	encoder_info->type = obs_encoder_type::OBS_ENCODER_VIDEO;
+	encoder_info->codec = "h264";
 
 		// Functions
-		Plugin::Interface::H264Encoder_Simple::encoder_info->get_name = &Plugin::Interface::H264Encoder_Simple::get_name;
-		Plugin::Interface::H264Encoder_Simple::encoder_info->get_defaults = &Plugin::Interface::H264Encoder_Simple::get_defaults;
-		Plugin::Interface::H264Encoder_Simple::encoder_info->get_properties = &Plugin::Interface::H264Encoder_Simple::get_properties;
-		Plugin::Interface::H264Encoder_Simple::encoder_info->create = &Plugin::Interface::H264Encoder_Simple::create;
-		Plugin::Interface::H264Encoder_Simple::encoder_info->destroy = &Plugin::Interface::H264Encoder_Simple::destroy;
-		Plugin::Interface::H264Encoder_Simple::encoder_info->encode = &Plugin::Interface::H264Encoder_Simple::encode;
-		Plugin::Interface::H264Encoder_Simple::encoder_info->update = &Plugin::Interface::H264Encoder_Simple::update;
-		Plugin::Interface::H264Encoder_Simple::encoder_info->get_video_info = &Plugin::Interface::H264Encoder_Simple::get_video_info;
-		Plugin::Interface::H264Encoder_Simple::encoder_info->get_extra_data = &Plugin::Interface::H264Encoder_Simple::get_extra_data;
+	encoder_info->get_name = &get_name;
+	encoder_info->get_defaults = &get_defaults;
+	encoder_info->get_properties = &get_properties;
+	encoder_info->create = &create;
+	encoder_info->destroy = &destroy;
+	encoder_info->encode = &encode;
+	encoder_info->update = &update;
+	encoder_info->get_video_info = &get_video_info;
+	encoder_info->get_extra_data = &get_extra_data;
 
-		obs_register_encoder(Plugin::Interface::H264Encoder_Simple::encoder_info);
-	}
+	obs_register_encoder(encoder_info);
 }
 
 const char* Plugin::Interface::H264Encoder_Simple::get_name(void* type_data) {
@@ -253,7 +249,7 @@ bool Plugin::Interface::H264Encoder_Simple::get_extra_data(void *data, uint8_t**
 //////////////////////////////////////////////////////////////////////////
 Plugin::Interface::H264Encoder_Simple::H264Encoder_Simple(obs_data_t* settings, obs_encoder_t* encoder) {
 	int32_t width, height, fpsNum, fpsDen;
-	
+
 	// OBS Settings
 	width = obs_encoder_get_width(encoder);
 	height = obs_encoder_get_height(encoder);
@@ -262,6 +258,7 @@ Plugin::Interface::H264Encoder_Simple::H264Encoder_Simple(obs_data_t* settings, 
 	fpsNum = voi->fps_num;
 	fpsDen = voi->fps_den;
 
+	// Encoder Static Parameters
 	m_VideoEncoder = new Plugin::AMD::H264VideoEncoder(H264EncoderType_AVC, H264MemoryType_Host);
 	switch (voi->format) {
 		case VIDEO_FORMAT_NV12:
@@ -278,49 +275,31 @@ Plugin::Interface::H264Encoder_Simple::H264Encoder_Simple(obs_data_t* settings, 
 			break;
 	}
 	m_VideoEncoder->SetUsage(H264Usage_Transcoding);
-
-	/// Quality Preset
-	m_VideoEncoder->SetQualityPreset((H264QualityPreset)obs_data_get_int(settings, AMF_VCE_H264_QUALITY_PRESET));
-
 	/// Profile
 	m_VideoEncoder->SetProfile((H264Profile)obs_data_get_int(settings, AMF_VCE_H264_PROFILE));
-	if (width > 1920)
-		m_VideoEncoder->SetProfileLevel(H264ProfileLevel_51);
+	if (height > 1080)
+		m_VideoEncoder->SetProfileLevel(H264ProfileLevel_52);
+	/// LTR Frames
+	m_VideoEncoder->SetMaxLTRFrames(0); // Let Encoder decide.
 
-	/// Other
-	m_VideoEncoder->SetScanType(H264ScanType_Progressive);
-
-	/// Framesize and -rate
+	// Encoder Resolution Parameters
 	m_VideoEncoder->SetFrameSize(width, height);
-	m_VideoEncoder->SetFrameRate(fpsNum, fpsDen);
 
-	// Dynamic Properties
-	/// Tuning
-	//switch (0) {
-	//	case 1: // Twitch
-	//		m_VCE->SetDeblockingFilterEnabled(true);
-	//		break;
-	//	case 2: // YouTube
-	//		m_VCE->SetDeblockingFilterEnabled(true);
-	//		break;
-	//	case 3: // Recording
-	//		m_VCE->SetDeblockingFilterEnabled(true);
-	//		break;
-	//	case 0:
-	//	default:
-	//		m_VCE->SetDeblockingFilterEnabled(false);
-	//		break;
-	//}
-	m_VideoEncoder->SetDeBlockingFilterEnabled(true);
-
-	/// Rate Control
+	/// Encoder Rate Control
+	if (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL) != H264RateControlMethod_CQP) {
+		m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) * 1000);
+		m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) * 1000);
+	}
 	m_VideoEncoder->SetRateControlMethod((H264RateControlMethod)obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL));
 	m_VideoEncoder->SetRateControlSkipFrameEnabled(obs_data_get_bool(settings, AMF_VCE_H264_FRAME_SKIPPING));
-	m_VideoEncoder->SetFillerDataEnabled(true);
-	m_VideoEncoder->SetEnforceHRDRestrictionsEnabled(true);
-
-	/// GOP & VBV Buffer
-	//m_VideoEncoder->SetGOPSize((uint32_t)((double_t)fpsNum / (double_t)fpsDen));
+	m_VideoEncoder->SetMinimumQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
+	m_VideoEncoder->SetMaximumQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MAXIMUM));
+	if (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL) == H264RateControlMethod_CQP) {
+		m_VideoEncoder->SetIFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
+		m_VideoEncoder->SetPFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
+		m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
+	}
+	m_VideoEncoder->SetFrameRate(fpsNum, fpsDen);
 	if (obs_data_get_bool(settings, AMF_VCE_H264_USE_CUSTOM_BUFFER_SIZE)) {
 		m_VideoEncoder->SetVBVBufferSize((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_CUSTOM_BUFFER_SIZE) * 1000);
 	} else {
@@ -339,38 +318,27 @@ Plugin::Interface::H264Encoder_Simple::H264Encoder_Simple(obs_data_t* settings, 
 		}
 		m_VideoEncoder->SetVBVBufferSize(bufferSize * 1000);
 	}
+	m_VideoEncoder->SetInitialVBVBufferFullness(1.0);
+	m_VideoEncoder->SetEnforceHRDRestrictionsEnabled(true);
+	m_VideoEncoder->SetFillerDataEnabled(true);
+	//m_VideoEncoder->SetMaximumAccessUnitSize(0);
 
-	/// Rate Control Parameters
-	m_VideoEncoder->SetMinimumQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-	m_VideoEncoder->SetMaximumQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-	switch (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL)) {
-		case H264RateControlMethod_CQP:
-			m_VideoEncoder->SetIFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-			m_VideoEncoder->SetPFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-			m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-			break;
-		case H264RateControlMethod_CBR:
-			m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) * 1000);
-			m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) * 1000);
-			break;
-		case H264RateControlMethod_VBR:
-		case H264RateControlMethod_VBR_LAT:
-			m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) * 1000);
-			m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_PEAK) * 1000);
-			break;
-	}
-
-	/// Other Settings
-	m_VideoEncoder->SetBPicturesPattern(H264BPicturesPattern_Three);
-	m_VideoEncoder->SetBReferenceEnabled(true);
-
-	/// Keyframe Interval
+	// Encoder Picture Control Parameters
+	m_VideoEncoder->SetHeaderInsertionSpacing((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_KEYFRAME_INTERVAL) * (uint32_t)((double_t)fpsNum / (double_t)fpsDen));
 	m_VideoEncoder->SetIDRPeriod((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_KEYFRAME_INTERVAL) * (uint32_t)((double_t)fpsNum / (double_t)fpsDen));
+	//m_VideoEncoder->SetDeBlockingFilterEnabled(false);
+	//m_VideoEncoder->SetBPicturesPattern(H264BPicturesPattern_None);
+	//m_VideoEncoder->SetBReferenceEnabled(false);
 
-	/// Motion
+	// Encoder Miscellaneous Parameters
+	m_VideoEncoder->SetScanType(H264ScanType_Progressive);
+	m_VideoEncoder->SetQualityPreset((H264QualityPreset)obs_data_get_int(settings, AMF_VCE_H264_QUALITY_PRESET));
+
+	// Encoder Motion Estimation Parameters
 	m_VideoEncoder->SetQuarterPixelMotionEstimationEnabled(true);
 	m_VideoEncoder->SetHalfPixelMotionEstimationEnabled(true);
 
+	//////////////////////////////////////////////////////////////////////////
 	// Verify
 	try {
 		AMF_LOG_INFO("Verify Settings:");
