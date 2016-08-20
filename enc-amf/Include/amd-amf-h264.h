@@ -351,12 +351,14 @@ namespace Plugin {
 				std::thread thread;
 				std::mutex mutex;
 				std::condition_variable condvar;
+				std::mutex queuemutex;
 				std::queue<amf::AMFSurfacePtr> queue;
 			} m_ThreadedInput;
 			struct {
 				std::thread thread;
 				std::mutex mutex;
 				std::condition_variable condvar;
+				std::mutex queuemutex;
 				std::queue<ThreadData> queue;
 			} m_ThreadedOutput;
 			std::mutex m_AMFSyncLock;
