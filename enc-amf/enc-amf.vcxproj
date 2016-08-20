@@ -128,21 +128,20 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <OmitFramePointers>true</OmitFramePointers>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <PreprocessorDefinitions>THREADED;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <StructMemberAlignment>4Bytes</StructMemberAlignment>
-      <ControlFlowGuard>false</ControlFlowGuard>
+      <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <StructMemberAlignment>Default</StructMemberAlignment>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <FloatingPointExceptions>false</FloatingPointExceptions>
+      <SDLCheck>false</SDLCheck>
+      <StringPooling>true</StringPooling>
       <CreateHotpatchableImage>false</CreateHotpatchableImage>
-      <EnforceTypeConversionRules>false</EnforceTypeConversionRules>
-      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <OmitFramePointers>false</OmitFramePointers>
+      <MinimalRebuild>true</MinimalRebuild>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -156,18 +155,16 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <PreprocessorDefinitions>THREADED;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <OmitFramePointers>true</OmitFramePointers>
-      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <StructMemberAlignment>4Bytes</StructMemberAlignment>
-      <ControlFlowGuard>false</ControlFlowGuard>
+      <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <FloatingPointExceptions>false</FloatingPointExceptions>
+      <SDLCheck>false</SDLCheck>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <StringPooling>true</StringPooling>
       <CreateHotpatchableImage>false</CreateHotpatchableImage>
-      <EnforceTypeConversionRules>false</EnforceTypeConversionRules>
-      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <MinimalRebuild>true</MinimalRebuild>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -178,12 +175,7 @@
   <ItemGroup>
     <ClInclude Include="Include\amd-amf-h264.h" />
     <ClInclude Include="Include\amd-amf.h" />
-    <ClInclude Include="Include\amf-vce-capabilities.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
+    <ClInclude Include="Include\amd-amf-h264-capabilities.h" />
     <ClInclude Include="Include\enc-h264-simple.h" />
     <ClInclude Include="Include\enc-h264.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -196,12 +188,7 @@
   <ItemGroup>
     <ClCompile Include="Source\amd-amf-h264.cpp" />
     <ClCompile Include="Source\amd-amf.cpp" />
-    <ClCompile Include="Source\amf-vce-capabilities.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="Source\amd-amf-h264-capabilities.cpp" />
     <ClCompile Include="Source\enc-h264-simple.cpp" />
     <ClCompile Include="Source\enc-h264.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
