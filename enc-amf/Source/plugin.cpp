@@ -31,6 +31,8 @@ SOFTWARE.
 // Plugin
 #include "plugin.h"
 #include "amd-amf.h"
+#include "amd-amf-h264.h"
+#include "amd-amf-h264-capabilities.h"
 #include "enc-h264-simple.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -57,7 +59,10 @@ MODULE_EXPORT bool obs_module_load(void) {
 		AMF_LOG_INFO("Version " PLUGIN_VERSION_TEXT);
 
 		// Attempt to load libraries
-		Plugin::AMD::AMF::GetInstance();
+		auto instance = Plugin::AMD::AMF::GetInstance();
+
+		// Report Capabilities
+		Plugin::AMD::H264Capabilities::reportCapabilities();
 
 		// Register Encoders
 		Plugin::Interface::H264Encoder_Simple::encoder_register();
