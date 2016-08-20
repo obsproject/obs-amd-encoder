@@ -57,7 +57,7 @@ OBS_MODULE_USE_DEFAULT_LOCALE("win-amf", "en-US");
 MODULE_EXPORT bool obs_module_load(void) {
 	try {
 		AMF_LOG_INFO("Version " PLUGIN_VERSION_TEXT);
-
+		
 		// Attempt to load libraries
 		auto instance = Plugin::AMD::AMF::GetInstance();
 
