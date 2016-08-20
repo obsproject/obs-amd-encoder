@@ -48,9 +48,6 @@ namespace Plugin {
 			#pragma region Singleton
 			public:
 			static std::shared_ptr<Plugin::AMD::AMF> GetInstance();
-			
-			private:
-			static std::shared_ptr<Plugin::AMD::AMF> __instance;
 			#pragma endregion Singleton
 
 			public:

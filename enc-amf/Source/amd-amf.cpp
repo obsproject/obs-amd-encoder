@@ -38,23 +38,29 @@ SOFTWARE.
 
 using namespace Plugin::AMD;
 
-std::shared_ptr<Plugin::AMD::AMF> Plugin::AMD::AMF::__instance;
-
 std::shared_ptr<Plugin::AMD::AMF> Plugin::AMD::AMF::GetInstance() {
-	if (!__instance) {
-		__instance = std::make_shared<Plugin::AMD::AMF>(AMF());
-	}
-
+	static std::shared_ptr<Plugin::AMD::AMF> __instance = std::make_shared<Plugin::AMD::AMF>();
 	return __instance;
 }
 
 Plugin::AMD::AMF::AMF() {
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_OK;
 
-	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Initializing...");
+	AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Initializing...");
 
+	// Null Values
+	m_TimerPeriod = 0;
+	m_AMFModule = nullptr;
+	m_AMFVersion_Compiler = 0;
+	m_AMFVersion_Runtime = 0;
+	m_AMFFactory = nullptr;
+	m_AMFTrace = nullptr;
+	m_AMFDebug = nullptr;
+	AMFQueryVersion = nullptr;
+	AMFInit = nullptr;
+	
 	// Increase Timer precision.
-	m_TimerPeriod = 1;
+	m_TimerPeriod = 0;
 	while (timeBeginPeriod(m_TimerPeriod) == TIMERR_NOCANDO) {
 		++m_TimerPeriod;
 	}
@@ -66,7 +72,7 @@ Plugin::AMD::AMF::AMF() {
 		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Loading of '" vstr(AMF_DLL_NAME) "' failed with error code %d.", error);
 		throw;
 	} else {
-		AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Loaded '" vstr(AMF_DLL_NAME) "'.");
+		AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Loaded '" vstr(AMF_DLL_NAME) "'.");
 	}
 
 	// Find Function: Query Version
@@ -84,7 +90,7 @@ Plugin::AMD::AMF::AMF() {
 		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Querying Version failed with error code %d.", res);
 		throw;
 	}
-	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Runtime is on Version %d.%d.%d.%d", 
+	AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Runtime is on Version %d.%d.%d.%d", 
 		(m_AMFVersion_Runtime >> 48ull) & 0xFFFF,
 		(m_AMFVersion_Runtime >> 32ull) & 0xFFFF,
 		(m_AMFVersion_Runtime >> 16ull) & 0xFFFF,
@@ -104,7 +110,7 @@ Plugin::AMD::AMF::AMF() {
 		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Initializing AMF Library failed with error code %d.", res);
 		throw;
 	} else {
-		AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> AMF Library initialized.");
+		AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> AMF Library initialized.");
 	}
 
 	// Retrieve Trace Object
@@ -121,16 +127,36 @@ Plugin::AMD::AMF::AMF() {
 		throw;
 	}
 
-	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Initialized.");
+	m_AMFDebug->EnablePerformanceMonitor(true);
+	m_AMFDebug->AssertsEnable(true);
+	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, true);
+	m_AMFTrace->TraceEnableAsync(true);
+
+	AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Initialized.");
 }
 
 Plugin::AMD::AMF::~AMF() {
+	AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Finalizing.");
+	
 	// Free Library again
 	if (m_AMFModule)
 		FreeLibrary(m_AMFModule);
 
 	// Restore Timer precision.
 	timeEndPeriod(m_TimerPeriod);
+
+	// Null Values
+	m_TimerPeriod = 0;
+	m_AMFModule = nullptr;
+	m_AMFVersion_Compiler = 0;
+	m_AMFVersion_Runtime = 0;
+	m_AMFFactory = nullptr;
+	m_AMFTrace = nullptr;
+	m_AMFDebug = nullptr;
+	AMFQueryVersion = nullptr;
+	AMFInit = nullptr;
+
+	AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Finalized.");
 }
 
 amf::AMFFactory* Plugin::AMD::AMF::GetFactory() {
