@@ -46,7 +46,7 @@ std::shared_ptr<Plugin::AMD::AMF> Plugin::AMD::AMF::GetInstance() {
 Plugin::AMD::AMF::AMF() {
 	AMF_RESULT res = AMF_OK;
 
-	AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Initializing...");
+	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Initializing...");
 
 	// Null Values
 	m_TimerPeriod = 0;
@@ -72,7 +72,7 @@ Plugin::AMD::AMF::AMF() {
 		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Loading of '" vstr(AMF_DLL_NAME) "' failed with error code %d.", error);
 		throw;
 	} else {
-		AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Loaded '" vstr(AMF_DLL_NAME) "'.");
+		AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Loaded '" vstr(AMF_DLL_NAME) "'.");
 	}
 
 	// Find Function: Query Version
@@ -90,7 +90,7 @@ Plugin::AMD::AMF::AMF() {
 		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Querying Version failed with error code %d.", res);
 		throw;
 	}
-	AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Runtime is on Version %d.%d.%d.%d", 
+	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Runtime is on Version %d.%d.%d.%d", 
 		(m_AMFVersion_Runtime >> 48ull) & 0xFFFF,
 		(m_AMFVersion_Runtime >> 32ull) & 0xFFFF,
 		(m_AMFVersion_Runtime >> 16ull) & 0xFFFF,
@@ -110,7 +110,7 @@ Plugin::AMD::AMF::AMF() {
 		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Initializing AMF Library failed with error code %d.", res);
 		throw;
 	} else {
-		AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> AMF Library initialized.");
+		AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> AMF Library initialized.");
 	}
 
 	// Retrieve Trace Object
@@ -132,11 +132,11 @@ Plugin::AMD::AMF::AMF() {
 	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, true);
 	m_AMFTrace->TraceEnableAsync(true);
 
-	AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Initialized.");
+	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Initialized.");
 }
 
 Plugin::AMD::AMF::~AMF() {
-	AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Finalizing.");
+	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Finalizing.");
 	
 	// Free Library again
 	if (m_AMFModule)
@@ -156,7 +156,7 @@ Plugin::AMD::AMF::~AMF() {
 	AMFQueryVersion = nullptr;
 	AMFInit = nullptr;
 
-	AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Finalized.");
+	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Finalized.");
 }
 
 amf::AMFFactory* Plugin::AMD::AMF::GetFactory() {
