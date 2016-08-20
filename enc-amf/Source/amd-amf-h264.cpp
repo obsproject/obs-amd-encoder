@@ -195,13 +195,13 @@ Plugin::AMD::H264VideoEncoder::~H264VideoEncoder() {
 	// AMF
 	if (m_AMFEncoder) {
 		m_AMFEncoder->Terminate();
-		m_AMFEncoder->Release();
-		m_AMFEncoder = nullptr;
+		/*m_AMFEncoder->Release();
+		m_AMFEncoder = nullptr;*/
 	}
 	if (m_AMFContext) {
 		m_AMFContext->Terminate();
-		m_AMFContext->Release();
-		m_AMFContext = nullptr;
+		/*m_AMFContext->Release();
+		m_AMFContext = nullptr;*/
 	}
 	m_AMFFactory = nullptr;
 }
@@ -269,7 +269,7 @@ bool Plugin::AMD::H264VideoEncoder::SendInput(struct encoder_frame*& frame) {
 			AMF_LOG_INFO("SendInput: Notified Threads");
 		} else {
 			AMF_LOG_ERROR("<Plugin::AMD::H264VideoEncoder::SendInput> Input Queue is full, aborting...");
-			pSurface->Release();
+			//pSurface->Release();
 			return false;
 		}
 	}
@@ -370,7 +370,7 @@ bool Plugin::AMD::H264VideoEncoder::GetExtraData(uint8_t**& extra_data, size_t*&
 		std::memcpy(m_ExtraDataBuffer.data(), buf->GetNative(), *extra_data_size);
 		*extra_data = m_ExtraDataBuffer.data();
 
-		buf->Release();
+		//buf->Release();
 
 		return true;
 	}
