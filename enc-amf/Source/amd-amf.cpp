@@ -129,9 +129,10 @@ Plugin::AMD::AMF::AMF() {
 
 	m_AMFDebug->EnablePerformanceMonitor(true);
 	m_AMFDebug->AssertsEnable(true);
-	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, true);
-	m_AMFTrace->TraceEnableAsync(true);
 	m_AMFTrace->SetGlobalLevel(AMF_TRACE_DEBUG);
+	m_AMFTrace->TraceEnableAsync(true);
+	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_CONSOLE, AMF_TRACE_DEBUG);
+	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, true);
 
 	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Initialized.");
 }
