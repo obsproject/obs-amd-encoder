@@ -45,6 +45,7 @@ SOFTWARE.
 #define AMF_LOG_ERROR(format, ...)   AMF_LOG(LOG_ERROR,   format, ##__VA_ARGS__)
 #define AMF_LOG_WARNING(format, ...) AMF_LOG(LOG_WARNING, format, ##__VA_ARGS__)
 #define AMF_LOG_INFO(format, ...)    AMF_LOG(LOG_INFO,    format, ##__VA_ARGS__)
+#define AMF_LOG_CONFIG(format, ...)  AMF_LOG(350,         format, ##__VA_ARGS__)
 #define AMF_LOG_DEBUG(format, ...)   AMF_LOG(LOG_DEBUG,   format, ##__VA_ARGS__)
 
 #define AMF_TEXT(x) ("AMF." ## x)
