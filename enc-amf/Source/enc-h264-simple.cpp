@@ -146,7 +146,7 @@ obs_properties_t* Plugin::Interface::H264Encoder_Simple::get_properties(void* da
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_TUNING_RECORDING), 3);*/
 
 	/// Profile
-	list = obs_properties_add_list(props, AMF_VCE_H264_PROFILE, obs_module_text(AMF_VCE_H264_QUALITY_PRESET), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	list = obs_properties_add_list(props, AMF_VCE_H264_PROFILE, obs_module_text(AMF_VCE_H264_PROFILE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_BASELINE), Plugin::AMD::H264Profile::H264Profile_Baseline);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_MAIN), Plugin::AMD::H264Profile::H264Profile_Main);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_HIGH), Plugin::AMD::H264Profile::H264Profile_High);
@@ -275,131 +275,84 @@ Plugin::Interface::H264Encoder_Simple::H264Encoder_Simple(obs_data_t* settings, 
 			break;
 	}
 
-	if (false) { // Use Order according to #define appearance.
-		m_VideoEncoder->SetUsage(H264Usage_Transcoding);
-		m_VideoEncoder->SetProfile((H264Profile)obs_data_get_int(settings, AMF_VCE_H264_PROFILE));
-		if (height > 1080)
-			m_VideoEncoder->SetProfileLevel(H264ProfileLevel_52);
-		//m_VideoEncoder->SetMaxLTRFrames(0); // Let Encoder decide.
-		m_VideoEncoder->SetScanType(H264ScanType_Progressive);
-		m_VideoEncoder->SetQualityPreset((H264QualityPreset)obs_data_get_int(settings, AMF_VCE_H264_QUALITY_PRESET));
-
-		m_VideoEncoder->SetEnforceHRDRestrictionsEnabled(true);
-		m_VideoEncoder->SetFillerDataEnabled(true);
-
-		if (obs_data_get_bool(settings, AMF_VCE_H264_USE_CUSTOM_BUFFER_SIZE)) {
-			m_VideoEncoder->SetVBVBufferSize((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_CUSTOM_BUFFER_SIZE) * 1000);
-		} else {
-			uint32_t bufferSize;
-			switch (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL)) {
-				case H264RateControlMethod_CQP:
-					bufferSize = (uint32_t)(51 - min(min(obs_data_get_int(settings, AMF_VCE_H264_QP_IFRAME), obs_data_get_int(settings, AMF_VCE_H264_QP_PFRAME)), obs_data_get_int(settings, AMF_VCE_H264_QP_BFRAME))) * 500; // Probably not optimal.
-					break;
-				case H264RateControlMethod_CBR:
-					bufferSize = (uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET);
-					break;
-				case H264RateControlMethod_VBR:
-				case H264RateControlMethod_VBR_LAT:
-					bufferSize = (uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_PEAK);
-					break;
-			}
-			m_VideoEncoder->SetVBVBufferSize(bufferSize * 1000);
+	m_VideoEncoder->SetUsage(H264Usage_Transcoding);
+	/// Profile
+	m_VideoEncoder->SetProfile((H264Profile)obs_data_get_int(settings, AMF_VCE_H264_PROFILE));
+	if (height > 1080) {
+		switch (Plugin::AMD::H264Capabilities::getInstance()->getEncoderCaps(H264EncoderType_AVC)->maxProfileLevel) {
+			case 42:
+				m_VideoEncoder->SetProfileLevel(H264ProfileLevel_42);
+				break;
+			case 50:
+				m_VideoEncoder->SetProfileLevel(H264ProfileLevel_50);
+				break;
+			case 51:
+				m_VideoEncoder->SetProfileLevel(H264ProfileLevel_51);
+				break;
+			case 52:
+				m_VideoEncoder->SetProfileLevel(H264ProfileLevel_52);
+				break;
 		}
-		m_VideoEncoder->SetInitialVBVBufferFullness(1.0);
-
-		//m_VideoEncoder->SetMaximumAccessUnitSize(0);
-
-		m_VideoEncoder->SetMinimumQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-		m_VideoEncoder->SetMaximumQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MAXIMUM));
-		if (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL) == H264RateControlMethod_CQP) {
-			m_VideoEncoder->SetIFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-			m_VideoEncoder->SetPFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-			m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-		}
-		if (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL) != H264RateControlMethod_CQP) {
-			m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) * 1000);
-			m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) * 1000);
-		}
-		m_VideoEncoder->SetRateControlSkipFrameEnabled(obs_data_get_bool(settings, AMF_VCE_H264_FRAME_SKIPPING));
-		m_VideoEncoder->SetRateControlMethod((H264RateControlMethod)obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL));
-
-		m_VideoEncoder->SetFrameSize(width, height);
-		m_VideoEncoder->SetFrameRate(fpsNum, fpsDen);
-
-		m_VideoEncoder->SetHeaderInsertionSpacing((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_KEYFRAME_INTERVAL) * (uint32_t)((double_t)fpsNum / (double_t)fpsDen));
-		//m_VideoEncoder->SetBPicturesPattern(H264BPicturesPattern_None);
-		//m_VideoEncoder->SetDeBlockingFilterEnabled(false);
-		//m_VideoEncoder->SetBReferenceEnabled(false);
-		m_VideoEncoder->SetIDRPeriod((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_KEYFRAME_INTERVAL) * (uint32_t)((double_t)fpsNum / (double_t)fpsDen));
-		
-		m_VideoEncoder->SetQuarterPixelMotionEstimationEnabled(true);
-		m_VideoEncoder->SetHalfPixelMotionEstimationEnabled(true);
-	} else {
-		m_VideoEncoder->SetUsage(H264Usage_Transcoding);
-		/// Profile
-		m_VideoEncoder->SetProfile((H264Profile)obs_data_get_int(settings, AMF_VCE_H264_PROFILE));
-		if (height > 1080)
-			m_VideoEncoder->SetProfileLevel(H264ProfileLevel_52);
-		/// LTR Frames
-		m_VideoEncoder->SetMaxLTRFrames(0); // Let Encoder decide.
-
-		// Encoder Resolution Parameters
-		m_VideoEncoder->SetFrameSize(width, height);
-
-		/// Encoder Rate Control
-		m_VideoEncoder->SetRateControlMethod((H264RateControlMethod)obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL));
-		m_VideoEncoder->SetRateControlSkipFrameEnabled(obs_data_get_bool(settings, AMF_VCE_H264_FRAME_SKIPPING));
-		m_VideoEncoder->SetMinimumQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-		m_VideoEncoder->SetMaximumQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MAXIMUM));
-		if (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL) != H264RateControlMethod_CQP) {
-			m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) * 1000);
-			m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) * 1000);
-		}
-		if (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL) == H264RateControlMethod_CQP) {
-			m_VideoEncoder->SetIFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-			m_VideoEncoder->SetPFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-			m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-		}
-		m_VideoEncoder->SetFrameRate(fpsNum, fpsDen);
-		if (obs_data_get_bool(settings, AMF_VCE_H264_USE_CUSTOM_BUFFER_SIZE)) {
-			m_VideoEncoder->SetVBVBufferSize((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_CUSTOM_BUFFER_SIZE) * 1000);
-		} else {
-			uint32_t bufferSize;
-			switch (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL)) {
-				case H264RateControlMethod_CQP:
-					bufferSize = (uint32_t)(51 - min(min(obs_data_get_int(settings, AMF_VCE_H264_QP_IFRAME), obs_data_get_int(settings, AMF_VCE_H264_QP_PFRAME)), obs_data_get_int(settings, AMF_VCE_H264_QP_BFRAME))) * 500; // Probably not optimal.
-					break;
-				case H264RateControlMethod_CBR:
-					bufferSize = (uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET);
-					break;
-				case H264RateControlMethod_VBR:
-				case H264RateControlMethod_VBR_LAT:
-					bufferSize = (uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_PEAK);
-					break;
-			}
-			m_VideoEncoder->SetVBVBufferSize(bufferSize * 1000);
-		}
-		m_VideoEncoder->SetInitialVBVBufferFullness(1.0);
-		m_VideoEncoder->SetEnforceHRDRestrictionsEnabled(true);
-		m_VideoEncoder->SetFillerDataEnabled(true);
-		//m_VideoEncoder->SetMaximumAccessUnitSize(0);
-
-		// Encoder Picture Control Parameters
-		m_VideoEncoder->SetHeaderInsertionSpacing((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_KEYFRAME_INTERVAL) * (uint32_t)((double_t)fpsNum / (double_t)fpsDen));
-		m_VideoEncoder->SetIDRPeriod((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_KEYFRAME_INTERVAL) * (uint32_t)((double_t)fpsNum / (double_t)fpsDen));
-		//m_VideoEncoder->SetDeBlockingFilterEnabled(false);
-		//m_VideoEncoder->SetBPicturesPattern(H264BPicturesPattern_None);
-		//m_VideoEncoder->SetBReferenceEnabled(false);
-
-		// Encoder Miscellaneous Parameters
-		m_VideoEncoder->SetScanType(H264ScanType_Progressive);
-		m_VideoEncoder->SetQualityPreset((H264QualityPreset)obs_data_get_int(settings, AMF_VCE_H264_QUALITY_PRESET));
-
-		// Encoder Motion Estimation Parameters
-		m_VideoEncoder->SetQuarterPixelMotionEstimationEnabled(true);
-		m_VideoEncoder->SetHalfPixelMotionEstimationEnabled(true);
 	}
+	/// LTR Frames
+	//m_VideoEncoder->SetMaxLTRFrames(0); // Let Encoder decide.
 
+	// Encoder Resolution Parameters
+	m_VideoEncoder->SetFrameSize(width, height);
+
+	/// Encoder Rate Control
+	m_VideoEncoder->SetRateControlMethod((H264RateControlMethod)obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL));
+	m_VideoEncoder->SetRateControlSkipFrameEnabled(obs_data_get_bool(settings, AMF_VCE_H264_FRAME_SKIPPING));
+	m_VideoEncoder->SetMinimumQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
+	m_VideoEncoder->SetMaximumQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MAXIMUM));
+	if (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL) != H264RateControlMethod_CQP) {
+		m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) * 1000);
+		m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) * 1000);
+	}
+	if (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL) == H264RateControlMethod_CQP) {
+		m_VideoEncoder->SetIFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
+		m_VideoEncoder->SetPFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
+		m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
+	}
+	m_VideoEncoder->SetFrameRate(fpsNum, fpsDen);
+	if (obs_data_get_bool(settings, AMF_VCE_H264_USE_CUSTOM_BUFFER_SIZE)) {
+		m_VideoEncoder->SetVBVBufferSize((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_CUSTOM_BUFFER_SIZE) * 1000);
+	} else {
+		uint32_t bufferSize;
+		switch (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL)) {
+			case H264RateControlMethod_CQP:
+				bufferSize = (uint32_t)(51 - min(min(obs_data_get_int(settings, AMF_VCE_H264_QP_IFRAME), obs_data_get_int(settings, AMF_VCE_H264_QP_PFRAME)), obs_data_get_int(settings, AMF_VCE_H264_QP_BFRAME))) * 500; // Probably not optimal.
+				break;
+			case H264RateControlMethod_CBR:
+				bufferSize = (uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET);
+				break;
+			case H264RateControlMethod_VBR:
+			case H264RateControlMethod_VBR_LAT:
+				bufferSize = (uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_PEAK);
+				break;
+		}
+		m_VideoEncoder->SetVBVBufferSize(bufferSize * 1000);
+	}
+	//m_VideoEncoder->SetInitialVBVBufferFullness(1.0);
+	//m_VideoEncoder->SetEnforceHRDRestrictionsEnabled(true);
+	//m_VideoEncoder->SetFillerDataEnabled(true);
+	//m_VideoEncoder->SetMaximumAccessUnitSize(0);
+
+	// Encoder Picture Control Parameters
+	//m_VideoEncoder->SetHeaderInsertionSpacing((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_KEYFRAME_INTERVAL) * (uint32_t)((double_t)fpsNum / (double_t)fpsDen));
+	m_VideoEncoder->SetIDRPeriod((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_KEYFRAME_INTERVAL) * (uint32_t)((double_t)fpsNum / (double_t)fpsDen));
+	//m_VideoEncoder->SetDeBlockingFilterEnabled(false);
+	//m_VideoEncoder->SetBPicturesPattern(H264BPicturesPattern_None);
+	//m_VideoEncoder->SetBReferenceEnabled(false);
+
+	// Encoder Miscellaneous Parameters
+	//m_VideoEncoder->SetScanType(H264ScanType_Progressive);
+	m_VideoEncoder->SetQualityPreset((H264QualityPreset)obs_data_get_int(settings, AMF_VCE_H264_QUALITY_PRESET));
+
+	// Encoder Motion Estimation Parameters
+	//m_VideoEncoder->SetQuarterPixelMotionEstimationEnabled(true);
+	//m_VideoEncoder->SetHalfPixelMotionEstimationEnabled(true);
+	
 	//////////////////////////////////////////////////////////////////////////
 	// Verify
 	try {

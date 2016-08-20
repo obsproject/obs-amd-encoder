@@ -36,6 +36,7 @@ SOFTWARE.
 // Plugin
 #include "plugin.h"
 #include "amd-amf-h264.h"
+#include "amd-amf-h264-capabilities.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Code
