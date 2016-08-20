@@ -28,6 +28,14 @@ SOFTWARE.
 #include "amd-amf-h264.h"
 
 //////////////////////////////////////////////////////////////////////////
+// Defines
+//////////////////////////////////////////////////////////////////////////
+#define AMF_SYNC_LOCK(x) { \
+		std::unique_lock<std::mutex> amflock(m_AMFSyncLock); \
+		x; \
+	};
+
+//////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
 static char* AMF_RESULT_AS_TEXT[] = {
@@ -664,9 +672,9 @@ Plugin::AMD::H264RateControlMethod Plugin::AMD::H264VideoEncoder::GetRateControl
 void Plugin::AMD::H264VideoEncoder::SetRateControlSkipFrameEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetRateControlMethod> Setting to %s failed with error %s (code %d).", enabled ? "Enabled" : "Disabled", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetRateControlSkipFrameEnabled> Setting to %s failed with error %s (code %d).", enabled ? "Enabled" : "Disabled", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetRateControlMethod> Set to %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetRateControlSkipFrameEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
 bool Plugin::AMD::H264VideoEncoder::IsRateControlSkipFrameEnabled() {
@@ -1222,9 +1230,10 @@ void Plugin::AMD::H264VideoEncoder::InputThreadLogic() {
 		while ((m_ThreadedInput.queue.size() > 0) && res == AMF_OK) { // Repeat until impossible.
 			amf::AMFSurfacePtr surface = m_ThreadedInput.queue.front();
 
-			AMF_RESULT res = m_AMFEncoder->SubmitInput(surface);
+			AMF_RESULT res = AMF_OK;
+			AMF_SYNC_LOCK(res = m_AMFEncoder->SubmitInput(surface););
 			if (res == AMF_OK) {
-				surface->Release();
+				//surface->Release(); // Handled by SubmitInput?
 				m_ThreadedInput.queue.pop();
 			} else if (res != AMF_INPUT_FULL) {
 				std::vector<char> msgBuf(128);
@@ -1240,7 +1249,7 @@ void Plugin::AMD::H264VideoEncoder::InputThreadLogic() {
 
 void Plugin::AMD::H264VideoEncoder::OutputThreadLogic() {
 	// Thread Loop that handles Querying
-	uint64_t lastFrameIndex = -1;
+	uint64_t lastFrameIndex = 0;
 
 	std::unique_lock<std::mutex> lock(m_ThreadedOutput.mutex);
 	do {
@@ -1265,18 +1274,19 @@ void Plugin::AMD::H264VideoEncoder::OutputThreadLogic() {
 				// Create a Packet
 				pkt.data.resize(pBuffer->GetSize());
 				std::memcpy(pkt.data.data(), pBuffer->GetNative(), pkt.data.size());
-				pkt.frame = uint64_t(pData->GetPts() * m_FrameRateDivisor); // (m_frameRateDiv / 1e7)); // Not sure what way around the accuracy is better.
-				AMF_RESULT res2 = pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &variant);
+				pkt.frame = (uint64_t)(pData->GetPts() * m_FrameRateDivisor / 1e7); // Not sure what way around the accuracy is better.
+				AMF_RESULT res2 = AMF_OK;
+				AMF_SYNC_LOCK(res2 = pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &variant););
 				if (res2 == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
 					pkt.type = (AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)variant.ToUInt64();
 				}
-				if ((lastFrameIndex >= pkt.frame) && (lastFrameIndex != 0))
+				if ((lastFrameIndex >= pkt.frame) && (lastFrameIndex > 0))
 					AMF_LOG_ERROR("<Plugin::AMD::H264VideoEncoder::OutputThreadLogic> Detected out of order packet. Frame Index is %d, expected %d.", pkt.frame, lastFrameIndex + 1);
 				lastFrameIndex = pkt.frame;
 
 				// Release Buffer and Data
-				pBuffer->Release();
-				pData->Release();
+				//pBuffer->Release(); // Automatically done?
+				//pData->Release();
 
 				// Queue
 				m_ThreadedOutput.queue.push(pkt);
@@ -1307,10 +1317,10 @@ amf::AMFSurfacePtr Plugin::AMD::H264VideoEncoder::CreateSurfaceFromFrame(struct 
 		#pragma region Host Memory Type
 		size_t planeCount;
 
-		res = m_AMFContext->AllocSurface(
+		AMF_SYNC_LOCK(res = m_AMFContext->AllocSurface(
 			memoryTypeToAMF[m_MemoryType], surfaceFormatToAMF[m_InputSurfaceFormat],
 			m_FrameSize.first, m_FrameSize.second,
-			&pSurface);
+			&pSurface););
 		if (res != AMF_OK) // Unable to create Surface
 			ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::CreateSurfaceFromFrame> Unable to create AMFSurface, error %s (code %d).", res);
 
@@ -1323,8 +1333,8 @@ amf::AMFSurfacePtr Plugin::AMD::H264VideoEncoder::CreateSurfaceFromFrame(struct 
 			int32_t height;
 			size_t hpitch;
 
-			plane = pSurface->GetPlaneAt(i);
-			plane_nat = plane->GetNative();
+			AMF_SYNC_LOCK(plane = pSurface->GetPlaneAt(i););
+			AMF_SYNC_LOCK(plane_nat = plane->GetNative(););
 			height = plane->GetHeight();
 			hpitch = plane->GetHPitch();
 
@@ -1339,8 +1349,8 @@ amf::AMFSurfacePtr Plugin::AMD::H264VideoEncoder::CreateSurfaceFromFrame(struct 
 
 		amf_pts amfPts = (int64_t)ceil((frame->pts / ((double_t)m_FrameRate.first / (double_t)m_FrameRate.second)) * 10000000l);
 			//(1 * 1000 * 1000 * 10)
-		pSurface->SetPts(amfPts);
-		pSurface->SetProperty(L"Frame", frame->pts);
+		AMF_SYNC_LOCK(pSurface->SetPts(amfPts););
+		AMF_SYNC_LOCK(pSurface->SetProperty(L"Frame", frame->pts););
 	}
 
 	return pSurface;

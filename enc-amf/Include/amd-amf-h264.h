@@ -152,7 +152,7 @@ namespace Plugin {
 			bool GetExtraData(uint8_t**& data, size_t*& size);
 			void GetVideoInfo(struct video_scale_info*& vsi);
 
-			// AMF Properties
+			#pragma region AMF Properties
 			public:
 			/// Internal
 			void SetInputSurfaceFormat(H264SurfaceFormat p_Format);
@@ -277,7 +277,7 @@ namespace Plugin {
 			/*	Enables or disables using B-pictures as references */
 			void SetBReferenceEnabled(bool enabled);
 			bool IsBReferenceEnabled();
-			/// Encoder Miscellaneos Parameters
+			/// Encoder Miscellaneous Parameters
 			/*	Selects progressive or interlaced scan */
 			void SetScanType(H264ScanType scanType);
 			H264ScanType GetScanType();
@@ -293,7 +293,7 @@ namespace Plugin {
 			bool IsQuarterPixelMotionEstimationEnabled();
 			/// Encoder SVC Parameters (Only Webcam Usage)
 			/*	Change the number of temporal enhancement layers. The maximum number allowed is set by the corresponding create parameter.
-			 *	
+			 *
 			 *	Remarks:
 			 *	- Actual modification of the number of temporal enhancement layers will be delayed until the start of the next temporal GOP.
 			 *	- B-pictures and Intra-refresh features are not supported with SVC.
@@ -304,12 +304,13 @@ namespace Plugin {
 			void SetCurrentTemporalLayer(uint32_t layer);
 			uint32_t GetCurrentTemporalLayer();
 			/*	Set the currently modified SVC Temporal Quality Layer
-			 *	
+			 *
 			 *	Remarks:
 			 *	- Quality layers are not supported on VCE 1.0. “QL0” must be used for quality layers.
 			 **/
 			void SetCurrentTemporalQualityLayer(uint32_t layer);
 			uint32_t GetCurrentTemporalQualityLayer();
+			#pragma endregion AMF Properties
 
 			// Threading
 			private:
@@ -358,6 +359,7 @@ namespace Plugin {
 				std::condition_variable condvar;
 				std::queue<ThreadData> queue;
 			} m_ThreadedOutput;
+			std::mutex m_AMFSyncLock;
 
 			// Static Buffers
 			std::vector<uint8_t> m_PacketDataBuffer;
