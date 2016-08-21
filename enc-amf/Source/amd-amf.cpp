@@ -25,6 +25,8 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Includes
 //////////////////////////////////////////////////////////////////////////
+#include <vector>
+
 #include "amd-amf.h"
 
 // AMD AMF SDK
@@ -37,6 +39,23 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 
 using namespace Plugin::AMD;
+
+class CustomWriter : public amf::AMFTraceWriter {
+
+	public:
+	virtual void Write(const wchar_t* scope, const wchar_t* message) override {
+		std::vector<char> buf1(1024), buf2(1024);
+		wcstombs(buf1.data(), scope, 1024);
+		wcstombs(buf2.data(), message, 1024);
+
+		blog(LOG_INFO, "%s", &(buf2.data()[33 + strlen(buf1.data()) + 2]));
+	}
+
+
+	virtual void Flush() override {
+	}
+};
+
 
 std::shared_ptr<Plugin::AMD::AMF> Plugin::AMD::AMF::GetInstance() {
 	static std::shared_ptr<Plugin::AMD::AMF> __instance = std::make_shared<Plugin::AMD::AMF>();
@@ -127,12 +146,18 @@ Plugin::AMD::AMF::AMF() {
 		throw;
 	}
 
-	m_AMFDebug->EnablePerformanceMonitor(true);
-	m_AMFDebug->AssertsEnable(true);
-	m_AMFTrace->SetGlobalLevel(AMF_TRACE_DEBUG);
-	m_AMFTrace->TraceEnableAsync(true);
-	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_CONSOLE, AMF_TRACE_DEBUG);
+	//m_AMFDebug->EnablePerformanceMonitor(false);
+	//m_AMFDebug->AssertsEnable(false);
+	//m_AMFTrace->TraceEnableAsync(true);
+	m_AMFTrace->SetGlobalLevel(AMF_TRACE_TEST);
+	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_FILE, AMF_TRACE_TEST);
+	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, AMF_TRACE_TEST);
+	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_CONSOLE, AMF_TRACE_TEST);
+	m_AMFTrace->SetPath(L"C:\\AMFLog.txt");
+	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_FILE, true);
+	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, true);
 	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, true);
+	m_AMFTrace->RegisterWriter(L"OBSWriter", new CustomWriter(), true);
 
 	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Initialized.");
 }
