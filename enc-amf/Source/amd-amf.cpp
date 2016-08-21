@@ -44,16 +44,13 @@ class CustomWriter : public amf::AMFTraceWriter {
 
 	public:
 	virtual void Write(const wchar_t* scope, const wchar_t* message) override {
-		std::vector<char> buf1(1024), buf2(1024);
-		wcstombs(buf1.data(), scope, 1024);
-		wcstombs(buf2.data(), message, 1024);
+		const wchar_t* realmsg = &(message[(33 + wcslen(scope) + 2)]);
+		size_t msgLen = wcslen(realmsg) - (sizeof(wchar_t));
 
-		blog(LOG_INFO, "%s", &(buf2.data()[33 + strlen(buf1.data()) + 2]));
+		blog(LOG_INFO, "[AMFTrace::%ls] %.*ls", scope, msgLen, realmsg);
 	}
 
-
-	virtual void Flush() override {
-	}
+	virtual void Flush() override {}
 };
 
 
@@ -77,7 +74,7 @@ Plugin::AMD::AMF::AMF() {
 	m_AMFDebug = nullptr;
 	AMFQueryVersion = nullptr;
 	AMFInit = nullptr;
-	
+
 	// Increase Timer precision.
 	m_TimerPeriod = 0;
 	while (timeBeginPeriod(m_TimerPeriod) == TIMERR_NOCANDO) {
@@ -109,7 +106,7 @@ Plugin::AMD::AMF::AMF() {
 		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Querying Version failed with error code %d.", res);
 		throw;
 	}
-	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Runtime is on Version %d.%d.%d.%d", 
+	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Runtime is on Version %d.%d.%d.%d",
 		(m_AMFVersion_Runtime >> 48ull) & 0xFFFF,
 		(m_AMFVersion_Runtime >> 32ull) & 0xFFFF,
 		(m_AMFVersion_Runtime >> 16ull) & 0xFFFF,
@@ -150,13 +147,13 @@ Plugin::AMD::AMF::AMF() {
 	//m_AMFDebug->AssertsEnable(false);
 	//m_AMFTrace->TraceEnableAsync(true);
 	m_AMFTrace->SetGlobalLevel(AMF_TRACE_TEST);
-	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_FILE, AMF_TRACE_TEST);
-	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, AMF_TRACE_TEST);
-	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_CONSOLE, AMF_TRACE_TEST);
-	m_AMFTrace->SetPath(L"C:\\AMFLog.txt");
-	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_FILE, true);
-	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, true);
-	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, true);
+	//m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_FILE, AMF_TRACE_TEST);
+	//m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, AMF_TRACE_TEST);
+	//m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_CONSOLE, AMF_TRACE_TEST);
+	//m_AMFTrace->SetPath(L"C:\\AMFLog.txt");
+	//m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_FILE, true);
+	//m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, true);
+	//m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, true);
 	m_AMFTrace->RegisterWriter(L"OBSWriter", new CustomWriter(), true);
 
 	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Initialized.");
@@ -164,7 +161,7 @@ Plugin::AMD::AMF::AMF() {
 
 Plugin::AMD::AMF::~AMF() {
 	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Finalizing.");
-	
+
 	// Free Library again
 	if (m_AMFModule)
 		FreeLibrary(m_AMFModule);
