@@ -117,9 +117,9 @@ namespace Plugin {
 			H264ScanType_Interlaced,
 		};
 		enum H264QualityPreset {
+			H264QualityPreset_Speed,
 			H264QualityPreset_Balanced,
 			H264QualityPreset_Quality,
-			H264QualityPreset_Speed,
 		};
 
 		class H264VideoEncoder {
@@ -240,7 +240,7 @@ namespace Plugin {
 			/*	Sets the initial VBV Buffer Fullness */
 			void SetInitialVBVBufferFullness(double_t fullness);
 			double_t GetInitialVBVBufferFullness();
-			/*	Enables/Disables contraints on QP variation within a picture to meet HRD requirement(s) */
+			/*	Enables/Disables constraints on QP variation within a picture to meet HRD requirement(s) */
 			void SetEnforceHRDRestrictionsEnabled(bool enforce);
 			bool IsEnforceHRDRestrictionsEnabled();
 			/*	Enables/Disables filler data */
@@ -339,6 +339,7 @@ namespace Plugin {
 			H264SurfaceFormat m_InputSurfaceFormat, m_OutputSurfaceFormat;
 			std::pair<uint32_t, uint32_t> m_FrameSize, m_FrameRate;
 			double_t m_FrameRateDivisor;
+			uint32_t m_InputQueueLimit;
 
 			// Threading
 			bool m_IsStarted;
