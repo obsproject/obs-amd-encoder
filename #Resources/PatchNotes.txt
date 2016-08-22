@@ -10,5 +10,8 @@ Before installing this Version, please uninstall any previous versions. If you u
 
 * Changed: Loading of required libraries was changed to match AMF documentation.
 * Changed: Shared Encoder is now using new Library linking class and was rewritten from the ground up.
-* 
+* Added: In depth AMF tracing to the OBS log files, allowing me to spot bugs much faster than before.
 
+**ToDo:**
+
+* Advanced Encoder update.
