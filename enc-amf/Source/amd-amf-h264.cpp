@@ -677,9 +677,9 @@ Plugin::AMD::H264RateControlMethod Plugin::AMD::H264VideoEncoder::GetRateControl
 	uint32_t method;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, &method);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetPeakBitrate> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetRateControlMethod> Retrieving Property failed with error %s (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetPeakBitrate> Retrieved Property, Value is %s.", CustomToName[AMFToCustom[method]]);
+	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetRateControlMethod> Retrieved Property, Value is %s.", CustomToName[AMFToCustom[method]]);
 	return AMFToCustom[method];
 }
 
@@ -817,7 +817,7 @@ void Plugin::AMD::H264VideoEncoder::SetFrameRate(uint32_t num, uint32_t den) {
 	m_FrameRate.first = num;
 	m_FrameRate.second = den;
 	m_FrameRateDivisor = (double_t)num / (double_t)den;
-	m_InputQueueLimit = ceil(m_FrameRateDivisor * 3);
+	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor * 3);
 }
 
 std::pair<uint32_t, uint32_t> Plugin::AMD::H264VideoEncoder::GetFrameRate() {
@@ -830,7 +830,7 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::H264VideoEncoder::GetFrameRate() {
 	m_FrameRate.first = frameRate.num;
 	m_FrameRate.second = frameRate.den;
 	m_FrameRateDivisor = (double_t)frameRate.num / (double_t)frameRate.den;
-	m_InputQueueLimit = ceil(m_FrameRateDivisor * 3);
+	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor * 3);
 	return std::pair<uint32_t, uint32_t>(m_FrameRate);
 }
 
