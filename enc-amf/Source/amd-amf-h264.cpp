@@ -684,7 +684,7 @@ Plugin::AMD::H264RateControlMethod Plugin::AMD::H264VideoEncoder::GetRateControl
 }
 
 void Plugin::AMD::H264VideoEncoder::SetRateControlSkipFrameEnabled(bool enabled) {
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, enabled);
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, enabled);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetRateControlSkipFrameEnabled> Setting to %s failed with error %s (code %d).", enabled ? "Enabled" : "Disabled", res);
 	}
@@ -693,7 +693,7 @@ void Plugin::AMD::H264VideoEncoder::SetRateControlSkipFrameEnabled(bool enabled)
 
 bool Plugin::AMD::H264VideoEncoder::IsRateControlSkipFrameEnabled() {
 	bool enabled;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, &enabled);
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, &enabled);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::IsRateControlSkipFrameEnabled> Retrieving Property failed with error %s (code %d).", res);
 	}
