@@ -26,6 +26,7 @@ SOFTWARE.
 // Includes
 //////////////////////////////////////////////////////////////////////////
 #include <vector>
+#include <mutex>
 
 #include "amd-amf.h"
 
@@ -55,8 +56,17 @@ class CustomWriter : public amf::AMFTraceWriter {
 
 
 std::shared_ptr<Plugin::AMD::AMF> Plugin::AMD::AMF::GetInstance() {
-	static std::shared_ptr<Plugin::AMD::AMF> __instance = std::make_shared<Plugin::AMD::AMF>();
-	return __instance;
+	static std::weak_ptr<AMF> __instance;
+	static std::mutex __mutex;
+
+	try {
+		const std::lock_guard<std::mutex> lock(__mutex);
+		if (const auto result = __instance.lock())
+			return result;
+		return (__instance = std::make_shared<AMF>()).lock();
+	} catch (...) {
+		return nullptr;
+	}
 }
 
 Plugin::AMD::AMF::AMF() {
@@ -85,18 +95,18 @@ Plugin::AMD::AMF::AMF() {
 	m_AMFModule = LoadLibraryW(AMF_DLL_NAME);
 	if (!m_AMFModule) {
 		DWORD error = GetLastError();
-		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Loading of '" vstr(AMF_DLL_NAME) "' failed with error code %d.", error);
-		throw;
+		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Loading of '%ls' failed with error code %d.", AMF_DLL_NAME, error);
+		throw std::exception("", error);
 	} else {
-		AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Loaded '" vstr(AMF_DLL_NAME) "'.");
+		AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Loaded '%ls'.", AMF_DLL_NAME);
 	}
 
 	// Find Function: Query Version
 	AMFQueryVersion = (AMFQueryVersion_Fn)GetProcAddress(m_AMFModule, AMF_QUERY_VERSION_FUNCTION_NAME);
 	if (!AMFQueryVersion) {
 		DWORD error = GetLastError();
-		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Finding Address of Function '" vstr(AMF_QUERY_VERSION_FUNCTION_NAME) "' failed with error code %d.", error);
-		throw;
+		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Finding Address of Function '%ls' failed with error code %d.", AMF_QUERY_VERSION_FUNCTION_NAME, error);
+		throw std::exception("", error);
 	}
 
 	// Query Runtime Version
@@ -104,7 +114,7 @@ Plugin::AMD::AMF::AMF() {
 	res = AMFQueryVersion(&m_AMFVersion_Runtime);
 	if (res != AMF_OK) {
 		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Querying Version failed with error code %d.", res);
-		throw;
+		throw std::exception("", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Runtime is on Version %d.%d.%d.%d",
 		(m_AMFVersion_Runtime >> 48ull) & 0xFFFF,
@@ -116,15 +126,15 @@ Plugin::AMD::AMF::AMF() {
 	AMFInit = (AMFInit_Fn)GetProcAddress(m_AMFModule, AMF_INIT_FUNCTION_NAME);
 	if (!AMFInit) {
 		DWORD error = GetLastError();
-		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Finding Address of Function '" vstr(AMF_INIT_FUNCTION_NAME) "' failed with error code %d.", error);
-		throw;
+		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Finding Address of Function '%ls' failed with error code %d.", AMF_INIT_FUNCTION_NAME, error);
+		throw std::exception("", error);
 	}
 
 	// Initialize AMF Libraries
 	res = AMFInit(m_AMFVersion_Compiler, &m_AMFFactory);
 	if (res != AMF_OK) {
 		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Initializing AMF Library failed with error code %d.", res);
-		throw;
+		throw std::exception("", res);
 	} else {
 		AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> AMF Library initialized.");
 	}
@@ -133,27 +143,17 @@ Plugin::AMD::AMF::AMF() {
 	res = m_AMFFactory->GetTrace(&m_AMFTrace);
 	if (res != AMF_OK) {
 		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Retrieving Trace object failed with error code %d.", res);
-		throw;
+		throw std::exception("", res);
 	}
 
 	// Retrieve Debug Object
 	res = m_AMFFactory->GetDebug(&m_AMFDebug);
 	if (res != AMF_OK) {
 		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Retrieving Debug object failed with error code %d.", res);
-		throw;
+		throw std::exception("", res);
 	}
 
-	//m_AMFDebug->EnablePerformanceMonitor(false);
-	//m_AMFDebug->AssertsEnable(false);
-	//m_AMFTrace->TraceEnableAsync(true);
 	m_AMFTrace->SetGlobalLevel(AMF_TRACE_TEST);
-	//m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_FILE, AMF_TRACE_TEST);
-	//m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, AMF_TRACE_TEST);
-	//m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_CONSOLE, AMF_TRACE_TEST);
-	//m_AMFTrace->SetPath(L"C:\\AMFLog.txt");
-	//m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_FILE, true);
-	//m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, true);
-	//m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, true);
 	m_AMFTrace->RegisterWriter(L"OBSWriter", new CustomWriter(), true);
 
 	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Initialized.");
