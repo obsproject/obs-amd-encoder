@@ -226,10 +226,9 @@ void Plugin::AMD::H264VideoEncoder::Start() {
 
 	// Threading
 	/// Create and start Threads
+	m_IsStarted = true;
 	m_ThreadedInput.thread = std::thread(&(Plugin::AMD::H264VideoEncoder::InputThreadMain), this);
 	m_ThreadedOutput.thread = std::thread(&(Plugin::AMD::H264VideoEncoder::OutputThreadMain), this);
-
-	m_IsStarted = true;
 }
 
 void Plugin::AMD::H264VideoEncoder::Stop() {
@@ -257,23 +256,29 @@ bool Plugin::AMD::H264VideoEncoder::SendInput(struct encoder_frame*& frame) {
 	}
 
 	// Submit Input
-	amf::AMFSurfacePtr pSurface = CreateSurfaceFromFrame(frame);
-	{/// Queue Frame 
-		std::unique_lock<std::mutex> lock(m_ThreadedInput.mutex);
-		if (m_ThreadedInput.queue.size() < (size_t)ceil(m_FrameRateDivisor * 2)) {
-			m_ThreadedInput.queue.push(pSurface);
-			/// Signal Thread Wakeup
-			m_ThreadedInput.condvar.notify_all();
-		} else {
-			AMF_LOG_ERROR("<Plugin::AMD::H264VideoEncoder::SendInput> Input Queue is full, aborting...");
-			return false;
-		}
-
-		#ifdef DEBUG
-		if (m_ThreadedInput.queue.size() % 5 == 4)
-			AMF_LOG_WARNING("<Plugin::AMD::H264VideoEncoder::InputThreadLogic> Input Queue is filling up. (%d of %d)", m_ThreadedInput.queue.size(), (size_t)(m_FrameRateDivisor));
-		#endif
+	amf::AMFSurfacePtr surface;
+	size_t queueSize = m_InputQueueLimit;
+	{
+		std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
+		queueSize = m_ThreadedInput.queue.size();
 	}
+
+	/// Only create a Surface if there is room left for it.
+	if (queueSize < m_InputQueueLimit) {
+		surface = CreateSurfaceFromFrame(frame);
+		m_ThreadedInput.queue.push(surface);
+	} else {
+		AMF_LOG_ERROR("<Plugin::AMD::H264VideoEncoder::SendInput> Input Queue is full, aborting...");
+		return false;
+	}
+
+	/// Signal Thread Wakeup
+	m_ThreadedInput.condvar.notify_all();
+
+	#ifdef DEBUG
+	if (queueSize % 5 == 4)
+		AMF_LOG_WARNING("<Plugin::AMD::H264VideoEncoder::InputThreadLogic> Input Queue is filling up. (%d of %d)", queueSize, m_InputQueueLimit);
+	#endif
 
 	return true;
 }
@@ -1249,15 +1254,23 @@ void Plugin::AMD::H264VideoEncoder::InputThreadLogic() {
 
 		// Skip to next wait if queue is empty.
 		AMF_RESULT res = AMF_OK;
-		while ((m_ThreadedInput.queue.size() > 0) && res == AMF_OK) { // Repeat until impossible.
-			amf::AMFSurfacePtr surface = m_ThreadedInput.queue.front();
+		while (res == AMF_OK) { // Repeat until impossible.
+			amf::AMFSurfacePtr surface;
+
+			{
+				std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
+				if (m_ThreadedInput.queue.size() == 0)
+					break;
+				surface = m_ThreadedInput.queue.front();
+			}
 
 			AMF_SYNC_LOCK(res = m_AMFEncoder->SubmitInput(surface););
 			if (res == AMF_OK) {
-				m_ThreadedInput.queue.pop();
-			} else if (res == AMF_INPUT_FULL) {
-				std::this_thread::sleep_for(std::chrono::milliseconds(1));
-			} else {
+				{
+					std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
+					m_ThreadedInput.queue.pop();
+				}
+			} else if (res != AMF_INPUT_FULL) {
 				std::vector<char> msgBuf(128);
 				FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
 				AMF_LOG_WARNING("<Plugin::AMD::H264VideoEncoder::InputThreadLogic> SubmitInput failed with error %s.", msgBuf.data());
@@ -1282,7 +1295,7 @@ void Plugin::AMD::H264VideoEncoder::OutputThreadLogic() {
 		while (res == AMF_OK) { // Repeat until impossible.
 			amf::AMFDataPtr pData;
 
-			res = m_AMFEncoder->QueryOutput(&pData);
+			AMF_SYNC_LOCK(res = m_AMFEncoder->QueryOutput(&pData););
 			if (res == AMF_OK) {
 				amf::AMFVariant variant;
 				ThreadData pkt;
@@ -1303,21 +1316,19 @@ void Plugin::AMD::H264VideoEncoder::OutputThreadLogic() {
 					AMF_LOG_ERROR("<Plugin::AMD::H264VideoEncoder::OutputThreadLogic> Detected out of order packet. Frame Index is %d, expected %d.", pkt.frame, lastFrameIndex + 1);
 				lastFrameIndex = pkt.frame;
 
-				// Release Buffer and Data
-				//pBuffer->Release(); // Automatically done?
-				//pData->Release();
-
 				// Queue
 				{
 					std::unique_lock<std::mutex> qlock(m_ThreadedOutput.queuemutex);
 					m_ThreadedOutput.queue.push(pkt);
 				}
-			} else if (res != AMF_REPEAT) {
+			} else if (res == AMF_REPEAT) { // Tukan40
+				std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Tukan40
+				res = AMF_OK; // Tukan40
+				// Notes: This could just be replaced with the old else if (res != AMF_REPEAT). It waits until the next signal then (which happens with the next ::encode call.
+			} else {
 				std::vector<char> msgBuf(128);
 				FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
 				AMF_LOG_WARNING("<Plugin::AMD::H264VideoEncoder::OutputThreadLogic> QueryOutput failed with error %s.", msgBuf.data());
-
-				std::this_thread::sleep_for(std::chrono::milliseconds(1));
 			}
 		}
 	} while (m_IsStarted);

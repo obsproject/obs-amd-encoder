@@ -75,20 +75,20 @@ namespace Plugin {
 			H264Profile_Unknown = -1,
 		};
 		enum H264ProfileLevel {
-			H264ProfileLevel_10,
+			H264ProfileLevel_10 = 10,
 			H264ProfileLevel_11,
 			H264ProfileLevel_12,
 			H264ProfileLevel_13,
-			H264ProfileLevel_20,
+			H264ProfileLevel_20 = 20,
 			H264ProfileLevel_21,
 			H264ProfileLevel_22,
-			H264ProfileLevel_30,
+			H264ProfileLevel_30 = 30,
 			H264ProfileLevel_31,
 			H264ProfileLevel_32,
-			H264ProfileLevel_40,
+			H264ProfileLevel_40 = 40,
 			H264ProfileLevel_41,
 			H264ProfileLevel_42,
-			H264ProfileLevel_50,
+			H264ProfileLevel_50 = 50,
 			H264ProfileLevel_51,
 			H264ProfileLevel_52,
 
@@ -183,12 +183,6 @@ namespace Plugin {
 			void SetFrameSize(uint32_t width, uint32_t height);
 			std::pair<uint32_t, uint32_t> GetFrameSize();
 			/// Encoder Rate Control
-			/*	Sets the target bitrate */
-			void SetTargetBitrate(uint32_t bitrate);
-			uint32_t GetTargetBitrate();
-			/*	Sets the peak bitrate */
-			void SetPeakBitrate(uint32_t bitrate);
-			uint32_t GetPeakBitrate();
 			/*	Selects the rate control method:
 			 *	- CQP – Constrained QP,
 			 *	- CBR - Constant Bitrate,
@@ -210,6 +204,12 @@ namespace Plugin {
 			/*	Sets the maximum QP */
 			void SetMaximumQP(uint8_t qp);
 			uint8_t GetMaximumQP();
+			/*	Sets the target bitrate */
+			void SetTargetBitrate(uint32_t bitrate);
+			uint32_t GetTargetBitrate();
+			/*	Sets the peak bitrate */
+			void SetPeakBitrate(uint32_t bitrate);
+			uint32_t GetPeakBitrate();
 			/*	Sets the Constant QP for I-Pictures.
 			 *
 			 *	Remarks:
