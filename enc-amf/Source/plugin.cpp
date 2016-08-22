@@ -69,8 +69,8 @@ MODULE_EXPORT bool obs_module_load(void) {
 
 		return true;
 	} catch(...) {
-		return false;
 	}
+	return false;
 }
 
 /** Optional: Called when the module is unloaded.  */
