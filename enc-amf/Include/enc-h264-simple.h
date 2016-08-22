@@ -52,6 +52,7 @@ namespace Plugin {
 			static const char* get_name(void* type_data);
 			static void get_defaults(obs_data_t *settings);
 			static obs_properties_t* get_properties(void* data);
+			static bool preset_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *settings);
 			static bool ratecontrolmethod_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *settings);
 			static bool custombuffer_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *settings);
 
@@ -75,6 +76,9 @@ namespace Plugin {
 			void get_video_info(struct video_scale_info* info);
 			bool get_extra_data(uint8_t** extra_data, size_t* size);
 
+			//////////////////////////////////////////////////////////////////////////
+			// Storage
+			//////////////////////////////////////////////////////////////////////////
 			private:
 			Plugin::AMD::H264VideoEncoder* m_VideoEncoder;
 
