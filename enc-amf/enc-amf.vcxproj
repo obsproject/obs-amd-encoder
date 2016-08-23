@@ -173,29 +173,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Include\amd-amf-h264.h" />
+    <ClInclude Include="Include\amd-amf-vce.h" />
     <ClInclude Include="Include\amd-amf.h" />
-    <ClInclude Include="Include\amd-amf-h264-capabilities.h" />
+    <ClInclude Include="Include\amd-amf-vce-capabilities.h" />
     <ClInclude Include="Include\enc-h264-simple.h" />
-    <ClInclude Include="Include\enc-h264.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
+    <ClInclude Include="Include\enc-h264.h" />
     <ClInclude Include="Include\plugin.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\amd-amf-h264.cpp" />
+    <ClCompile Include="Source\amd-amf-vce.cpp" />
     <ClCompile Include="Source\amd-amf.cpp" />
-    <ClCompile Include="Source\amd-amf-h264-capabilities.cpp" />
+    <ClCompile Include="Source\amd-amf-vce-capabilities.cpp" />
     <ClCompile Include="Source\enc-h264-simple.cpp" />
-    <ClCompile Include="Source\enc-h264.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="Source\enc-h264.cpp" />
     <ClCompile Include="Source\plugin.cpp" />
   </ItemGroup>
   <ItemGroup>
