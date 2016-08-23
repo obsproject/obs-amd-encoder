@@ -1,7 +1,10 @@
 AMD hides certain parameters from us, but i think some of them should be accessible. Might need some in depth IDA work first.
 
 ## The following Encoder Types have been discovered:
-* AMFEncoderHEVC
+* AMFVideoEncoderVCE_AVC
+* AMFVideoEncoderVCE_SVC
+* AMFVideoEncoderHW_AVC
+* AMFVideoEncoderHW_HEVC(AMFEncoderHEVC)
 
 ## The following Properties have been discovered:
 * **Tier**
@@ -78,7 +81,6 @@ AMD hides certain parameters from us, but i think some of them should be accessi
 * XVBA
 * AHEVCEncode
 * AHEHVCApplySpeedQualityPreset is bypassed, because it is not implemented
-
 
 # More Discoveries
 
