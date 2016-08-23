@@ -302,7 +302,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) {
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_FRAME_SKIPPING_DISABLED), 0);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_FRAME_SKIPPING_ENABLED), 1);
 	/// Minimum QP, Maximum QP
- 	obs_properties_add_int_slider(props, AMF_VCE_H264_QP_MINIMUM, obs_module_text(AMF_VCE_H264_QP_MINIMUM), -1, 51, 1);
+	obs_properties_add_int_slider(props, AMF_VCE_H264_QP_MINIMUM, obs_module_text(AMF_VCE_H264_QP_MINIMUM), -1, 51, 1);
 	obs_properties_add_int_slider(props, AMF_VCE_H264_QP_MAXIMUM, obs_module_text(AMF_VCE_H264_QP_MAXIMUM), -1, 51, 1);
 	/// Method: Bitrate
 	obs_properties_add_int_slider(props, AMF_VCE_H264_BITRATE_TARGET, obs_module_text(AMF_VCE_H264_BITRATE_TARGET), -1, VCECapabilities::getInstance()->getEncoderCaps(VCEEncoderType_AVC)->maxBitrate, 1);
@@ -329,7 +329,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) {
 	/// B-Picture Related
 	obs_properties_add_int_slider(props, AMF_VCE_H264_BPIC_DELTA_QP, obs_module_text(AMF_VCE_H264_BPIC_DELTA_QP), -11, 10, 1);
 	obs_properties_add_int_slider(props, AMF_VCE_H264_REF_BPIC_DELTA_QP, obs_module_text(AMF_VCE_H264_REF_BPIC_DELTA_QP), -11, 10, 1);
-	
+
 	//////////////////////////////////////////////////////////////////////////
 	// Encoder Picture Control
 	//////////////////////////////////////////////////////////////////////////
@@ -449,7 +449,7 @@ bool Plugin::Interface::H264Interface::update_from_amf(obs_properties_t *props, 
 	// Static Properties (Can't be changed during Encoding)
 	//////////////////////////////////////////////////////////////////////////
 		VCEEncoder* vce = new VCEEncoder(VCEEncoderType_AVC, VCEMemoryType_Host);
-		
+
 		// Usage & Quality Preset
 		int64_t usage = obs_data_get_int(settings, AMF_VCE_H264_USAGE);
 		vce->SetUsage((VCEUsage)usage);
@@ -849,111 +849,159 @@ bool Plugin::Interface::H264Interface::update_properties(obs_data_t* settings) {
 	//////////////////////////////////////////////////////////////////////////
 	// Rate Control
 	/// Method
-	value = obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL_METHOD);
-	if (value != -1)
-		m_VideoEncoder->SetRateControlMethod((H264RateControlMethod)value);
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL_METHOD);
+		if (value != -1)
+			m_VideoEncoder->SetRateControlMethod((H264RateControlMethod)value);
+	} catch (...) {}
 	/// Frame Skipping
-	value = obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL_FRAME_SKIPPING);
-	if (value != -1)
-		m_VideoEncoder->SetRateControlSkipFrameEnabled(value == 1);
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL_FRAME_SKIPPING);
+		if (value != -1)
+			m_VideoEncoder->SetRateControlSkipFrameEnabled(value == 1);
+	} catch (...) {}
 
-	// Rate Control - Other
-	/// Enable Filler Data
-	value = obs_data_get_int(settings, AMF_VCE_H264_FILLERDATA);
-	if (value != -1)
-		m_VideoEncoder->SetFillerDataEnabled(value == 1);
+		// Rate Control - Other
+		/// Enable Filler Data
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_FILLERDATA);
+		if (value != -1)
+			m_VideoEncoder->SetFillerDataEnabled(value == 1);
+	} catch (...) {}
 	/// Enforce HRD
-	value = obs_data_get_int(settings, AMF_VCE_H264_ENFORCEHRD);
-	if (value != -1)
-		m_VideoEncoder->SetEnforceHRDRestrictionsEnabled(value == 1);
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_ENFORCEHRD);
+		if (value != -1)
+			m_VideoEncoder->SetEnforceHRDRestrictionsEnabled(value == 1);
+	} catch (...) {}
 
 	// Video Coding Settings
 	/// VBV Buffer Size
-	value = obs_data_get_int(settings, AMF_VCE_H264_VBVBUFFER_SIZE);
-	if (value != -1)
-		m_VideoEncoder->SetVBVBufferSize((uint32_t)value);
-	/// Initial VBV Buffer Fullnes
-	valued = obs_data_get_double(settings, AMF_VCE_H264_VBVBUFFER_FULLNESS);
-	m_VideoEncoder->SetInitialVBVBufferFullness(valued);
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_VBVBUFFER_SIZE);
+		if (value != -1)
+			m_VideoEncoder->SetVBVBufferSize((uint32_t)value);
+	} catch (...) {}
+	/// Initial VBV Buffer Fullness
+	try {
+		valued = obs_data_get_double(settings, AMF_VCE_H264_VBVBUFFER_FULLNESS);
+		m_VideoEncoder->SetInitialVBVBufferFullness(valued);
+	} catch (...) {}
 	/// Max AU Size
-	value = obs_data_get_int(settings, AMF_VCE_H264_MAX_AU_SIZE);
-	if (value != -1)
-		m_VideoEncoder->SetMaximumAccessUnitSize((uint32_t)value);
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_MAX_AU_SIZE);
+		if (value != -1)
+			m_VideoEncoder->SetMaximumAccessUnitSize((uint32_t)value);
+	} catch (...) {}
 	/// B-Picture Delta QP
-	value = obs_data_get_int(settings, AMF_VCE_H264_BPIC_DELTA_QP);
-	if (value != -11)
-		m_VideoEncoder->SetBPictureDeltaQP((int8_t)value);
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_BPIC_DELTA_QP);
+		if (value != -11)
+			m_VideoEncoder->SetBPictureDeltaQP((int8_t)value);
+	} catch (...) {}
 	/// Ref B-Picture Delta QP
-	value = obs_data_get_int(settings, AMF_VCE_H264_REF_BPIC_DELTA_QP);
-	if (value != -11)
-		m_VideoEncoder->SetReferenceBPictureDeltaQP((int8_t)value);
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_REF_BPIC_DELTA_QP);
+		if (value != -11)
+			m_VideoEncoder->SetReferenceBPictureDeltaQP((int8_t)value);
+	} catch (...) {}
 
 	// Rate Control: CQP
 	/// Minimum & Maximum QP
-	value = obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM);
-	if (value != -1)
-		m_VideoEncoder->SetMinimumQP((uint8_t)value);
-	value = obs_data_get_int(settings, AMF_VCE_H264_QP_MAXIMUM);
-	if (value != -1)
-		m_VideoEncoder->SetMaximumQP((uint8_t)value);
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM);
+		if (value != -1)
+			m_VideoEncoder->SetMinimumQP((uint8_t)value);
+	} catch (...) {}
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_QP_MAXIMUM);
+		if (value != -1)
+			m_VideoEncoder->SetMaximumQP((uint8_t)value);
+	} catch (...) {}
 	/// I-, P-, B-Frame QP
-	value = obs_data_get_int(settings, AMF_VCE_H264_QP_IFRAME);
-	if (value != -1)
-		m_VideoEncoder->SetIFrameQP((uint8_t)value);
-	value = obs_data_get_int(settings, AMF_VCE_H264_QP_PFRAME);
-	if (value != -1)
-		m_VideoEncoder->SetPFrameQP((uint8_t)value);
-	value = obs_data_get_int(settings, AMF_VCE_H264_QP_BFRAME);
-	if (value != -1)
-		m_VideoEncoder->SetBFrameQP((uint8_t)value);
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_QP_IFRAME);
+		if (value != -1)
+			m_VideoEncoder->SetIFrameQP((uint8_t)value);
+	} catch (...) {}
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_QP_PFRAME);
+		if (value != -1)
+			m_VideoEncoder->SetPFrameQP((uint8_t)value);
+	} catch (...) {}
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_QP_BFRAME);
+		if (value != -1)
+			m_VideoEncoder->SetBFrameQP((uint8_t)value);
+	} catch (...) {}
 
 	// Rate Control: CBR, VBR
 	/// Target Bitrate
-	value = obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET);
-	if (value != -1)
-		m_VideoEncoder->SetTargetBitrate((uint32_t)value);
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET);
+		if (value != -1)
+			m_VideoEncoder->SetTargetBitrate((uint32_t)value);
+	} catch (...) {}
 	/// Peak Bitrate
-	value = obs_data_get_int(settings, AMF_VCE_H264_BITRATE_PEAK);
-	if (value != -1)
-		m_VideoEncoder->SetPeakBitrate((uint32_t)value);
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_BITRATE_PEAK);
+		if (value != -1)
+			m_VideoEncoder->SetPeakBitrate((uint32_t)value);
+	} catch (...) {}
 
 	// Picture Control Properties
 	/// Header Insertion Spacing
-	value = obs_data_get_int(settings, AMF_VCE_H264_HEADER_INSERTION_SPACING);
-	if (value != -1)
-		m_VideoEncoder->SetHeaderInsertionSpacing((uint32_t)value);
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_HEADER_INSERTION_SPACING);
+		if (value != -1)
+			m_VideoEncoder->SetHeaderInsertionSpacing((uint32_t)value);
+	} catch (...) {}
 	/// B-Pictures Pattern
-	value = obs_data_get_int(settings, AMF_VCE_H264_NUMBER_OF_BPICTURES);
-	if (value != -1)
-		m_VideoEncoder->SetBPicturesPattern((VCEBPicturesPattern)value);
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_NUMBER_OF_BPICTURES);
+		if (value != -1)
+			m_VideoEncoder->SetBPicturesPattern((VCEBPicturesPattern)value);
+	} catch (...) {}
 	/// De-Blocking Filter
-	value = obs_data_get_int(settings, AMF_VCE_H264_DEBLOCKING_FILTER);
-	if (value != -1)
-		m_VideoEncoder->SetDeBlockingFilterEnabled(value == 1);
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_DEBLOCKING_FILTER);
+		if (value != -1)
+			m_VideoEncoder->SetDeBlockingFilterEnabled(value == 1);
+	} catch (...) {}
 	/// Enable Reference to B-Frames (2nd Generation GCN and newer)
-	value = obs_data_get_int(settings, AMF_VCE_H264_BREFERENCE);
-	if (value != -1)
-		m_VideoEncoder->SetBReferenceEnabled(value == 1);
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_BREFERENCE);
+		if (value != -1)
+			m_VideoEncoder->SetBReferenceEnabled(value == 1);
+	} catch (...) {}
 	/// IDR Period (Is this Keyframe distance?)
-	value = obs_data_get_int(settings, AMF_VCE_H264_IDR_PERIOD);
-	if (value != -1)
-		m_VideoEncoder->SetIDRPeriod((uint32_t)value);
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_IDR_PERIOD);
+		if (value != -1)
+			m_VideoEncoder->SetIDRPeriod((uint32_t)value);
+	} catch (...) {}
 	/// Intra Refresh MBs Number Per Slot in Macroblocks
-	value = obs_data_get_int(settings, AMF_VCE_H264_INTRAREFRESHNUMMBPERSLOT);
-	if (value != -1)
-		m_VideoEncoder->SetIntraRefreshMBsNumberPerSlot((uint32_t)value);
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_INTRAREFRESHNUMMBPERSLOT);
+		if (value != -1)
+			m_VideoEncoder->SetIntraRefreshMBsNumberPerSlot((uint32_t)value);
+	} catch (...) {}
 	/// Number of slices Per Frame
-	value = obs_data_get_int(settings, AMF_VCE_H264_SLICESPERFRAME);
-	if (value != -1)
-		m_VideoEncoder->SetSlicesPerFrame((uint32_t)value);
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_SLICESPERFRAME);
+		if (value != -1)
+			m_VideoEncoder->SetSlicesPerFrame((uint32_t)value);
+	} catch (...) {}
 
 	// Motion EstimationerSlotInMacroblocks(value);
 	/// Number of slices Per Frame
-	value = obs_data_get_int(settings, AMF_VCE_H264_MOTIONESTIMATION);
-	if (value != -1) {
-		m_VideoEncoder->SetHalfPixelMotionEstimationEnabled(!!(value & 0x1));
-		m_VideoEncoder->SetQuarterPixelMotionEstimationEnabled(!!(value & 0x2));
-	}
+	try {
+		value = obs_data_get_int(settings, AMF_VCE_H264_MOTIONESTIMATION);
+		if (value != -1) {
+			m_VideoEncoder->SetHalfPixelMotionEstimationEnabled(!!(value & 0x1));
+			m_VideoEncoder->SetQuarterPixelMotionEstimationEnabled(!!(value & 0x2));
+		}
+	} catch (...) {}
 
 	return true;
 }
