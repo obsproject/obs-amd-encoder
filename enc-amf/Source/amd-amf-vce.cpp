@@ -175,9 +175,13 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_Memor
 		case VCEEncoderType_AVC:
 			res = m_AMFFactory->CreateComponent(m_AMFContext, AMFVideoEncoderVCE_AVC, &m_AMFEncoder);
 			break;
-		/*case H264EncoderType_SVC:
+		case VCEEncoderType_SVC:
 			res = m_AMFFactory->CreateComponent(m_AMFContext, AMFVideoEncoderVCE_SVC, &m_AMFEncoder);
-			break;*/
+			break;
+		case VCEEncoderType_HEVC:
+			//res = m_AMFFactory->CreateComponent(m_AMFContext, L"AMFVideoEncoderHW_AVC", &m_AMFEncoder);
+			res = m_AMFFactory->CreateComponent(m_AMFContext, L"AMFVideoEncoderHW_HEVC", &m_AMFEncoder);
+			break;
 	}
 	if (res != AMF_OK) {
 		AMF_LOG_ERROR("<Plugin::AMD::H264VideoEncoder::H264VideoEncoder> Creating a component object failed with error code %d.", res);
