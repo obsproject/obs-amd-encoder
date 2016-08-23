@@ -26,28 +26,31 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Includes
 //////////////////////////////////////////////////////////////////////////
-#include "amd-amf-h264-capabilities.h"
+#include <string>
+#include <sstream>
+
+#include "amd-amf-vce-capabilities.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
-Plugin::AMD::H264Capabilities* Plugin::AMD::H264Capabilities::instance;
+Plugin::AMD::VCECapabilities* Plugin::AMD::VCECapabilities::instance;
 
-Plugin::AMD::H264Capabilities* Plugin::AMD::H264Capabilities::getInstance() {
+Plugin::AMD::VCECapabilities* Plugin::AMD::VCECapabilities::getInstance() {
 	if (!instance)
-		instance = new H264Capabilities();
+		instance = new VCECapabilities();
 
 	return instance;
 }
 
-void Plugin::AMD::H264Capabilities::reportCapabilities() {
+void Plugin::AMD::VCECapabilities::reportCapabilities() {
 	//////////////////////////////////////////////////////////////////////////
 	// Report Capabilities to log file first.
 	//////////////////////////////////////////////////////////////////////////
 	#pragma region Capability Reporting
 
 	AMF_LOG_INFO("Gathering Capability Information...");
-	H264Capabilities* caps = H264Capabilities::getInstance();
+	VCECapabilities* caps = VCECapabilities::getInstance();
 
 	AMF_LOG_INFO(" %4s | %8s | %11s | %8s | %11s | %9s | %7s | %11s | %7s | %3s | %10s ",
 		"Type",
@@ -62,7 +65,7 @@ void Plugin::AMD::H264Capabilities::reportCapabilities() {
 		"FSM",
 		"Instance #");
 
-	H264Capabilities::EncoderCaps* capsEnc[2] = { &caps->m_AVCCaps, &caps->m_SVCCaps };
+	VCECapabilities::EncoderCaps* capsEnc[2] = { &caps->m_AVCCaps, &caps->m_SVCCaps };
 	for (uint8_t i = 0; i < 2; i++) {
 		// Encoder Acceleration
 		char* accelType;
@@ -88,7 +91,7 @@ void Plugin::AMD::H264Capabilities::reportCapabilities() {
 			(i == 0 ? "AVC" : "SVC"),
 			accelType,
 			capsEnc[i]->maxBitrate,
-			capsEnc[i]->maxNumOfStreams, 
+			capsEnc[i]->maxNumOfStreams,
 			capsEnc[i]->maxProfile,
 			capsEnc[i]->maxProfileLevel,
 			capsEnc[i]->supportsBFrames ? "Yes" : "No",
@@ -97,18 +100,40 @@ void Plugin::AMD::H264Capabilities::reportCapabilities() {
 			capsEnc[i]->supportsFixedSliceMode ? "Yes" : "No",
 			capsEnc[i]->maxNumOfHwInstances);
 		AMF_LOG_INFO("%s", msgBuf.data());
+	}
 
-		/*H264Capabilities::EncoderCaps::IOCaps* capsIO[2] = { &capsEnc[i]->input, &capsEnc[i]->output };
+	for (uint8_t i = 0; i < 2; i++) {
+		// Type | Flow   | Min. Res. | Max. Res. | S.I | Align | Formats | Surface Types
+		//      |  Input |   64x  64 | 4096x4096 | Yes | 8     | ... | ...
+		//      | Output |   64x  64 | 4096x4096 | No  | 8     | ... | ...
+		AMF_LOG_INFO(" %4s | %6s | %9s | %9s | %3s | %5s | %s | %s",
+			"Type",
+			"Flow",
+			"Min. Res.",
+			"Max. Res.",
+			"S.I",
+			"Align",
+			"Formats",
+			"Surface Types");
+
+
+		VCECapabilities::EncoderCaps::IOCaps* capsIO[2] = { &capsEnc[i]->input, &capsEnc[i]->output };
 		for (uint8_t j = 0; j < 2; j++) {
-			if (j == 0)
-				AMF_LOG_INFO("<Plugin::AMD::H264Capabilities::reportCapabilities> 		Input:");
-			else
-				AMF_LOG_INFO("<Plugin::AMD::H264Capabilities::reportCapabilities> 		Output:");
+			// Print to log
+			std::vector<char> msgBuf(8192), formatBuf(8192), surfaceBuf(8192);
+			std::stringstream formats, surfaces;
 
-			AMF_LOG_INFO("<Plugin::AMD::H264Capabilities::reportCapabilities> 			Width Range: %d, %d", capsIO[j]->minWidth, capsIO[j]->maxWidth);
-			AMF_LOG_INFO("<Plugin::AMD::H264Capabilities::reportCapabilities> 			Height Range: %d, %d", capsIO[j]->minHeight, capsIO[j]->maxHeight);
-			AMF_LOG_INFO("<Plugin::AMD::H264Capabilities::reportCapabilities> 			Supports Interlaced: %s", capsIO[j]->isInterlacedSupported ? "Yes" : "No");
-			AMF_LOG_INFO("<Plugin::AMD::H264Capabilities::reportCapabilities> 			Vertical Buffer Alignment: %d bytes", capsIO[j]->verticalAlignment);
+
+			sprintf(msgBuf.data(),
+				" %4s | %6s | %4dx%4d | %4dx%4d | %s | %s | %3s | %5s | %s | %s",
+				(i == 0 ? "AVC" : "SVC"),
+				(j == 0 ? "Input" : "Output"),
+				capsIO[j]->minWidth, capsIO[j]->minHeight,
+				capsIO[j]->maxWidth, capsIO[j]->maxHeight,
+				capsIO[j]->isInterlacedSupported ? "Yes" : "No",
+				capsIO[j]->verticalAlignment,
+				);
+			AMF_LOG_INFO("%s", msgBuf.data());
 
 			char* surfaceFormat[] = {
 				"Unknown",
@@ -141,20 +166,20 @@ void Plugin::AMD::H264Capabilities::reportCapabilities() {
 			for (uint32_t k = 0; k < capsIO[j]->memoryTypes.size(); k++) {
 				AMF_LOG_INFO("<Plugin::AMD::H264Capabilities::reportCapabilities> 			- %s%s", memoryTypes[capsIO[j]->memoryTypes[k].first], capsIO[j]->memoryTypes[k].second ? " (Native)" : "");
 			}
-		}*/
+		}
 	}
 	#pragma endregion
 }
 
-Plugin::AMD::H264Capabilities::H264Capabilities() {
+Plugin::AMD::VCECapabilities::VCECapabilities() {
 	refreshCapabilities();
 }
 
-Plugin::AMD::H264Capabilities::~H264Capabilities() {
+Plugin::AMD::VCECapabilities::~VCECapabilities() {
 
 }
 
-bool Plugin::AMD::H264Capabilities::refreshCapabilities() {
+bool Plugin::AMD::VCECapabilities::refreshCapabilities() {
 	AMF_RESULT res;
 
 	std::shared_ptr<AMD::AMF> l_AMF = AMD::AMF::GetInstance();
@@ -242,12 +267,12 @@ bool Plugin::AMD::H264Capabilities::refreshCapabilities() {
 	return true;
 }
 
-Plugin::AMD::H264Capabilities::EncoderCaps* Plugin::AMD::H264Capabilities::getEncoderCaps(H264EncoderType type) {
+Plugin::AMD::VCECapabilities::EncoderCaps* Plugin::AMD::VCECapabilities::getEncoderCaps(H264EncoderType type) {
 	EncoderCaps* caps[2] = { &m_AVCCaps, &m_SVCCaps };
 	return caps[type];
 }
 
-Plugin::AMD::H264Capabilities::EncoderCaps::IOCaps* Plugin::AMD::H264Capabilities::getIOCaps(H264EncoderType type, bool output) {
+Plugin::AMD::VCECapabilities::EncoderCaps::IOCaps* Plugin::AMD::VCECapabilities::getIOCaps(H264EncoderType type, bool output) {
 	EncoderCaps* caps[2] = { &m_AVCCaps, &m_SVCCaps };
 	if (output)
 		return &caps[type]->output;

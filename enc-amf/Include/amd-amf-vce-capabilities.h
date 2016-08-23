@@ -33,7 +33,7 @@ SOFTWARE.
 // Plugin
 #include "plugin.h"
 #include "amd-amf.h"
-#include "amd-amf-h264.h"
+#include "amd-amf-vce.h"
 
 // AMF
 #include "components\ComponentCaps.h"
@@ -44,14 +44,14 @@ SOFTWARE.
 
 namespace Plugin {
 	namespace AMD {
-		class H264Capabilities {
+		class VCECapabilities {
 			//////////////////////////////////////////////////////////////////////////
 			// Singleton
 			//////////////////////////////////////////////////////////////////////////
-			static H264Capabilities* instance;
+			static VCECapabilities* instance;
 
 			public:
-			static H264Capabilities* getInstance();
+			static VCECapabilities* getInstance();
 			static void reportCapabilities();
 
 			//////////////////////////////////////////////////////////////////////////
@@ -84,8 +84,8 @@ namespace Plugin {
 			} m_AVCCaps, m_SVCCaps;
 
 
-			H264Capabilities();
-			~H264Capabilities();
+			VCECapabilities();
+			~VCECapabilities();
 
 			bool refreshCapabilities();
 			EncoderCaps* getEncoderCaps(H264EncoderType);

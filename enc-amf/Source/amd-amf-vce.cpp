@@ -25,9 +25,9 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Includes
 //////////////////////////////////////////////////////////////////////////
-#include "amd-amf-h264.h"
+#include "amd-amf-vce.h"
 
-#include "amd-amf-h264-capabilities.h"
+#include "amd-amf-vce-capabilities.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Defines
@@ -604,7 +604,7 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::H264VideoEncoder::GetFrameSize() {
 
 void Plugin::AMD::H264VideoEncoder::SetTargetBitrate(uint32_t bitrate) {
 	// Clamp Value
-	bitrate = min(max(bitrate, 10000), Plugin::AMD::H264Capabilities::getInstance()->getEncoderCaps(m_EncoderType)->maxBitrate);
+	bitrate = min(max(bitrate, 10000), Plugin::AMD::VCECapabilities::getInstance()->getEncoderCaps(m_EncoderType)->maxBitrate);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, bitrate);
 	if (res != AMF_OK) {
@@ -625,7 +625,7 @@ uint32_t Plugin::AMD::H264VideoEncoder::GetTargetBitrate() {
 
 void Plugin::AMD::H264VideoEncoder::SetPeakBitrate(uint32_t bitrate) {
 	// Clamp Value
-	bitrate = min(max(bitrate, 10000), Plugin::AMD::H264Capabilities::getInstance()->getEncoderCaps(m_EncoderType)->maxBitrate);
+	bitrate = min(max(bitrate, 10000), Plugin::AMD::VCECapabilities::getInstance()->getEncoderCaps(m_EncoderType)->maxBitrate);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, bitrate);
 	if (res != AMF_OK) {
@@ -1270,7 +1270,10 @@ void Plugin::AMD::H264VideoEncoder::InputThreadLogic() {
 					std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
 					m_ThreadedInput.queue.pop();
 				}
-			} else if (res != AMF_INPUT_FULL) {
+			} else if (res == AMF_INPUT_FULL) { // Tukan40
+				std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Tukan40
+				res = AMF_OK; // Tukan40
+			} else {
 				std::vector<char> msgBuf(128);
 				FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
 				AMF_LOG_WARNING("<Plugin::AMD::H264VideoEncoder::InputThreadLogic> SubmitInput failed with error %s.", msgBuf.data());
@@ -1324,7 +1327,6 @@ void Plugin::AMD::H264VideoEncoder::OutputThreadLogic() {
 			} else if (res == AMF_REPEAT) { // Tukan40
 				std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Tukan40
 				res = AMF_OK; // Tukan40
-				// Notes: This could just be replaced with the old else if (res != AMF_REPEAT). It waits until the next signal then (which happens with the next ::encode call.
 			} else {
 				std::vector<char> msgBuf(128);
 				FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
