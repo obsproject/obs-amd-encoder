@@ -25,18 +25,25 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Includes
 //////////////////////////////////////////////////////////////////////////
+#include <stdint.h>
+#include <inttypes.h>
+#include <exception>
+#include <stdexcept>
+
+// Open Broadcaster Software
 #include "OBS-Studio/libobs/obs-module.h"
+#include "OBS-Studio/libobs/obs-encoder.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Defines
 //////////////////////////////////////////////////////////////////////////
 
-#define vstr(s) str(s)
-#define str(s) #s
+#define vstr(s) dstr(s)
+#define dstr(s) #s
 
 #define PLUGIN_VERSION_MAJOR		1
 #define PLUGIN_VERSION_MINOR		3
-#define PLUGIN_VERSION_RELEASE		0pre2
+#define PLUGIN_VERSION_RELEASE		0pre3
 #define PLUGIN_VERSION_FULL			(((uint64_t)PLUGIN_VERSION_MAJOR << 48ull) | ((uint64_t)PLUGIN_VERSION_MINOR << 16ull) | ((uint64_t)PLUGIN_VERSION_RELEASE))
 #define PLUGIN_VERSION_TEXT			vstr(PLUGIN_VERSION_MAJOR) "." vstr(PLUGIN_VERSION_MINOR) "." vstr(PLUGIN_VERSION_RELEASE) "-" vstr(AMF_VERSION_MAJOR) "." vstr(AMF_VERSION_MINOR) "." vstr(AMF_VERSION_RELEASE) "." vstr(AMF_VERSION_BUILD_NUM)
 
