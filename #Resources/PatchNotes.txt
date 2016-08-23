@@ -26,4 +26,3 @@ Before installing this Version, please uninstall any previous versions. If you u
 * Fixed: SetRateControlSkipFrameEnabled (Option: Frame Skipping) will no longer override the Rate Control Method.
 * Fixed: Fixes for the threading model, higher framerates/resolutions should now be possible.
 * Fixed: Advanced Interface is available again.
-* Todo: Split Input and Output Color Format selection (Advanced Interface).
