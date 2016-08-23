@@ -1,71 +1,93 @@
 AMD hides certain parameters from us, but i think some of them should be accessible. Might need some in depth IDA work first.
 
-21:29:09.114: [AMFTrace::VCEEncoderTrace]     Info: <--------------------- Picture Control Params(-1) ----------------------------->
-21:29:09.114: [AMFTrace::VCEEncoderTrace]     Info:     useConstIntraP: 0
-21:29:09.114: [AMFTrace::VCEEncoderTrace]     Info:     CABACEnable:    1
-21:29:09.114: [AMFTrace::VCEEncoderTrace]     Info:     CABACIDC:       0
-21:29:09.114: [AMFTrace::VCEEncoderTrace]     Info:     loopFilterDis:  0
-21:29:09.114: [AMFTrace::VCEEncoderTrace]     Info:     encLFBetaOff:   0
-21:29:09.114: [AMFTrace::VCEEncoderTrace]     Info:     encLFAlphaC0Of: 0
-21:29:09.114: [AMFTrace::VCEEncoderTrace]     Info:     encIDRPeriod:   120
-21:29:09.114: [AMFTrace::VCEEncoderTrace]     Info:     encIPicPeriod:  120
-21:29:09.115: [AMFTrace::VCEEncoderTrace]     Info:     encHeaderInse:  0
-21:29:09.115: [AMFTrace::VCEEncoderTrace]     Info:     CropLeftOffset: 0
-21:29:09.115: [AMFTrace::VCEEncoderTrace]     Info:     CropRightOff:   0
-21:29:09.115: [AMFTrace::VCEEncoderTrace]     Info:     CropTopOff:     0
-21:29:09.115: [AMFTrace::VCEEncoderTrace]     Info:     CropBottomOff:  4
-21:29:09.115: [AMFTrace::VCEEncoderTrace]     Info:     NumMBsPerSlice: 8160
-21:29:09.115: [AMFTrace::VCEEncoderTrace]     Info:     NumSlicesPerFr: 1
-21:29:09.115: [AMFTrace::VCEEncoderTrace]     Info:     ForceIntraRefr: 0
-21:29:09.115: [AMFTrace::VCEEncoderTrace]     Info:     ForceIMBPeriod: 0
-21:29:09.115: [AMFTrace::VCEEncoderTrace]     Info:     InsertVUIParam: 0
-21:29:09.115: [AMFTrace::VCEEncoderTrace]     Info:     InsertSEIMsg:   0
-21:29:09.115: [AMFTrace::VCEEncoderTrace]     Info:     encPicOrderCnt: 0
-21:29:09.115: [AMFTrace::VCEEncoderTrace]     Info:     encSPSID:       0
-21:29:09.115: [AMFTrace::VCEEncoderTrace]     Info:     encPPSID:       0
-21:29:09.116: [AMFTrace::VCEEncoderTrace]     Info:     encNumOfTempEL: 0
-21:29:09.116: [AMFTrace::VCEEncoderTrace]     Info:     encConstraintS: 0
-21:29:09.116: [AMFTrace::VCEEncoderTrace]     Info:     useConstraintS: 0
-21:29:09.116: [AMFTrace::VCEEncoderTrace]     Info:     InsertPrefixNa: 0
-21:29:09.116: [AMFTrace::VCEEncoderTrace]     Info:     encIntraRefres: 0
-21:29:09.116: [AMFTrace::VCEEncoderTrace]     Info:     encBPicPattern: 0
-21:29:09.116: [AMFTrace::VCEEncoderTrace]     Info:     disableBRefere: 1
-21:29:09.116: [AMFTrace::VCEEncoderTrace]     Info: <--------------------- Rate Control Params(-1) ----------------------------->
-21:29:09.116: [AMFTrace::VCEEncoderTrace]     Info:     RateCtrlMethod: 0
-21:29:09.116: [AMFTrace::VCEEncoderTrace]     Info:     Target bitrate: 10000000
-21:29:09.116: [AMFTrace::VCEEncoderTrace]     Info:     Peak bitrate:   10000000
-21:29:09.116: [AMFTrace::VCEEncoderTrace]     Info:     RCFrameRateNum: 60
-21:29:09.116: [AMFTrace::VCEEncoderTrace]     Info:     RCFrameRateDen: 1
-21:29:09.116: [AMFTrace::VCEEncoderTrace]     Info:     GOPSize:        60
-21:29:09.116: [AMFTrace::VCEEncoderTrace]     Info:     SkipFrame:      0
-21:29:09.116: [AMFTrace::VCEEncoderTrace]     Info:     QP_I:           22
-21:29:09.116: [AMFTrace::VCEEncoderTrace]     Info:     QP_P:           22
-21:29:09.117: [AMFTrace::VCEEncoderTrace]     Info:     QP_B:           22
-21:29:09.117: [AMFTrace::VCEEncoderTrace]     Info:     VBV BuffSize:   20000000
-21:29:09.117: [AMFTrace::VCEEncoderTrace]     Info: <--------------------- Motion Estimation Params(-1) ----------------------------->
-21:29:09.117: [AMFTrace::VCEEncoderTrace]     Info:                          imeDecimationSearch: 1
-21:29:09.117: [AMFTrace::VCEEncoderTrace]     Info:                           motionEstHalfPixel: 1
-21:29:09.117: [AMFTrace::VCEEncoderTrace]     Info:                        motionEstQuarterPixel: 1
-21:29:09.117: [AMFTrace::VCEEncoderTrace]     Info:                         disableFavorPMVPoint: 0
-21:29:09.117: [AMFTrace::VCEEncoderTrace]     Info:                         forceZeroPointCenter: 0
-21:29:09.117: [AMFTrace::VCEEncoderTrace]     Info:                                      lsmVert: 2
-21:29:09.117: [AMFTrace::VCEEncoderTrace]     Info:                              encSearchRangeX: 16
-21:29:09.117: [AMFTrace::VCEEncoderTrace]     Info:                              encSearchRangeY: 16
-21:29:09.117: [AMFTrace::VCEEncoderTrace]     Info:                             encSearch1RangeX: 16
-21:29:09.117: [AMFTrace::VCEEncoderTrace]     Info:                             encSearch1RangeY: 16
-21:29:09.117: [AMFTrace::VCEEncoderTrace]     Info:                           disable16x16Frame1: 0
-21:29:09.117: [AMFTrace::VCEEncoderTrace]     Info:                                  disableSATD: 0
-21:29:09.117: [AMFTrace::VCEEncoderTrace]     Info:                                    enableAMD: 0
-21:29:09.118: [AMFTrace::VCEEncoderTrace]     Info:                            encDisableSubMode: 120
-21:29:09.118: [AMFTrace::VCEEncoderTrace]     Info:                                  encIMESkipX: 0
-21:29:09.118: [AMFTrace::VCEEncoderTrace]     Info:                                  encIMESkipY: 0
-21:29:09.118: [AMFTrace::VCEEncoderTrace]     Info:                         encEnImeOverwDisSubm: 1
-21:29:09.118: [AMFTrace::VCEEncoderTrace]     Info:                         encImeOverwDisSubmNo: 1
-21:29:09.118: [AMFTrace::VCEEncoderTrace]     Info:                          encIME2SearchRangeX: 4
-21:29:09.118: [AMFTrace::VCEEncoderTrace]     Info:                          encIME2SearchRangeY: 4
-21:29:09.118: [AMFTrace::VCEEncoderTrace]     Info: <--------------------- VUIConfig Params(-1) ----------------------------->
-21:29:09.118: [AMFTrace::VCEEncoderTrace]     Info:                                                  flags: 0x0
-21:29:09.118: [AMFTrace::VCEEncoderTrace]     Info:                             videoSignalTypePresentFlag: 1
-21:29:09.118: [AMFTrace::VCEEncoderTrace]     Info:                                            videoFormat: 0x0
-21:29:09.118: [AMFTrace::VCEEncoderTrace]     Info:                                     videoFullRangeFlag: 0
-21:29:09.118: [AMFTrace::VCEEncoderTrace]     Info:                        bitstreamRestrictionPresentFlag: 1
+## The following Encoder Types have been discovered:
+* AMFEncoderHEVC
+
+## The following Properties have been discovered:
+* **Tier**
+* ProfileLevel
+* MaxOfLTRFrames
+* **MaxNumRefFrames**
+* TargetBitrate
+* PeakBitrate
+* RateControlMethod
+* **MinQP_I**
+* **MaxQP_I**
+* QP_I
+* **MinQP_P**
+* **MaxQP_P**
+* QP_P
+* **QPCBOFFSET**
+* **QPCROFFSET**
+* **GOPType**
+* **GOPPerIDR**
+* **GOPSize**
+* **GOPSizeMin**
+* **GOPSizeMax**
+* **AspectRatio**
+* **NominalRange**
+* VBVBufferSize
+* InitialVBVBufferFullness
+* MaxAUSize
+* HeaderInsertionSpacing
+* IDRPeriod
+* DeBlockingFilter
+* **IntraRefreshFrameNum**
+* **IntraRefreshMode**
+* SlicesPerFrame
+* BPicturesPattern
+* BReferenceEnable
+* **LowLatencyInternal**
+* **CommonLowLatencyInternal**
+* **EnableGOPAlignment**
+* **SliceControlMode**
+* **SliceControlSize**
+* **CABACEnable**
+* ScanType
+* HalfPixel
+* QuarterPixel
+* **UniqueInstance**
+* EncoderMaxInstances
+* **MultiInstanceMode**
+* **MultiInstanceCurrentQueue**
+* MaxNumOfTemporalLayers
+* NumOfTemporalLayers
+* **TemporalLayerSelect**
+* InsertSPS
+* InsertPPS
+* ForcePictureType
+* InsertAUD
+* EndOfSequence
+* EndOfStream
+* MarkCurrentWithLTRIndex
+* ForceLTRReferenceBitfield
+
+## Constants found
+* AHEVC_PARAMETER_NAME__TEMPORAL_LAYER_SELECT
+* AHEVC_PARAMETER_NAME__NUM_TEMPORAL_LAYERS
+* AHEVC_PARAMETER_NAME__MAX_NUM_TEMPORAL_LAYE
+* AHEVC_PARAMETER_NAME__TIER
+* and some more.
+
+## Other Strings in the same list:
+* GOP_ALIGNED
+* IDR_ALIGNED
+* Cabac
+* Calv
+* Undefined
+* XVBA
+* AHEVCEncode
+* AHEHVCApplySpeedQualityPreset is bypassed, because it is not implemented
+
+
+# More Discoveries
+
+## Profile Level
+Libraries support as high as 6.2, which is most likely for HEVC. Full List:  
+1.0 2.0 2.1 3.0 3.1 4.0 4.1 5.0 5.1 5.2 6.0 6.1 6.2
+
+## SubmitInput, QueryOutput
+There are references to deque, which is something in std::queue. Or BufferQueue.
+
+## Typos
+* CheckRes**oul**tion
