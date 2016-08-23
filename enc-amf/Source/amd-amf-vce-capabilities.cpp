@@ -44,6 +44,8 @@ Plugin::AMD::VCECapabilities* Plugin::AMD::VCECapabilities::getInstance() {
 }
 
 void Plugin::AMD::VCECapabilities::reportCapabilities() {
+	static std::vector<char> msgBuf(8192);
+
 	//////////////////////////////////////////////////////////////////////////
 	// Report Capabilities to log file first.
 	//////////////////////////////////////////////////////////////////////////
@@ -85,7 +87,6 @@ void Plugin::AMD::VCECapabilities::reportCapabilities() {
 		}
 
 		// Print to log
-		std::vector<char> msgBuf(8192);
 		sprintf(msgBuf.data(),
 			" %4s | %8s | %11d | %8d | %11d | %9d | %7s | %4d - %4d | %7d | %3s | %10d ",
 			(i == 0 ? "AVC" : "SVC"),
@@ -102,70 +103,56 @@ void Plugin::AMD::VCECapabilities::reportCapabilities() {
 		AMF_LOG_INFO("%s", msgBuf.data());
 	}
 
+	// Type | Flow   | Min. Res. | Max. Res. | S.I | Align | Formats | Surface Types
+	//      |  Input |   64x  64 | 4096x4096 | Yes | 8     | ... | ...
+	//      | Output |   64x  64 | 4096x4096 | No  | 8     | ... | ...
+	AMF_LOG_INFO(" %4s | %6s | %9s | %9s | %3s | %5s | %s | %s",
+		"Type",
+		"Flow",
+		"Min. Res.",
+		"Max. Res.",
+		"S.I",
+		"Align",
+		"Formats",
+		"Memory Types");
 	for (uint8_t i = 0; i < 2; i++) {
-		// Type | Flow   | Min. Res. | Max. Res. | S.I | Align | Formats | Surface Types
-		//      |  Input |   64x  64 | 4096x4096 | Yes | 8     | ... | ...
-		//      | Output |   64x  64 | 4096x4096 | No  | 8     | ... | ...
-		AMF_LOG_INFO(" %4s | %6s | %9s | %9s | %3s | %5s | %s | %s",
-			"Type",
-			"Flow",
-			"Min. Res.",
-			"Max. Res.",
-			"S.I",
-			"Align",
-			"Formats",
-			"Surface Types");
-
-
 		VCECapabilities::EncoderCaps::IOCaps* capsIO[2] = { &capsEnc[i]->input, &capsEnc[i]->output };
 		for (uint8_t j = 0; j < 2; j++) {
+			std::shared_ptr<AMF> t_amf = AMF::GetInstance();
+			std::stringstream formats, memtypes;
+
+			// Surface Formats
+			for (uint32_t k = 0; k < capsIO[j]->formats.size(); k++) {
+				wcstombs(msgBuf.data(), t_amf->GetTrace()->SurfaceGetFormatName(capsIO[j]->formats[k].first), 1024);
+				formats << msgBuf.data();
+				if (capsIO[j]->formats[k].second)
+					formats << " (Native)";
+				if (k < capsIO[j]->formats.size()-1)
+					formats << ", ";
+			}
+
+			// Memory Types
+			for (uint32_t k = 0; k < capsIO[j]->memoryTypes.size(); k++) {
+				wcstombs(msgBuf.data(), t_amf->GetTrace()->GetMemoryTypeName(capsIO[j]->memoryTypes[k].first), 1024);
+				memtypes << msgBuf.data();
+				if (capsIO[j]->memoryTypes[k].second)
+					memtypes << " (Native)";
+				if (k < capsIO[j]->memoryTypes.size()-1)
+					memtypes << ", ";
+			}
+
 			// Print to log
-			std::vector<char> msgBuf(8192), formatBuf(8192), surfaceBuf(8192);
-			std::stringstream formats, surfaces;
-
-
 			sprintf(msgBuf.data(),
-				" %4s | %6s | %4dx%4d | %4dx%4d | %s | %s | %3s | %5s | %s | %s",
+				" %4s | %6s | %4dx%4d | %4dx%4d | %3s | %5d | %s | %s",
 				(i == 0 ? "AVC" : "SVC"),
 				(j == 0 ? "Input" : "Output"),
 				capsIO[j]->minWidth, capsIO[j]->minHeight,
 				capsIO[j]->maxWidth, capsIO[j]->maxHeight,
 				capsIO[j]->isInterlacedSupported ? "Yes" : "No",
 				capsIO[j]->verticalAlignment,
-				);
+				formats.str().c_str(),
+				memtypes.str().c_str());
 			AMF_LOG_INFO("%s", msgBuf.data());
-
-			char* surfaceFormat[] = {
-				"Unknown",
-				"NV12",
-				"YV12",
-				"BRGA",
-				"ARGB",
-				"RGBA",
-				"GRAY8",
-				"YUV420P",
-				"U8V8",
-				"YUY2"
-			};
-			AMF_LOG_INFO("<Plugin::AMD::H264Capabilities::reportCapabilities> 			Surface Formats:");
-			for (uint32_t k = 0; k < capsIO[j]->formats.size(); k++) {
-				AMF_LOG_INFO("<Plugin::AMD::H264Capabilities::reportCapabilities> 			- %s%s", surfaceFormat[capsIO[j]->formats[k].first], capsIO[j]->formats[k].second ? " (Native)" : "");
-			}
-
-			char * memoryTypes[] = {
-				"Unknown",
-				"Host",
-				"DirectX9",
-				"DirectX11",
-				"OpenCL",
-				"OpenGL",
-				"XV",
-				"GrAlloc"
-			};
-			AMF_LOG_INFO("<Plugin::AMD::H264Capabilities::reportCapabilities> 			Memory Types:");
-			for (uint32_t k = 0; k < capsIO[j]->memoryTypes.size(); k++) {
-				AMF_LOG_INFO("<Plugin::AMD::H264Capabilities::reportCapabilities> 			- %s%s", memoryTypes[capsIO[j]->memoryTypes[k].first], capsIO[j]->memoryTypes[k].second ? " (Native)" : "");
-			}
 		}
 	}
 	#pragma endregion
