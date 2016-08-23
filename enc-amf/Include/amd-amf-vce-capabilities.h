@@ -88,8 +88,8 @@ namespace Plugin {
 			~VCECapabilities();
 
 			bool refreshCapabilities();
-			EncoderCaps* getEncoderCaps(H264EncoderType);
-			EncoderCaps::IOCaps* getIOCaps(H264EncoderType, bool output);
+			EncoderCaps* getEncoderCaps(VCEEncoderType);
+			EncoderCaps::IOCaps* getIOCaps(VCEEncoderType, bool output);
 		};
 	}
 }

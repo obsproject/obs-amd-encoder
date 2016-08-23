@@ -254,12 +254,12 @@ bool Plugin::AMD::VCECapabilities::refreshCapabilities() {
 	return true;
 }
 
-Plugin::AMD::VCECapabilities::EncoderCaps* Plugin::AMD::VCECapabilities::getEncoderCaps(H264EncoderType type) {
+Plugin::AMD::VCECapabilities::EncoderCaps* Plugin::AMD::VCECapabilities::getEncoderCaps(VCEEncoderType type) {
 	EncoderCaps* caps[2] = { &m_AVCCaps, &m_SVCCaps };
 	return caps[type];
 }
 
-Plugin::AMD::VCECapabilities::EncoderCaps::IOCaps* Plugin::AMD::VCECapabilities::getIOCaps(H264EncoderType type, bool output) {
+Plugin::AMD::VCECapabilities::EncoderCaps::IOCaps* Plugin::AMD::VCECapabilities::getIOCaps(VCEEncoderType type, bool output) {
 	EncoderCaps* caps[2] = { &m_AVCCaps, &m_SVCCaps };
 	if (output)
 		return &caps[type]->output;

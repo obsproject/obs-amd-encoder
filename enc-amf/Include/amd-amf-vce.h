@@ -43,92 +43,93 @@ SOFTWARE.
 namespace Plugin {
 	namespace AMD {
 		// Internal Properties
-		enum H264EncoderType {
-			H264EncoderType_AVC,	// Advanced Video Coding
-			H264EncoderType_SVC,	// Scalable Video Coding
+		enum VCEEncoderType {
+			VCEEncoderType_AVC,		// Advanced Video Coding
+			VCEEncoderType_SVC,		// Scalable Video Coding
+			VCEEncoderType_HEVC,	// High-Efficiency Video Coding (Discovered in amfrt64.dll)
 		};
-		enum H264MemoryType {
-			H264MemoryType_Host,			// Host-Managed Memory
-			H264MemoryType_DirectX9,		// DirectX9
-			H264MemoryType_DirectX11,	// DirectX11
-			H264MemoryType_OpenGL,		// OpenGL
-			H264MemoryType_OpenCL,		// OpenCL
+		enum VCEMemoryType {
+			VCEMemoryType_Host,			// Host-Managed Memory
+			VCEMemoryType_DirectX9,		// DirectX9
+			VCEMemoryType_DirectX11,	// DirectX11
+			VCEMemoryType_OpenGL,		// OpenGL
+			VCEMemoryType_OpenCL,		// OpenCL
 		};
-		enum H264SurfaceFormat {
-			H264SurfaceFormat_NV12,	// NV12
-			H264SurfaceFormat_I420,	// YUV 4:2:0
-			H264SurfaceFormat_RGBA,	// RGBA
+		enum VCESurfaceFormat {
+			VCESurfaceFormat_NV12,	// NV12
+			VCESurfaceFormat_I420,	// YUV 4:2:0
+			VCESurfaceFormat_RGBA,	// RGBA
 		};
 
 		// Static Properties
-		enum H264Usage {
-			H264Usage_Transcoding,
-			H264Usage_UltraLowLatency,
-			H264Usage_LowLatency,
-			H264Usage_Webcam,			// For SVC
+		enum VCEUsage {
+			VCEUsage_Transcoding,
+			VCEUsage_UltraLowLatency,
+			VCEUsage_LowLatency,
+			VCEUsage_Webcam,			// For SVC
 		};
-		enum H264Profile {
-			H264Profile_Baseline,
-			H264Profile_Main,
-			H264Profile_High,
+		enum VCEProfile {
+			VCEProfile_Baseline,
+			VCEProfile_Main,
+			VCEProfile_High,
 
-			H264Profile_Unknown = -1,
+			VCEProfile_Unknown = -1,
 		};
-		enum H264ProfileLevel {
-			H264ProfileLevel_10 = 10,
-			H264ProfileLevel_11,
-			H264ProfileLevel_12,
-			H264ProfileLevel_13,
-			H264ProfileLevel_20 = 20,
-			H264ProfileLevel_21,
-			H264ProfileLevel_22,
-			H264ProfileLevel_30 = 30,
-			H264ProfileLevel_31,
-			H264ProfileLevel_32,
-			H264ProfileLevel_40 = 40,
-			H264ProfileLevel_41,
-			H264ProfileLevel_42,
-			H264ProfileLevel_50 = 50,
-			H264ProfileLevel_51,
-			H264ProfileLevel_52,
+		enum VCEProfileLevel {
+			VCEProfileLevel_10 = 10,
+			VCEProfileLevel_11,
+			VCEProfileLevel_12,
+			VCEProfileLevel_13,
+			VCEProfileLevel_20 = 20,
+			VCEProfileLevel_21,
+			VCEProfileLevel_22,
+			VCEProfileLevel_30 = 30,
+			VCEProfileLevel_31,
+			VCEProfileLevel_32,
+			VCEProfileLevel_40 = 40,
+			VCEProfileLevel_41,
+			VCEProfileLevel_42,
+			VCEProfileLevel_50 = 50,
+			VCEProfileLevel_51,
+			VCEProfileLevel_52,
 
-			H264ProfileLevel_Unknown = -1,
+			VCEProfileLevel_Unknown = -1,
 		};
 		enum H264RateControlMethod {
-			H264RateControlMethod_CQP,
-			H264RateControlMethod_CBR,
-			H264RateControlMethod_VBR,
-			H264RateControlMethod_VBR_LAT,
+			VCERateControlMethod_CQP,
+			VCERateControlMethod_CBR,
+			VCERateControlMethod_VBR,
+			VCERateControlMethod_VBR_LAT,
 
-			H264RateControlMethod_ConstantQP = H264RateControlMethod_CQP,
-			H264RateControlMethod_ConstantQuantizationParameter = H264RateControlMethod_CQP,
-			H264RateControlMethod_ConstantBitrate = H264RateControlMethod_CBR,
-			H264RateControlMethod_VariableBitrate = H264RateControlMethod_VBR,
-			H264RateControlMethod_LatencyConstrainedVariableBitrate = H264RateControlMethod_VBR_LAT,
+			VCERateControlMethod_ConstantQP = VCERateControlMethod_CQP,
+			VCERateControlMethod_ConstantQuantizationParameter = VCERateControlMethod_CQP,
+			VCERateControlMethod_ConstantBitrate = VCERateControlMethod_CBR,
+			VCERateControlMethod_VariableBitrate_PeakConstrained = VCERateControlMethod_VBR,
+			VCERateControlMethod_VariableBitrate_LatencyConstrained = VCERateControlMethod_VBR_LAT,
 		};
-		enum H264BPicturesPattern {
-			H264BPicturesPattern_None,
-			H264BPicturesPattern_One,
-			H264BPicturesPattern_Two,
-			H264BPicturesPattern_Three,
+		enum VCEBPicturesPattern {
+			VCEBPicturesPattern_None,
+			VCEBPicturesPattern_One,
+			VCEBPicturesPattern_Two,
+			VCEBPicturesPattern_Three,
 		};
-		enum H264ScanType {
-			H264ScanType_Progressive,
-			H264ScanType_Interlaced,
+		enum VCEScanType {
+			VCEScanType_Progressive,
+			VCEScanType_Interlaced,
 		};
-		enum H264QualityPreset {
-			H264QualityPreset_Speed,
-			H264QualityPreset_Balanced,
-			H264QualityPreset_Quality,
+		enum VCEQualityPreset {
+			VCEQualityPreset_Speed,
+			VCEQualityPreset_Balanced,
+			VCEQualityPreset_Quality,
 		};
 
-		class H264VideoEncoder {
+		class VCEEncoder {
 			//////////////////////////////////////////////////////////////////////////
 			#pragma region Functions
 			//////////////////////////////////////////////////////////////////////////
 			private:
-			static void InputThreadMain(Plugin::AMD::H264VideoEncoder* p_this);
-			static void OutputThreadMain(Plugin::AMD::H264VideoEncoder* p_this);
+			static void InputThreadMain(Plugin::AMD::VCEEncoder* p_this);
+			static void OutputThreadMain(Plugin::AMD::VCEEncoder* p_this);
 
 			#pragma endregion Functions
 			//////////////////////////////////////////////////////////////////////////
@@ -137,8 +138,8 @@ namespace Plugin {
 			#pragma region Initializer & Finalizer
 			//////////////////////////////////////////////////////////////////////////
 			public:
-			H264VideoEncoder(H264EncoderType p_Type, H264MemoryType p_MemoryType);
-			~H264VideoEncoder();
+			VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_MemoryType);
+			~VCEEncoder();
 			#pragma endregion Initializer & Finalizer
 
 			//////////////////////////////////////////////////////////////////////////
@@ -155,20 +156,20 @@ namespace Plugin {
 			#pragma region AMF Properties
 			public:
 			/// Internal
-			void SetInputSurfaceFormat(H264SurfaceFormat p_Format);
-			H264SurfaceFormat GetInputSurfaceFormat();
-			void SetOutputSurfaceFormat(H264SurfaceFormat p_Format);
-			H264SurfaceFormat GetOutputSurfaceFormat();
+			void SetInputSurfaceFormat(VCESurfaceFormat p_Format);
+			VCESurfaceFormat GetInputSurfaceFormat();
+			void SetOutputSurfaceFormat(VCESurfaceFormat p_Format);
+			VCESurfaceFormat GetOutputSurfaceFormat();
 			/// Encoder Static Parameters
 			/*	Selects the AMF Usage */
-			void SetUsage(H264Usage usage);
-			H264Usage GetUsage();
+			void SetUsage(VCEUsage usage);
+			VCEUsage GetUsage();
 			/*	Selects the H.264 Profile */
-			void SetProfile(H264Profile profile);
-			H264Profile GetProfile();
+			void SetProfile(VCEProfile profile);
+			VCEProfile GetProfile();
 			/*	Selects the H.264 Profile Level */
-			void SetProfileLevel(H264ProfileLevel level);
-			H264ProfileLevel GetProfileLevel();
+			void SetProfileLevel(VCEProfileLevel level);
+			VCEProfileLevel GetProfileLevel();
 			/*	The number of long-term references controlled by the user.
 			 *
 			 *	Remarks:
@@ -272,18 +273,18 @@ namespace Plugin {
 			void SetSlicesPerFrame(uint32_t slices);
 			uint32_t GetSlicesPerFrame();
 			/*	Sets the number of consecutive B-pictures in a GOP. BPicturesPattern = 0 indicates that B-pictures are not used */
-			void SetBPicturesPattern(H264BPicturesPattern pattern);
-			H264BPicturesPattern GetBPicturesPattern();
+			void SetBPicturesPattern(VCEBPicturesPattern pattern);
+			VCEBPicturesPattern GetBPicturesPattern();
 			/*	Enables or disables using B-pictures as references */
 			void SetBReferenceEnabled(bool enabled);
 			bool IsBReferenceEnabled();
 			/// Encoder Miscellaneous Parameters
 			/*	Selects progressive or interlaced scan */
-			void SetScanType(H264ScanType scanType);
-			H264ScanType GetScanType();
+			void SetScanType(VCEScanType scanType);
+			VCEScanType GetScanType();
 			/*	Selects the quality preset */
-			void SetQualityPreset(H264QualityPreset preset);
-			H264QualityPreset GetQualityPreset();
+			void SetQualityPreset(VCEQualityPreset preset);
+			VCEQualityPreset GetQualityPreset();
 			/// Encoder Motion Estimation Parameters
 			/*	Turns on/off half-pixel motion estimation */
 			void SetHalfPixelMotionEstimationEnabled(bool enabled);
@@ -334,9 +335,9 @@ namespace Plugin {
 			amf::AMFComponentPtr m_AMFEncoder;
 
 			// Internal Properties
-			H264EncoderType m_EncoderType;
-			H264MemoryType m_MemoryType;
-			H264SurfaceFormat m_InputSurfaceFormat, m_OutputSurfaceFormat;
+			VCEEncoderType m_EncoderType;
+			VCEMemoryType m_MemoryType;
+			VCESurfaceFormat m_InputSurfaceFormat, m_OutputSurfaceFormat;
 			std::pair<uint32_t, uint32_t> m_FrameSize, m_FrameRate;
 			double_t m_FrameRateDivisor;
 			uint32_t m_InputQueueLimit;
