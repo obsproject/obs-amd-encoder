@@ -1274,9 +1274,6 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {
 					std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
 					m_ThreadedInput.queue.pop();
 				}
-			} else if (res == AMF_INPUT_FULL) { // Tukan40
-				std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Tukan40
-				res = AMF_OK; // Tukan40
 			} else {
 				std::vector<char> msgBuf(128);
 				FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
