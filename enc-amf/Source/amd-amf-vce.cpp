@@ -1328,10 +1328,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {
 					std::unique_lock<std::mutex> qlock(m_ThreadedOutput.queuemutex);
 					m_ThreadedOutput.queue.push(pkt);
 				}
-			} else if (res == AMF_REPEAT) { // Tukan40
-				std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Tukan40
-				res = AMF_OK; // Tukan40
-			} else {
+			} else if (res != AMF_REPEAT) {
 				std::vector<char> msgBuf(128);
 				FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
 				AMF_LOG_WARNING("<Plugin::AMD::H264VideoEncoder::OutputThreadLogic> QueryOutput failed with error %s.", msgBuf.data());
