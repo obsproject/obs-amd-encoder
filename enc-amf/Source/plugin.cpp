@@ -31,9 +31,10 @@ SOFTWARE.
 // Plugin
 #include "plugin.h"
 #include "amd-amf.h"
-#include "amd-amf-h264.h"
-#include "amd-amf-h264-capabilities.h"
+#include "amd-amf-vce.h"
+#include "amd-amf-vce-capabilities.h"
 #include "enc-h264-simple.h"
+#include "enc-h264.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -62,11 +63,11 @@ MODULE_EXPORT bool obs_module_load(void) {
 		auto instance = Plugin::AMD::AMF::GetInstance();
 
 		// Report Capabilities
-		Plugin::AMD::H264Capabilities::reportCapabilities();
+		Plugin::AMD::VCECapabilities::reportCapabilities();
 
 		// Register Encoders
-		Plugin::Interface::H264Encoder_Simple::encoder_register();
-
+		Plugin::Interface::H264SimpleInterface::encoder_register();
+		Plugin::Interface::H264Interface::encoder_register();
 		return true;
 	} catch(...) {
 	}
