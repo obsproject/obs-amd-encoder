@@ -35,15 +35,15 @@ SOFTWARE.
 
 // Plugin
 #include "plugin.h"
-#include "amd-amf-h264.h"
-#include "amd-amf-h264-capabilities.h"
+#include "amd-amf-vce.h"
+#include "amd-amf-vce-capabilities.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
 namespace Plugin {
 	namespace Interface {
-		class H264Encoder_Simple {
+		class H264SimpleInterface {
 			//////////////////////////////////////////////////////////////////////////
 			// Static Code
 			//////////////////////////////////////////////////////////////////////////
@@ -68,8 +68,8 @@ namespace Plugin {
 			//////////////////////////////////////////////////////////////////////////
 			public:
 
-			H264Encoder_Simple(obs_data_t* settings, obs_encoder_t* encoder);
-			~H264Encoder_Simple();
+			H264SimpleInterface(obs_data_t* settings, obs_encoder_t* encoder);
+			~H264SimpleInterface();
 
 			bool update(obs_data_t* settings);
 			bool encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet);

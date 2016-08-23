@@ -72,7 +72,7 @@ using namespace Plugin;
 using namespace Plugin::AMD;
 using namespace Plugin::Interface;
 
-void Plugin::Interface::H264Encoder_Simple::encoder_register() {
+void Plugin::Interface::H264SimpleInterface::encoder_register() {
 	static obs_encoder_info* encoder_info = new obs_encoder_info();
 	std::memset(encoder_info, 0, sizeof(obs_encoder_info));
 	encoder_info->id = "amd_amf_h264_simple";
@@ -93,11 +93,11 @@ void Plugin::Interface::H264Encoder_Simple::encoder_register() {
 	obs_register_encoder(encoder_info);
 }
 
-const char* Plugin::Interface::H264Encoder_Simple::get_name(void* type_data) {
+const char* Plugin::Interface::H264SimpleInterface::get_name(void* type_data) {
 	return AMF_TEXT_H264_T("Name");
 }
 
-void Plugin::Interface::H264Encoder_Simple::get_defaults(obs_data_t *settings) {
+void Plugin::Interface::H264SimpleInterface::get_defaults(obs_data_t *settings) {
 	// Main Properties
 	/// Preset
 	obs_data_set_default_int(settings, AMF_VCE_H264_PRESET, 0);
@@ -126,7 +126,7 @@ void Plugin::Interface::H264Encoder_Simple::get_defaults(obs_data_t *settings) {
 	obs_data_set_default_bool(settings, AMF_VCE_H264_FRAME_SKIPPING, false);
 }
 
-obs_properties_t* Plugin::Interface::H264Encoder_Simple::get_properties(void* data) {
+obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void* data) {
 	obs_properties* props = obs_properties_create();
 	obs_property_t* list;
 	obs_property_t* p;
@@ -157,7 +157,7 @@ obs_properties_t* Plugin::Interface::H264Encoder_Simple::get_properties(void* da
 
 	/// Profile Level
 	list = obs_properties_add_list(props, AMF_VCE_H264_PROFILE_LEVEL, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	switch (H264Capabilities::getInstance()->getEncoderCaps(H264EncoderType_AVC)->maxProfileLevel) {
+	switch (VCECapabilities::getInstance()->getEncoderCaps(H264EncoderType_AVC)->maxProfileLevel) {
 		case 52:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(52)), H264ProfileLevel_52);
 		case 51:
@@ -192,8 +192,8 @@ obs_properties_t* Plugin::Interface::H264Encoder_Simple::get_properties(void* da
 	obs_property_set_modified_callback(list, &ratecontrolmethod_modified);
 
 	/// Rate Control: CBR, VBR
-	obs_properties_add_int(props, AMF_VCE_H264_BITRATE_TARGET, obs_module_text(AMF_VCE_H264_BITRATE_TARGET), 10, H264Capabilities::getInstance()->getEncoderCaps(H264EncoderType_AVC)->maxBitrate / 1000, 1);
-	obs_properties_add_int(props, AMF_VCE_H264_BITRATE_PEAK, obs_module_text(AMF_VCE_H264_BITRATE_PEAK), 10, H264Capabilities::getInstance()->getEncoderCaps(H264EncoderType_AVC)->maxBitrate / 1000, 1);
+	obs_properties_add_int(props, AMF_VCE_H264_BITRATE_TARGET, obs_module_text(AMF_VCE_H264_BITRATE_TARGET), 10, VCECapabilities::getInstance()->getEncoderCaps(H264EncoderType_AVC)->maxBitrate / 1000, 1);
+	obs_properties_add_int(props, AMF_VCE_H264_BITRATE_PEAK, obs_module_text(AMF_VCE_H264_BITRATE_PEAK), 10, VCECapabilities::getInstance()->getEncoderCaps(H264EncoderType_AVC)->maxBitrate / 1000, 1);
 
 	/// Rate Control: Constrained QP
 	obs_properties_add_int_slider(props, AMF_VCE_H264_QP_MINIMUM, obs_module_text(AMF_VCE_H264_QP_MINIMUM), 0, 51, 1);
@@ -213,16 +213,16 @@ obs_properties_t* Plugin::Interface::H264Encoder_Simple::get_properties(void* da
 	return props;
 }
 
-bool Plugin::Interface::H264Encoder_Simple::preset_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *settings) {
+bool Plugin::Interface::H264SimpleInterface::preset_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *settings) {
 	switch (obs_data_get_int(settings, AMF_VCE_H264_PRESET)) {
 		case 0: // Recording
 			obs_data_set_int(settings, AMF_VCE_H264_KEYFRAME_INTERVAL, 1);
 			obs_data_set_int(settings, AMF_VCE_H264_QUALITY_PRESET, H264QualityPreset_Balanced);
 			obs_data_set_int(settings, AMF_VCE_H264_PROFILE, H264Profile_High);
-			obs_data_set_int(settings, AMF_VCE_H264_PROFILE_LEVEL, H264Capabilities::getInstance()->getEncoderCaps(H264EncoderType_AVC)->maxProfileLevel);
+			obs_data_set_int(settings, AMF_VCE_H264_PROFILE_LEVEL, VCECapabilities::getInstance()->getEncoderCaps(H264EncoderType_AVC)->maxProfileLevel);
 			obs_data_set_int(settings, AMF_VCE_H264_RATECONTROL, H264RateControlMethod_VBR_LAT);
 			obs_data_set_int(settings, AMF_VCE_H264_BITRATE_TARGET, 10000);
-			obs_data_set_int(settings, AMF_VCE_H264_BITRATE_PEAK, H264Capabilities::getInstance()->getEncoderCaps(H264EncoderType_AVC)->maxBitrate / 1000);
+			obs_data_set_int(settings, AMF_VCE_H264_BITRATE_PEAK, VCECapabilities::getInstance()->getEncoderCaps(H264EncoderType_AVC)->maxBitrate / 1000);
 			obs_data_set_int(settings, AMF_VCE_H264_USE_CUSTOM_BUFFER_SIZE, false);
 			obs_data_set_int(settings, AMF_VCE_H264_FRAME_SKIPPING, false);
 			break;
@@ -255,7 +255,7 @@ bool Plugin::Interface::H264Encoder_Simple::preset_modified(obs_properties_t *pr
 	return true;
 }
 
-bool Plugin::Interface::H264Encoder_Simple::ratecontrolmethod_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *settings) {
+bool Plugin::Interface::H264SimpleInterface::ratecontrolmethod_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *settings) {
 	// Reset State
 	obs_property_set_visible(obs_properties_get(props, AMF_VCE_H264_BITRATE_PEAK), false);
 	obs_property_set_visible(obs_properties_get(props, AMF_VCE_H264_BITRATE_TARGET), false);
@@ -279,7 +279,7 @@ bool Plugin::Interface::H264Encoder_Simple::ratecontrolmethod_modified(obs_prope
 	return true;
 }
 
-bool Plugin::Interface::H264Encoder_Simple::custombuffer_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *settings) {
+bool Plugin::Interface::H264SimpleInterface::custombuffer_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *settings) {
 	obs_property_set_visible(obs_properties_get(props, AMF_VCE_H264_CUSTOM_BUFFER_SIZE), false);
 	if (obs_data_get_bool(settings, AMF_VCE_H264_USE_CUSTOM_BUFFER_SIZE))
 		obs_property_set_visible(obs_properties_get(props, AMF_VCE_H264_CUSTOM_BUFFER_SIZE), true);
@@ -287,39 +287,39 @@ bool Plugin::Interface::H264Encoder_Simple::custombuffer_modified(obs_properties
 	return true;
 }
 
-void* Plugin::Interface::H264Encoder_Simple::create(obs_data_t* settings, obs_encoder_t* encoder) {
+void* Plugin::Interface::H264SimpleInterface::create(obs_data_t* settings, obs_encoder_t* encoder) {
 	try {
-		return new Plugin::Interface::H264Encoder_Simple(settings, encoder);
+		return new Plugin::Interface::H264SimpleInterface(settings, encoder);
 	} catch (std::exception e) {
 		return NULL;
 	}
 }
 
-void Plugin::Interface::H264Encoder_Simple::destroy(void* data) {
-	delete (static_cast<Plugin::Interface::H264Encoder_Simple*>(data));
+void Plugin::Interface::H264SimpleInterface::destroy(void* data) {
+	delete (static_cast<Plugin::Interface::H264SimpleInterface*>(data));
 	data = nullptr;
 }
 
-bool Plugin::Interface::H264Encoder_Simple::update(void *data, obs_data_t *settings) {
-	return static_cast<Plugin::Interface::H264Encoder_Simple*>(data)->update(settings);
+bool Plugin::Interface::H264SimpleInterface::update(void *data, obs_data_t *settings) {
+	return static_cast<Plugin::Interface::H264SimpleInterface*>(data)->update(settings);
 }
 
-bool Plugin::Interface::H264Encoder_Simple::encode(void *data, struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
-	return static_cast<Plugin::Interface::H264Encoder_Simple*>(data)->encode(frame, packet, received_packet);
+bool Plugin::Interface::H264SimpleInterface::encode(void *data, struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
+	return static_cast<Plugin::Interface::H264SimpleInterface*>(data)->encode(frame, packet, received_packet);
 }
 
-void Plugin::Interface::H264Encoder_Simple::get_video_info(void *data, struct video_scale_info *info) {
-	static_cast<Plugin::Interface::H264Encoder_Simple*>(data)->get_video_info(info);
+void Plugin::Interface::H264SimpleInterface::get_video_info(void *data, struct video_scale_info *info) {
+	static_cast<Plugin::Interface::H264SimpleInterface*>(data)->get_video_info(info);
 }
 
-bool Plugin::Interface::H264Encoder_Simple::get_extra_data(void *data, uint8_t** extra_data, size_t* size) {
-	return static_cast<Plugin::Interface::H264Encoder_Simple*>(data)->get_extra_data(extra_data, size);
+bool Plugin::Interface::H264SimpleInterface::get_extra_data(void *data, uint8_t** extra_data, size_t* size) {
+	return static_cast<Plugin::Interface::H264SimpleInterface*>(data)->get_extra_data(extra_data, size);
 }
 
 //////////////////////////////////////////////////////////////////////////
 // Module Code
 //////////////////////////////////////////////////////////////////////////
-Plugin::Interface::H264Encoder_Simple::H264Encoder_Simple(obs_data_t* settings, obs_encoder_t* encoder) {
+Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings, obs_encoder_t* encoder) {
 	int32_t width, height, fpsNum, fpsDen;
 
 	// OBS Settings
@@ -351,7 +351,7 @@ Plugin::Interface::H264Encoder_Simple::H264Encoder_Simple(obs_data_t* settings, 
 	m_VideoEncoder->SetUsage(H264Usage_Transcoding);
 	m_VideoEncoder->SetProfile((H264Profile)obs_data_get_int(settings, AMF_VCE_H264_PROFILE));
 	if ((height > 1080) || (width > 1920)) {
-		switch (Plugin::AMD::H264Capabilities::getInstance()->getEncoderCaps(H264EncoderType_AVC)->maxProfileLevel) {
+		switch (Plugin::AMD::VCECapabilities::getInstance()->getEncoderCaps(H264EncoderType_AVC)->maxProfileLevel) {
 			case 50:
 				m_VideoEncoder->SetProfileLevel(H264ProfileLevel_50);
 				break;
@@ -534,26 +534,26 @@ Plugin::Interface::H264Encoder_Simple::H264Encoder_Simple(obs_data_t* settings, 
 	m_VideoEncoder->Start();
 }
 
-Plugin::Interface::H264Encoder_Simple::~H264Encoder_Simple() {
+Plugin::Interface::H264SimpleInterface::~H264SimpleInterface() {
 	m_VideoEncoder->Stop();
 	delete m_VideoEncoder;
 }
 
-bool Plugin::Interface::H264Encoder_Simple::update(obs_data_t* settings) {
+bool Plugin::Interface::H264SimpleInterface::update(obs_data_t* settings) {
 	return false;
 }
 
-bool Plugin::Interface::H264Encoder_Simple::encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
+bool Plugin::Interface::H264SimpleInterface::encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
 	bool retVal = true;
 	retVal = m_VideoEncoder->SendInput(frame);
 	m_VideoEncoder->GetOutput(packet, received_packet);
 	return retVal;
 }
 
-void Plugin::Interface::H264Encoder_Simple::get_video_info(struct video_scale_info* info) {
+void Plugin::Interface::H264SimpleInterface::get_video_info(struct video_scale_info* info) {
 	m_VideoEncoder->GetVideoInfo(info);
 }
 
-bool Plugin::Interface::H264Encoder_Simple::get_extra_data(uint8_t** extra_data, size_t* size) {
+bool Plugin::Interface::H264SimpleInterface::get_extra_data(uint8_t** extra_data, size_t* size) {
 	return m_VideoEncoder->GetExtraData(extra_data, size);
 }
