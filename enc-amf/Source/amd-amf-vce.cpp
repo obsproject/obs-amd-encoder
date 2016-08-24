@@ -32,13 +32,13 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Defines
 //////////////////////////////////////////////////////////////////////////
-#define AMF_SYNC_LOCK(x) { \
-		x; \
-	};
 //#define AMF_SYNC_LOCK(x) { \
-//		std::unique_lock<std::mutex> amflock(m_AMFSyncLock); \
 //		x; \
 //	};
+#define AMF_SYNC_LOCK(x) { \
+		std::unique_lock<std::mutex> amflock(m_AMFSyncLock); \
+		x; \
+	};
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -112,24 +112,9 @@ static void FormatTextWithAMFError(std::vector<char>* buffer, const char* format
 	sprintf(buffer->data(), format, AMF_RESULT_AS_TEXT[res], res);
 }
 
-static void ThrowExceptionWithAMFError(const char* errorMsg, AMF_RESULT res) {
-	std::vector<char> msgBuf(1024);
-	FormatTextWithAMFError(&msgBuf, errorMsg, res);
-	AMF_LOG_ERROR("%s", msgBuf.data());
-	throw std::exception(msgBuf.data());
-}
-
 template<typename _T>
 static void FormatTextWithAMFError(std::vector<char>* buffer, const char* format, _T other, AMF_RESULT res) {
 	sprintf(buffer->data(), format, other, AMF_RESULT_AS_TEXT[res], res);
-}
-
-template<typename _T>
-static void ThrowExceptionWithAMFError(const char* errorMsg, _T other, AMF_RESULT res) {
-	std::vector<char> msgBuf(1024);
-	FormatTextWithAMFError(&msgBuf, errorMsg, other, res);
-	AMF_LOG_ERROR("%s", msgBuf.data());
-	throw std::exception(msgBuf.data());
 }
 
 void Plugin::AMD::VCEEncoder::InputThreadMain(Plugin::AMD::VCEEncoder* p_this) {
@@ -144,6 +129,15 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_Memor
 	AMF_RESULT res;
 
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::H264VideoEncoder> Initializing...");
+
+	// Solve the optimized away issue.
+	m_IsStarted = false;
+	m_InputSurfaceFormat = VCESurfaceFormat_NV12;
+	m_OutputSurfaceFormat = VCESurfaceFormat_NV12;
+	m_FrameSize.first = 64;	m_FrameSize.second = 64;
+	m_FrameRate.first = 30; m_FrameRate.second = 1;
+	m_FrameRateDivisor = (((double_t)m_FrameRate.first) / m_FrameRate.second);
+	m_InputQueueLimit = (uint32_t)(m_FrameRateDivisor * 3);
 
 	// AMF
 	m_AMF = AMF::GetInstance();
@@ -226,7 +220,7 @@ void Plugin::AMD::VCEEncoder::Start() {
 			break;
 	}
 	if (res != AMF_OK)
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::Start> Initialization failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::Start> Initialization failed with error %ls (code %d).", res);
 
 	// Threading
 	/// Create and start Threads
@@ -443,7 +437,7 @@ void Plugin::AMD::VCEEncoder::SetUsage(VCEUsage usage) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, customToAMF[usage]);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetUsage> Setting to %s failed with error %s (code %d).", customToName[usage], res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetUsage> Setting to %s failed with error %ls (code %d).", res, customToName[usage]);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetUsage> Set to %s.", customToName[usage]);
 }
@@ -465,7 +459,7 @@ Plugin::AMD::VCEUsage Plugin::AMD::VCEEncoder::GetUsage() {
 	uint32_t usage;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_USAGE, &usage);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetUsage> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetUsage> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetUsage> Retrieved Property, Value is %s.", customToName[AMFToCustom[usage]]);
 	return AMFToCustom[usage];
@@ -485,7 +479,7 @@ void Plugin::AMD::VCEEncoder::SetProfile(VCEProfile profile) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, customToAMF[profile]);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetProfile> Setting to %s failed with error %s (code %d).", customToName[profile], res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetProfile> Setting to %s failed with error %ls (code %d).", res, customToName[profile]);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetProfile> Set to %s.", customToName[profile]);
 }
@@ -500,7 +494,7 @@ Plugin::AMD::VCEProfile Plugin::AMD::VCEEncoder::GetProfile() {
 	uint32_t profile;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PROFILE, &profile);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	switch ((AMF_VIDEO_ENCODER_PROFILE_ENUM)profile) {
 		case AMF_VIDEO_ENCODER_PROFILE_BASELINE:
@@ -531,7 +525,7 @@ void Plugin::AMD::VCEEncoder::SetProfileLevel(VCEProfileLevel level) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, customToAMF[level]);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetProfile> Setting to %d failed with error %s (code %d).", customToAMF[level], res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetProfile> Setting to %d failed with error %ls (code %d).", res, customToAMF[level]);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetProfile> Set to %d.", customToAMF[level]);
 }
@@ -540,25 +534,17 @@ Plugin::AMD::VCEProfileLevel Plugin::AMD::VCEEncoder::GetProfileLevel() {
 	uint32_t profileLevel;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, &profileLevel);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetProfileLevel> Retrieving Property failed with error %s (code %d).", profileLevel, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetProfileLevel> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetProfileLevel> Retrieved Property, Value is %d.", profileLevel);
 	switch (profileLevel) {
 		case 10: case 11: case 12: case 13:
-			return (VCEProfileLevel)(VCEProfileLevel_10 + (profileLevel - 10));
-			break;
 		case 20: case 21: case 22:
-			return (VCEProfileLevel)(VCEProfileLevel_20 + (profileLevel - 20));
-			break;
 		case 30: case 31: case 32:
-			return (VCEProfileLevel)(VCEProfileLevel_30 + (profileLevel - 30));
-			break;
 		case 40: case 41: case 42:
-			return (VCEProfileLevel)(VCEProfileLevel_40 + (profileLevel - 40));
-			break;
 		case 50: case 51: case 52:
-			return (VCEProfileLevel)(VCEProfileLevel_50 + (profileLevel - 50));
-			break;
+		case 60: case 61: case 62:
+			return (VCEProfileLevel)(profileLevel);
 	}
 	return VCEProfileLevel_Unknown;
 }
@@ -569,7 +555,7 @@ void Plugin::AMD::VCEEncoder::SetMaxLTRFrames(uint32_t maximumLTRFrames) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, maximumLTRFrames);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetMaxLTRFrames> Setting to %d failed with error %s (code %d).", maximumLTRFrames, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetMaxLTRFrames> Setting to %d failed with error %ls (code %d).", res, maximumLTRFrames);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetMaxLTRFrames> Set to %d.", maximumLTRFrames);
 }
@@ -578,7 +564,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetMaxLTRFrames() {
 	uint32_t maximumLTRFrames;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, &maximumLTRFrames);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetMaxLTRFrames> Retrieving Property failed with error %s (code %d).", maximumLTRFrames, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetMaxLTRFrames> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetMaxLTRFrames> Retrieved Property, Value is %d.", maximumLTRFrames);
 	return maximumLTRFrames;
@@ -589,7 +575,7 @@ void Plugin::AMD::VCEEncoder::SetFrameSize(uint32_t width, uint32_t height) {
 	if (res != AMF_OK) {
 		std::vector<char> msgBuf;
 		sprintf(msgBuf.data(), "%dx%d", width, height);
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetFrameSize> Setting to %s failed with error %s (code %d).", msgBuf.data(), res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetFrameSize> Setting to %s failed with error %ls (code %d).", res, msgBuf.data());
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetFrameSize> Set to %dx%d.", width, height);
 }
@@ -598,7 +584,7 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameSize() {
 	AMFSize frameSize;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, &frameSize);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetFrameSize> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetFrameSize> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetFrameSize> Retrieved Property, Value is %dx%d.", frameSize.width, frameSize.height);
 	m_FrameSize.first = frameSize.width;
@@ -612,7 +598,7 @@ void Plugin::AMD::VCEEncoder::SetTargetBitrate(uint32_t bitrate) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, bitrate);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetTargetBitrate> Setting to %d bits failed with error %s (code %d).", bitrate, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetTargetBitrate> Setting to %d bits failed with error %ls (code %d).", res, bitrate);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetTargetBitrate> Set to %d bits.", bitrate);
 }
@@ -621,7 +607,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetTargetBitrate() {
 	uint32_t bitrate;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, &bitrate);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetTargetBitrate> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetTargetBitrate> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetTargetBitrate> Retrieved Property, Value is %d bits.", bitrate);
 	return bitrate;
@@ -633,7 +619,7 @@ void Plugin::AMD::VCEEncoder::SetPeakBitrate(uint32_t bitrate) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, bitrate);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetPeakBitrate> Setting to %d bits failed with error %s (code %d).", bitrate, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetPeakBitrate> Setting to %d bits failed with error %ls (code %d).", res, bitrate);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetPeakBitrate> Set to %d bits.", bitrate);
 }
@@ -642,7 +628,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetPeakBitrate() {
 	uint32_t bitrate;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, &bitrate);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetPeakBitrate> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetPeakBitrate> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetPeakBitrate> Retrieved Property, Value is %d bits.", bitrate);
 	return bitrate;
@@ -664,7 +650,7 @@ void Plugin::AMD::VCEEncoder::SetRateControlMethod(H264RateControlMethod method)
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, CustomToAMF[method]);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetRateControlMethod> Setting to %s failed with error %s (code %d).", CustomToName[method], res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetRateControlMethod> Setting to %s failed with error %ls (code %d).", res, CustomToName[method]);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetRateControlMethod> Set to %s.", CustomToName[method]);
 }
@@ -686,7 +672,7 @@ Plugin::AMD::H264RateControlMethod Plugin::AMD::VCEEncoder::GetRateControlMethod
 	uint32_t method;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, &method);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetRateControlMethod> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetRateControlMethod> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetRateControlMethod> Retrieved Property, Value is %s.", CustomToName[AMFToCustom[method]]);
 	return AMFToCustom[method];
@@ -695,7 +681,7 @@ Plugin::AMD::H264RateControlMethod Plugin::AMD::VCEEncoder::GetRateControlMethod
 void Plugin::AMD::VCEEncoder::SetRateControlSkipFrameEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetRateControlSkipFrameEnabled> Setting to %s failed with error %s (code %d).", enabled ? "Enabled" : "Disabled", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetRateControlSkipFrameEnabled> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetRateControlSkipFrameEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
@@ -704,7 +690,7 @@ bool Plugin::AMD::VCEEncoder::IsRateControlSkipFrameEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, &enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::IsRateControlSkipFrameEnabled> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::IsRateControlSkipFrameEnabled> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::IsRateControlSkipFrameEnabled> Retrieved Property, Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
@@ -716,7 +702,7 @@ void Plugin::AMD::VCEEncoder::SetMinimumQP(uint8_t qp) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MIN_QP, qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetMinimumQP> Setting to %d failed with error %s (code %d).", qp, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetMinimumQP> Setting to %d failed with error %ls (code %d).", res, qp);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetMinimumQP> Set to %d.", qp);
 }
@@ -725,7 +711,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetMinimumQP() {
 	uint32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MIN_QP, &qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetMinimumQP> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetMinimumQP> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetMinimumQP> Retrieved Property, Value is %d.", qp);
 	return qp;
@@ -737,7 +723,7 @@ void Plugin::AMD::VCEEncoder::SetMaximumQP(uint8_t qp) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_QP, qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetMaximumQP> Setting to %d failed with error %s (code %d).", qp, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetMaximumQP> Setting to %d failed with error %ls (code %d).", res, qp);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetMaximumQP> Set to %d.", qp);
 }
@@ -746,7 +732,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetMaximumQP() {
 	uint32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_QP, &qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetMaximumQP> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetMaximumQP> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetMaximumQP> Retrieved Property, Value is %d.", qp);
 	return qp;
@@ -758,7 +744,7 @@ void Plugin::AMD::VCEEncoder::SetIFrameQP(uint8_t qp) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_I, qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetIFrameQP> Setting to %d failed with error %s (code %d).", qp, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetIFrameQP> Setting to %d failed with error %ls (code %d).", res, qp);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetIFrameQP> Set to %d.", qp);
 }
@@ -767,7 +753,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetIFrameQP() {
 	uint32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QP_I, &qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetIFrameQP> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetIFrameQP> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetIFrameQP> Retrieved Property, Value is %d.", qp);
 	return qp;
@@ -779,7 +765,7 @@ void Plugin::AMD::VCEEncoder::SetPFrameQP(uint8_t qp) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_P, qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetPFrameQP> Setting to %d failed with error %s (code %d).", qp, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetPFrameQP> Setting to %d failed with error %ls (code %d).", res, qp);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetPFrameQP> Set to %d.", qp);
 }
@@ -788,7 +774,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetPFrameQP() {
 	uint32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QP_P, &qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetPFrameQP> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetPFrameQP> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetPFrameQP> Retrieved Property, Value is %d.", qp);
 	return qp;
@@ -800,7 +786,7 @@ void Plugin::AMD::VCEEncoder::SetBFrameQP(uint8_t qp) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_B, qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetBFrameQP> Setting to %d failed with error %s (code %d).", qp, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetBFrameQP> Setting to %d failed with error %ls (code %d).", res, qp);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetBFrameQP> Set to %d.", qp);
 }
@@ -809,7 +795,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetBFrameQP() {
 	uint32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QP_B, &qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetBFrameQP> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetBFrameQP> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetBFrameQP> Retrieved Property, Value is %d.", qp);
 	return qp;
@@ -820,7 +806,7 @@ void Plugin::AMD::VCEEncoder::SetFrameRate(uint32_t num, uint32_t den) {
 	if (res != AMF_OK) {
 		std::vector<char> msgBuf;
 		sprintf(msgBuf.data(), "%d/%d", num, den);
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetFrameRate> Setting to %s failed with error %s (code %d).", msgBuf.data(), res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetFrameRate> Setting to %s failed with error %ls (code %d).", res, msgBuf.data());
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetFrameRate> Set to %d/%d.", num, den);
 	m_FrameRate.first = num;
@@ -833,7 +819,7 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameRate() {
 	AMFRate frameRate;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FRAMERATE, &frameRate);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetFrameRate> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetFrameRate> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetFrameRate> Retrieved Property, Value is %d/%d.", frameRate.num, frameRate.den);
 	m_FrameRate.first = frameRate.num;
@@ -849,7 +835,7 @@ void Plugin::AMD::VCEEncoder::SetVBVBufferSize(uint32_t size) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, size);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetVBVBufferSize> Setting to %d bits failed with error %s (code %d).", size, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetVBVBufferSize> Setting to %d bits failed with error %ls (code %d).", res, size);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetVBVBufferSize> Set to %d bits.", size);
 }
@@ -858,7 +844,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetVBVBufferSize() {
 	uint32_t size;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, &size);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetVBVBufferSize> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetVBVBufferSize> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetVBVBufferSize> Retrieved Property, Value is %d.", size);
 	return size;
@@ -870,7 +856,7 @@ void Plugin::AMD::VCEEncoder::SetInitialVBVBufferFullness(double_t fullness) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, (uint32_t)(fullness * 64));
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetVBVBufferFullness> Setting to %f%% failed with error %s (code %d).", fullness * 100, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetVBVBufferFullness> Setting to %f%% failed with error %ls (code %d).", res, fullness * 100);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetVBVBufferFullness> Set to %f%%.", fullness * 100);
 }
@@ -879,7 +865,7 @@ double_t Plugin::AMD::VCEEncoder::GetInitialVBVBufferFullness() {
 	uint32_t vbvBufferFullness;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, &vbvBufferFullness);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetVBVBufferSize> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetVBVBufferSize> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetVBVBufferSize> Retrieved Property, Value is %d.", vbvBufferFullness);
 	return ((double_t)vbvBufferFullness / 64.0);
@@ -888,7 +874,7 @@ double_t Plugin::AMD::VCEEncoder::GetInitialVBVBufferFullness() {
 void Plugin::AMD::VCEEncoder::SetEnforceHRDRestrictionsEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetEnforceHRD> Setting to %s failed with error %s (code %d).", enabled ? "Enabled" : "Disabled", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetEnforceHRD> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetEnforceHRD> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
@@ -897,7 +883,7 @@ bool Plugin::AMD::VCEEncoder::IsEnforceHRDRestrictionsEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, &enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetEnforceHRD> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetEnforceHRD> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetEnforceHRD> Retrieved Property, Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
@@ -906,7 +892,7 @@ bool Plugin::AMD::VCEEncoder::IsEnforceHRDRestrictionsEnabled() {
 void Plugin::AMD::VCEEncoder::SetFillerDataEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetFillerDataEnabled> Setting to %s failed with error %s (code %d).", enabled ? "Enabled" : "Disabled", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetFillerDataEnabled> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetFillerDataEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
@@ -915,7 +901,7 @@ bool Plugin::AMD::VCEEncoder::IsFillerDataEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, &enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::IsFillerDataEnabled> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::IsFillerDataEnabled> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::IsFillerDataEnabled> Retrieved Property, Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
@@ -927,7 +913,7 @@ void Plugin::AMD::VCEEncoder::SetMaximumAccessUnitSize(uint32_t size) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, size);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetMaxAUSize> Setting to %d bits failed with error %s (code %d).", size, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetMaxAUSize> Setting to %d bits failed with error %ls (code %d).", res, size);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetMaxAUSize> Set to %d bits.", size);
 }
@@ -936,7 +922,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetMaximumAccessUnitSize() {
 	uint32_t size;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, &size);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetMaxAUSize> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetMaxAUSize> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetMaxAUSize> Retrieved Property, Value is %d.", size);
 	return size;
@@ -948,7 +934,7 @@ void Plugin::AMD::VCEEncoder::SetBPictureDeltaQP(int8_t qp) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetBPictureDeltaQP> Setting to %d failed with error %s (code %d).", qp, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetBPictureDeltaQP> Setting to %d failed with error %ls (code %d).", res, qp);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetBPictureDeltaQP> Set to %d.", qp);
 }
@@ -957,7 +943,7 @@ int8_t Plugin::AMD::VCEEncoder::GetBPictureDeltaQP() {
 	int32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, &qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetBPictureDeltaQP> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetBPictureDeltaQP> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetBPictureDeltaQP> Retrieved Property, Value is %d.", qp);
 	return qp;
@@ -969,7 +955,7 @@ void Plugin::AMD::VCEEncoder::SetReferenceBPictureDeltaQP(int8_t qp) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetReferenceBPictureDeltaQP> Setting to %d failed with error %s (code %d).", qp, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetReferenceBPictureDeltaQP> Setting to %d failed with error %ls (code %d).", res, qp);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetReferenceBPictureDeltaQP> Set to %d.", qp);
 }
@@ -978,7 +964,7 @@ int8_t Plugin::AMD::VCEEncoder::GetReferenceBPictureDeltaQP() {
 	int32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, &qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetReferenceBPictureDeltaQP> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetReferenceBPictureDeltaQP> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetReferenceBPictureDeltaQP> Retrieved Property, Value is %d.", qp);
 	return qp;
@@ -990,7 +976,7 @@ void Plugin::AMD::VCEEncoder::SetHeaderInsertionSpacing(uint32_t spacing) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING, spacing);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetHeaderInsertionSpacing> Setting to %d failed with error %s (code %d).", spacing, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetHeaderInsertionSpacing> Setting to %d failed with error %ls (code %d).", res, spacing);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetHeaderInsertionSpacing> Set to %d.", spacing);
 }
@@ -999,7 +985,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetHeaderInsertionSpacing() {
 	int32_t headerInsertionSpacing;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING, &headerInsertionSpacing);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetHeaderInsertionSpacing> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetHeaderInsertionSpacing> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetHeaderInsertionSpacing> Retrieved Property, Value is %d.", headerInsertionSpacing);
 	return headerInsertionSpacing;
@@ -1011,7 +997,7 @@ void Plugin::AMD::VCEEncoder::SetIDRPeriod(uint32_t period) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, period);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetIDRPeriod> Setting to %d failed with error %s (code %d).", period, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetIDRPeriod> Setting to %d failed with error %ls (code %d).", res, period);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetIDRPeriod> Set to %d.", period);
 }
@@ -1020,7 +1006,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetIDRPeriod() {
 	int32_t period;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, &period);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetIDRPeriod> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetIDRPeriod> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetIDRPeriod> Retrieved Property, Value is %d.", period);
 	return period;
@@ -1029,7 +1015,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetIDRPeriod() {
 void Plugin::AMD::VCEEncoder::SetDeBlockingFilterEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER, enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetDeBlockingFilterEnabled> Setting to %s failed with error %s (code %d).", enabled ? "Enabled" : "Disabled", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetDeBlockingFilterEnabled> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetDeBlockingFilterEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
@@ -1038,7 +1024,7 @@ bool Plugin::AMD::VCEEncoder::IsDeBlockingFilterEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER, &enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::IsDeBlockingFilterEnabled> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::IsDeBlockingFilterEnabled> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::IsDeBlockingFilterEnabled> Retrieved Property, Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
@@ -1047,7 +1033,7 @@ bool Plugin::AMD::VCEEncoder::IsDeBlockingFilterEnabled() {
 void Plugin::AMD::VCEEncoder::SetIntraRefreshMBsNumberPerSlot(uint32_t mbs) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, mbs);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetIntraRefreshMBsNumberPerSlot> Setting to %d failed with error %s (code %d).", mbs, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetIntraRefreshMBsNumberPerSlot> Setting to %d failed with error %ls (code %d).", res, mbs);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetIntraRefreshMBsNumberPerSlot> Set to %d.", mbs);
 }
@@ -1056,7 +1042,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetIntraRefreshMBsNumberPerSlot() {
 	int32_t mbs;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, &mbs);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetIntraRefreshMBsNumberPerSlot> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetIntraRefreshMBsNumberPerSlot> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetIntraRefreshMBsNumberPerSlot> Retrieved Property, Value is %d.", mbs);
 	return mbs;
@@ -1067,7 +1053,7 @@ void Plugin::AMD::VCEEncoder::SetSlicesPerFrame(uint32_t slices) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, slices);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetSlicesPerFrame> Setting to %d failed with error %s (code %d).", slices, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetSlicesPerFrame> Setting to %d failed with error %ls (code %d).", res, slices);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetSlicesPerFrame> Set to %d.", slices);
 }
@@ -1076,7 +1062,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetSlicesPerFrame() {
 	uint32_t slices;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, &slices);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetSlicesPerFrame> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetSlicesPerFrame> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetSlicesPerFrame> Retrieved Property, Value is %d.", slices);
 	return slices;
@@ -1085,7 +1071,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetSlicesPerFrame() {
 void Plugin::AMD::VCEEncoder::SetBPicturesPattern(VCEBPicturesPattern pattern) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, (uint32_t)pattern);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetBPicturesPattern> Setting to %d failed with error %s (code %d).", pattern, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetBPicturesPattern> Setting to %d failed with error %ls (code %d).", res, pattern);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetBPicturesPattern> Set to %d.", pattern);
 }
@@ -1094,7 +1080,7 @@ Plugin::AMD::VCEBPicturesPattern Plugin::AMD::VCEEncoder::GetBPicturesPattern() 
 	uint32_t pattern;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, &pattern);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetBPicturesPattern> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetBPicturesPattern> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetBPicturesPattern> Retrieved Property, Value is %d.", pattern);
 	return (Plugin::AMD::VCEBPicturesPattern)pattern;
@@ -1103,7 +1089,7 @@ Plugin::AMD::VCEBPicturesPattern Plugin::AMD::VCEEncoder::GetBPicturesPattern() 
 void Plugin::AMD::VCEEncoder::SetBReferenceEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetBReferenceEnabled> Setting to %s failed with error %s (code %d).", enabled ? "Enabled" : "Disabled", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetBReferenceEnabled> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetBReferenceEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
@@ -1112,7 +1098,7 @@ bool Plugin::AMD::VCEEncoder::IsBReferenceEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, &enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::IsBReferenceEnabled> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::IsBReferenceEnabled> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::IsBReferenceEnabled> Retrieved Property, Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
@@ -1130,7 +1116,7 @@ void Plugin::AMD::VCEEncoder::SetScanType(VCEScanType scanType) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SCANTYPE, CustomToAMF[scanType]);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetScanType> Setting to %s failed with error %s (code %d).", CustomToName[scanType], res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetScanType> Setting to %s failed with error %ls (code %d).", res, CustomToName[scanType]);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetScanType> Set to %s.", CustomToName[scanType]);
 }
@@ -1144,7 +1130,7 @@ Plugin::AMD::VCEScanType Plugin::AMD::VCEEncoder::GetScanType() {
 	uint32_t scanType;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_SCANTYPE, &scanType);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetScanType> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetScanType> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetScanType> Retrieved Property, Value is %s.", CustomToName[scanType]);
 	return (Plugin::AMD::VCEScanType)scanType;
@@ -1164,7 +1150,7 @@ void Plugin::AMD::VCEEncoder::SetQualityPreset(VCEQualityPreset preset) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, CustomToAMF[preset]);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetQualityPreset> Setting to %s failed with error %s (code %d).", CustomToName[preset], res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetQualityPreset> Setting to %s failed with error %ls (code %d).", res, CustomToName[preset]);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetQualityPreset> Set to %s.", CustomToName[preset]);
 }
@@ -1184,7 +1170,7 @@ Plugin::AMD::VCEQualityPreset Plugin::AMD::VCEEncoder::GetQualityPreset() {
 	uint32_t preset;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, &preset);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetQualityPreset> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetQualityPreset> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetQualityPreset> Retrieved Property, Value is %s.", CustomToName[AMFToCustom[preset]]);
 	return AMFToCustom[preset];
@@ -1193,7 +1179,7 @@ Plugin::AMD::VCEQualityPreset Plugin::AMD::VCEEncoder::GetQualityPreset() {
 void Plugin::AMD::VCEEncoder::SetHalfPixelMotionEstimationEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetHalfPixelMotionEstimationEnabled> Setting to %s failed with error %s (code %d).", enabled ? "Enabled" : "Disabled", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetHalfPixelMotionEstimationEnabled> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetHalfPixelMotionEstimationEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
@@ -1202,7 +1188,7 @@ bool Plugin::AMD::VCEEncoder::IsHalfPixelMotionEstimationEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, &enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::IsHalfPixelMotionEstimationEnabled> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::IsHalfPixelMotionEstimationEnabled> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::IsHalfPixelMotionEstimationEnabled> Retrieved Property, Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
@@ -1211,7 +1197,7 @@ bool Plugin::AMD::VCEEncoder::IsHalfPixelMotionEstimationEnabled() {
 void Plugin::AMD::VCEEncoder::SetQuarterPixelMotionEstimationEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL, enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetQuarterPixelMotionEstimationEnabled> Setting to %s failed with error %s (code %d).", enabled ? "Enabled" : "Disabled", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetQuarterPixelMotionEstimationEnabled> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetQuarterPixelMotionEstimationEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
@@ -1220,7 +1206,7 @@ bool Plugin::AMD::VCEEncoder::IsQuarterPixelMotionEstimationEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL, &enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::IsQuarterPixelMotionEstimationEnabled> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::IsQuarterPixelMotionEstimationEnabled> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::IsQuarterPixelMotionEstimationEnabled> Retrieved Property, Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
@@ -1231,7 +1217,7 @@ void Plugin::AMD::VCEEncoder::SetNumberOfTemporalEnhancementLayers(uint32_t laye
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS, layers);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetNumberOfTemporalEnhancementLayers> Setting to %d failed with error %s (code %d).", layers, res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetNumberOfTemporalEnhancementLayers> Setting to %d failed with error %ls (code %d).", res, layers);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetNumberOfTemporalEnhancementLayers> Set to %d.", layers);
 }
@@ -1240,7 +1226,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetNumberOfTemporalEnhancementLayers() {
 	uint32_t layers;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS, &layers);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetNumberOfTemporalEnhancementLayers> Retrieving Property failed with error %s (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetNumberOfTemporalEnhancementLayers> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetNumberOfTemporalEnhancementLayers> Retrieved Property, Value is %d.", layers);
 	return layers;
@@ -1357,7 +1343,7 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 			m_FrameSize.first, m_FrameSize.second,
 			&pSurface););
 		if (res != AMF_OK) // Unable to create Surface
-			ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::CreateSurfaceFromFrame> Unable to create AMFSurface, error %s (code %d).", res);
+			ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::CreateSurfaceFromFrame> Unable to create AMFSurface, error %ls (code %d).", res);
 
 		planeCount = pSurface->GetPlanesCount();
 

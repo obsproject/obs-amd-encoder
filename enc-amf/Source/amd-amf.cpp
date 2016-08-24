@@ -38,7 +38,6 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
-
 using namespace Plugin::AMD;
 
 class CustomWriter : public amf::AMFTraceWriter {
@@ -95,8 +94,10 @@ Plugin::AMD::AMF::AMF() {
 	m_AMFModule = LoadLibraryW(AMF_DLL_NAME);
 	if (!m_AMFModule) {
 		DWORD error = GetLastError();
-		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Loading of '%ls' failed with error code %d.", AMF_DLL_NAME, error);
-		throw std::exception("", error);
+		std::vector<char> buf(1024);
+		sprintf(buf.data(), "<Plugin::AMD::AMF::AMF> Loading of '%ls' failed with error code %d.", AMF_DLL_NAME, error);
+		AMF_LOG_ERROR("%s", buf.data());
+		throw std::exception(buf.data(), error);
 	} else {
 		AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Loaded '%ls'.", AMF_DLL_NAME);
 	}
@@ -105,16 +106,19 @@ Plugin::AMD::AMF::AMF() {
 	AMFQueryVersion = (AMFQueryVersion_Fn)GetProcAddress(m_AMFModule, AMF_QUERY_VERSION_FUNCTION_NAME);
 	if (!AMFQueryVersion) {
 		DWORD error = GetLastError();
-		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Finding Address of Function '%ls' failed with error code %d.", AMF_QUERY_VERSION_FUNCTION_NAME, error);
-		throw std::exception("", error);
+		std::vector<char> buf(1024);
+		sprintf(buf.data(), "<Plugin::AMD::AMF::AMF> Finding Address of Function '%s' failed with error code %d.", AMF_QUERY_VERSION_FUNCTION_NAME, error);
+		AMF_LOG_ERROR("%s", buf.data());
+		throw std::exception(buf.data(), error);
 	}
 
 	// Query Runtime Version
 	m_AMFVersion_Compiler = AMF_FULL_VERSION;
 	res = AMFQueryVersion(&m_AMFVersion_Runtime);
 	if (res != AMF_OK) {
+		
 		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Querying Version failed with error code %d.", res);
-		throw std::exception("", res);
+		throw std::exception("<Plugin::AMD::AMF::AMF> Querying Version failed with error code ", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Runtime is on Version %d.%d.%d.%d",
 		(m_AMFVersion_Runtime >> 48ull) & 0xFFFF,
@@ -142,14 +146,13 @@ Plugin::AMD::AMF::AMF() {
 	// Retrieve Trace Object
 	res = m_AMFFactory->GetTrace(&m_AMFTrace);
 	if (res != AMF_OK) {
-		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Retrieving Trace object failed with error code %d.", res);
-		throw std::exception("", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::AMF::AMF> Retrieving Trace object failed with error %ls (code %d).", res);
 	}
 
 	// Retrieve Debug Object
 	res = m_AMFFactory->GetDebug(&m_AMFDebug);
 	if (res != AMF_OK) {
-		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Retrieving Debug object failed with error code %d.", res);
+		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Retrieving Debug object failed with error code %ls (code %d).", res);
 		throw std::exception("", res);
 	}
 
