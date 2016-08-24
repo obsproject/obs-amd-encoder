@@ -23,7 +23,7 @@ And these great people have decided to support the project by one or another mea
 Spanish translator  
 [Website](https://markitos.ovh), [Steam](http://steamcommunity.com/id/markitos22/)
 
-## Markus
+## [Markus](https://github.com/Morphy2k)
 
 ## [nwgat.ninja](https://nwgat.ninja/)
 nwgat.ninja is proud to support Xaymars Technology Projects
