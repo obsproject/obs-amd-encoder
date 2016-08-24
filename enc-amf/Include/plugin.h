@@ -57,3 +57,10 @@ SOFTWARE.
 
 #define AMF_TEXT(x) ("AMF." ## x)
 #define AMF_TEXT_T(x) obs_module_text(AMF_TEXT(x))
+
+#define ThrowExceptionWithAMFError(format, res, ...) {\
+	std::vector<char> _throwexceptionwithamferror_buf(8192);\
+	sprintf(_throwexceptionwithamferror_buf.data(), format, ##__VA_ARGS__, Plugin::AMD::AMF::GetInstance()->GetTrace()->GetResultText(res), res);\
+	AMF_LOG_ERROR("%s", _throwexceptionwithamferror_buf.data()); \
+	throw new std::exception(_throwexceptionwithamferror_buf.data(), res); \
+}
