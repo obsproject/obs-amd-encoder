@@ -12,6 +12,9 @@ You need to select "Advanced" as the Output Mode for it to show up.
 ### Q: There are two encoders called the same, what do I do?!
 Select the one that is called "H264 Encoder (AMD Advanced Media Framework)".
 
+### Q: My Video is blocky or has a low framerate!
+If you're using the advanced interface, you need to put in the bitrate in bit/s, not kbit/s. If you're using the Simple Interface, see the entry "Reporting Issues".
+
 ## Reporting Issues
 
 Before reporting an Issue, please [read this first](https://github.com/Xaymar/OBS-AMD-Media-Framework/wiki/Reporting-Issues).
