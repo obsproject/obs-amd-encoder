@@ -160,6 +160,12 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void* d
 	/// Profile Level
 	list = obs_properties_add_list(props, AMF_VCE_H264_PROFILE_LEVEL, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	switch (VCECapabilities::getInstance()->getEncoderCaps(VCEEncoderType_AVC)->maxProfileLevel) {
+		case 62:
+			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(62)), VCEProfileLevel_62);
+		case 61:
+			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(61)), VCEProfileLevel_61);
+		case 60:
+			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(60)), VCEProfileLevel_60);
 		case 52:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(52)), VCEProfileLevel_52);
 		case 51:
@@ -369,19 +375,7 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	/// Encoder Static Parameters
 	m_VideoEncoder->SetUsage(VCEUsage_Transcoding);
 	m_VideoEncoder->SetProfile((VCEProfile)obs_data_get_int(settings, AMF_VCE_H264_PROFILE));
-	if ((height > 1080) || (width > 1920)) {
-		switch (Plugin::AMD::VCECapabilities::getInstance()->getEncoderCaps(VCEEncoderType_AVC)->maxProfileLevel) {
-			case 50:
-				m_VideoEncoder->SetProfileLevel(VCEProfileLevel_50);
-				break;
-			case 51:
-				m_VideoEncoder->SetProfileLevel(VCEProfileLevel_51);
-				break;
-			case 52:
-				m_VideoEncoder->SetProfileLevel(VCEProfileLevel_52);
-				break;
-		}
-	}
+	m_VideoEncoder->SetProfileLevel((VCEProfileLevel)obs_data_get_int(settings, AMF_VCE_H264_PROFILE_LEVEL));
 
 	/// Encoder Resolution Parameters
 	m_VideoEncoder->SetFrameSize(width, height);
@@ -413,7 +407,6 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	//m_VideoEncoder->SetHeaderInsertionSpacing((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_KEYFRAME_INTERVAL) * (uint32_t)((double_t)fpsNum / (double_t)fpsDen));
 	m_VideoEncoder->SetIDRPeriod((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_KEYFRAME_INTERVAL) * (uint32_t)((double_t)fpsNum / (double_t)fpsDen));
 	//m_VideoEncoder->SetDeBlockingFilterEnabled(false);
-
 
 	/// Encoder Miscellaneous Parameters
 	//m_VideoEncoder->SetScanType(H264ScanType_Progressive);
