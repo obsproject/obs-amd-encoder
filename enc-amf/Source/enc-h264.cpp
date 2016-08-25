@@ -250,18 +250,24 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) {
 	list = obs_properties_add_list(props, AMF_VCE_H264_PROFILE, obs_module_text(AMF_VCE_H264_PROFILE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_DEFAULT), -1);
 	switch (VCECapabilities::getInstance()->getEncoderCaps(VCEEncoderType_AVC)->maxProfile) {
-		case VCEProfile_High:
+		case 100:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_HIGH), VCEProfile_High);
-		case VCEProfile_Main:
+		case 77:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_MAIN), VCEProfile_Main);
-		case VCEProfile_Baseline:
+		case 66:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_BASELINE), VCEProfile_Baseline);
 			break;
 	}
 	/// h264 Profile Level
 	list = obs_properties_add_list(props, AMF_VCE_H264_PROFILE_LEVEL, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2("Default")), -1);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(Default)), -1);
 	switch (VCECapabilities::getInstance()->getEncoderCaps(VCEEncoderType_AVC)->maxProfileLevel) {
+		case 62:
+			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(62)), VCEProfileLevel_62);
+		case 61:
+			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(61)), VCEProfileLevel_61);
+		case 60:
+			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(60)), VCEProfileLevel_60);
 		case 52:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(52)), VCEProfileLevel_52);
 		case 51:
@@ -287,7 +293,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) {
 			break;
 	}
 	/// Maximum Long-Term-Reference Frames
-	obs_properties_add_int_slider(props, AMF_VCE_H264_MAX_LTR_FRAMES, obs_module_text(AMF_VCE_H264_MAX_LTR_FRAMES), -1, 255, 1);
+	obs_properties_add_int_slider(props, AMF_VCE_H264_MAX_LTR_FRAMES, obs_module_text(AMF_VCE_H264_MAX_LTR_FRAMES), -1, VCECapabilities::getInstance()->getEncoderCaps(VCEEncoderType_AVC)->maxReferenceFrames, 1);
 
 	//////////////////////////////////////////////////////////////////////////
 	// Encoder Rate Control
