@@ -498,15 +498,15 @@ Plugin::AMD::VCEProfile Plugin::AMD::VCEEncoder::GetProfile() {
 	}
 	switch ((AMF_VIDEO_ENCODER_PROFILE_ENUM)profile) {
 		case AMF_VIDEO_ENCODER_PROFILE_BASELINE:
-			AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieved Property, Value is %s.", customToName[VCEProfile_Baseline]);
+			AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieved Property, Value is %s.", customToName[0]);
 			return VCEProfile_Baseline;
 			break;
 		case AMF_VIDEO_ENCODER_PROFILE_MAIN:
-			AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieved Property, Value is %s.", customToName[VCEProfile_Main]);
+			AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieved Property, Value is %s.", customToName[1]);
 			return VCEProfile_Main;
 			break;
 		case AMF_VIDEO_ENCODER_PROFILE_HIGH:
-			AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieved Property, Value is %s.", customToName[VCEProfile_High]);
+			AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieved Property, Value is %s.", customToName[2]);
 			return VCEProfile_High;
 			break;
 	}
@@ -1260,7 +1260,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {
 					std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
 					m_ThreadedInput.queue.pop();
 				}
-			} else {
+			} else if (res != AMF_INPUT_FULL) {
 				std::vector<char> msgBuf(128);
 				FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
 				AMF_LOG_WARNING("<Plugin::AMD::H264VideoEncoder::InputThreadLogic> SubmitInput failed with error %s.", msgBuf.data());
