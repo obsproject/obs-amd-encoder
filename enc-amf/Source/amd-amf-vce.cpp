@@ -498,15 +498,15 @@ Plugin::AMD::VCEProfile Plugin::AMD::VCEEncoder::GetProfile() {
 	}
 	switch ((AMF_VIDEO_ENCODER_PROFILE_ENUM)profile) {
 		case AMF_VIDEO_ENCODER_PROFILE_BASELINE:
-			AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieved Property, Value is %s.", customToName[0]);
+			AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieved Property, Value is %s.", customToName[profile]);
 			return VCEProfile_Baseline;
 			break;
 		case AMF_VIDEO_ENCODER_PROFILE_MAIN:
-			AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieved Property, Value is %s.", customToName[1]);
+			AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieved Property, Value is %s.", customToName[profile]);
 			return VCEProfile_Main;
 			break;
 		case AMF_VIDEO_ENCODER_PROFILE_HIGH:
-			AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieved Property, Value is %s.", customToName[2]);
+			AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieved Property, Value is %s.", customToName[profile]);
 			return VCEProfile_High;
 			break;
 	}
@@ -521,13 +521,14 @@ void Plugin::AMD::VCEEncoder::SetProfileLevel(VCEProfileLevel level) {
 		30, 31, 32,
 		40, 41, 42,
 		50, 51, 52,
+		60, 61, 62
 	};
 
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, customToAMF[level]);
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, level);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetProfile> Setting to %d failed with error %ls (code %d).", res, customToAMF[level]);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetProfile> Setting to %d failed with error %ls (code %d).", res, level);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetProfile> Set to %d.", customToAMF[level]);
+	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetProfile> Set to %d.", level);
 }
 
 Plugin::AMD::VCEProfileLevel Plugin::AMD::VCEEncoder::GetProfileLevel() {
@@ -551,7 +552,9 @@ Plugin::AMD::VCEProfileLevel Plugin::AMD::VCEEncoder::GetProfileLevel() {
 
 void Plugin::AMD::VCEEncoder::SetMaxLTRFrames(uint32_t maximumLTRFrames) {
 	// Clamp Parameter Value
-	maximumLTRFrames = max(min(maximumLTRFrames, 2), 0);
+	if (maximumLTRFrames != 0) {
+		maximumLTRFrames = max(min(maximumLTRFrames, VCECapabilities::getInstance()->getEncoderCaps(m_EncoderType)->maxReferenceFrames), VCECapabilities::getInstance()->getEncoderCaps(m_EncoderType)->minReferenceFrames);
+	}
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, maximumLTRFrames);
 	if (res != AMF_OK) {

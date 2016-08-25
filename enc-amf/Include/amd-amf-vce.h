@@ -69,9 +69,9 @@ namespace Plugin {
 			VCEUsage_Webcam,			// For SVC
 		};
 		enum VCEProfile {
-			VCEProfile_Baseline = 66,
-			VCEProfile_Main = 77,
-			VCEProfile_High = 100,
+			VCEProfile_Baseline,
+			VCEProfile_Main,
+			VCEProfile_High,
 
 			VCEProfile_Unknown = -1,
 		};
@@ -92,6 +92,9 @@ namespace Plugin {
 			VCEProfileLevel_50 = 50,
 			VCEProfileLevel_51,
 			VCEProfileLevel_52,
+			VCEProfileLevel_60 = 60,
+			VCEProfileLevel_61,
+			VCEProfileLevel_62,
 
 			VCEProfileLevel_Unknown = -1,
 		};
