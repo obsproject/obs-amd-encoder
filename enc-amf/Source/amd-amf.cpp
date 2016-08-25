@@ -156,7 +156,7 @@ Plugin::AMD::AMF::AMF() {
 		throw std::exception("", res);
 	}
 
-	m_AMFTrace->SetGlobalLevel(AMF_TRACE_TEST);
+	m_AMFTrace->SetGlobalLevel(AMF_TRACE_WARNING);
 	m_AMFTrace->RegisterWriter(L"OBSWriter", new CustomWriter(), true);
 
 	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Initialized.");
