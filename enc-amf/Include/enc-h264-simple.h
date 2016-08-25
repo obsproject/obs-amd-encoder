@@ -35,6 +35,7 @@ SOFTWARE.
 
 // Plugin
 #include "plugin.h"
+#include "amd-amf.h"
 #include "amd-amf-vce.h"
 #include "amd-amf-vce-capabilities.h"
 
