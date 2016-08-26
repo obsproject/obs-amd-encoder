@@ -26,3 +26,20 @@ Before installing this Version, please uninstall any previous versions. If you u
 * Fixed: SetRateControlSkipFrameEnabled (Option: Frame Skipping) will no longer override the Rate Control Method.
 * Fixed: Fixes for the threading model, higher framerates/resolutions should now be possible.
 * Fixed: Advanced Interface is available again.
+
+*1.3.0pre5*
+
+* Skipped pre4 due to major issues.
+* Added: Checkbox to enable in depth tracing, to be used when reporting errors and crashes.
+* Changed: Default AMF Trace level is now ERROR instead of TEST.
+* Changed: Profile Level now goes to 6.2 if a GPU ever supports it (matches AMF values).
+* Changed: Simple Interface will always use maximum available LTR frames, disabling B-Picture support.
+* Changed: Simple Interface will enforce HRD Compatibility restrictions.
+* Changed: Simple Interface will calculate the best Buffer Size for your stream based on your settings.
+* Updated: Languages en-US, vi-VI and es-ES have been updated.
+* Fixed: Max LTR Frames slider only goes up to 2.
+* Fixed: Log Spam due to getting stuck on AMF_REPEAT or AMF_INPUT_FULL.
+* Fixed: Crash in SetProfile and GetProfile internal functions.
+* Fixed: Crash when clicking Update Values from AMF.
+* Fixed: Crash when clicking Apply in Advanced Interface.
+* Fixed: Constant QP will now apply the correct values.
