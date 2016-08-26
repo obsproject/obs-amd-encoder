@@ -1,4 +1,4 @@
-PROJECT(enc-amf VERSION 1.3.0.5 LANGUAGES C CXX)
+PROJECT(enc-amf)
 
 OPTION(AMDAMF_Disable "Disable AMD Advanced Media Framework support" OFF)
 SET(AMDAMF_SDKDir "AMD AMF SDK" CACHE PATH "AMD Advanced Media Framework SDK Directory")
