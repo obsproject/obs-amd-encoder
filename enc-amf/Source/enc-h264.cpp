@@ -278,19 +278,29 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) {
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(42)), VCEProfileLevel_42);
 		case 41: // Some APUs and VCE 1.0 Cards.
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(41)), VCEProfileLevel_41);
-		default: // These should in theory be supported by all VCE 1.0 devices and APUs.
+		case 40: // These should in theory be supported by all VCE 1.0 devices and APUs.
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(40)), VCEProfileLevel_40);
+		case 32:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(32)), VCEProfileLevel_32);
+		case 31:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(31)), VCEProfileLevel_31);
+		case 30:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(30)), VCEProfileLevel_30);
+		case 22:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(22)), VCEProfileLevel_22);
+		case 21:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(21)), VCEProfileLevel_21);
+		case 20:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(20)), VCEProfileLevel_20);
+		case 13:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(13)), VCEProfileLevel_13);
+		case 12:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(12)), VCEProfileLevel_12);
+		case 11:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(11)), VCEProfileLevel_11);
+		case 10:
+		default:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(10)), VCEProfileLevel_10);
-			break;
 	}
 	/// Maximum Long-Term-Reference Frames
 	obs_properties_add_int_slider(props, AMF_VCE_H264_MAX_LTR_FRAMES, obs_module_text(AMF_VCE_H264_MAX_LTR_FRAMES), -1, VCECapabilities::getInstance()->getEncoderCaps(VCEEncoderType_AVC)->maxReferenceFrames, 1);
@@ -323,7 +333,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) {
 	/// VBV Buffer
 	obs_properties_add_int_slider(props, AMF_VCE_H264_VBVBUFFER_SIZE, obs_module_text(AMF_VCE_H264_VBVBUFFER_SIZE), -1, VCECapabilities::getInstance()->getEncoderCaps(VCEEncoderType_AVC)->maxBitrate, 1);
 	obs_properties_add_float_slider(props, AMF_VCE_H264_VBVBUFFER_FULLNESS, obs_module_text(AMF_VCE_H264_VBVBUFFER_FULLNESS), 0.0, 1.0, 0.015625);
-	/// Enforce Hyptohecial Reference Decoder Compatability
+	/// Enforce Hypothecial Reference Decoder Compatibility
 	list = obs_properties_add_list(props, AMF_VCE_H264_ENFORCEHRD, obs_module_text(AMF_VCE_H264_ENFORCEHRD), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_ENFORCEHRD_DEFAULT), -1);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_ENFORCEHRD_DISABLED), 0);
@@ -661,8 +671,8 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 	} else {
 		t_amf->GetDebug()->AssertsEnable(false);
 		t_amf->GetDebug()->EnablePerformanceMonitor(false);
-		t_amf->GetTrace()->SetGlobalLevel(AMF_TRACE_ERROR);
-		t_amf->GetTrace()->SetWriterLevel(L"OBSWriter", AMF_TRACE_ERROR);
+		t_amf->GetTrace()->SetGlobalLevel(AMF_TRACE_NOLOG);
+		t_amf->GetTrace()->SetWriterLevel(L"OBSWriter", AMF_TRACE_NOLOG);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
