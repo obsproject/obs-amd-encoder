@@ -31,8 +31,8 @@ SOFTWARE.
 #include <stdexcept>
 
 // Open Broadcaster Software
-#include "OBS-Studio/libobs/obs-module.h"
-#include "OBS-Studio/libobs/obs-encoder.h"
+#include "libobs/obs-module.h"
+#include "libobs/obs-encoder.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Defines

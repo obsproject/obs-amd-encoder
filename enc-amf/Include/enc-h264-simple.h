@@ -30,8 +30,8 @@ SOFTWARE.
 #include <inttypes.h>
 
 // OBS
-#include "OBS-Studio/libobs/obs-module.h"
-#include "OBS-Studio/libobs/obs-encoder.h"
+#include "libobs/obs-module.h"
+#include "libobs/obs-encoder.h"
 
 // Plugin
 #include "plugin.h"
