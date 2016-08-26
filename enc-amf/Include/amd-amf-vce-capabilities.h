@@ -82,8 +82,7 @@ namespace Plugin {
 					std::vector<std::pair<amf::AMF_MEMORY_TYPE, bool>> memoryTypes;
 				} input, output;
 			} m_AVCCaps, m_SVCCaps;
-
-
+			
 			VCECapabilities();
 			~VCECapabilities();
 
