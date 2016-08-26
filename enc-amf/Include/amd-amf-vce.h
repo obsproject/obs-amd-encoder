@@ -69,9 +69,9 @@ namespace Plugin {
 			VCEUsage_Webcam,			// For SVC
 		};
 		enum VCEProfile {
-			VCEProfile_Baseline,
-			VCEProfile_Main,
-			VCEProfile_High,
+			VCEProfile_Baseline	= 66,
+			VCEProfile_Main		= 77,
+			VCEProfile_High		= 100,
 
 			VCEProfile_Unknown = -1,
 		};
@@ -314,6 +314,46 @@ namespace Plugin {
 			 **/
 			void SetCurrentTemporalQualityLayer(uint32_t layer);
 			uint32_t GetCurrentTemporalQualityLayer();
+
+			/// Hidden Parameters
+			void SetTier(uint32_t tier);
+			uint32_t GetTier();
+			void SetMinimumIFrameQP(uint8_t qp);
+			uint8_t GetMinimumIFrameQP();
+			void SetMaximumIFrameQP(uint8_t qp);
+			uint8_t GetMaximumIFrameQP();
+			void SetMinimumPFrameQP(uint8_t qp);
+			uint8_t GetMinimumPFrameQP();
+			void SetMaximumPFrameQP(uint8_t qp);
+			uint8_t GetMaximumPFrameQP();
+			void SetQPCBOffset(uint32_t offset);
+			uint32_t GetQPCBOffset();
+			void SetQPCROffset(uint32_t offset);
+			uint32_t GetQPCROffset();
+			void SetGOPType(uint32_t gopType); // GOP_ALIGNED, IDR_ALIGNED?
+			uint32_t GetGOPType();
+			void SetGOPPerIDR(bool gopPerIDR);
+			bool GetGOPPerIDR();
+			void SetGOPSize(uint32_t size);
+			uint32_t GetGOPSize();
+			void SetMinimumGOPSize(uint32_t size);
+			uint32_t GetMinimumGOPSize();
+			void SetMaximumGOPSize(uint32_t size);
+			uint32_t GetMaximumGOPSize();
+			void SetAspectRatio(uint32_t x, uint32_t y);
+			std::pair<uint32_t, uint32_t> GetAspectRatio();
+			void SetNominalRange(uint32_t range);
+			uint32_t GetNominalRange();
+			void SetIntraRefreshMode(uint32_t mode);
+			uint32_t GetIntraRefreshMode();
+			void SetGOPAlignmentEnabled(bool enabled);
+			bool IsGOPAlignmentEnabled();
+			void SetSliceControlMode(uint32_t mode);
+			uint32_t GetSliceControlMode();
+			void SetSliceControlSize(uint32_t size);
+			uint32_t GetSliceControlSize();
+			void SetCABACEnabled(bool enabled);
+			bool IsCABACEnabled();
 			#pragma endregion AMF Properties
 
 			// Threading
