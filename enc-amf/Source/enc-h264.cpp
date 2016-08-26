@@ -303,7 +303,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) {
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(10)), VCEProfileLevel_10);
 	}
 	/// Maximum Long-Term-Reference Frames
-	obs_properties_add_int_slider(props, AMF_VCE_H264_MAX_LTR_FRAMES, obs_module_text(AMF_VCE_H264_MAX_LTR_FRAMES), -1, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxReferenceFrames, 1);
+	obs_properties_add_int_slider(props, AMF_VCE_H264_MAX_LTR_FRAMES, obs_module_text(AMF_VCE_H264_MAX_LTR_FRAMES), -1, 2, 1);
 
 	//////////////////////////////////////////////////////////////////////////
 	// Encoder Rate Control
