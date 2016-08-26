@@ -176,19 +176,29 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void* d
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(42)), VCEProfileLevel_42);
 		case 41: // Some APUs and VCE 1.0 Cards.
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(41)), VCEProfileLevel_41);
-		default: // These should in theory be supported by all VCE 1.0 devices and APUs.
+		case 40: // These should in theory be supported by all VCE 1.0 devices and APUs.
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(40)), VCEProfileLevel_40);
+		case 32:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(32)), VCEProfileLevel_32);
+		case 31:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(31)), VCEProfileLevel_31);
+		case 30:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(30)), VCEProfileLevel_30);
+		case 22:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(22)), VCEProfileLevel_22);
+		case 21:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(21)), VCEProfileLevel_21);
+		case 20:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(20)), VCEProfileLevel_20);
+		case 13:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(13)), VCEProfileLevel_13);
+		case 12:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(12)), VCEProfileLevel_12);
+		case 11:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(11)), VCEProfileLevel_11);
+		case 10:
+		default:
 			obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_PROFILE_LEVEL2(10)), VCEProfileLevel_10);
-			break;
 	}
 
 	/// Rate Control
@@ -351,8 +361,8 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	} else {
 		t_amf->GetDebug()->AssertsEnable(false);
 		t_amf->GetDebug()->EnablePerformanceMonitor(false);
-		t_amf->GetTrace()->SetGlobalLevel(AMF_TRACE_ERROR);
-		t_amf->GetTrace()->SetWriterLevel(L"OBSWriter", AMF_TRACE_ERROR);
+		t_amf->GetTrace()->SetGlobalLevel(AMF_TRACE_NOLOG);
+		t_amf->GetTrace()->SetWriterLevel(L"OBSWriter", AMF_TRACE_NOLOG);
 	}
 
 	// Encoder Static Parameters
@@ -374,6 +384,7 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 
 	/// Encoder Static Parameters
 	m_VideoEncoder->SetUsage(VCEUsage_Transcoding);
+	m_VideoEncoder->SetQualityPreset((VCEQualityPreset)obs_data_get_int(settings, AMF_VCE_H264_QUALITY_PRESET)); // Temporarily moved up here from down there.
 	m_VideoEncoder->SetProfile((VCEProfile)obs_data_get_int(settings, AMF_VCE_H264_PROFILE));
 	m_VideoEncoder->SetProfileLevel((VCEProfileLevel)obs_data_get_int(settings, AMF_VCE_H264_PROFILE_LEVEL));
 
@@ -410,7 +421,7 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 
 	/// Encoder Miscellaneous Parameters
 	//m_VideoEncoder->SetScanType(H264ScanType_Progressive);
-	m_VideoEncoder->SetQualityPreset((VCEQualityPreset)obs_data_get_int(settings, AMF_VCE_H264_QUALITY_PRESET));
+	//m_VideoEncoder->SetQualityPreset((VCEQualityPreset)obs_data_get_int(settings, AMF_VCE_H264_QUALITY_PRESET)); // Temporarily moved from down here to up there.
 
 	/// Encoder Motion Estimation Parameters
 	m_VideoEncoder->SetHalfPixelMotionEstimationEnabled(true);
