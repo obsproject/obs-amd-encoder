@@ -708,7 +708,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetPeakBitrate() {
 	return bitrate;
 }
 
-void Plugin::AMD::VCEEncoder::SetRateControlMethod(H264RateControlMethod method) {
+void Plugin::AMD::VCEEncoder::SetRateControlMethod(VCERateControlMethod method) {
 	static AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM CustomToAMF[] = {
 		AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP,
 		AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR,
@@ -729,12 +729,12 @@ void Plugin::AMD::VCEEncoder::SetRateControlMethod(H264RateControlMethod method)
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetRateControlMethod> Set to %s.", CustomToName[method]);
 }
 
-Plugin::AMD::H264RateControlMethod Plugin::AMD::VCEEncoder::GetRateControlMethod() {
-	static H264RateControlMethod AMFToCustom[] = {
-		VCERateControlMethod_CQP,
-		VCERateControlMethod_CBR,
-		VCERateControlMethod_VBR,
-		VCERateControlMethod_VBR_LAT,
+Plugin::AMD::VCERateControlMethod Plugin::AMD::VCEEncoder::GetRateControlMethod() {
+	static VCERateControlMethod AMFToCustom[] = {
+		VCERateControlMethod_ConstrainedQP,
+		VCERateControlMethod_ConstantBitrate,
+		VCERateControlMethod_VariableBitrate_PeakConstrained,
+		VCERateControlMethod_VariableBitrate_LatencyConstrained,
 	};
 	static char* CustomToName[] = {
 		"Constant Quantization Parameter",

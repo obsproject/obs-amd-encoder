@@ -311,10 +311,10 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) {
 	/// Method
 	list = obs_properties_add_list(props, AMF_VCE_H264_RATECONTROL_METHOD, obs_module_text(AMF_VCE_H264_RATECONTROL_METHOD), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_METHOD_DEFAULT), -1);
-	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_METHOD_CQP), VCERateControlMethod_CQP);
-	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_METHOD_CBR), VCERateControlMethod_CBR);
-	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_METHOD_VBR_PEAK_CONSTRAINED), VCERateControlMethod_VBR);
-	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_METHOD_VBR_LATENCY_CONSTRAINED), VCERateControlMethod_VBR_LAT);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_METHOD_CQP), VCERateControlMethod_ConstrainedQP);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_METHOD_CBR), VCERateControlMethod_ConstantBitrate);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_METHOD_VBR_PEAK_CONSTRAINED), VCERateControlMethod_VariableBitrate_PeakConstrained);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_METHOD_VBR_LATENCY_CONSTRAINED), VCERateControlMethod_VariableBitrate_LatencyConstrained);
 	/// Skip Frames if necessary
 	list = obs_properties_add_list(props, AMF_VCE_H264_RATECONTROL_FRAME_SKIPPING, obs_module_text(AMF_VCE_H264_RATECONTROL_FRAME_SKIPPING), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_FRAME_SKIPPING_DEFAULT), -1);
@@ -891,7 +891,7 @@ bool Plugin::Interface::H264Interface::update_properties(obs_data_t* settings) {
 	try {
 		value = obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL_METHOD);
 		if (value != -1)
-			m_VideoEncoder->SetRateControlMethod((H264RateControlMethod)value);
+			m_VideoEncoder->SetRateControlMethod((VCERateControlMethod)value);
 	} catch (...) {}
 	/// Frame Skipping
 	try {
