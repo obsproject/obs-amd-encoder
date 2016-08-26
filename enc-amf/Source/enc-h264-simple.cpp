@@ -203,7 +203,7 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void* d
 
 	/// Rate Control
 	list = obs_properties_add_list(props, AMF_VCE_H264_RATECONTROL, obs_module_text(AMF_VCE_H264_RATECONTROL), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_CQP), Plugin::AMD::VCERateControlMethod::VCERateControlMethod_ConstrainedQP);
+	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_CQP), Plugin::AMD::VCERateControlMethod::VCERateControlMethod_ConstantQP);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_CBR), Plugin::AMD::VCERateControlMethod::VCERateControlMethod_ConstantBitrate);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_VBR_PEAK_CONSTRAINED), Plugin::AMD::VCERateControlMethod::VCERateControlMethod_VariableBitrate_PeakConstrained);
 	obs_property_list_add_int(list, obs_module_text(AMF_VCE_H264_RATECONTROL_VBR_LATENCY_CONSTRAINED), Plugin::AMD::VCERateControlMethod::VCERateControlMethod_VariableBitrate_LatencyConstrained);
@@ -285,7 +285,7 @@ bool Plugin::Interface::H264SimpleInterface::ratecontrolmethod_modified(obs_prop
 	obs_property_set_visible(obs_properties_get(props, AMF_VCE_H264_QP_BFRAME), false);
 
 	switch (obs_data_get_int(data, AMF_VCE_H264_RATECONTROL)) {
-		case Plugin::AMD::VCERateControlMethod::VCERateControlMethod_ConstrainedQP:
+		case Plugin::AMD::VCERateControlMethod::VCERateControlMethod_ConstantQP:
 			obs_property_set_visible(obs_properties_get(props, AMF_VCE_H264_QP_IFRAME), true);
 			obs_property_set_visible(obs_properties_get(props, AMF_VCE_H264_QP_PFRAME), true);
 			obs_property_set_visible(obs_properties_get(props, AMF_VCE_H264_QP_BFRAME), true);
@@ -403,32 +403,67 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	if (obs_data_get_bool(settings, AMF_VCE_H264_USE_CUSTOM_BUFFER_SIZE)) {
 		m_VideoEncoder->SetVBVBufferSize((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_CUSTOM_BUFFER_SIZE) * 1000);
 	} else {
-		if (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL) != VCERateControlMethod_ConstrainedQP) {
-			uint32_t bitrate = max(obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET), obs_data_get_int(settings, AMF_VCE_H264_BITRATE_PEAK));
+		if (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL) != VCERateControlMethod_ConstantQP) {
+			uint32_t bitrate = (uint32_t)max(obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET), obs_data_get_int(settings, AMF_VCE_H264_BITRATE_PEAK));
 			m_VideoEncoder->SetVBVBufferSize(bitrate * 1000);
 		} else {
+			// Values at 1920x1080@60p
 			//	I	P	B	Min	Max	Bitrate
-			//	22	22	22	18	51	~50000kbit
-			//	33	33	33	18	51	~43000kbit
-			// QP(IPB) 22 = ~50mbit
-			// QP(IPB) 33 = ~43mbit
-			// QP(IPB,Min) 33 = ~7.1kbit
-			// QP(IPB,Min) 44 = ~3.3kbit
-			// 
-			// QP(IPB,Min) 51 = 
+			//	 0	 0	 0	 0	 0	~150000kbit
+			//	 1	 1	 1	 1	 1	~138000kbit
+			//	11	11	11	11	11	~ 58800kbit
+			//	21	21	21	21	21	~ 19500kbit
+			//	31	31	31	31	31	~  3500kbit 
+			//	41	41	41	41	41	~   320kbit
+			//	51	51	51	51	51	~    90kbit
+			//	22	22	22	 1	51	~142000kbit
+			//	22	22	22	11	51	~ 58500kbit
+			//	22	22	22	21	51	~ 21000kbit
+			//	22	22	22	31	51	~  3800kbit
+			//	22	22	22	41	51	~   300kbit
+			//	22	22	22	51	51	~   100kbit
+			//	SHAPE: PARABOLA! (51-QP)*(51-QP)*bitrate = What we need.
+			double_t bitrate = (width * height);
+			switch (voi->format) {
+				case VIDEO_FORMAT_NV12: // Y=W*H, UV=W*H/2. Total = 1.5
+					bitrate *= 1.5;
+					break;
+				case VIDEO_FORMAT_I420: // Y=W*H, U=W*H/2, V=W*H/2. Total = 2
+					bitrate *= 2;
+					break;
+				case VIDEO_FORMAT_RGBA: // R=W*H, G=W*H, B=W*H. Total = 3
+					bitrate *= 3;
+					break;
+			}
+			bitrate *= ((double_t)fpsNum / (double_t)fpsDen);
+			double_t qpMult = (double_t)min(
+				min(
+					obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM),
+					obs_data_get_int(settings, AMF_VCE_H264_QP_MAXIMUM)
+				), min(
+					min(
+						obs_data_get_int(settings, AMF_VCE_H264_QP_IFRAME),
+						obs_data_get_int(settings, AMF_VCE_H264_QP_PFRAME)
+					), obs_data_get_int(settings, AMF_VCE_H264_QP_BFRAME)
+				)
+			);
+			qpMult = (51 - qpMult);
+			qpMult = max(qpMult * qpMult, 0.001); // Can't allow 0.
+			bitrate *= qpMult;
+			m_VideoEncoder->SetVBVBufferSize((uint32_t)bitrate);
 		}
 	}
 	m_VideoEncoder->SetInitialVBVBufferFullness(1.0);
 	m_VideoEncoder->SetMinimumQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
 	m_VideoEncoder->SetMaximumQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MAXIMUM));
-	if (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL) != VCERateControlMethod_ConstrainedQP) {
+	if (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL) != VCERateControlMethod_ConstantQP) {
 		m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_TARGET) * 1000);
 		m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_BITRATE_PEAK) * 1000);
 	}
-	if (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL) == VCERateControlMethod_ConstrainedQP) {
-		m_VideoEncoder->SetIFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-		m_VideoEncoder->SetPFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
-		m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_MINIMUM));
+	if (obs_data_get_int(settings, AMF_VCE_H264_RATECONTROL) == VCERateControlMethod_ConstantQP) {
+		m_VideoEncoder->SetIFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_IFRAME));
+		m_VideoEncoder->SetPFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_PFRAME));
+		m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(settings, AMF_VCE_H264_QP_BFRAME));
 	}
 	//m_VideoEncoder->SetEnforceHRDRestrictionsEnabled(false);
 	m_VideoEncoder->SetFillerDataEnabled(true);

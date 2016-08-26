@@ -99,11 +99,10 @@ namespace Plugin {
 			VCEProfileLevel_Unknown = -1,
 		};
 		enum VCERateControlMethod {
-			VCERateControlMethod_ConstrainedQP,
+			VCERateControlMethod_ConstantQP,
 			VCERateControlMethod_ConstantBitrate,
 			VCERateControlMethod_VariableBitrate_PeakConstrained,
 			VCERateControlMethod_VariableBitrate_LatencyConstrained,
-			VCERateControlMethod_ConstantQP, // Not actually supported by the SDK yet?
 		};
 		enum VCEBPicturesPattern {
 			VCEBPicturesPattern_None,

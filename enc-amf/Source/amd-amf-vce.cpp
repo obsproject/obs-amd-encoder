@@ -731,7 +731,7 @@ void Plugin::AMD::VCEEncoder::SetRateControlMethod(VCERateControlMethod method) 
 
 Plugin::AMD::VCERateControlMethod Plugin::AMD::VCEEncoder::GetRateControlMethod() {
 	static VCERateControlMethod AMFToCustom[] = {
-		VCERateControlMethod_ConstrainedQP,
+		VCERateControlMethod_ConstantQP,
 		VCERateControlMethod_ConstantBitrate,
 		VCERateControlMethod_VariableBitrate_PeakConstrained,
 		VCERateControlMethod_VariableBitrate_LatencyConstrained,
