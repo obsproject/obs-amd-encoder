@@ -156,6 +156,8 @@ namespace Plugin {
 			bool GetExtraData(uint8_t**& data, size_t*& size);
 			void GetVideoInfo(struct video_scale_info*& vsi);
 
+			void LogProperties();
+
 			#pragma region AMF Properties
 			public:
 			/// Internal
