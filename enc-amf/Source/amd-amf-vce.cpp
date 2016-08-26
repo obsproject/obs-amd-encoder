@@ -471,47 +471,22 @@ void Plugin::AMD::VCEEncoder::SetProfile(VCEProfile profile) {
 		AMF_VIDEO_ENCODER_PROFILE_MAIN,
 		AMF_VIDEO_ENCODER_PROFILE_HIGH,
 	};
-	static char* customToName[] = {
-		"Baseline",
-		"Main",
-		"High",
-	};
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, customToAMF[profile]);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetProfile> Setting to %s failed with error %ls (code %d).", res, customToName[profile]);
+		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetProfile> Setting to %s failed with error %ls (code %d).", res, (profile == 100 ? "High" : (profile == 77 ? "Main" : "Baseline")));
 	}
-	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetProfile> Set to %s.", customToName[profile]);
+	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::SetProfile> Set to %s.", (profile == 100 ? "High" : (profile == 77 ? "Main" : "Baseline")));
 }
 
 Plugin::AMD::VCEProfile Plugin::AMD::VCEEncoder::GetProfile() {
-	static char* customToName[] = {
-		"Baseline",
-		"Main",
-		"High",
-	};
-
 	uint32_t profile;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PROFILE, &profile);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieving Property failed with error %ls (code %d).", res);
 	}
-	switch ((AMF_VIDEO_ENCODER_PROFILE_ENUM)profile) {
-		case AMF_VIDEO_ENCODER_PROFILE_BASELINE:
-			AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieved Property, Value is %s.", customToName[profile]);
-			return VCEProfile_Baseline;
-			break;
-		case AMF_VIDEO_ENCODER_PROFILE_MAIN:
-			AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieved Property, Value is %s.", customToName[profile]);
-			return VCEProfile_Main;
-			break;
-		case AMF_VIDEO_ENCODER_PROFILE_HIGH:
-			AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieved Property, Value is %s.", customToName[profile]);
-			return VCEProfile_High;
-			break;
-	}
-
-	return VCEProfile_Unknown;
+	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetProfile> Retrieved Property, Value is %s.", (profile == 100 ? "High" : (profile == 77 ? "Main" : "Baseline")));
+	return (VCEProfile)profile;
 }
 
 void Plugin::AMD::VCEEncoder::SetProfileLevel(VCEProfileLevel level) {
