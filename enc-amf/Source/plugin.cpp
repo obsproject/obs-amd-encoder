@@ -63,7 +63,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 		auto instance = Plugin::AMD::AMF::GetInstance();
 
 		// Report Capabilities
-		Plugin::AMD::VCECapabilities::reportCapabilities();
+		Plugin::AMD::VCECapabilities::ReportCapabilities();
 
 		// Register Encoders
 		Plugin::Interface::H264SimpleInterface::encoder_register();

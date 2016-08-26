@@ -36,14 +36,14 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 Plugin::AMD::VCECapabilities* Plugin::AMD::VCECapabilities::instance;
 
-Plugin::AMD::VCECapabilities* Plugin::AMD::VCECapabilities::getInstance() {
+Plugin::AMD::VCECapabilities* Plugin::AMD::VCECapabilities::GetInstance() {
 	if (!instance)
 		instance = new VCECapabilities();
 
 	return instance;
 }
 
-void Plugin::AMD::VCECapabilities::reportCapabilities() {
+void Plugin::AMD::VCECapabilities::ReportCapabilities() {
 	static std::vector<char> msgBuf(8192);
 
 	//////////////////////////////////////////////////////////////////////////
@@ -52,7 +52,7 @@ void Plugin::AMD::VCECapabilities::reportCapabilities() {
 	#pragma region Capability Reporting
 
 	AMF_LOG_INFO("Gathering Capability Information...");
-	VCECapabilities* caps = VCECapabilities::getInstance();
+	VCECapabilities* caps = VCECapabilities::GetInstance();
 
 	AMF_LOG_INFO(" %4s | %8s | %11s | %8s | %11s | %9s | %7s | %11s | %7s | %3s | %10s ",
 		"Type",
@@ -159,14 +159,14 @@ void Plugin::AMD::VCECapabilities::reportCapabilities() {
 }
 
 Plugin::AMD::VCECapabilities::VCECapabilities() {
-	refreshCapabilities();
+	RefreshCapabilities();
 }
 
 Plugin::AMD::VCECapabilities::~VCECapabilities() {
 
 }
 
-bool Plugin::AMD::VCECapabilities::refreshCapabilities() {
+bool Plugin::AMD::VCECapabilities::RefreshCapabilities() {
 	AMF_RESULT res;
 
 	std::shared_ptr<AMD::AMF> l_AMF = AMD::AMF::GetInstance();
@@ -254,12 +254,12 @@ bool Plugin::AMD::VCECapabilities::refreshCapabilities() {
 	return true;
 }
 
-Plugin::AMD::VCECapabilities::EncoderCaps* Plugin::AMD::VCECapabilities::getEncoderCaps(VCEEncoderType type) {
+Plugin::AMD::VCECapabilities::EncoderCaps* Plugin::AMD::VCECapabilities::GetEncoderCaps(VCEEncoderType type) {
 	EncoderCaps* caps[2] = { &m_AVCCaps, &m_SVCCaps };
 	return caps[type];
 }
 
-Plugin::AMD::VCECapabilities::EncoderCaps::IOCaps* Plugin::AMD::VCECapabilities::getIOCaps(VCEEncoderType type, bool output) {
+Plugin::AMD::VCECapabilities::EncoderCaps::IOCaps* Plugin::AMD::VCECapabilities::GetIOCaps(VCEEncoderType type, bool output) {
 	EncoderCaps* caps[2] = { &m_AVCCaps, &m_SVCCaps };
 	if (output)
 		return &caps[type]->output;

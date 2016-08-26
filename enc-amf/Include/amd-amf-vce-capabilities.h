@@ -51,8 +51,8 @@ namespace Plugin {
 			static VCECapabilities* instance;
 
 			public:
-			static VCECapabilities* getInstance();
-			static void reportCapabilities();
+			static VCECapabilities* GetInstance();
+			static void ReportCapabilities();
 
 			//////////////////////////////////////////////////////////////////////////
 			// Class
@@ -87,9 +87,9 @@ namespace Plugin {
 			VCECapabilities();
 			~VCECapabilities();
 
-			bool refreshCapabilities();
-			EncoderCaps* getEncoderCaps(VCEEncoderType);
-			EncoderCaps::IOCaps* getIOCaps(VCEEncoderType, bool output);
+			bool RefreshCapabilities();
+			EncoderCaps* GetEncoderCaps(VCEEncoderType);
+			EncoderCaps::IOCaps* GetIOCaps(VCEEncoderType, bool output);
 		};
 	}
 }
