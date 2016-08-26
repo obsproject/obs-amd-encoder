@@ -98,17 +98,12 @@ namespace Plugin {
 
 			VCEProfileLevel_Unknown = -1,
 		};
-		enum H264RateControlMethod {
-			VCERateControlMethod_CQP,
-			VCERateControlMethod_CBR,
-			VCERateControlMethod_VBR,
-			VCERateControlMethod_VBR_LAT,
-
-			VCERateControlMethod_ConstantQP = VCERateControlMethod_CQP,
-			VCERateControlMethod_ConstantQuantizationParameter = VCERateControlMethod_CQP,
-			VCERateControlMethod_ConstantBitrate = VCERateControlMethod_CBR,
-			VCERateControlMethod_VariableBitrate_PeakConstrained = VCERateControlMethod_VBR,
-			VCERateControlMethod_VariableBitrate_LatencyConstrained = VCERateControlMethod_VBR_LAT,
+		enum VCERateControlMethod {
+			VCERateControlMethod_ConstrainedQP,
+			VCERateControlMethod_ConstantBitrate,
+			VCERateControlMethod_VariableBitrate_PeakConstrained,
+			VCERateControlMethod_VariableBitrate_LatencyConstrained,
+			VCERateControlMethod_ConstantQP, // Not actually supported by the SDK yet?
 		};
 		enum VCEBPicturesPattern {
 			VCEBPicturesPattern_None,
@@ -199,8 +194,8 @@ namespace Plugin {
 			 *	- When SVC encoding is enabled, all Rate-control parameters (with some restrictions) can be configured differently for a particular SVC-layer. An SVC-layer is denoted by an index pair [SVC-Temporal Layer index][SVC-Quality Layer index]. E.g. The bitrate may be configured differently for SVC-layers [0][0] and [1][0].
 			 *	- We restrict all SVC layers to have the same Rate Control method. Some RC parameters are not enabled with SVC encoding (e.g. all parameters related to B-pictures).
 			 **/
-			void SetRateControlMethod(H264RateControlMethod method);
-			H264RateControlMethod GetRateControlMethod();
+			void SetRateControlMethod(VCERateControlMethod method);
+			VCERateControlMethod GetRateControlMethod();
 			/*	Enables skip frame for rate control */
 			void SetRateControlSkipFrameEnabled(bool enabled);
 			bool IsRateControlSkipFrameEnabled();
