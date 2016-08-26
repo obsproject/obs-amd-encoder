@@ -490,15 +490,6 @@ Plugin::AMD::VCEProfile Plugin::AMD::VCEEncoder::GetProfile() {
 }
 
 void Plugin::AMD::VCEEncoder::SetProfileLevel(VCEProfileLevel level) {
-	static uint32_t customToAMF[] = {
-		10, 11, 12, 13,
-		20, 21, 22,
-		30, 31, 32,
-		40, 41, 42,
-		50, 51, 52,
-		60, 61, 62
-	};
-
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, level);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetProfile> Setting to %d failed with error %ls (code %d).", res, level);
@@ -513,16 +504,7 @@ Plugin::AMD::VCEProfileLevel Plugin::AMD::VCEEncoder::GetProfileLevel() {
 		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::GetProfileLevel> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::H264VideoEncoder::GetProfileLevel> Retrieved Property, Value is %d.", profileLevel);
-	switch (profileLevel) {
-		case 10: case 11: case 12: case 13:
-		case 20: case 21: case 22:
-		case 30: case 31: case 32:
-		case 40: case 41: case 42:
-		case 50: case 51: case 52:
-		case 60: case 61: case 62:
-			return (VCEProfileLevel)(profileLevel);
-	}
-	return VCEProfileLevel_Unknown;
+	return (VCEProfileLevel)(profileLevel);
 }
 
 void Plugin::AMD::VCEEncoder::SetMaxLTRFrames(uint32_t maximumLTRFrames) {
