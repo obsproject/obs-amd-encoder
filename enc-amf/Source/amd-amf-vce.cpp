@@ -625,9 +625,7 @@ Plugin::AMD::VCEProfileLevel Plugin::AMD::VCEEncoder::GetProfileLevel() {
 
 void Plugin::AMD::VCEEncoder::SetMaxLTRFrames(uint32_t maximumLTRFrames) {
 	// Clamp Parameter Value
-	if (maximumLTRFrames != 0) {
-		maximumLTRFrames = max(min(maximumLTRFrames, VCECapabilities::GetInstance()->GetEncoderCaps(m_EncoderType)->maxReferenceFrames), VCECapabilities::GetInstance()->GetEncoderCaps(m_EncoderType)->minReferenceFrames);
-	}
+	maximumLTRFrames = max(min(maximumLTRFrames, 2), 0);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, maximumLTRFrames);
 	if (res != AMF_OK) {
