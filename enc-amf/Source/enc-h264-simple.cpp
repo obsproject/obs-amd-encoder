@@ -361,8 +361,8 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	} else {
 		t_amf->GetDebug()->AssertsEnable(false);
 		t_amf->GetDebug()->EnablePerformanceMonitor(false);
-		t_amf->GetTrace()->SetGlobalLevel(AMF_TRACE_NOLOG);
-		t_amf->GetTrace()->SetWriterLevel(L"OBSWriter", AMF_TRACE_NOLOG);
+		t_amf->GetTrace()->SetGlobalLevel(AMF_TRACE_ERROR);
+		t_amf->GetTrace()->SetWriterLevel(L"OBSWriter", AMF_TRACE_ERROR);
 	}
 
 	// Encoder Static Parameters
