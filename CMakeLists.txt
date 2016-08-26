@@ -1,9 +1,9 @@
 project(enc-amf)
 
-set(AMDAMF_Disable CACHE BOOL "Disable AMD Advanced Media Framework support")
+set(AMDAMF_Enable CACHE BOOL "Enable AMD Advanced Media Framework support")
 set(AMDAMF_SDKDir CACHE "PATH" "AMD Advanced Media Framework SDK Directory")
 
-if(AMDAMF_Disable)
+if(!AMDAMF_Enable)
 	message(STATUS "AMD AMF support disabled")
 	return()
 endif()
