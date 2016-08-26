@@ -1,22 +1,21 @@
-project(enc-amf)
+PROJECT(enc-amf VERSION 1.3.0.5 LANGUAGES C CXX)
 
-set(AMDAMF_Disable CACHE BOOL "Disable AMD Advanced Media Framework support")
+OPTION(AMDAMF_Disable "Disable AMD Advanced Media Framework support" OFF)
+SET(AMDAMF_SDKDir "AMD AMF SDK"CACHE "PATH" "AMD Advanced Media Framework SDK Directory")
 
 if(AMDAMF_Disable)
 	message(STATUS "AMD AMF support disabled")
 	return()
 endif()
 
-set(AMDAMF_SDKDir CACHE "PATH" "AMD Advanced Media Framework SDK Directory")
-
-include_directories(
+INCLUDE_DIRECTORIES(
 	SYSTEM "${CMAKE_SOURCE_DIR}"
 	SYSTEM "${CMAKE_SOURCE_DIR}/plugins/enc-amf/enc-amf/Include"
 	SYSTEM "${CMAKE_SOURCE_DIR}/plugins/enc-amf/enc-amf/Source"
 	SYSTEM "${AMDAMF_SDKDir}/amf/public/include"
 )
 
-set(enc-amf_HEADERS
+SET(enc-amf_HEADERS
 	"enc-amf/Include/amd-amf.h"
 	"enc-amf/Include/amd-amf-vce.h"
 	"enc-amf/Include/amd-amf-vce-capabilities.h"
@@ -25,7 +24,7 @@ set(enc-amf_HEADERS
 	"enc-amf/Include/plugin.h"
 )
 
-set(enc-amf_SOURCES
+SET(enc-amf_SOURCES
 	"enc-amf/Source/amd-amf.cpp"
 	"enc-amf/Source/amd-amf-vce.cpp"
 	"enc-amf/Source/amd-amf-vce-capabilities.cpp"
