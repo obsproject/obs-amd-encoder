@@ -1,13 +1,13 @@
 project(enc-amf)
 
-set(AMDAMF_Enable CACHE BOOL "Enable AMD Advanced Media Framework support")
-set(AMDAMF_SDKDir CACHE "PATH" "AMD Advanced Media Framework SDK Directory")
+set(AMDAMF_Disable CACHE BOOL "Disable AMD Advanced Media Framework support")
 
-if(!AMDAMF_Enable)
+if(AMDAMF_Disable)
 	message(STATUS "AMD AMF support disabled")
 	return()
 endif()
 
+set(AMDAMF_SDKDir CACHE "PATH" "AMD Advanced Media Framework SDK Directory")
 
 include_directories(
 	SYSTEM "${CMAKE_SOURCE_DIR}"
