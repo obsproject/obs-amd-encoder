@@ -405,6 +405,124 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 	//ToDo: Figure out Color Range and Color Profile conversion (AMD worker says there is a default Video Converter attached?)
 }
 
+void Plugin::AMD::VCEEncoder::LogProperties() {
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::LogProperties> Current Properties:");
+	/// Internal
+	try {
+		this->GetInputSurfaceFormat();
+		this->GetOutputSurfaceFormat();
+	} catch (...) {}
+	/// Encoder Static Parameters
+	try {
+		this->GetUsage();
+	} catch (...) {}
+	try {
+		this->GetProfile();
+	} catch (...) {}
+	try {
+		this->GetProfileLevel();
+	} catch (...) {}
+	try {
+		this->GetMaxLTRFrames();
+	} catch (...) {}
+	/// Encoder Resolution Parameters
+	try {
+		this->GetFrameSize();
+	} catch (...) {}
+	/// Encoder Rate Control
+	try {
+		this->GetTargetBitrate();
+	} catch (...) {}
+	try {
+		this->GetPeakBitrate();
+	} catch (...) {}
+	try {
+		this->GetRateControlMethod();
+	} catch (...) {}
+	try {
+		this->IsRateControlSkipFrameEnabled();
+	} catch (...) {}
+	try {
+		this->GetMinimumQP();
+	} catch (...) {}
+	try {
+		this->GetMaximumQP();
+	} catch (...) {}
+	try {
+		this->GetIFrameQP();
+	} catch (...) {}
+	try {
+		this->GetPFrameQP();
+	} catch (...) {}
+	try {
+		this->GetBFrameQP();
+	} catch (...) {}
+	try {
+		this->GetFrameRate();
+	} catch (...) {}
+	try {
+		this->GetVBVBufferSize();
+	} catch (...) {}
+	try {
+		this->GetInitialVBVBufferFullness();
+	} catch (...) {}
+	try {
+		this->IsEnforceHRDRestrictionsEnabled();
+	} catch (...) {}
+	try {
+		this->IsFillerDataEnabled();
+	} catch (...) {}
+	try {
+		this->GetMaximumAccessUnitSize();
+	} catch (...) {}
+	try {
+		this->GetBPictureDeltaQP();
+	} catch (...) {}
+	try {
+		this->GetReferenceBPictureDeltaQP();
+	} catch (...) {}
+	/// Encoder Picture Control Parameters
+	try {
+		this->GetHeaderInsertionSpacing();
+	} catch (...) {}
+	try {
+		this->GetIDRPeriod();
+	} catch (...) {}
+	try {
+		this->IsDeBlockingFilterEnabled();
+	} catch (...) {}
+	try {
+		this->GetIntraRefreshMBsNumberPerSlot();
+	} catch (...) {}
+	try {
+		this->GetSlicesPerFrame();
+	} catch (...) {}
+	try {
+		this->GetBPicturesPattern();
+	} catch (...) {}
+	try {
+		this->IsBReferenceEnabled();
+	} catch (...) {}
+	/// Encoder Miscellaneos Parameters
+	try {
+		this->GetScanType();
+	} catch (...) {}
+	try {
+		this->GetQualityPreset();
+	} catch (...) {}
+	/// Encoder Motion Estimation Parameters
+	try {
+		this->IsHalfPixelMotionEstimationEnabled();
+	} catch (...) {}
+	try {
+		this->IsQuarterPixelMotionEstimationEnabled();
+	} catch (...) {}
+	/// Encoder SVC Parameters (Only Webcam Usage)
+	try {
+		this->GetNumberOfTemporalEnhancementLayers();
+	} catch (...) {}
+}
+
 void Plugin::AMD::VCEEncoder::SetInputSurfaceFormat(VCESurfaceFormat p_Format) {
 	m_InputSurfaceFormat = p_Format;
 }
@@ -466,13 +584,11 @@ Plugin::AMD::VCEUsage Plugin::AMD::VCEEncoder::GetUsage() {
 }
 
 void Plugin::AMD::VCEEncoder::SetProfile(VCEProfile profile) {
-	static AMF_VIDEO_ENCODER_PROFILE_ENUM customToAMF[] = {
-		AMF_VIDEO_ENCODER_PROFILE_BASELINE,
-		AMF_VIDEO_ENCODER_PROFILE_MAIN,
-		AMF_VIDEO_ENCODER_PROFILE_HIGH,
-	};
+	if ((profile != VCEProfile_High) && (profile != VCEProfile_Main) && (profile != VCEProfile_Baseline)) {
+		profile = VCEProfile_Baseline;
+	}
 
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, customToAMF[profile]);
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, profile);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::H264VideoEncoder::SetProfile> Setting to %s failed with error %ls (code %d).", res, (profile == 100 ? "High" : (profile == 77 ? "Main" : "Baseline")));
 	}
@@ -509,9 +625,7 @@ Plugin::AMD::VCEProfileLevel Plugin::AMD::VCEEncoder::GetProfileLevel() {
 
 void Plugin::AMD::VCEEncoder::SetMaxLTRFrames(uint32_t maximumLTRFrames) {
 	// Clamp Parameter Value
-	if (maximumLTRFrames != 0) {
-		maximumLTRFrames = max(min(maximumLTRFrames, VCECapabilities::getInstance()->getEncoderCaps(m_EncoderType)->maxReferenceFrames), VCECapabilities::getInstance()->getEncoderCaps(m_EncoderType)->minReferenceFrames);
-	}
+	maximumLTRFrames = max(min(maximumLTRFrames, 2), 0);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, maximumLTRFrames);
 	if (res != AMF_OK) {
@@ -554,7 +668,7 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameSize() {
 
 void Plugin::AMD::VCEEncoder::SetTargetBitrate(uint32_t bitrate) {
 	// Clamp Value
-	bitrate = min(max(bitrate, 10000), Plugin::AMD::VCECapabilities::getInstance()->getEncoderCaps(m_EncoderType)->maxBitrate);
+	bitrate = min(max(bitrate, 10000), Plugin::AMD::VCECapabilities::GetInstance()->GetEncoderCaps(m_EncoderType)->maxBitrate);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, bitrate);
 	if (res != AMF_OK) {
@@ -575,7 +689,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetTargetBitrate() {
 
 void Plugin::AMD::VCEEncoder::SetPeakBitrate(uint32_t bitrate) {
 	// Clamp Value
-	bitrate = min(max(bitrate, 10000), Plugin::AMD::VCECapabilities::getInstance()->getEncoderCaps(m_EncoderType)->maxBitrate);
+	bitrate = min(max(bitrate, 10000), Plugin::AMD::VCECapabilities::GetInstance()->GetEncoderCaps(m_EncoderType)->maxBitrate);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, bitrate);
 	if (res != AMF_OK) {
