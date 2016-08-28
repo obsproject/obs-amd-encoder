@@ -135,7 +135,7 @@ namespace Plugin {
 			#pragma region Initializer & Finalizer
 			//////////////////////////////////////////////////////////////////////////
 			public:
-			VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_MemoryType);
+			VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_MemoryType, VCESurfaceFormat p_SurfaceFormat);
 			~VCEEncoder();
 			#pragma endregion Initializer & Finalizer
 
@@ -152,11 +152,6 @@ namespace Plugin {
 
 			#pragma region AMF Properties
 			public:
-			/// Internal
-			void SetInputSurfaceFormat(VCESurfaceFormat p_Format);
-			VCESurfaceFormat GetInputSurfaceFormat();
-			void SetOutputSurfaceFormat(VCESurfaceFormat p_Format);
-			VCESurfaceFormat GetOutputSurfaceFormat();
 			/// Encoder Static Parameters
 			/*	Selects the AMF Usage */
 			void SetUsage(VCEUsage usage);
@@ -374,7 +369,7 @@ namespace Plugin {
 			// Internal Properties
 			VCEEncoderType m_EncoderType;
 			VCEMemoryType m_MemoryType;
-			VCESurfaceFormat m_InputSurfaceFormat, m_OutputSurfaceFormat;
+			VCESurfaceFormat m_SurfaceFormat;
 			std::pair<uint32_t, uint32_t> m_FrameSize, m_FrameRate;
 			double_t m_FrameRateDivisor;
 			uint32_t m_InputQueueLimit;
