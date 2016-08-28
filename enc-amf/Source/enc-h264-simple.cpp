@@ -64,6 +64,8 @@ SOFTWARE.
 #define AMF_VCE_H264_USE_CUSTOM_BUFFER_SIZE								AMF_TEXT_H264("UseCustomBufferSize")
 #define AMF_VCE_H264_CUSTOM_BUFFER_SIZE									AMF_TEXT_H264("CustomBufferSize")
 #define AMF_VCE_H264_FRAME_SKIPPING										AMF_TEXT_H264("FrameSkipping")
+#define AMF_VCE_H264_ADVANCED_SHOW_PARAMETERS							AMF_TEXT_H264("Advanced.ShowParameters")
+#define AMF_VCE_H264_ENABLE_DEBUG_TRACE									AMF_TEXT_H264("EnableDebugTrace")
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -228,8 +230,11 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void* d
 	/// Frame Skipping
 	obs_properties_add_bool(props, AMF_VCE_H264_FRAME_SKIPPING, obs_module_text(AMF_VCE_H264_FRAME_SKIPPING));
 
+	// Advanced Parameters
+	p = obs_properties_add_bool(props, AMF_VCE_H264_ADVANCED_SHOW_PARAMETERS, obs_module_text(AMF_VCE_H264_ADVANCED_SHOW_PARAMETERS));
+	
 	/// Debug Mode
-	obs_properties_add_bool(props, "Debug", "Turn on Debug Tracing");
+	obs_properties_add_bool(props, AMF_VCE_H264_ENABLE_DEBUG_TRACE, obs_module_text(AMF_VCE_H264_ENABLE_DEBUG_TRACE));
 
 	return props;
 }
@@ -343,6 +348,8 @@ bool Plugin::Interface::H264SimpleInterface::get_extra_data(void *data, uint8_t*
 Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings, obs_encoder_t* encoder) {
 	int32_t width, height, fpsNum, fpsDen;
 
+	AMF_LOG_INFO("<AMFEncoder::H264SimpleInterface::H264SimpleInterface> Initializing...");
+
 	// OBS Settings
 	width = obs_encoder_get_width(encoder);
 	height = obs_encoder_get_height(encoder);
@@ -353,7 +360,7 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 
 	// AMF Setup
 	auto t_amf = Plugin::AMD::AMF::GetInstance();
-	if (obs_data_get_bool(settings, "Debug")) {
+	if (obs_data_get_bool(settings, AMF_VCE_H264_ENABLE_DEBUG_TRACE)) {
 		t_amf->GetDebug()->AssertsEnable(true);
 		t_amf->GetDebug()->EnablePerformanceMonitor(true);
 		t_amf->GetTrace()->TraceEnableAsync(true);
@@ -473,6 +480,7 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	m_VideoEncoder->SetIDRPeriod((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_KEYFRAME_INTERVAL) * (uint32_t)((double_t)fpsNum / (double_t)fpsDen));
 	//m_VideoEncoder->SetDeBlockingFilterEnabled(false);
 	m_VideoEncoder->SetBPicturesPattern(VCEBPicturesPattern_None);
+	// ToDo: Add better support for B-Frames by modifying Delta QP for them here. Maybe add a dropdown with an advanced checkbox?
 
 	/// Encoder Miscellaneous Parameters
 	//m_VideoEncoder->SetScanType(H264ScanType_Progressive);
@@ -490,6 +498,8 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	m_VideoEncoder->LogProperties();
 
 	m_VideoEncoder->Start();
+
+	AMF_LOG_INFO("<AMFEncoder::H264SimpleInterface::H264SimpleInterface> Initialized.");
 }
 
 Plugin::Interface::H264SimpleInterface::~H264SimpleInterface() {
