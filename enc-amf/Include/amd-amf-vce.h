@@ -152,6 +152,8 @@ namespace Plugin {
 
 			#pragma region AMF Properties
 			public:
+			void LogProperties();
+
 			/// Encoder Static Parameters
 			/*	Selects the AMF Usage */
 			void SetUsage(VCEUsage usage);
