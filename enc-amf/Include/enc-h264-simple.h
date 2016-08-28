@@ -56,6 +56,7 @@ namespace Plugin {
 			static bool preset_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *settings);
 			static bool ratecontrolmethod_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *settings);
 			static bool custombuffer_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *settings);
+			static bool advanced_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *settings);
 
 			static void* create(obs_data_t* settings, obs_encoder_t* encoder);
 			static void destroy(void* data);

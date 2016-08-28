@@ -55,8 +55,16 @@ SOFTWARE.
 #define AMF_LOG_CONFIG(format, ...)  AMF_LOG(350,         format, ##__VA_ARGS__)
 #define AMF_LOG_DEBUG(format, ...)   AMF_LOG(LOG_DEBUG,   format, ##__VA_ARGS__)
 
-#define AMF_TEXT(x) ("AMF." ## x)
-#define AMF_TEXT_T(x) obs_module_text(AMF_TEXT(x))
+#define TEXT_AMF(x) ("AMF." ## x)
+#define TEXT_AMF_T(x) obs_module_text(TEXT_AMF(x))
+#define TEXT_AMF_H264(x) (TEXT_AMF("H264." ## x))
+#define TEXT_AMF_H264_T(x) obs_module_text(TEXT_AMF_H264(x))
+#define TEXT_AMF_H264ADVANCED(x) (TEXT_AMF("H264Advanced." ## x))
+#define TEXT_AMF_H264ADVANCED_T(x) obs_module_text(TEXT_AMF_H264ADVANCED(x))
+#define TEXT_AMF_H264SIMPLE(x) (TEXT_AMF("H264Simple." ## x))
+#define TEXT_AMF_H264SIMPLE_T(x) obs_module_text(TEXT_AMF_H264SIMPLE(x))
+#define TEXT_AMF_UTIL(x) (TEXT_AMF("Util." ## x))
+#define TEXT_AMF_UTIL_T(x) obs_module_text(TEXT_AMF_UTIL(x))
 
 #define ThrowExceptionWithAMFError(format, res, ...) {\
 	std::vector<char> _throwexceptionwithamferror_buf(8192);\
