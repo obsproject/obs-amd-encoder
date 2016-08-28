@@ -76,5 +76,8 @@
     <None Include="Resources\locale\vi-VN.ini">
       <Filter>Resource Files\locale</Filter>
     </None>
+    <None Include="Resources\locale\de-DE.ini">
+      <Filter>Resource Files\locale</Filter>
+    </None>
   </ItemGroup>
 </Project>
