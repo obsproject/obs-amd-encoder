@@ -189,6 +189,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\locale\da-DK.ini" />
+    <None Include="Resources\locale\de-DE.ini" />
     <None Include="Resources\locale\en-US.ini" />
     <None Include="Resources\locale\es-ES.ini" />
     <None Include="Resources\locale\hu-HU.ini" />
