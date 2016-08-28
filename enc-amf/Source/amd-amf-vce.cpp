@@ -43,80 +43,18 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
-static char* AMF_RESULT_AS_TEXT[] = {
-	"AMF_OK",
-	"AMF_FAIL",
-	// common errors
-	"AMF_UNEXPECTED",
-	"AMF_ACCESS_DENIED",
-	"AMF_INVALID_ARG",
-	"AMF_OUT_OF_RANGE",
-	"AMF_OUT_OF_MEMORY",
-	"AMF_INVALID_POINTER",
-	"AMF_NO_INTERFACE",
-	"AMF_NOT_IMPLEMENTED",
-	"AMF_NOT_SUPPORTED",
-	"AMF_NOT_FOUND",
-	"AMF_ALREADY_INITIALIZED",
-	"AMF_NOT_INITIALIZED",
-	"AMF_INVALID_FORMAT",
-	"AMF_WRONG_STATE",
-	"AMF_FILE_NOT_OPEN",
-	// device common codes
-	"AMF_NO_DEVICE",
-	// device directx
-	"AMF_DIRECTX_FAILED",
-	// device opencl 
-	"AMF_OPENCL_FAILED",
-	// device opengl 
-	"AMF_GLX_FAILED",
-	// device XV 
-	"AMF_XV_FAILED",
-	// device alsa
-	"AMF_ALSA_FAILED",
-	// component common codes
-	//		result codes
-	"AMF_EOF",
-	"AMF_REPEAT",
-	"AMF_INPUT_FULL",
-	"AMF_RESOLUTION_CHANGED",
-	"AMF_RESOLUTION_UPDATED",
-	//		error codes
-	"AMF_INVALID_DATA_TYPE",
-	"AMF_INVALID_RESOLUTION",
-	"AMF_CODEC_NOT_SUPPORTED",
-	"AMF_SURFACE_FORMAT_NOT_SUPPORTED",
-	"AMF_SURFACE_MUST_BE_SHARED",
-	// component video decoder
-	"AMF_DECODER_NOT_PRESENT",
-	"AMF_DECODER_SURFACE_ALLOCATION_FAILED",
-	"AMF_DECODER_NO_FREE_SURFACES",
-	// component video encoder
-	"AMF_ENCODER_NOT_PRESENT",
-	// component video processor
-	// component video conveter
-	// component dem
-	"AMF_DEM_ERROR",
-	"AMF_DEM_PROPERTY_READONLY",
-	"AMF_DEM_REMOTE_DISPLAY_CREATE_FAILED",
-	"AMF_DEM_START_ENCODING_FAILED",
-	"AMF_DEM_QUERY_OUTPUT_FAILED",
-	// component TAN
-	"AMF_TAN_CLIPPING_WAS_REQUIRED",
-	"AMF_TAN_UNSUPPORTED_VERSION",
-	"AMF_NEED_MORE_INPUT",
-};
 
 // Logging and Exception Helpers
 static void FormatTextWithAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res) {
-	sprintf(buffer->data(), format, AMF_RESULT_AS_TEXT[res], res);
+	sprintf(buffer->data(), format, Plugin::AMD::AMF::GetInstance()->GetTrace()->GetResultText(res), res);
 }
 
 template<typename _T>
 static void FormatTextWithAMFError(std::vector<char>* buffer, const char* format, _T other, AMF_RESULT res) {
-	sprintf(buffer->data(), format, other, AMF_RESULT_AS_TEXT[res], res);
+	sprintf(buffer->data(), format, other, Plugin::AMD::AMF::GetInstance()->GetTrace()->GetResultText(res), res);
 }
 
+// Class
 void Plugin::AMD::VCEEncoder::InputThreadMain(Plugin::AMD::VCEEncoder* p_this) {
 	p_this->InputThreadLogic();
 }
@@ -125,15 +63,14 @@ void Plugin::AMD::VCEEncoder::OutputThreadMain(Plugin::AMD::VCEEncoder* p_this) 
 	p_this->OutputThreadLogic();
 }
 
-Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_MemoryType) {
+Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_MemoryType, VCESurfaceFormat p_SurfaceFormat) {
 	AMF_RESULT res;
 
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::VCEEncoder> Initializing...");
 
 	// Solve the optimized away issue.
 	m_IsStarted = false;
-	m_InputSurfaceFormat = VCESurfaceFormat_NV12;
-	m_OutputSurfaceFormat = VCESurfaceFormat_NV12;
+	m_SurfaceFormat = VCESurfaceFormat_NV12;
 	m_FrameSize.first = 64;	m_FrameSize.second = 64;
 	m_FrameRate.first = 30; m_FrameRate.second = 1;
 	m_FrameRateDivisor = (((double_t)m_FrameRate.first) / m_FrameRate.second);
@@ -184,6 +121,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_Memor
 
 	m_EncoderType = p_Type;
 	m_MemoryType = p_MemoryType;
+	m_SurfaceFormat = p_SurfaceFormat;
 
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::VCEEncoder> Initialization complete!");
 }
@@ -208,7 +146,7 @@ Plugin::AMD::VCEEncoder::~VCEEncoder() {
 
 void Plugin::AMD::VCEEncoder::Start() {
 	AMF_RESULT res;
-	switch (m_InputSurfaceFormat) {
+	switch (m_SurfaceFormat) {
 		case VCESurfaceFormat_NV12:
 			res = m_AMFEncoder->Init(amf::AMF_SURFACE_NV12, m_FrameSize.first, m_FrameSize.second);
 			break;
@@ -387,7 +325,7 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 	if (!m_IsStarted)
 		throw std::exception("<Plugin::AMD::VCEEncoder::GetVideoInfo> Called while not encoding.");
 
-	switch (m_InputSurfaceFormat) {
+	switch (m_SurfaceFormat) {
 		case VCESurfaceFormat_NV12:
 			vsi->format = VIDEO_FORMAT_NV12;
 			break;
@@ -407,11 +345,6 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 
 void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::LogProperties> Current Properties:");
-	/// Internal
-	try {
-		this->GetInputSurfaceFormat();
-		this->GetOutputSurfaceFormat();
-	} catch (...) {}
 	/// Encoder Static Parameters
 	try {
 		this->GetUsage();
@@ -521,22 +454,6 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	try {
 		this->GetNumberOfTemporalEnhancementLayers();
 	} catch (...) {}
-}
-
-void Plugin::AMD::VCEEncoder::SetInputSurfaceFormat(VCESurfaceFormat p_Format) {
-	m_InputSurfaceFormat = p_Format;
-}
-
-Plugin::AMD::VCESurfaceFormat Plugin::AMD::VCEEncoder::GetInputSurfaceFormat() {
-	return m_InputSurfaceFormat;
-}
-
-void Plugin::AMD::VCEEncoder::SetOutputSurfaceFormat(VCESurfaceFormat p_Format) {
-	m_OutputSurfaceFormat = p_Format;
-}
-
-Plugin::AMD::VCESurfaceFormat Plugin::AMD::VCEEncoder::GetOutputSurfaceFormat() {
-	return m_OutputSurfaceFormat;
 }
 
 void Plugin::AMD::VCEEncoder::SetUsage(VCEUsage usage) {
@@ -1413,7 +1330,7 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 		size_t planeCount;
 
 		AMF_SYNC_LOCK(res = m_AMFContext->AllocSurface(
-			memoryTypeToAMF[m_MemoryType], surfaceFormatToAMF[m_InputSurfaceFormat],
+			memoryTypeToAMF[m_MemoryType], surfaceFormatToAMF[m_SurfaceFormat],
 			m_FrameSize.first, m_FrameSize.second,
 			&pSurface););
 		if (res != AMF_OK) // Unable to create Surface
