@@ -111,6 +111,7 @@ SOFTWARE.
 #define AMF_VCE_H264_MOTIONESTIMATION_QUARTER							AMF_TEXT_H264("MotionEstimation.Quarter")
 #define AMF_VCE_H264_MOTIONESTIMATION_BOTH								AMF_TEXT_H264("MotionEstimation.Both")
 #define AMF_VCE_H264_NUMBEROFTEMPORALENHANCEMENTLAYERS					AMF_TEXT_H264("NumberOfTemporalEnhancementLayers")
+#define AMF_VCE_H264_ENABLE_DEBUG_TRACE									AMF_TEXT_H264("EnableDebugTrace")
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -403,7 +404,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) {
 	// Debug
 	//////////////////////////////////////////////////////////////////////////
 	/// Debug Mode
-	obs_properties_add_bool(props, "Debug", "Turn on Debug Tracing");
+	obs_properties_add_bool(props, AMF_VCE_H264_ENABLE_DEBUG_TRACE, obs_module_text(AMF_VCE_H264_ENABLE_DEBUG_TRACE));
 
 	return props;
 }
@@ -496,7 +497,7 @@ bool Plugin::Interface::H264Interface::update_from_amf(obs_properties_t *props, 
 				obs_data_set_int(settings, AMF_VCE_H264_PROFILE_LEVEL, vce->GetProfileLevel());
 		} catch (...) {}
 
-				// Other
+		// Other
 		try {
 			if (obs_data_get_int(settings, AMF_VCE_H264_MAX_LTR_FRAMES) == -1)
 				obs_data_set_int(settings, AMF_VCE_H264_MAX_LTR_FRAMES, vce->GetMaxLTRFrames());
@@ -663,7 +664,7 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 
 	// AMF Setup
 	auto t_amf = Plugin::AMD::AMF::GetInstance();
-	if (obs_data_get_bool(settings, "Debug")) {
+	if (obs_data_get_bool(settings, AMF_VCE_H264_ENABLE_DEBUG_TRACE)) {
 		t_amf->GetDebug()->AssertsEnable(true);
 		t_amf->GetDebug()->EnablePerformanceMonitor(true);
 		t_amf->GetTrace()->TraceEnableAsync(true);
