@@ -104,11 +104,11 @@ namespace Plugin {
 			VCERateControlMethod_VariableBitrate_PeakConstrained,
 			VCERateControlMethod_VariableBitrate_LatencyConstrained,
 		};
-		enum VCEBPicturesPattern {
-			VCEBPicturesPattern_None,
-			VCEBPicturesPattern_One,
-			VCEBPicturesPattern_Two,
-			VCEBPicturesPattern_Three,
+		enum VCEBPicturePattern {
+			VCEBPicturePattern_None,
+			VCEBPicturePattern_One,
+			VCEBPicturePattern_Two,
+			VCEBPicturePattern_Three,
 		};
 		enum VCEScanType {
 			VCEScanType_Progressive,
@@ -265,10 +265,10 @@ namespace Plugin {
 			void SetSlicesPerFrame(uint32_t slices);
 			uint32_t GetSlicesPerFrame();
 			/*	Sets the number of consecutive B-pictures in a GOP. BPicturesPattern = 0 indicates that B-pictures are not used */
-			void SetBPicturesPattern(VCEBPicturesPattern pattern);
-			VCEBPicturesPattern GetBPicturesPattern();
+			void SetBPicturePattern(VCEBPicturePattern pattern);
+			VCEBPicturePattern GetBPicturesPattern();
 			/*	Enables or disables using B-pictures as references */
-			void SetBReferenceEnabled(bool enabled);
+			void SetBPictureReferenceEnabled(bool enabled);
 			bool IsBReferenceEnabled();
 			/// Encoder Miscellaneous Parameters
 			/*	Selects progressive or interlaced scan */

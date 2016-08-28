@@ -1059,7 +1059,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetSlicesPerFrame() {
 	return slices;
 }
 
-void Plugin::AMD::VCEEncoder::SetBPicturesPattern(VCEBPicturesPattern pattern) {
+void Plugin::AMD::VCEEncoder::SetBPicturePattern(VCEBPicturePattern pattern) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, (uint32_t)pattern);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetBPicturesPattern> Setting to %d failed with error %ls (code %d).", res, pattern);
@@ -1067,17 +1067,17 @@ void Plugin::AMD::VCEEncoder::SetBPicturesPattern(VCEBPicturesPattern pattern) {
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetBPicturesPattern> Set to %d.", pattern);
 }
 
-Plugin::AMD::VCEBPicturesPattern Plugin::AMD::VCEEncoder::GetBPicturesPattern() {
+Plugin::AMD::VCEBPicturePattern Plugin::AMD::VCEEncoder::GetBPicturesPattern() {
 	uint32_t pattern;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, &pattern);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetBPicturesPattern> Retrieving Property failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetBPicturesPattern> Retrieved Property, Value is %d.", pattern);
-	return (Plugin::AMD::VCEBPicturesPattern)pattern;
+	return (Plugin::AMD::VCEBPicturePattern)pattern;
 }
 
-void Plugin::AMD::VCEEncoder::SetBReferenceEnabled(bool enabled) {
+void Plugin::AMD::VCEEncoder::SetBPictureReferenceEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, enabled);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetBReferenceEnabled> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
