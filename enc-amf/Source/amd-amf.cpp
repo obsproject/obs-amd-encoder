@@ -116,15 +116,15 @@ Plugin::AMD::AMF::AMF() {
 	m_AMFVersion_Compiler = AMF_FULL_VERSION;
 	res = AMFQueryVersion(&m_AMFVersion_Runtime);
 	if (res != AMF_OK) {
-		
+
 		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Querying Version failed with error code %d.", res);
 		throw std::exception("<Plugin::AMD::AMF::AMF> Querying Version failed with error code ", res);
 	}
 	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Runtime is on Version %d.%d.%d.%d",
-		(m_AMFVersion_Runtime >> 48ull) & 0xFFFF,
-		(m_AMFVersion_Runtime >> 32ull) & 0xFFFF,
-		(m_AMFVersion_Runtime >> 16ull) & 0xFFFF,
-		(m_AMFVersion_Runtime & 0xFFFF));
+		(uint16_t)((m_AMFVersion_Runtime >> 48ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Runtime >> 32ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Runtime >> 16ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Runtime & 0xFFFF)));
 
 	// Find Function: Init
 	AMFInit = (AMFInit_Fn)GetProcAddress(m_AMFModule, AMF_INIT_FUNCTION_NAME);
