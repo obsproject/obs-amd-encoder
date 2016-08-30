@@ -32,14 +32,14 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Defines
 //////////////////////////////////////////////////////////////////////////
-//#define AMF_SYNC_LOCK(x) { \
-//		x; \
-//	};
+#ifdef SINGLETHREAD
+#define AMF_SYNC_LOCK(x) x
+#else
 #define AMF_SYNC_LOCK(x) { \
 		std::unique_lock<std::mutex> amflock(m_AMFSyncLock); \
 		x; \
 	};
-
+#endif
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
@@ -73,7 +73,8 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_Memor
 	m_SurfaceFormat = VCESurfaceFormat_NV12;
 	m_FrameSize.first = 64;	m_FrameSize.second = 64;
 	m_FrameRate.first = 30; m_FrameRate.second = 1;
-	m_FrameRateDivisor = (((double_t)m_FrameRate.first) / m_FrameRate.second);
+	m_FrameRateDivisor = ((double_t)m_FrameRate.first / (double_t)m_FrameRate.second);
+	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)(m_FrameRateDivisor * 3);
 
 	// AMF
@@ -803,6 +804,7 @@ void Plugin::AMD::VCEEncoder::SetFrameRate(uint32_t num, uint32_t den) {
 	m_FrameRate.first = num;
 	m_FrameRate.second = den;
 	m_FrameRateDivisor = (double_t)num / (double_t)den;
+	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor * 3);
 }
 
@@ -1263,6 +1265,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {
 void Plugin::AMD::VCEEncoder::OutputThreadLogic() {
 	// Thread Loop that handles Querying
 	uint64_t lastFrameIndex = 0;
+	double_t frameRateDivisor = (m_FrameRateReverseDivisor * 10000000.0);
 
 	std::unique_lock<std::mutex> lock(m_ThreadedOutput.mutex);
 	do {
@@ -1271,6 +1274,9 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {
 		// Skip to check if isStarted is false.
 		if (!m_IsStarted)
 			continue;
+
+		// Update divisor.
+		frameRateDivisor = (m_FrameRateReverseDivisor * 10000000.0);
 
 		AMF_RESULT res = AMF_OK;
 		while (res == AMF_OK) { // Repeat until impossible.
@@ -1287,7 +1293,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {
 				// Create a Packet
 				pkt.data.resize(pBuffer->GetSize());
 				std::memcpy(pkt.data.data(), pBuffer->GetNative(), pkt.data.size());
-				pkt.frame = (uint64_t)(pData->GetPts() * m_FrameRateDivisor / 1e7); // Not sure what way around the accuracy is better.
+				pkt.frame = (uint64_t)((double_t)pData->GetPts() / frameRateDivisor); // Not sure what way around the accuracy is better.
 				AMF_RESULT res2 = AMF_OK;
 				AMF_SYNC_LOCK(res2 = pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &variant););
 				if (res2 == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
@@ -1359,8 +1365,8 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 		}
 		#pragma endregion Host Memory Type
 
-		amf_pts amfPts = (int64_t)ceil((frame->pts / ((double_t)m_FrameRate.first / (double_t)m_FrameRate.second)) * 10000000l);
-			//(1 * 1000 * 1000 * 10)
+		// Convert Frame Index to Nanoseconds.
+		amf_pts amfPts = (int64_t)ceil((double_t)frame->pts * (m_FrameRateReverseDivisor * 10000000.0));
 		AMF_SYNC_LOCK(pSurface->SetPts(amfPts););
 		AMF_SYNC_LOCK(pSurface->SetProperty(L"Frame", frame->pts););
 	}
