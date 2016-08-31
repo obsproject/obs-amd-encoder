@@ -78,11 +78,11 @@ MODULE_EXPORT bool obs_module_load(void) {
 MODULE_EXPORT void obs_module_unload(void) {}
 
 /** Optional: Returns the full name of the module */
-MODULE_EXPORT const char *obs_module_name() {
+MODULE_EXPORT const char* obs_module_name() {
 	return "AMD Media Framework Plugin";
 }
 
 /** Optional: Returns a description of the module */
-MODULE_EXPORT const char *obs_module_description() {
+MODULE_EXPORT const char* obs_module_description() {
 	return "AMD Media Framework Plugin";
 }
