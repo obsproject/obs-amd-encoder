@@ -34,13 +34,19 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
-Plugin::AMD::VCECapabilities* Plugin::AMD::VCECapabilities::instance;
 
-Plugin::AMD::VCECapabilities* Plugin::AMD::VCECapabilities::GetInstance() {
-	if (!instance)
-		instance = new VCECapabilities();
+std::shared_ptr<Plugin::AMD::VCECapabilities> Plugin::AMD::VCECapabilities::GetInstance() {
+	static std::weak_ptr<VCECapabilities> __instance;
+	static std::mutex __mutex;
 
-	return instance;
+	try {
+		const std::lock_guard<std::mutex> lock(__mutex);
+		if (const auto result = __instance.lock())
+			return result;
+		return (__instance = std::make_shared<VCECapabilities>()).lock();
+	} catch (...) {
+		return nullptr;
+	}
 }
 
 void Plugin::AMD::VCECapabilities::ReportCapabilities() {
@@ -52,7 +58,7 @@ void Plugin::AMD::VCECapabilities::ReportCapabilities() {
 	#pragma region Capability Reporting
 
 	AMF_LOG_INFO("Gathering Capability Information...");
-	VCECapabilities* caps = VCECapabilities::GetInstance();
+	auto caps = VCECapabilities::GetInstance();
 
 	AMF_LOG_INFO(" %4s | %8s | %11s | %8s | %11s | %9s | %7s | %11s | %7s | %3s | %10s ",
 		"Type",
