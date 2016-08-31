@@ -33,13 +33,24 @@ Before installing this Version, please uninstall any previous versions. If you u
 * Added: Checkbox to enable in depth tracing, to be used when reporting errors and crashes.
 * Changed: Default AMF Trace level is now ERROR instead of TEST.
 * Changed: Profile Level now goes to 6.2 if a GPU ever supports it (matches AMF values).
-* Changed: Simple Interface will always use maximum available LTR frames, disabling B-Picture support.
-* Changed: Simple Interface will enforce HRD Compatibility restrictions.
 * Changed: Simple Interface will calculate the best Buffer Size for your stream based on your settings.
-* Updated: Languages en-US, vi-VI and es-ES have been updated.
+* Changed: Simple Interface will automatically set B-Pictures Pattern to 0 for best Quality.
+* Updated: Languages en-US, vi-VN and es-ES have been updated.
 * Fixed: Max LTR Frames slider only goes up to 2.
 * Fixed: Log Spam due to getting stuck on AMF_REPEAT or AMF_INPUT_FULL.
 * Fixed: Crash in SetProfile and GetProfile internal functions.
 * Fixed: Crash when clicking Update Values from AMF.
 * Fixed: Crash when clicking Apply in Advanced Interface.
 * Fixed: Constant QP will now apply the correct values.
+
+*1.3.0pre6*
+
+* Added: B-Picture settings for Simple Interface (only shown if supported).
+* Added: De-Blocking Filter setting for Simple Interface.
+* Added: Enforce HRD Compatibility setting for Simple Interface.
+* Changed: Language files have been massively simplified.
+* Changed: Timer Resolution is now half the expected frametime (1000 / framerate / 2) to reduce CPU usage and Power draw.
+* Updated: Languages en-US, vi-VN, ru-RU and es-ES.
+* Updated: Presets in Simpler Interface will now also set up advanced properties (if supported).
+* Fixed: Log messages from encoder will not come from an impossible source/class.
+* Fixed: 32-Bit now shows the correct Version number.
