@@ -81,7 +81,7 @@ SOFTWARE.
 #define AMF_H264SIMPLE_KEYFRAME_INTERVAL		TEXT_AMF_H264SIMPLE("KeyframeInterval")
 #define AMF_H264SIMPLE_USE_CUSTOM_BUFFER_SIZE	TEXT_AMF_H264SIMPLE("UseCustomBufferSize")
 #define AMF_H264SIMPLE_CUSTOM_BUFFER_SIZE		TEXT_AMF_H264SIMPLE("CustomBufferSize")
-#define AMF_H264SIMPLE_ADVANCED_SHOW_PARAMETERS	TEXT_AMF_H264SIMPLE("Advanced.ShowParameters")
+#define AMF_H264SIMPLE_ADVANCED_SHOW_PARAMETERS	TEXT_AMF_H264SIMPLE("ShowAdvancedParameters")
 
 // Utility
 #define AMF_UTIL_DEFAULT						TEXT_AMF_UTIL("Default")
@@ -278,7 +278,7 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void* d
 	obs_properties_add_int_slider(props, AMF_H264_QP_BPICTURE_DELTA, obs_module_text(AMF_H264_QP_BPICTURE_DELTA), -10, 10, 1);
 	obs_properties_add_int_slider(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, obs_module_text(AMF_H264_QP_REFERENCE_BPICTURE_DELTA), -10, 10, 1);
 	/// De-Blocking Filter
-	list = obs_properties_add_list(props, AMF_H264_DEBLOCKINGFILTER, obs_module_text(AMF_H264_BPICTURE_REFERENCE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	list = obs_properties_add_list(props, AMF_H264_DEBLOCKINGFILTER, obs_module_text(AMF_H264_DEBLOCKINGFILTER), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_TOGGLE_DISABLED), 0);
 	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_TOGGLE_ENABLED), 1);
 	/// HRD Restrictions
@@ -307,6 +307,7 @@ bool Plugin::Interface::H264SimpleInterface::preset_modified(obs_properties_t *p
 			obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 0);
 			obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 3 : 0));
 			obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 1 : 0));
+			obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 0);
 			obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 			break;
 		case 1: // Twitch
@@ -323,7 +324,8 @@ bool Plugin::Interface::H264SimpleInterface::preset_modified(obs_properties_t *p
 			obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 1);
 			obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, 0);
 			obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
-			obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 1);
+			obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 0);
+			obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 			break;
 		case 2: // YouTube
 			obs_data_set_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 2);
@@ -339,7 +341,8 @@ bool Plugin::Interface::H264SimpleInterface::preset_modified(obs_properties_t *p
 			obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 1);
 			obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 3 : 0));
 			obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 1 : 0));
-			obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 1);
+			obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 0);
+			obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 			break;
 	}
 	obs_data_set_int(data, AMF_H264SIMPLE_PRESET, -1);
@@ -383,6 +386,8 @@ bool Plugin::Interface::H264SimpleInterface::advanced_modified(obs_properties_t 
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_BPICTURE_REFERENCE), false);
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_BPICTURE_DELTA), false);
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA), false);
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_DEBLOCKINGFILTER), false);
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_ENFORCEHRDCOMPATIBILITY), false);
 
 	if (obs_data_get_bool(settings, AMF_H264SIMPLE_ADVANCED_SHOW_PARAMETERS)) {
 		if (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames) {
@@ -391,6 +396,8 @@ bool Plugin::Interface::H264SimpleInterface::advanced_modified(obs_properties_t 
 			obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_BPICTURE_DELTA), true);
 			obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA), true);
 		}
+		obs_property_set_visible(obs_properties_get(props, AMF_H264_DEBLOCKINGFILTER), true);
+		obs_property_set_visible(obs_properties_get(props, AMF_H264_ENFORCEHRDCOMPATIBILITY), true);
 	}
 
 	return true;
@@ -485,7 +492,7 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 
 	/// Encoder Rate Control
 	m_VideoEncoder->SetRateControlMethod((VCERateControlMethod)obs_data_get_int(settings, AMF_H264_RATECONTROLMETHOD));
-	m_VideoEncoder->SetFillerDataEnabled(obs_data_get_bool(settings, AMF_H264_FILLERDATA));
+	m_VideoEncoder->SetFillerDataEnabled(obs_data_get_int(settings, AMF_H264_FILLERDATA) == 1);
 	m_VideoEncoder->SetRateControlSkipFrameEnabled(obs_data_get_bool(settings, AMF_H264_FRAMESKIPPING));
 	if (obs_data_get_bool(settings, AMF_H264SIMPLE_USE_CUSTOM_BUFFER_SIZE)) {
 		m_VideoEncoder->SetVBVBufferSize((uint32_t)obs_data_get_int(settings, AMF_H264SIMPLE_CUSTOM_BUFFER_SIZE) * 1000);
@@ -529,7 +536,7 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 				)
 			);
 			qpMult = (51 - qpMult);
-			qpMult = max(qpMult * qpMult, 0.001); // Can't allow 0.
+			qpMult = max(qpMult * qpMult, 0.01); // Can't allow 0.
 			bitrate *= qpMult;
 			m_VideoEncoder->SetVBVBufferSize((uint32_t)bitrate);
 		}
@@ -547,7 +554,6 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 		m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_BFRAME));
 	}
 	m_VideoEncoder->SetEnforceHRDRestrictionsEnabled(obs_data_get_int(settings, AMF_H264_ENFORCEHRDCOMPATIBILITY) == 1);
-	m_VideoEncoder->SetFillerDataEnabled(obs_data_get_int(settings, AMF_H264_FILLERDATA) == 1);
 
 	/// Encoder Picture Control Parameters
 	//m_VideoEncoder->SetHeaderInsertionSpacing((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_KEYFRAME_INTERVAL) * (uint32_t)((double_t)fpsNum / (double_t)fpsDen));
