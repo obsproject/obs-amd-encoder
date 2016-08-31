@@ -84,12 +84,6 @@ Plugin::AMD::AMF::AMF() {
 	AMFQueryVersion = nullptr;
 	AMFInit = nullptr;
 
-	// Increase Timer precision.
-	m_TimerPeriod = 0;
-	while (timeBeginPeriod(m_TimerPeriod) == TIMERR_NOCANDO) {
-		++m_TimerPeriod;
-	}
-
 	// Load Dynamic Library
 	m_AMFModule = LoadLibraryW(AMF_DLL_NAME);
 	if (!m_AMFModule) {
@@ -168,9 +162,6 @@ Plugin::AMD::AMF::~AMF() {
 	// Free Library again
 	if (m_AMFModule)
 		FreeLibrary(m_AMFModule);
-
-	// Restore Timer precision.
-	timeEndPeriod(m_TimerPeriod);
 
 	// Null Values
 	m_TimerPeriod = 0;
