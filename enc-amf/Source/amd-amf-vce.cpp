@@ -32,7 +32,7 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Defines
 //////////////////////////////////////////////////////////////////////////
-#ifdef SINGLETHREAD
+#ifndef SINGLETHREAD
 #define AMF_SYNC_LOCK(x) x
 #else
 #define AMF_SYNC_LOCK(x) { \
@@ -40,6 +40,7 @@ SOFTWARE.
 		x; \
 	};
 #endif
+
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
@@ -134,18 +135,23 @@ Plugin::AMD::VCEEncoder::~VCEEncoder() {
 	// AMF
 	if (m_AMFEncoder) {
 		m_AMFEncoder->Terminate();
-		/*m_AMFEncoder->Release();
-		m_AMFEncoder = nullptr;*/
+		m_AMFEncoder = nullptr;
 	}
 	if (m_AMFContext) {
 		m_AMFContext->Terminate();
-		/*m_AMFContext->Release();
-		m_AMFContext = nullptr;*/
+		m_AMFContext = nullptr;
 	}
 	m_AMFFactory = nullptr;
 }
 
 void Plugin::AMD::VCEEncoder::Start() {
+	// Set proper Timer resolution.
+	m_TimerPeriod = (uint32_t)m_FrameRateReverseDivisor * 500;
+	while (timeBeginPeriod(m_TimerPeriod) == TIMERR_NOCANDO) {
+		++m_TimerPeriod;
+	}
+
+	// Create Encoder
 	AMF_RESULT res;
 	switch (m_SurfaceFormat) {
 		case VCESurfaceFormat_NV12:
@@ -170,6 +176,11 @@ void Plugin::AMD::VCEEncoder::Start() {
 
 void Plugin::AMD::VCEEncoder::Stop() {
 	m_IsStarted = false;
+
+	// Restore Timer precision.
+	if (m_TimerPeriod != 0) {
+		timeEndPeriod(m_TimerPeriod);
+	}
 
 	// Threading
 	m_ThreadedOutput.condvar.notify_all();
@@ -806,6 +817,17 @@ void Plugin::AMD::VCEEncoder::SetFrameRate(uint32_t num, uint32_t den) {
 	m_FrameRateDivisor = (double_t)num / (double_t)den;
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor * 3);
+
+	// Increase Timer precision.
+	if (m_TimerPeriod != 0) {
+		// Restore Timer precision.
+		timeEndPeriod(m_TimerPeriod);
+	}
+	m_TimerPeriod = (uint32_t)m_FrameRateReverseDivisor * 500;
+	while (timeBeginPeriod(m_TimerPeriod) == TIMERR_NOCANDO) {
+		++m_TimerPeriod;
+	}
+
 }
 
 std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameRate() {
@@ -1343,8 +1365,6 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 			ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame> Unable to create AMFSurface, error %ls (code %d).", res);
 
 		planeCount = pSurface->GetPlanesCount();
-
-		#pragma loop(hint_parallel(2))
 		for (uint8_t i = 0; i < planeCount; i++) {
 			amf::AMFPlane* plane;
 			void* plane_nat;
@@ -1356,7 +1376,6 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 			height = plane->GetHeight();
 			hpitch = plane->GetHPitch();
 
-			#pragma loop(hint_parallel(2))
 			for (int32_t py = 0; py < height; py++) {
 				size_t plane_off = py * hpitch;
 				size_t frame_off = py * frame->linesize[i];

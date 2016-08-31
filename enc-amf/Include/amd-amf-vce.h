@@ -375,6 +375,7 @@ namespace Plugin {
 			std::pair<uint32_t, uint32_t> m_FrameSize, m_FrameRate;
 			double_t m_FrameRateDivisor, m_FrameRateReverseDivisor;
 			uint32_t m_InputQueueLimit;
+			uint32_t m_TimerPeriod;
 
 			// Threading
 			bool m_IsStarted;
