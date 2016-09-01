@@ -88,7 +88,6 @@ SOFTWARE.
 #define AMF_UTIL_TOGGLE_DISABLED				TEXT_AMF_UTIL("Toggle.Disabled")
 #define AMF_UTIL_TOGGLE_ENABLED					TEXT_AMF_UTIL("Toggle.Enabled")
 
-
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
@@ -98,10 +97,15 @@ using namespace Plugin::Interface;
 
 void Plugin::Interface::H264SimpleInterface::encoder_register() {
 	static obs_encoder_info* encoder_info = new obs_encoder_info();
+	static const char* encoder_name = "amd_amf_h264_simple";
+	static const char* encoder_codec = "h264";
+
 	std::memset(encoder_info, 0, sizeof(obs_encoder_info));
-	encoder_info->id = "amd_amf_h264_simple";
+
+	// Initialize Structure
+	encoder_info->id = encoder_name;
 	encoder_info->type = obs_encoder_type::OBS_ENCODER_VIDEO;
-	encoder_info->codec = "h264";
+	encoder_info->codec = encoder_codec;
 
 	// Functions
 	encoder_info->get_name = &get_name;
@@ -300,14 +304,14 @@ bool Plugin::Interface::H264SimpleInterface::preset_modified(obs_properties_t *p
 			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
 			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxProfileLevel);
 			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_VariableBitrate_LatencyConstrained);
-			obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 10000);
+			obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 20000);
 			obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / 1000);
 			obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_BUFFER_SIZE, false);
 			obs_data_set_int(data, AMF_H264_FILLERDATA, 0);
 			obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 0);
-			obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 3 : 0));
-			obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 1 : 0));
-			obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 0);
+			obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, 0);//(VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 3 : 0));
+			obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);//(VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 1 : 0));
+			obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 1);
 			obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 			break;
 		case 1: // Twitch
@@ -324,7 +328,7 @@ bool Plugin::Interface::H264SimpleInterface::preset_modified(obs_properties_t *p
 			obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 1);
 			obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, 0);
 			obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
-			obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 0);
+			obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 1);
 			obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 			break;
 		case 2: // YouTube
@@ -333,15 +337,15 @@ bool Plugin::Interface::H264SimpleInterface::preset_modified(obs_properties_t *p
 			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
 			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_42);
 			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_VariableBitrate_PeakConstrained);
-			obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 3000);
+			obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 3500);
 			obs_data_set_int(data, AMF_H264_BITRATE_PEAK, 6000);
 			obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_BUFFER_SIZE, true);
-			obs_data_set_int(data, AMF_H264SIMPLE_CUSTOM_BUFFER_SIZE, 3000);
+			obs_data_set_int(data, AMF_H264SIMPLE_CUSTOM_BUFFER_SIZE, 6000);
 			obs_data_set_int(data, AMF_H264_FILLERDATA, 1);
 			obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 1);
-			obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 3 : 0));
-			obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 1 : 0));
-			obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 0);
+			obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, 0);
+			obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
+			obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 1);
 			obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 			break;
 	}
@@ -493,7 +497,7 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	/// Encoder Rate Control
 	m_VideoEncoder->SetRateControlMethod((VCERateControlMethod)obs_data_get_int(settings, AMF_H264_RATECONTROLMETHOD));
 	m_VideoEncoder->SetFillerDataEnabled(obs_data_get_int(settings, AMF_H264_FILLERDATA) == 1);
-	m_VideoEncoder->SetRateControlSkipFrameEnabled(obs_data_get_bool(settings, AMF_H264_FRAMESKIPPING));
+	m_VideoEncoder->SetRateControlSkipFrameEnabled(obs_data_get_int(settings, AMF_H264_FRAMESKIPPING) == 1);
 	if (obs_data_get_bool(settings, AMF_H264SIMPLE_USE_CUSTOM_BUFFER_SIZE)) {
 		m_VideoEncoder->SetVBVBufferSize((uint32_t)obs_data_get_int(settings, AMF_H264SIMPLE_CUSTOM_BUFFER_SIZE) * 1000);
 	} else {
@@ -535,8 +539,9 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 					), obs_data_get_int(settings, AMF_H264_QP_BFRAME)
 				)
 			);
-			qpMult = (51 - qpMult);
-			qpMult = max(qpMult * qpMult, 0.01); // Can't allow 0.
+			qpMult = (51 - qpMult) / 51.0;
+			qpMult = qpMult * qpMult;
+			qpMult = max(qpMult, 0.001); // Needs to be at least 0.001.
 			bitrate *= qpMult;
 			m_VideoEncoder->SetVBVBufferSize((uint32_t)bitrate);
 		}
@@ -560,12 +565,12 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	m_VideoEncoder->SetIDRPeriod((uint32_t)obs_data_get_int(settings, AMF_H264SIMPLE_KEYFRAME_INTERVAL) * (uint32_t)((double_t)fpsNum / (double_t)fpsDen));
 	m_VideoEncoder->SetDeBlockingFilterEnabled(obs_data_get_int(settings, AMF_H264_DEBLOCKINGFILTER) == 1);
 	m_VideoEncoder->SetBPicturePattern((VCEBPicturePattern)obs_data_get_int(settings, AMF_H264_BPICTURE_PATTERN));
-	m_VideoEncoder->SetBPictureReferenceEnabled(obs_data_get_bool(settings, AMF_H264_BPICTURE_REFERENCE));
+	m_VideoEncoder->SetBPictureReferenceEnabled(obs_data_get_int(settings, AMF_H264_BPICTURE_REFERENCE) == 1);
 	m_VideoEncoder->SetBPictureDeltaQP((int8_t)obs_data_get_int(settings, AMF_H264_QP_BPICTURE_DELTA));
 	m_VideoEncoder->SetReferenceBPictureDeltaQP((int8_t)obs_data_get_int(settings, AMF_H264_QP_REFERENCE_BPICTURE_DELTA));
 
 	/// Encoder Miscellaneous Parameters
-	//m_VideoEncoder->SetScanType(H264ScanType_Progressive);
+	m_VideoEncoder->SetScanType(VCEScanType_Progressive);
 	//m_VideoEncoder->SetQualityPreset((VCEQualityPreset)obs_data_get_int(settings, AMF_VCE_H264_QUALITY_PRESET)); // Temporarily moved from down here to up there.
 
 	/// Encoder Motion Estimation Parameters
@@ -573,8 +578,8 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	m_VideoEncoder->SetQuarterPixelMotionEstimationEnabled(true);
 
 	// Do this again just to be sure (output file seems to have 1000 fps?)
-	m_VideoEncoder->SetFrameSize(width, height);
-	m_VideoEncoder->SetFrameRate(fpsNum, fpsDen);
+	/*m_VideoEncoder->SetFrameSize(width, height);
+	m_VideoEncoder->SetFrameRate(fpsNum, fpsDen);*/
 
 	//////////////////////////////////////////////////////////////////////////
 	// Verify
