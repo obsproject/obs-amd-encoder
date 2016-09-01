@@ -31,47 +31,6 @@ SOFTWARE.
 // Defines
 //////////////////////////////////////////////////////////////////////////
 
-// Shared
-#define AMF_H264_USAGE							TEXT_AMF_H264("Usage")
-#define AMF_H264_USAGE_TRANSCODING				TEXT_AMF_H264("Usage.Transcoding")
-#define AMF_H264_USAGE_ULTRALOWLATENCY			TEXT_AMF_H264("Usage.UltraLowLatency")
-#define AMF_H264_USAGE_LOWLATENCY				TEXT_AMF_H264("Usage.LowLatency")
-#define AMF_H264_USAGE_WEBCAM					TEXT_AMF_H264("Usage.Webcam")
-#define AMF_H264_QUALITY_PRESET					TEXT_AMF_H264("QualityPreset")
-#define AMF_H264_QUALITY_PRESET_SPEED			TEXT_AMF_H264("QualityPreset.Speed")
-#define AMF_H264_QUALITY_PRESET_BALANCED		TEXT_AMF_H264("QualityPreset.Balanced")
-#define AMF_H264_QUALITY_PRESET_QUALITY			TEXT_AMF_H264("QualityPreset.Quality")
-#define AMF_H264_PROFILE						TEXT_AMF_H264("Profile")
-#define AMF_H264_PROFILE_BASELINE				TEXT_AMF_H264("Profile.Baseline")
-#define AMF_H264_PROFILE_MAIN					TEXT_AMF_H264("Profile.Main")
-#define AMF_H264_PROFILE_HIGH					TEXT_AMF_H264("Profile.High")
-#define AMF_H264_PROFILELEVEL					TEXT_AMF_H264("ProfileLevel")
-#define AMF_H264_PROFILELEVEL2(x)				TEXT_AMF_H264("ProfileLevel." # x)
-#define AMF_H264_RATECONTROLMETHOD				TEXT_AMF_H264("RateControlMethod")
-#define AMF_H264_RATECONTROLMETHOD_CQP			TEXT_AMF_H264("RateControlMethod.CQP")
-#define AMF_H264_RATECONTROLMETHOD_CBR			TEXT_AMF_H264("RateControlMethod.CBR")
-#define AMF_H264_RATECONTROLMETHOD_VBR			TEXT_AMF_H264("RateControlMethod.VBR.Peak")
-#define AMF_H264_RATECONTROLMETHOD_VBR_LAT		TEXT_AMF_H264("RateControlMethod.VBR.Latency")
-#define AMF_H264_BITRATE_TARGET					TEXT_AMF_H264("Bitrate.Target")
-#define AMF_H264_BITRATE_PEAK					TEXT_AMF_H264("Bitrate.Peak")
-#define AMF_H264_QP_MINIMUM						TEXT_AMF_H264("QP.Minimum")
-#define AMF_H264_QP_MAXIMUM						TEXT_AMF_H264("QP.Maximum")
-#define AMF_H264_QP_IFRAME						TEXT_AMF_H264("QP.IFrame")
-#define AMF_H264_QP_PFRAME						TEXT_AMF_H264("QP.PFrame")
-#define AMF_H264_QP_BFRAME						TEXT_AMF_H264("QP.BFrame")
-#define AMF_H264_QP_BPICTURE_DELTA				TEXT_AMF_H264("QP.BPictureDelta")
-#define AMF_H264_QP_REFERENCE_BPICTURE_DELTA	TEXT_AMF_H264("QP.RefeferenceBPictureDelta")
-#define AMF_H264_FILLERDATA						TEXT_AMF_H264("FillerData")
-#define AMF_H264_FRAMESKIPPING					TEXT_AMF_H264("FrameSkipping")
-#define AMF_H264_ENFORCEHRDCOMPATIBILITY		TEXT_AMF_H264("EnforceHRDCompatibility")
-#define AMF_H264_DEBLOCKINGFILTER				TEXT_AMF_H264("DeBlockingFilter")
-#define AMF_H264_SCANTYPE						TEXT_AMF_H264("ScanType")
-#define AMF_H264_SCANTYPE_PROGRESSIVE			TEXT_AMF_H264("ScanType.Progressive")
-#define AMF_H264_SCANTYPE_INTERLACED			TEXT_AMF_H264("ScanType.Interlaced")
-#define AMF_H264_BPICTURE_PATTERN				TEXT_AMF_H264("BPicture.Pattern")
-#define AMF_H264_BPICTURE_REFERENCE				TEXT_AMF_H264("BPicture.Reference")
-#define AMF_H264_DEBUGTRACING					TEXT_AMF_H264("DebugTracing")
-
 // Simple Interface
 #define AMF_H264SIMPLE_NAME						TEXT_AMF_H264SIMPLE("Name")
 #define AMF_H264SIMPLE_PRESET					TEXT_AMF_H264SIMPLE("Preset")
@@ -82,11 +41,6 @@ SOFTWARE.
 #define AMF_H264SIMPLE_USE_CUSTOM_BUFFER_SIZE	TEXT_AMF_H264SIMPLE("UseCustomBufferSize")
 #define AMF_H264SIMPLE_CUSTOM_BUFFER_SIZE		TEXT_AMF_H264SIMPLE("CustomBufferSize")
 #define AMF_H264SIMPLE_ADVANCED_SHOW_PARAMETERS	TEXT_AMF_H264SIMPLE("ShowAdvancedParameters")
-
-// Utility
-#define AMF_UTIL_DEFAULT						TEXT_AMF_UTIL("Default")
-#define AMF_UTIL_TOGGLE_DISABLED				TEXT_AMF_UTIL("Toggle.Disabled")
-#define AMF_UTIL_TOGGLE_ENABLED					TEXT_AMF_UTIL("Toggle.Enabled")
 
 //////////////////////////////////////////////////////////////////////////
 // Code
