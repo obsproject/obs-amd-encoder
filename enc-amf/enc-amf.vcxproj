@@ -192,6 +192,7 @@
     <None Include="Resources\locale\en-US.ini" />
     <None Include="Resources\locale\es-ES.ini" />
     <None Include="Resources\locale\hu-HU.ini" />
+    <None Include="Resources\locale\nb-NO.ini" />
     <None Include="Resources\locale\ru-RU.ini" />
     <None Include="Resources\locale\vi-VN.ini" />
   </ItemGroup>
@@ -201,7 +202,12 @@
   <Target Name="CopyResources" AfterTargets="Build">
     <ItemGroup>
       <Resources Include="$(ProjectDir)\Resources\**\*.*" />
+	  <Binaries Include="$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\*.dll" />
+	  <Binaries Include="$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\*.pdb" />
     </ItemGroup>
     <Copy SourceFiles="@(Resources)" DestinationFiles="@(Resources->'$(TargetDir)..\..\data\obs-plugins\$(ProjectName)\%(RecursiveDir)\%(Filename)%(Extension)')" SkipUnchangedFiles="True" UseHardlinksIfPossible="True" />
+	
+    <Copy SourceFiles="@(Resources)" DestinationFiles="@(Resources->'$(SolutionDir)\#Resources\Package\data\obs-plugins\%(RecursiveDir)\%(Filename)%(Extension)')" SkipUnchangedFiles="True" UseHardlinksIfPossible="True" />
+    <Copy SourceFiles="@(Binaries)" DestinationFiles="@(Binaries->'$(SolutionDir)\#Resources\Package\obs-plugins\$(PlatformArchitecture)bit\%(RecursiveDir)\%(Filename)%(Extension)')" SkipUnchangedFiles="True" UseHardlinksIfPossible="True" />
   </Target>
 </Project>
