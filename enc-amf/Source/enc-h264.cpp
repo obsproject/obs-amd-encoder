@@ -102,10 +102,15 @@ using namespace Plugin::Interface;
 
 void Plugin::Interface::H264Interface::encoder_register() {
 	static obs_encoder_info* encoder_info = new obs_encoder_info();
+	static const char* encoder_name = "amd_amf_h264";
+	static const char* encoder_codec = "h264";
+
 	std::memset(encoder_info, 0, sizeof(obs_encoder_info));
-	encoder_info->id = "amd_amf_h264";
+
+	// Initialize Structure
+	encoder_info->id = encoder_name;
 	encoder_info->type = obs_encoder_type::OBS_ENCODER_VIDEO;
-	encoder_info->codec = "h264";
+	encoder_info->codec = encoder_codec;
 
 	// Functions
 	encoder_info->get_name = &get_name;
