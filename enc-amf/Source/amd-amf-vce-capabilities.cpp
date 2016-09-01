@@ -36,14 +36,12 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 
 std::shared_ptr<Plugin::AMD::VCECapabilities> Plugin::AMD::VCECapabilities::GetInstance() {
-	static std::weak_ptr<VCECapabilities> __instance;
+	static std::shared_ptr<VCECapabilities> __instance = std::make_shared<VCECapabilities>();
 	static std::mutex __mutex;
 
 	try {
 		const std::lock_guard<std::mutex> lock(__mutex);
-		if (const auto result = __instance.lock())
-			return result;
-		return (__instance = std::make_shared<VCECapabilities>()).lock();
+		return __instance;
 	} catch (...) {
 		return nullptr;
 	}

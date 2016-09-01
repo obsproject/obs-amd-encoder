@@ -41,7 +41,6 @@ SOFTWARE.
 using namespace Plugin::AMD;
 
 class CustomWriter : public amf::AMFTraceWriter {
-
 	public:
 	virtual void Write(const wchar_t* scope, const wchar_t* message) override {
 		const wchar_t* realmsg = &(message[(33 + wcslen(scope) + 2)]);
@@ -55,14 +54,12 @@ class CustomWriter : public amf::AMFTraceWriter {
 
 
 std::shared_ptr<Plugin::AMD::AMF> Plugin::AMD::AMF::GetInstance() {
-	static std::weak_ptr<AMF> __instance;
+	static std::shared_ptr<AMF> __instance = std::make_shared<AMF>();
 	static std::mutex __mutex;
 
 	try {
 		const std::lock_guard<std::mutex> lock(__mutex);
-		if (const auto result = __instance.lock())
-			return result;
-		return (__instance = std::make_shared<AMF>()).lock();
+		return __instance;
 	} catch (...) {
 		return nullptr;
 	}
