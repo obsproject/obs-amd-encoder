@@ -37,6 +37,10 @@ You will not get help unless you include all necessary information listed on tha
 4. Build the Solution (or Batch Build)
 5. Binaries should be located in /#Build/$(Configuration)/
 
+## Committing Changes
+
+Read [this wiki page for information](https://github.com/Xaymar/OBS-AMD-Advanced-Media-Framework/wiki/Contributing) and please follow it. Rebasing a bunch of pushed commits is not good.
+
 # License
 
 ## MIT License

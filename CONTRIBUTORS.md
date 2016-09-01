@@ -17,14 +17,18 @@ These great People have helped create this plugin:
 
 And these great people have decided to support the project by one or another means.
 
-## Jeremy Nieth
+## August 2016
+### Jeremy Nieth
+Jeremy has decided to not specify what he wanted to be written here. So this will have to do for now.
 
-## Marcos Vidal
-Spanish translator  
+### Marcos Vidal
+Spanish translator.  
 [Website](https://markitos.ovh), [Steam](http://steamcommunity.com/id/markitos22/)
 
-## [Markus](https://github.com/Morphy2k)
+### Markus Wiegand
+Markus has also decided to not specify what should be here. So instead, I've decided to write these two sentences for him.  
+[Twitter](https://twitter.com/Morphy2k/), [GitHub](https://github.com/Morphy2k)
 
-## [nwgat.ninja](https://nwgat.ninja/)
-nwgat.ninja is proud to support Xaymars Technology Projects  
+### nwgat.ninja
+nwgat.ninja is proud to support Xaymars Technology Projects.  
 [Website](https://nwgat.ninja)
