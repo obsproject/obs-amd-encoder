@@ -381,7 +381,8 @@ namespace Plugin {
 			bool m_IsStarted;
 			struct ThreadData {
 				std::vector<uint8_t> data;
-				uint64_t frame;
+				uint64_t dts;
+				uint64_t pts;
 				AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM type;
 			};
 			struct {

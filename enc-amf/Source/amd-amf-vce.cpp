@@ -272,7 +272,8 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 	packet->type = OBS_ENCODER_VIDEO;
 	packet->size = bufferSize;
 	packet->data = m_PacketDataBuffer.data();
-	packet->pts = packet->dts = pkt.frame;
+	packet->pts = pkt.pts;
+	packet->dts = pkt.dts;
 	switch (pkt.type) {
 		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR://
 			packet->keyframe = true;				// IDR-Frames are Keyframes that contain a lot of information.
@@ -352,7 +353,13 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 			break;
 	}
 
-	//ToDo: Figure out Color Range and Color Profile conversion (AMD worker says there is a default Video Converter attached?)
+	// Fix AMF stupidity: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/6
+	vsi->range = VIDEO_RANGE_PARTIAL; // Because AMF is stupid. - Xaymar 2016
+	if (vsi->height < 780) // See: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/6#issuecomment-243473568
+		vsi->colorspace = VIDEO_CS_601;
+	else
+		vsi->colorspace = VIDEO_CS_709;
+	// HEVC will fix it. Or not. We don't even have Two Pass Encoding yet! AMD what the hell?
 }
 
 void Plugin::AMD::VCEEncoder::LogProperties() {
@@ -814,20 +821,22 @@ void Plugin::AMD::VCEEncoder::SetFrameRate(uint32_t num, uint32_t den) {
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetFrameRate> Set to %d/%d.", num, den);
 	m_FrameRate.first = num;
 	m_FrameRate.second = den;
-	m_FrameRateDivisor = (double_t)num / (double_t)den;
+	m_FrameRateDivisor = (double_t)m_FrameRate.first / (double_t)m_FrameRate.second;
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor * 3);
+	//AMF_LOG_INFO("%f div, %f revdiv", m_FrameRateDivisor, m_FrameRateReverseDivisor);
 
-	// Increase Timer precision.
-	if (m_TimerPeriod != 0) {
-		// Restore Timer precision.
-		timeEndPeriod(m_TimerPeriod);
-	}
-	m_TimerPeriod = (uint32_t)m_FrameRateReverseDivisor * 500;
-	while (timeBeginPeriod(m_TimerPeriod) == TIMERR_NOCANDO) {
-		++m_TimerPeriod;
-	}
+	if (m_IsStarted) { // Change Timer precision if encoding.
+		if (m_TimerPeriod != 0) {
+			// Restore Timer precision.
+			timeEndPeriod(m_TimerPeriod);
+		}
 
+		m_TimerPeriod = (uint32_t)m_FrameRateReverseDivisor * 500;
+		while (timeBeginPeriod(m_TimerPeriod) == TIMERR_NOCANDO) {
+			++m_TimerPeriod;
+		}
+	}
 }
 
 std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameRate() {
@@ -1268,7 +1277,11 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {
 					break;
 				surface = m_ThreadedInput.queue.front();
 			}
-
+			/*AMF_LOG_INFO("in: %d pts, %d frame, %d frame2",
+				surface->GetPts(),
+				(uint64_t)((double_t)surface->GetPts() / 10000000.0 * m_FrameRateDivisor),
+				(uint64_t)(((double_t)surface->GetPts() / 10000000.0) / m_FrameRateReverseDivisor)
+			);*/
 			AMF_SYNC_LOCK(res = m_AMFEncoder->SubmitInput(surface););
 			if (res == AMF_OK) {
 				{
@@ -1308,6 +1321,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {
 			if (res == AMF_OK) {
 				amf::AMFVariant variant;
 				ThreadData pkt;
+				uint64_t pktType;
 
 				// Acquire Buffer
 				amf::AMFBufferPtr pBuffer(pData);
@@ -1315,15 +1329,19 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {
 				// Create a Packet
 				pkt.data.resize(pBuffer->GetSize());
 				std::memcpy(pkt.data.data(), pBuffer->GetNative(), pkt.data.size());
-				pkt.frame = (uint64_t)((double_t)pData->GetPts() / frameRateDivisor); // Not sure what way around the accuracy is better.
-				AMF_RESULT res2 = AMF_OK;
-				AMF_SYNC_LOCK(res2 = pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &variant););
-				if (res2 == AMF_OK && variant.type == amf::AMF_VARIANT_INT64) {
-					pkt.type = (AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)variant.ToUInt64();
-				}
-				if ((lastFrameIndex >= pkt.frame) && (lastFrameIndex > 0))
-					AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::OutputThreadLogic> Detected out of order packet. Frame Index is %d, expected %d.", pkt.frame, lastFrameIndex + 1);
-				lastFrameIndex = pkt.frame;
+				/*AMF_LOG_INFO("out: %d pts, %d frame, %d frame2",
+					pData->GetPts(),
+					(uint64_t)((double_t)pData->GetPts() / frameRateDivisor),
+					(uint64_t)(((double_t)pData->GetPts() / 10000000.0) / m_FrameRateReverseDivisor)
+				);*/
+				pkt.dts = (uint64_t)((double_t)pData->GetPts() / frameRateDivisor);
+				pData->GetProperty(L"Frame", &pkt.pts);
+				pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &pktType);
+				pkt.type = (AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)pktType;
+
+				if ((lastFrameIndex >= pkt.dts) && (lastFrameIndex > 0))
+					AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::OutputThreadLogic> Detected out of order packet. Frame Index is %d, expected %d.", pkt.dts, lastFrameIndex + 1);
+				lastFrameIndex = pkt.dts;
 
 				// Queue
 				{
@@ -1386,8 +1404,8 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 
 		// Convert Frame Index to Nanoseconds.
 		amf_pts amfPts = (int64_t)ceil((double_t)frame->pts * (m_FrameRateReverseDivisor * 10000000.0));
-		AMF_SYNC_LOCK(pSurface->SetPts(amfPts););
-		AMF_SYNC_LOCK(pSurface->SetProperty(L"Frame", frame->pts););
+		pSurface->SetPts(amfPts);
+		pSurface->SetProperty(L"Frame", frame->pts);
 	}
 
 	return pSurface;
