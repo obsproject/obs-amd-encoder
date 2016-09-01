@@ -13,7 +13,7 @@ You need to select "Advanced" as the Output Mode for it to show up.
 Select the one that is called "H264 Encoder (AMD Advanced Media Framework)".
 
 ### Q: My Video is blocky or has a low framerate!
-If you're using the advanced interface, you need to put in the bitrate in bit/s, not kbit/s. If you're using the Simple Interface, see the entry "Reporting Issues".
+The first step is to increase the bitrate or lower the QP values. Additionally make sure that you enter the values in the correct format, advanced interface needs bits/s while simple interface needs kbit/s. If neither helped, see the entry "Reporting Issues".
 
 ## Reporting Issues
 

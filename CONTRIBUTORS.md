@@ -26,4 +26,5 @@ Spanish translator
 ## [Markus](https://github.com/Morphy2k)
 
 ## [nwgat.ninja](https://nwgat.ninja/)
-nwgat.ninja is proud to support Xaymars Technology Projects
+nwgat.ninja is proud to support Xaymars Technology Projects  
+[Website](https://nwgat.ninja)
