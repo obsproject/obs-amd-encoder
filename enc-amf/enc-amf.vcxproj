@@ -133,7 +133,6 @@
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <StringPooling>true</StringPooling>
       <CreateHotpatchableImage>false</CreateHotpatchableImage>
-      <OmitFramePointers>true</OmitFramePointers>
       <MinimalRebuild>true</MinimalRebuild>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -161,7 +160,6 @@
       <MinimalRebuild>true</MinimalRebuild>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
     </ClCompile>
     <Link>
@@ -202,11 +200,10 @@
   <Target Name="CopyResources" AfterTargets="Build">
     <ItemGroup>
       <Resources Include="$(ProjectDir)\Resources\**\*.*" />
-	  <Binaries Include="$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\*.dll" />
-	  <Binaries Include="$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\*.pdb" />
+      <Binaries Include="$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\*.dll" />
+      <Binaries Include="$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\*.pdb" />
     </ItemGroup>
     <Copy SourceFiles="@(Resources)" DestinationFiles="@(Resources->'$(TargetDir)..\..\data\obs-plugins\$(ProjectName)\%(RecursiveDir)\%(Filename)%(Extension)')" SkipUnchangedFiles="True" UseHardlinksIfPossible="True" />
-	
     <Copy SourceFiles="@(Resources)" DestinationFiles="@(Resources->'$(SolutionDir)\#Resources\Package\data\obs-plugins\%(RecursiveDir)\%(Filename)%(Extension)')" SkipUnchangedFiles="True" UseHardlinksIfPossible="True" />
     <Copy SourceFiles="@(Binaries)" DestinationFiles="@(Binaries->'$(SolutionDir)\#Resources\Package\obs-plugins\$(PlatformArchitecture)bit\%(RecursiveDir)\%(Filename)%(Extension)')" SkipUnchangedFiles="True" UseHardlinksIfPossible="True" />
   </Target>
