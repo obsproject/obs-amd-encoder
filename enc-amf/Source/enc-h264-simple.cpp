@@ -510,7 +510,9 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	if (obs_data_get_int(settings, AMF_H264_RATECONTROLMETHOD) == VCERateControlMethod_ConstantQP) {
 		m_VideoEncoder->SetIFrameQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_IFRAME));
 		m_VideoEncoder->SetPFrameQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_PFRAME));
-		m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_BFRAME));
+		try {
+			m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_BFRAME));
+		} catch (...) {}
 	}
 	m_VideoEncoder->SetEnforceHRDRestrictionsEnabled(obs_data_get_int(settings, AMF_H264_ENFORCEHRDCOMPATIBILITY) == 1);
 
@@ -518,10 +520,18 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	//m_VideoEncoder->SetHeaderInsertionSpacing((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_KEYFRAME_INTERVAL) * (uint32_t)((double_t)fpsNum / (double_t)fpsDen));
 	m_VideoEncoder->SetIDRPeriod((uint32_t)obs_data_get_int(settings, AMF_H264SIMPLE_KEYFRAME_INTERVAL) * (uint32_t)((double_t)fpsNum / (double_t)fpsDen));
 	m_VideoEncoder->SetDeBlockingFilterEnabled(obs_data_get_int(settings, AMF_H264_DEBLOCKINGFILTER) == 1);
-	m_VideoEncoder->SetBPicturePattern((VCEBPicturePattern)obs_data_get_int(settings, AMF_H264_BPICTURE_PATTERN));
-	m_VideoEncoder->SetBPictureReferenceEnabled(obs_data_get_int(settings, AMF_H264_BPICTURE_REFERENCE) == 1);
-	m_VideoEncoder->SetBPictureDeltaQP((int8_t)obs_data_get_int(settings, AMF_H264_QP_BPICTURE_DELTA));
-	m_VideoEncoder->SetReferenceBPictureDeltaQP((int8_t)obs_data_get_int(settings, AMF_H264_QP_REFERENCE_BPICTURE_DELTA));
+	try {
+		m_VideoEncoder->SetBPicturePattern((VCEBPicturePattern)obs_data_get_int(settings, AMF_H264_BPICTURE_PATTERN));
+	} catch (...) {}
+	try {
+		m_VideoEncoder->SetBPictureReferenceEnabled(obs_data_get_int(settings, AMF_H264_BPICTURE_REFERENCE) == 1);
+	} catch (...) {}
+	try {
+		m_VideoEncoder->SetBPictureDeltaQP((int8_t)obs_data_get_int(settings, AMF_H264_QP_BPICTURE_DELTA));
+	} catch (...) {}
+	try {
+		m_VideoEncoder->SetReferenceBPictureDeltaQP((int8_t)obs_data_get_int(settings, AMF_H264_QP_REFERENCE_BPICTURE_DELTA));
+	} catch (...) {}
 
 	/// Encoder Miscellaneous Parameters
 	m_VideoEncoder->SetScanType(VCEScanType_Progressive);
