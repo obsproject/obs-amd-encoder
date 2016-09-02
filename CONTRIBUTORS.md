@@ -32,3 +32,6 @@ Markus has also decided to not specify what should be here. So instead, I've dec
 ### nwgat.ninja
 nwgat.ninja is proud to support Xaymars Technology Projects.  
 [Website](https://nwgat.ninja)
+
+### Nico Thate
+Even though he has chosen to not receive a reward for being a patron, he'll get an entry anyway.
