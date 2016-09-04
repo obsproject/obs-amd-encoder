@@ -541,15 +541,17 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	m_VideoEncoder->SetHalfPixelMotionEstimationEnabled(true);
 	m_VideoEncoder->SetQuarterPixelMotionEstimationEnabled(true);
 
-	// Do this again just to be sure (output file seems to have 1000 fps?)
-	/*m_VideoEncoder->SetFrameSize(width, height);
-	m_VideoEncoder->SetFrameRate(fpsNum, fpsDen);*/
+	/// Encoder Resolution Parameters
+	m_VideoEncoder->SetFrameSize(width, height);
+	m_VideoEncoder->SetFrameRate(fpsNum, fpsDen);
 
-	//////////////////////////////////////////////////////////////////////////
 	// Verify
-	//////////////////////////////////////////////////////////////////////////
 	m_VideoEncoder->LogProperties();
 
+	// Attempt to fix FFMPEG listed bitrate.
+	obs_data_set_int(settings, "bitrate", m_VideoEncoder->GetVBVBufferSize());
+
+	// Start Encoding
 	m_VideoEncoder->Start();
 
 	AMF_LOG_INFO("<AMFEncoder::H264SimpleInterface::H264SimpleInterface> Initialized.");

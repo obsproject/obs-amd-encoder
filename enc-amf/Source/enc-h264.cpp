@@ -405,10 +405,8 @@ bool Plugin::Interface::H264Interface::update_from_amf(obs_properties_t *props, 
 	if (obs_data_get_bool(settings, AMF_H264ADVANCED_UPDATE) == false)
 		return false;
 	obs_data_set_bool(settings, AMF_H264ADVANCED_UPDATE, false);
+
 	try {
-	//////////////////////////////////////////////////////////////////////////
-	// Static Properties (Can't be changed during Encoding)
-	//////////////////////////////////////////////////////////////////////////
 		VCEEncoder* vce = new VCEEncoder(VCEEncoderType_AVC, VCEMemoryType_Host, VCESurfaceFormat_NV12);
 
 		// Usage & Quality Preset
@@ -660,10 +658,19 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 	////////////////////////////////////////////////////////////////////////////
 	update_properties(settings);
 
+	// Framesize & Framerate
+	m_VideoEncoder->SetFrameSize(m_cfgWidth, m_cfgHeight);
+	m_VideoEncoder->SetFrameRate(m_cfgFPSnum, m_cfgFPSden);
+
 	//////////////////////////////////////////////////////////////////////////
 	// Verify
 	//////////////////////////////////////////////////////////////////////////
 	m_VideoEncoder->LogProperties();
+
+	//////////////////////////////////////////////////////////////////////////
+	// Attempt to fix FFMPEG listed bitrate.
+	//////////////////////////////////////////////////////////////////////////
+	obs_data_set_int(settings, "bitrate", m_VideoEncoder->GetVBVBufferSize());
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize (locks static properties)
