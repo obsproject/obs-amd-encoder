@@ -31,6 +31,7 @@ SOFTWARE.
 #include <queue>
 #include <thread>
 #include <vector>
+#include <chrono>
 
 // Plugin
 #include "plugin.h"
@@ -376,6 +377,10 @@ namespace Plugin {
 			double_t m_FrameRateDivisor, m_FrameRateReverseDivisor;
 			uint32_t m_InputQueueLimit;
 			uint32_t m_TimerPeriod;
+
+			// OBS: Fix unnotified shutdown.
+			std::chrono::high_resolution_clock::time_point m_LastFrame_ReceivedAt;
+			std::vector<uint8_t> m_LastFrame_KeyFrame;
 
 			// Threading
 			bool m_IsStarted;

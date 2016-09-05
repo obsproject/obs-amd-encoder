@@ -26,7 +26,6 @@ SOFTWARE.
 // Includes
 //////////////////////////////////////////////////////////////////////////
 #include "amd-amf-vce.h"
-
 #include "amd-amf-vce-capabilities.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -184,9 +183,39 @@ void Plugin::AMD::VCEEncoder::Stop() {
 
 	// Threading
 	m_ThreadedOutput.condvar.notify_all();
+	#if defined _WIN32 || defined _WIN64
+	{ // Windows: Force terminate Thread after 1 second of waiting.
+		uint32_t res = WaitForSingleObject(m_ThreadedOutput.thread.native_handle(), 1000);
+		switch (res) {
+			case WAIT_OBJECT_0:
+				m_ThreadedOutput.thread.join();
+				break;
+			default:
+				TerminateThread(m_ThreadedOutput.thread.native_handle(), -1);
+				m_ThreadedOutput.thread.join();
+				break;
+		}
+	}
+	#else
 	m_ThreadedOutput.thread.join();
+	#endif
 	m_ThreadedInput.condvar.notify_all();
-	m_ThreadedInput.thread.join();
+	#if defined _WIN32 || defined _WIN64
+	{ // Windows: Force terminate Thread after 1 second of waiting.
+		uint32_t res = WaitForSingleObject(m_ThreadedInput.thread.native_handle(), 1000);
+		switch (res) {
+			case WAIT_OBJECT_0:
+				m_ThreadedInput.thread.join();
+				break;
+			default:
+				TerminateThread(m_ThreadedInput.thread.native_handle(), -1);
+				m_ThreadedInput.thread.join();
+				break;
+		}
+	}
+	#else
+	m_ThreadedOutput.thread.join();
+	#endif
 
 	// Stop AMF Encoder
 	m_AMFEncoder->Drain();
@@ -249,11 +278,21 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 	{ // Queue: Check if a Packet is available.
 		std::unique_lock<std::mutex> lock(m_ThreadedOutput.queuemutex);
 		if (m_ThreadedOutput.queue.size() == 0) {
-			*received_packet = false;
+			if ((std::chrono::high_resolution_clock::now() - m_LastFrame_ReceivedAt) > std::chrono::milliseconds(2500)) { // OBS: Fix unnotified shutdown.
+				*received_packet = false;
+			} else {
+				*received_packet = true;
+
+				packet->data = m_LastFrame_KeyFrame.data();
+				packet->size = m_LastFrame_KeyFrame.size();
+				packet->keyframe = true;
+			}
+
 			return;
 		}
 
 		pkt = m_ThreadedOutput.queue.front();
+		m_LastFrame_ReceivedAt = std::chrono::high_resolution_clock::now();
 	}
 
 	// Submit Packet to OBS
@@ -268,19 +307,25 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 		std::memcpy(m_PacketDataBuffer.data(), pkt.data.data(), bufferSize);
 
 	/// Set up Packet Information
+	*received_packet = true;
 	packet->type = OBS_ENCODER_VIDEO;
 	packet->size = bufferSize;
 	packet->data = m_PacketDataBuffer.data();
-	packet->pts = pkt.pts;
-	packet->dts = pkt.dts;
-	//packet->pts_usec = pkt.pts_usec;
-	packet->dts_usec = pkt.dts_usec;
-
+	packet->pts = pkt.pts; //packet->pts_usec = pkt.pts_usec;
+	packet->dts = pkt.dts; packet->dts_usec = pkt.dts_usec;
 	switch (pkt.type) {
 		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR://
 			packet->keyframe = true;				// IDR-Frames are Key-Frames that contain a lot of information.
 			packet->priority = 3;					// Highest priority, always continue streaming with these.
 			packet->drop_priority = 3;				// Dropped IDR-Frames can only be replaced by the next IDR-Frame.
+
+			{ // OBS: Fix unnotified shutdown.
+				if (m_LastFrame_KeyFrame.size() == 0) {
+					m_LastFrame_KeyFrame.resize(packet->size);
+					std::memcpy(m_LastFrame_KeyFrame.data(), m_PacketDataBuffer.data(), packet->size);
+				}
+			}
+
 			break;
 		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_I:	// I-Frames need only a previous I- or IDR-Frame.
 			packet->priority = 2;					// I- and IDR-Frames will most likely be present.
@@ -295,7 +340,6 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 			packet->drop_priority = 1;				// So require a P-Frame or better to continue streaming.
 			break;
 	}
-	*received_packet = true;
 	
 	{ // Queue: Remove submitted element.
 		std::unique_lock<std::mutex> lock(m_ThreadedOutput.queuemutex);
@@ -303,9 +347,9 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 	}
 
 	// Debug: Packet Information
-	#ifdef DEBUG
+	//#ifdef DEBUG
 	AMF_LOG_INFO("Packet: Type(%d), PTS(%4d,%12d), DTS(%4d,%12d), Size(%8d)", pkt.type, pkt.pts, pkt.pts_usec, pkt.dts, pkt.dts_usec, pkt.data.size());
-	#endif
+	//#endif
 }
 
 bool Plugin::AMD::VCEEncoder::GetExtraData(uint8_t**& extra_data, size_t*& extra_data_size) {
@@ -429,27 +473,15 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 				// Create a Packet
 				pkt.data.resize(pBuffer->GetSize());
 				std::memcpy(pkt.data.data(), pBuffer->GetNative(), pkt.data.size());
-				{
-					//See: https://stackoverflow.com/questions/6044330/ffmpeg-c-what-are-pts-and-dts-what-does-this-code-block-do-in-ffmpeg-c
-					//	So let's say we had a movie, and the frames were displayed like: I B B P.
-					//	Now, we need to know the information in P before we can display either B frame.
-					//	Because of this, the frames might be stored like this: I P B B.
-					//	This is why we have a decoding timestamp and a presentation timestamp on each frame.
-					//	The decoding timestamp tells us when we need to decode something, and the presentation
-					//	time stamp tells us when we need to display something. So, in this case, our stream might look like this:
-					//	
-					//		PTS:    1 4 2 3
-					//		DTS:    1 2 3 4
-					//		Stream: I P B B
-					//	
-					//	Generally the PTS and DTS will only differ when the stream we are playing has B frames in it
-					
+				{ // See: https://stackoverflow.com/questions/6044330/ffmpeg-c-what-are-pts-and-dts-what-does-this-code-block-do-in-ffmpeg-c
 					// GetPTS actually returns DTS.
 					double_t pts_as_usec = (double_t)(pData->GetPts() / 10.0);
 					pkt.pts_usec = pkt.dts_usec = (uint64_t)(pts_as_usec);
 					pkt.pts = pkt.dts = (uint64_t)(pts_as_usec / frameRateDivisor);
 
-					// Don't touch PTS at all, OBS fucks you up.
+					// Touching PTS here will mess up. Why? No fucking clue.
+					//pBuffer->GetProperty(L"Frame", &pkt.pts);
+					//pkt.pts_usec = (uint64_t)(pkt.pts * frameRateDivisor);
 				}
 				{ // Read Packet Type
 					uint64_t pktType;
