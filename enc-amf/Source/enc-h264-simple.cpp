@@ -552,12 +552,12 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 
 	// OBS: Enforce streaming service encoder settings
 	const char* t_str = obs_data_get_string(settings, "rate_control");
-	if (!strcmp(t_str, "")) {
-		if (strcmp(t_str, "CBR")) {
+	if (strcmp(t_str, "") != 0) {
+		if (strcmp(t_str, "CBR") == 0) {
 			m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_ConstantBitrate);
-		} else if (strcmp(t_str, "VBR")) {
+		} else if (strcmp(t_str, "VBR") == 0) {
 			m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_VariableBitrate_PeakConstrained);
-		} else if (strcmp(t_str, "CQP")) {
+		} else if (strcmp(t_str, "CQP") == 0) {
 			m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_ConstantQP);
 		}
 	} else {
