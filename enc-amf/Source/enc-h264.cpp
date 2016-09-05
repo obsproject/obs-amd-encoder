@@ -272,7 +272,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) {
 	/// VBV Buffer
 	obs_properties_add_int_slider(props, AMF_H264ADVANCED_VBVBUFFER_SIZE, obs_module_text(AMF_H264ADVANCED_VBVBUFFER_SIZE), -1, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate, 1);
 	obs_properties_add_float_slider(props, AMF_H264ADVANCED_VBVBUFFER_FULLNESS, obs_module_text(AMF_H264ADVANCED_VBVBUFFER_FULLNESS), 0.0, 1.0, 0.015625);
-	/// Enforce Hypothecial Reference Decoder Compatibility
+	/// Enforce Hypothetical Reference Decoder Compatibility
 	list = obs_properties_add_list(props, AMF_H264_ENFORCEHRDCOMPATIBILITY, obs_module_text(AMF_H264_ENFORCEHRDCOMPATIBILITY), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_DEFAULT), -1);
 	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_TOGGLE_DISABLED), 0);
@@ -297,7 +297,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) {
 	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_DEFAULT), -1);
 	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_TOGGLE_DISABLED), 0);
 	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_TOGGLE_ENABLED), 1);
-	/// Intra Refresh MBs Number Per Slot in Macroblocks
+	/// Intra Refresh MBs Number Per Slot in Macro-Blocks
 	obs_properties_add_int_slider(props, AMF_H264ADVANCED_INTRAREFRESHNUMMBPERSLOT, obs_module_text(AMF_H264ADVANCED_INTRAREFRESHNUMMBPERSLOT), -1, 1024, 1);
 	/// Number of slices Per Frame 
 	obs_properties_add_int_slider(props, AMF_H264ADVANCED_SLICESPERFRAME, obs_module_text(AMF_H264ADVANCED_SLICESPERFRAME), -1, 1000, 1);
