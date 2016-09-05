@@ -676,9 +676,9 @@ Plugin::AMD::VCEUsage Plugin::AMD::VCEEncoder::GetUsage() {
 	uint32_t usage;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_USAGE, &usage);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetUsage> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetUsage> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetUsage> Retrieved Property, Value is %s.", customToName[AMFToCustom[usage]]);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetUsage> Value is %s.", customToName[AMFToCustom[usage]]);
 	return AMFToCustom[usage];
 }
 
@@ -698,9 +698,9 @@ Plugin::AMD::VCEProfile Plugin::AMD::VCEEncoder::GetProfile() {
 	uint32_t profile;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PROFILE, &profile);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetProfile> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetProfile> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetProfile> Retrieved Property, Value is %s.", (profile == 100 ? "High" : (profile == 77 ? "Main" : "Baseline")));
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetProfile> Value is %s.", (profile == 100 ? "High" : (profile == 77 ? "Main" : "Baseline")));
 	return (VCEProfile)profile;
 }
 
@@ -716,9 +716,9 @@ Plugin::AMD::VCEProfileLevel Plugin::AMD::VCEEncoder::GetProfileLevel() {
 	uint32_t profileLevel;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, &profileLevel);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetProfileLevel> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetProfileLevel> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetProfileLevel> Retrieved Property, Value is %d.", profileLevel);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetProfileLevel> Value is %d.", profileLevel);
 	return (VCEProfileLevel)(profileLevel);
 }
 
@@ -737,9 +737,9 @@ uint32_t Plugin::AMD::VCEEncoder::GetMaxLTRFrames() {
 	uint32_t maximumLTRFrames;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, &maximumLTRFrames);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetMaxLTRFrames> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetMaxLTRFrames> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetMaxLTRFrames> Retrieved Property, Value is %d.", maximumLTRFrames);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetMaxLTRFrames> Value is %d.", maximumLTRFrames);
 	return maximumLTRFrames;
 }
 
@@ -757,9 +757,9 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameSize() {
 	AMFSize frameSize;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, &frameSize);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetFrameSize> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetFrameSize> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetFrameSize> Retrieved Property, Value is %dx%d.", frameSize.width, frameSize.height);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetFrameSize> Value is %dx%d.", frameSize.width, frameSize.height);
 	m_FrameSize.first = frameSize.width;
 	m_FrameSize.second = frameSize.height;
 	return std::pair<uint32_t, uint32_t>(m_FrameSize);
@@ -780,9 +780,9 @@ uint32_t Plugin::AMD::VCEEncoder::GetTargetBitrate() {
 	uint32_t bitrate;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, &bitrate);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetTargetBitrate> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetTargetBitrate> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetTargetBitrate> Retrieved Property, Value is %d bits.", bitrate);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetTargetBitrate> Value is %d bits.", bitrate);
 	return bitrate;
 }
 
@@ -801,9 +801,9 @@ uint32_t Plugin::AMD::VCEEncoder::GetPeakBitrate() {
 	uint32_t bitrate;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, &bitrate);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetPeakBitrate> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetPeakBitrate> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetPeakBitrate> Retrieved Property, Value is %d bits.", bitrate);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetPeakBitrate> Value is %d bits.", bitrate);
 	return bitrate;
 }
 
@@ -845,9 +845,9 @@ Plugin::AMD::VCERateControlMethod Plugin::AMD::VCEEncoder::GetRateControlMethod(
 	uint32_t method;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, &method);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetRateControlMethod> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetRateControlMethod> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetRateControlMethod> Retrieved Property, Value is %s.", CustomToName[AMFToCustom[method]]);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetRateControlMethod> Value is %s.", CustomToName[AMFToCustom[method]]);
 	return AMFToCustom[method];
 }
 
@@ -863,9 +863,9 @@ bool Plugin::AMD::VCEEncoder::IsRateControlSkipFrameEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, &enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsRateControlSkipFrameEnabled> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsRateControlSkipFrameEnabled> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsRateControlSkipFrameEnabled> Retrieved Property, Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsRateControlSkipFrameEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 
@@ -884,9 +884,9 @@ uint8_t Plugin::AMD::VCEEncoder::GetMinimumQP() {
 	uint32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MIN_QP, &qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetMinimumQP> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetMinimumQP> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetMinimumQP> Retrieved Property, Value is %d.", qp);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetMinimumQP> Value is %d.", qp);
 	return qp;
 }
 
@@ -905,9 +905,9 @@ uint8_t Plugin::AMD::VCEEncoder::GetMaximumQP() {
 	uint32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_QP, &qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetMaximumQP> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetMaximumQP> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetMaximumQP> Retrieved Property, Value is %d.", qp);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetMaximumQP> Value is %d.", qp);
 	return qp;
 }
 
@@ -926,9 +926,9 @@ uint8_t Plugin::AMD::VCEEncoder::GetIFrameQP() {
 	uint32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QP_I, &qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetIFrameQP> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetIFrameQP> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetIFrameQP> Retrieved Property, Value is %d.", qp);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetIFrameQP> Value is %d.", qp);
 	return qp;
 }
 
@@ -947,9 +947,9 @@ uint8_t Plugin::AMD::VCEEncoder::GetPFrameQP() {
 	uint32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QP_P, &qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetPFrameQP> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetPFrameQP> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetPFrameQP> Retrieved Property, Value is %d.", qp);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetPFrameQP> Value is %d.", qp);
 	return qp;
 }
 
@@ -968,9 +968,9 @@ uint8_t Plugin::AMD::VCEEncoder::GetBFrameQP() {
 	uint32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QP_B, &qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetBFrameQP> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetBFrameQP> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetBFrameQP> Retrieved Property, Value is %d.", qp);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetBFrameQP> Value is %d.", qp);
 	return qp;
 }
 
@@ -1006,9 +1006,9 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameRate() {
 	AMFRate frameRate;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FRAMERATE, &frameRate);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetFrameRate> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetFrameRate> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetFrameRate> Retrieved Property, Value is %d/%d.", frameRate.num, frameRate.den);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetFrameRate> Value is %d/%d.", frameRate.num, frameRate.den);
 	m_FrameRate.first = frameRate.num;
 	m_FrameRate.second = frameRate.den;
 	m_FrameRateDivisor = (double_t)frameRate.num / (double_t)frameRate.den;
@@ -1031,9 +1031,9 @@ uint32_t Plugin::AMD::VCEEncoder::GetVBVBufferSize() {
 	uint32_t size;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, &size);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetVBVBufferSize> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetVBVBufferSize> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetVBVBufferSize> Retrieved Property, Value is %d.", size);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetVBVBufferSize> Value is %d.", size);
 	return size;
 }
 
@@ -1052,9 +1052,9 @@ double_t Plugin::AMD::VCEEncoder::GetInitialVBVBufferFullness() {
 	uint32_t vbvBufferFullness;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, &vbvBufferFullness);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetVBVBufferSize> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetInitialVBVBufferFullness> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetVBVBufferSize> Retrieved Property, Value is %d.", vbvBufferFullness);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetInitialVBVBufferFullness> Value is %f%%.", vbvBufferFullness / 64.0 * 100.0);
 	return ((double_t)vbvBufferFullness / 64.0);
 }
 
@@ -1070,9 +1070,9 @@ bool Plugin::AMD::VCEEncoder::IsEnforceHRDRestrictionsEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, &enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetEnforceHRD> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetEnforceHRD> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetEnforceHRD> Retrieved Property, Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetEnforceHRD> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 
@@ -1088,9 +1088,9 @@ bool Plugin::AMD::VCEEncoder::IsFillerDataEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, &enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsFillerDataEnabled> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsFillerDataEnabled> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsFillerDataEnabled> Retrieved Property, Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsFillerDataEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 
@@ -1109,9 +1109,9 @@ uint32_t Plugin::AMD::VCEEncoder::GetMaximumAccessUnitSize() {
 	uint32_t size;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, &size);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetMaxAUSize> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetMaxAUSize> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetMaxAUSize> Retrieved Property, Value is %d.", size);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetMaxAUSize> Value is %d.", size);
 	return size;
 }
 
@@ -1130,9 +1130,9 @@ int8_t Plugin::AMD::VCEEncoder::GetBPictureDeltaQP() {
 	int32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, &qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetBPictureDeltaQP> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetBPictureDeltaQP> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetBPictureDeltaQP> Retrieved Property, Value is %d.", qp);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetBPictureDeltaQP> Value is %d.", qp);
 	return qp;
 }
 
@@ -1151,9 +1151,9 @@ int8_t Plugin::AMD::VCEEncoder::GetReferenceBPictureDeltaQP() {
 	int32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, &qp);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetReferenceBPictureDeltaQP> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetReferenceBPictureDeltaQP> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetReferenceBPictureDeltaQP> Retrieved Property, Value is %d.", qp);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetReferenceBPictureDeltaQP> Value is %d.", qp);
 	return qp;
 }
 
@@ -1172,9 +1172,9 @@ uint32_t Plugin::AMD::VCEEncoder::GetHeaderInsertionSpacing() {
 	int32_t headerInsertionSpacing;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING, &headerInsertionSpacing);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetHeaderInsertionSpacing> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetHeaderInsertionSpacing> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetHeaderInsertionSpacing> Retrieved Property, Value is %d.", headerInsertionSpacing);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetHeaderInsertionSpacing> Value is %d.", headerInsertionSpacing);
 	return headerInsertionSpacing;
 }
 
@@ -1193,9 +1193,9 @@ uint32_t Plugin::AMD::VCEEncoder::GetIDRPeriod() {
 	int32_t period;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, &period);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetIDRPeriod> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetIDRPeriod> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetIDRPeriod> Retrieved Property, Value is %d.", period);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetIDRPeriod> Value is %d.", period);
 	return period;
 }
 
@@ -1211,9 +1211,9 @@ bool Plugin::AMD::VCEEncoder::IsDeBlockingFilterEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER, &enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsDeBlockingFilterEnabled> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsDeBlockingFilterEnabled> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsDeBlockingFilterEnabled> Retrieved Property, Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsDeBlockingFilterEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 
@@ -1229,9 +1229,9 @@ uint32_t Plugin::AMD::VCEEncoder::GetIntraRefreshMBsNumberPerSlot() {
 	int32_t mbs;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, &mbs);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetIntraRefreshMBsNumberPerSlot> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetIntraRefreshMBsNumberPerSlot> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetIntraRefreshMBsNumberPerSlot> Retrieved Property, Value is %d.", mbs);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetIntraRefreshMBsNumberPerSlot> Value is %d.", mbs);
 	return mbs;
 }
 
@@ -1249,9 +1249,9 @@ uint32_t Plugin::AMD::VCEEncoder::GetSlicesPerFrame() {
 	uint32_t slices;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, &slices);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetSlicesPerFrame> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetSlicesPerFrame> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetSlicesPerFrame> Retrieved Property, Value is %d.", slices);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetSlicesPerFrame> Value is %d.", slices);
 	return slices;
 }
 
@@ -1267,9 +1267,9 @@ Plugin::AMD::VCEBPicturePattern Plugin::AMD::VCEEncoder::GetBPicturesPattern() {
 	uint32_t pattern;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, &pattern);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetBPicturesPattern> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetBPicturesPattern> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetBPicturesPattern> Retrieved Property, Value is %d.", pattern);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetBPicturesPattern> Value is %d.", pattern);
 	return (Plugin::AMD::VCEBPicturePattern)pattern;
 }
 
@@ -1285,9 +1285,9 @@ bool Plugin::AMD::VCEEncoder::IsBReferenceEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, &enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsBReferenceEnabled> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsBReferenceEnabled> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsBReferenceEnabled> Retrieved Property, Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsBReferenceEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 
@@ -1317,9 +1317,9 @@ Plugin::AMD::VCEScanType Plugin::AMD::VCEEncoder::GetScanType() {
 	uint32_t scanType;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_SCANTYPE, &scanType);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetScanType> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetScanType> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetScanType> Retrieved Property, Value is %s.", CustomToName[scanType]);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetScanType> Value is %s.", CustomToName[scanType]);
 	return (Plugin::AMD::VCEScanType)scanType;
 }
 
@@ -1357,9 +1357,9 @@ Plugin::AMD::VCEQualityPreset Plugin::AMD::VCEEncoder::GetQualityPreset() {
 	uint32_t preset;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, &preset);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetQualityPreset> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetQualityPreset> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetQualityPreset> Retrieved Property, Value is %s.", CustomToName[AMFToCustom[preset]]);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetQualityPreset> Value is %s.", CustomToName[AMFToCustom[preset]]);
 	return AMFToCustom[preset];
 }
 
@@ -1375,9 +1375,9 @@ bool Plugin::AMD::VCEEncoder::IsHalfPixelMotionEstimationEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, &enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsHalfPixelMotionEstimationEnabled> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsHalfPixelMotionEstimationEnabled> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsHalfPixelMotionEstimationEnabled> Retrieved Property, Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsHalfPixelMotionEstimationEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 
@@ -1393,9 +1393,9 @@ bool Plugin::AMD::VCEEncoder::IsQuarterPixelMotionEstimationEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL, &enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsQuarterPixelMotionEstimationEnabled> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsQuarterPixelMotionEstimationEnabled> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsQuarterPixelMotionEstimationEnabled> Retrieved Property, Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsQuarterPixelMotionEstimationEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 
@@ -1413,8 +1413,8 @@ uint32_t Plugin::AMD::VCEEncoder::GetNumberOfTemporalEnhancementLayers() {
 	uint32_t layers;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_NUM_TEMPORAL_ENHANCMENT_LAYERS, &layers);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetNumberOfTemporalEnhancementLayers> Retrieving Property failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetNumberOfTemporalEnhancementLayers> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetNumberOfTemporalEnhancementLayers> Retrieved Property, Value is %d.", layers);
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetNumberOfTemporalEnhancementLayers> Value is %d.", layers);
 	return layers;
 }
