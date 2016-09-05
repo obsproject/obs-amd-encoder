@@ -1329,13 +1329,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {
 				// Create a Packet
 				pkt.data.resize(pBuffer->GetSize());
 				std::memcpy(pkt.data.data(), pBuffer->GetNative(), pkt.data.size());
-				/*AMF_LOG_INFO("out: %d pts, %d frame, %d frame2",
-					pData->GetPts(),
-					(uint64_t)((double_t)pData->GetPts() / frameRateDivisor),
-					(uint64_t)(((double_t)pData->GetPts() / 10000000.0) / m_FrameRateReverseDivisor)
-				);*/
-				pkt.dts = (uint64_t)((double_t)pData->GetPts() / frameRateDivisor);
-				pData->GetProperty(L"Frame", &pkt.pts);
+				pkt.dts = pkt.pts = (uint64_t)((double_t)pData->GetPts() / frameRateDivisor);
 				pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &pktType);
 				pkt.type = (AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)pktType;
 
