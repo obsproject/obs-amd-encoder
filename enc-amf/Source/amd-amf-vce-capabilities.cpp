@@ -71,8 +71,8 @@ void Plugin::AMD::VCECapabilities::ReportCapabilities() {
 		"FSM",
 		"Instance #");
 
-	VCECapabilities::EncoderCaps* capsEnc[2] = { &caps->m_AVCCaps, &caps->m_SVCCaps };
-	for (uint8_t i = 0; i < 2; i++) {
+	VCECapabilities::EncoderCaps* capsEnc[3] = { &caps->m_AVCCaps, &caps->m_SVCCaps, &caps->m_HEVCCaps };
+	for (uint8_t i = 0; i < 3; i++) {
 		// Encoder Acceleration
 		char* accelType;
 		switch (capsEnc[i]->acceleration_type) {
@@ -93,7 +93,7 @@ void Plugin::AMD::VCECapabilities::ReportCapabilities() {
 		// Print to log
 		sprintf(msgBuf.data(),
 			" %4s | %8s | %11d | %8d | %11d | %9d | %7s | %4d - %4d | %7d | %3s | %10d ",
-			(i == 0 ? "AVC" : "SVC"),
+			(i == 0 ? "AVC" : (i == 1 ? "SVC" : "HEVC")),
 			accelType,
 			capsEnc[i]->maxBitrate,
 			capsEnc[i]->maxNumOfStreams,
@@ -185,19 +185,32 @@ bool Plugin::AMD::VCECapabilities::RefreshCapabilities() {
 	//////////////////////////////////////////////////////////////////////////
 	// Get Encoder Capabilities
 	//////////////////////////////////////////////////////////////////////////
-	EncoderCaps* caps[2] = { &m_AVCCaps, &m_SVCCaps };
-	const wchar_t* capsString[2] = { AMFVideoEncoderVCE_AVC , AMFVideoEncoderVCE_SVC };
-	for (uint8_t capsIndex = 0; capsIndex < 2; capsIndex++) {
+	EncoderCaps* caps[3] = { &m_AVCCaps, &m_SVCCaps, &m_HEVCCaps};
+	const wchar_t* capsString[3] = { AMFVideoEncoderVCE_AVC , AMFVideoEncoderVCE_SVC, L"AMFVideoEncoderHW_HEVC" };
+	for (uint8_t capsIndex = 0; capsIndex < 3; capsIndex++) {
+		// Null Values
+		caps[capsIndex]->acceleration_type = amf::AMF_ACCEL_NOT_SUPPORTED;
+		caps[capsIndex]->maxBitrate = 0;
+		caps[capsIndex]->maxNumOfStreams = 0;
+		caps[capsIndex]->maxProfile = 0;
+		caps[capsIndex]->maxProfileLevel = 0;
+		caps[capsIndex]->supportsBFrames = false;
+		caps[capsIndex]->minReferenceFrames = 0;
+		caps[capsIndex]->maxReferenceFrames = 0;
+		caps[capsIndex]->maxTemporalLayers = 0;
+		caps[capsIndex]->supportsFixedSliceMode = false;
+		caps[capsIndex]->maxNumOfHwInstances = 0;
+		
 		amf::AMFComponentPtr l_AMFComponent;
 		res = l_AMFFactory->CreateComponent(l_AMFContext, capsString[capsIndex], &l_AMFComponent);
 		if (res != AMF_OK) {
-			AMF_LOG_ERROR("Failed to gather Capabilities for Encoder Type %s, error code %d.", (capsIndex ? "SVC" : "AVC"), res);
+			AMF_LOG_ERROR("Failed to gather Capabilities for Encoder Type %s, error code %d.", (capsIndex == 0 ? "AVC" : (capsIndex == 1 ? "AVC" : "HEVC")), res);
 			break;
 		}
 		amf::AMFCapsPtr encCaps;
 		res = l_AMFComponent->GetCaps(&encCaps);
 		if (res != AMF_OK) {
-			AMF_LOG_ERROR("Failed to gather Capabilities for Encoder Type %s, error code %d.", (capsIndex ? "SVC" : "AVC"), res);
+			AMF_LOG_ERROR("Failed to gather Capabilities for Encoder Type %s, error code %d.", (capsIndex == 0 ? "AVC" : (capsIndex == 1 ? "AVC" : "HEVC")), res);
 			l_AMFComponent->Terminate();
 			break;
 		}
