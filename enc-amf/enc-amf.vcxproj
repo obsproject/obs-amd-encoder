@@ -204,7 +204,7 @@
       <Binaries Include="$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\*.pdb" />
     </ItemGroup>
     <Copy SourceFiles="@(Resources)" DestinationFiles="@(Resources->'$(TargetDir)..\..\data\obs-plugins\$(ProjectName)\%(RecursiveDir)\%(Filename)%(Extension)')" SkipUnchangedFiles="True" UseHardlinksIfPossible="True" />
-    <Copy SourceFiles="@(Resources)" DestinationFiles="@(Resources->'$(SolutionDir)\#Resources\Package\data\obs-plugins\$ProjectName)\%(RecursiveDir)\%(Filename)%(Extension)')" SkipUnchangedFiles="True" UseHardlinksIfPossible="True" />
+    <Copy SourceFiles="@(Resources)" DestinationFiles="@(Resources->'$(SolutionDir)\#Resources\Package\data\obs-plugins\$(ProjectName)\%(RecursiveDir)\%(Filename)%(Extension)')" SkipUnchangedFiles="True" UseHardlinksIfPossible="True" />
     <Copy SourceFiles="@(Binaries)" DestinationFiles="@(Binaries->'$(SolutionDir)\#Resources\Package\obs-plugins\$(PlatformArchitecture)bit\%(RecursiveDir)\%(Filename)%(Extension)')" SkipUnchangedFiles="True" UseHardlinksIfPossible="True" />
   </Target>
 </Project>
