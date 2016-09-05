@@ -263,8 +263,8 @@ bool Plugin::Interface::H264SimpleInterface::preset_modified(obs_properties_t *p
 			obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_BUFFER_SIZE, false);
 			obs_data_set_int(data, AMF_H264_FILLERDATA, 0);
 			obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 0);
-			obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, 0);//(VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 3 : 0));
-			obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);//(VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 1 : 0));
+			obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 3 : 0));
+			obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 1 : 0));
 			obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 1);
 			obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 			break;
