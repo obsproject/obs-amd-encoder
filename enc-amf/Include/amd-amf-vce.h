@@ -149,7 +149,15 @@ namespace Plugin {
 			void GetOutput(struct encoder_packet*& packet, bool*& received_packet);
 			bool GetExtraData(uint8_t**& data, size_t*& size);
 			void GetVideoInfo(struct video_scale_info*& vsi);
+			
+			// Threading
+			private:
+			void InputThreadLogic();
+			void OutputThreadLogic();
 
+			// Utility
+			inline amf::AMFSurfacePtr CreateSurfaceFromFrame(struct encoder_frame*& frame);
+			
 			#pragma region AMF Properties
 			public:
 			void LogProperties();
@@ -346,15 +354,7 @@ namespace Plugin {
 			void SetCABACEnabled(bool enabled);
 			bool IsCABACEnabled();
 			#pragma endregion AMF Properties
-
-			// Threading
-			private:
-			void InputThreadLogic();
-			void OutputThreadLogic();
-
-			// Utility
-			inline amf::AMFSurfacePtr CreateSurfaceFromFrame(struct encoder_frame*& frame);
-
+			
 			#pragma endregion Methods
 			//////////////////////////////////////////////////////////////////////////
 
@@ -381,8 +381,8 @@ namespace Plugin {
 			bool m_IsStarted;
 			struct ThreadData {
 				std::vector<uint8_t> data;
-				uint64_t dts;
-				uint64_t pts;
+				uint64_t dts, dts_usec;
+				uint64_t pts, pts_usec;
 				AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM type;
 			};
 			struct {
@@ -407,7 +407,6 @@ namespace Plugin {
 
 			#pragma endregion Members
 			//////////////////////////////////////////////////////////////////////////
-
 		};
 	}
 }

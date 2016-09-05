@@ -234,6 +234,7 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
 void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& received_packet) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFDataPtr pData;
+	ThreadData pkt;
 
 	// Early-Exception if not encoding.
 	if (!m_IsStarted) {
@@ -244,10 +245,8 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 
 	// Query Output
 	m_ThreadedOutput.condvar.notify_all();
-
-	// Queue: Check if a Packet is available.
-	ThreadData pkt;
-	{
+	
+	{ // Queue: Check if a Packet is available.
 		std::unique_lock<std::mutex> lock(m_ThreadedOutput.queuemutex);
 		if (m_ThreadedOutput.queue.size() == 0) {
 			*received_packet = false;
@@ -274,9 +273,12 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 	packet->data = m_PacketDataBuffer.data();
 	packet->pts = pkt.pts;
 	packet->dts = pkt.dts;
+	//packet->pts_usec = pkt.pts_usec;
+	packet->dts_usec = pkt.dts_usec;
+
 	switch (pkt.type) {
 		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR://
-			packet->keyframe = true;				// IDR-Frames are Keyframes that contain a lot of information.
+			packet->keyframe = true;				// IDR-Frames are Key-Frames that contain a lot of information.
 			packet->priority = 3;					// Highest priority, always continue streaming with these.
 			packet->drop_priority = 3;				// Dropped IDR-Frames can only be replaced by the next IDR-Frame.
 			break;
@@ -294,16 +296,15 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 			break;
 	}
 	*received_packet = true;
-
-	// Queue: Remove submitted element.
-	{
+	
+	{ // Queue: Remove submitted element.
 		std::unique_lock<std::mutex> lock(m_ThreadedOutput.queuemutex);
 		m_ThreadedOutput.queue.pop();
 	}
 
 	// Debug: Packet Information
 	#ifdef DEBUG
-	AMF_LOG_INFO("Packet: Priority(%d), DropPriority(%d), PTS(%d), Size(%d)", packet->priority, packet->drop_priority, packet->pts, packet->size);
+	AMF_LOG_INFO("Packet: Type(%d), PTS(%4d,%12d), DTS(%4d,%12d), Size(%8d)", pkt.type, pkt.pts, pkt.pts_usec, pkt.dts, pkt.dts_usec, pkt.data.size());
 	#endif
 }
 
@@ -360,6 +361,168 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 	else
 		vsi->colorspace = VIDEO_CS_709;
 	// HEVC will fix it. Or not. We don't even have Two Pass Encoding yet! AMD what the hell?
+}
+
+void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles Surface Submission
+	std::unique_lock<std::mutex> lock(m_ThreadedInput.mutex);
+
+	do {
+		m_ThreadedInput.condvar.wait(lock);
+
+		// Skip to check if isStarted is false.
+		if (!m_IsStarted)
+			continue;
+
+		// Skip to next wait if queue is empty.
+		AMF_RESULT res = AMF_OK;
+		while (res == AMF_OK) { // Repeat until impossible.
+			amf::AMFSurfacePtr surface;
+
+			{ // Dequeue Surface
+				std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
+				if (m_ThreadedInput.queue.size() == 0)
+					break;
+				surface = m_ThreadedInput.queue.front();
+			}
+
+			AMF_SYNC_LOCK(res = m_AMFEncoder->SubmitInput(surface););
+			if (res == AMF_OK) {
+				{ // Remove Surface from Queue
+					std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
+					m_ThreadedInput.queue.pop();
+				}
+			} else if (res != AMF_INPUT_FULL) {
+				std::vector<char> msgBuf(128);
+				FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
+				AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::InputThreadLogic> SubmitInput failed with error %s.", msgBuf.data());
+			}
+		}
+	} while (m_IsStarted);
+}
+
+void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles Querying
+	std::unique_lock<std::mutex> lock(m_ThreadedOutput.mutex);
+	double_t frameRateDivisor = (m_FrameRateReverseDivisor * 10000000.0);
+
+	do {
+		m_ThreadedOutput.condvar.wait(lock);
+
+		// Skip to check if isStarted is false.
+		if (!m_IsStarted)
+			continue;
+
+		// Update divisor.
+		frameRateDivisor = (m_FrameRateReverseDivisor * 1000000.0);
+
+		AMF_RESULT res = AMF_OK;
+		while (res == AMF_OK) { // Repeat until impossible.
+			amf::AMFDataPtr pData;
+
+			AMF_SYNC_LOCK(res = m_AMFEncoder->QueryOutput(&pData););
+			if (res == AMF_OK) {
+				amf::AMFVariant variant;
+				ThreadData pkt;
+
+				// Acquire Buffer
+				amf::AMFBufferPtr pBuffer(pData);
+
+				// Create a Packet
+				pkt.data.resize(pBuffer->GetSize());
+				std::memcpy(pkt.data.data(), pBuffer->GetNative(), pkt.data.size());
+				{
+					//See: https://stackoverflow.com/questions/6044330/ffmpeg-c-what-are-pts-and-dts-what-does-this-code-block-do-in-ffmpeg-c
+					//	So let's say we had a movie, and the frames were displayed like: I B B P.
+					//	Now, we need to know the information in P before we can display either B frame.
+					//	Because of this, the frames might be stored like this: I P B B.
+					//	This is why we have a decoding timestamp and a presentation timestamp on each frame.
+					//	The decoding timestamp tells us when we need to decode something, and the presentation
+					//	time stamp tells us when we need to display something. So, in this case, our stream might look like this:
+					//	
+					//		PTS:    1 4 2 3
+					//		DTS:    1 2 3 4
+					//		Stream: I P B B
+					//	
+					//	Generally the PTS and DTS will only differ when the stream we are playing has B frames in it
+					
+					// GetPTS actually returns DTS.
+					double_t pts_as_usec = (double_t)(pData->GetPts() / 10.0);
+					pkt.pts_usec = pkt.dts_usec = (uint64_t)(pts_as_usec);
+					pkt.pts = pkt.dts = (uint64_t)(pts_as_usec / frameRateDivisor);
+
+					// Don't touch PTS at all, OBS fucks you up.
+				}
+				{ // Read Packet Type
+					uint64_t pktType;
+					pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &pktType);
+					pkt.type = (AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)pktType;
+				}
+
+				// Queue
+				{
+					std::unique_lock<std::mutex> qlock(m_ThreadedOutput.queuemutex);
+					m_ThreadedOutput.queue.push(pkt);
+				}
+			} else if (res != AMF_REPEAT) {
+				std::vector<char> msgBuf(128);
+				FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
+				AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::OutputThreadLogic> QueryOutput failed with error %s.", msgBuf.data());
+			}
+		}
+	} while (m_IsStarted);
+}
+
+amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encoder_frame*& frame) {
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFSurfacePtr pSurface = nullptr;
+	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
+		amf::AMF_SURFACE_NV12,
+		amf::AMF_SURFACE_YUV420P,
+		amf::AMF_SURFACE_RGBA
+	};
+	amf::AMF_MEMORY_TYPE memoryTypeToAMF[] = {
+		amf::AMF_MEMORY_HOST,
+		amf::AMF_MEMORY_DX11,
+		amf::AMF_MEMORY_OPENGL
+	};
+
+	if (m_MemoryType == VCEMemoryType_Host) {
+		#pragma region Host Memory Type
+		size_t planeCount;
+
+		AMF_SYNC_LOCK(res = m_AMFContext->AllocSurface(
+			memoryTypeToAMF[m_MemoryType], surfaceFormatToAMF[m_SurfaceFormat],
+			m_FrameSize.first, m_FrameSize.second,
+			&pSurface););
+		if (res != AMF_OK) // Unable to create Surface
+			ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame> Unable to create AMFSurface, error %ls (code %d).", res);
+
+		planeCount = pSurface->GetPlanesCount();
+		for (uint8_t i = 0; i < planeCount; i++) {
+			amf::AMFPlane* plane;
+			void* plane_nat;
+			int32_t height;
+			size_t hpitch;
+
+			AMF_SYNC_LOCK(plane = pSurface->GetPlaneAt(i););
+			AMF_SYNC_LOCK(plane_nat = plane->GetNative(););
+			height = plane->GetHeight();
+			hpitch = plane->GetHPitch();
+
+			for (int32_t py = 0; py < height; py++) {
+				size_t plane_off = py * hpitch;
+				size_t frame_off = py * frame->linesize[i];
+				std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+			}
+		}
+		#pragma endregion Host Memory Type
+
+		// Convert Frame Index to Nanoseconds.
+		amf_pts amfPts = (int64_t)ceil((double_t)frame->pts * (m_FrameRateReverseDivisor * 10000000.0));
+		pSurface->SetPts(amfPts);
+		pSurface->SetProperty(L"Frame", frame->pts);
+	}
+
+	return pSurface;
 }
 
 void Plugin::AMD::VCEEncoder::LogProperties() {
@@ -1255,153 +1418,3 @@ uint32_t Plugin::AMD::VCEEncoder::GetNumberOfTemporalEnhancementLayers() {
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetNumberOfTemporalEnhancementLayers> Retrieved Property, Value is %d.", layers);
 	return layers;
 }
-
-void Plugin::AMD::VCEEncoder::InputThreadLogic() {
-	// Thread Loop that handles Surface Submission
-	std::unique_lock<std::mutex> lock(m_ThreadedInput.mutex);
-	do {
-		m_ThreadedInput.condvar.wait(lock);
-
-		// Skip to check if isStarted is false.
-		if (!m_IsStarted)
-			continue;
-
-		// Skip to next wait if queue is empty.
-		AMF_RESULT res = AMF_OK;
-		while (res == AMF_OK) { // Repeat until impossible.
-			amf::AMFSurfacePtr surface;
-
-			{
-				std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
-				if (m_ThreadedInput.queue.size() == 0)
-					break;
-				surface = m_ThreadedInput.queue.front();
-			}
-			/*AMF_LOG_INFO("in: %d pts, %d frame, %d frame2",
-				surface->GetPts(),
-				(uint64_t)((double_t)surface->GetPts() / 10000000.0 * m_FrameRateDivisor),
-				(uint64_t)(((double_t)surface->GetPts() / 10000000.0) / m_FrameRateReverseDivisor)
-			);*/
-			AMF_SYNC_LOCK(res = m_AMFEncoder->SubmitInput(surface););
-			if (res == AMF_OK) {
-				{
-					std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
-					m_ThreadedInput.queue.pop();
-				}
-			} else if (res != AMF_INPUT_FULL) {
-				std::vector<char> msgBuf(128);
-				FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
-				AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::InputThreadLogic> SubmitInput failed with error %s.", msgBuf.data());
-			}
-		}
-	} while (m_IsStarted);
-}
-
-void Plugin::AMD::VCEEncoder::OutputThreadLogic() {
-	// Thread Loop that handles Querying
-	uint64_t lastFrameIndex = 0;
-	double_t frameRateDivisor = (m_FrameRateReverseDivisor * 10000000.0);
-
-	std::unique_lock<std::mutex> lock(m_ThreadedOutput.mutex);
-	do {
-		m_ThreadedOutput.condvar.wait(lock);
-
-		// Skip to check if isStarted is false.
-		if (!m_IsStarted)
-			continue;
-
-		// Update divisor.
-		frameRateDivisor = (m_FrameRateReverseDivisor * 10000000.0);
-
-		AMF_RESULT res = AMF_OK;
-		while (res == AMF_OK) { // Repeat until impossible.
-			amf::AMFDataPtr pData;
-
-			AMF_SYNC_LOCK(res = m_AMFEncoder->QueryOutput(&pData););
-			if (res == AMF_OK) {
-				amf::AMFVariant variant;
-				ThreadData pkt;
-				uint64_t pktType;
-
-				// Acquire Buffer
-				amf::AMFBufferPtr pBuffer(pData);
-
-				// Create a Packet
-				pkt.data.resize(pBuffer->GetSize());
-				std::memcpy(pkt.data.data(), pBuffer->GetNative(), pkt.data.size());
-				pkt.dts = pkt.pts = (uint64_t)((double_t)pData->GetPts() / frameRateDivisor);
-				pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &pktType);
-				pkt.type = (AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)pktType;
-
-				if ((lastFrameIndex >= pkt.dts) && (lastFrameIndex > 0))
-					AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::OutputThreadLogic> Detected out of order packet. Frame Index is %d, expected %d.", pkt.dts, lastFrameIndex + 1);
-				lastFrameIndex = pkt.dts;
-
-				// Queue
-				{
-					std::unique_lock<std::mutex> qlock(m_ThreadedOutput.queuemutex);
-					m_ThreadedOutput.queue.push(pkt);
-				}
-			} else if (res != AMF_REPEAT) {
-				std::vector<char> msgBuf(128);
-				FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
-				AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::OutputThreadLogic> QueryOutput failed with error %s.", msgBuf.data());
-			}
-		}
-	} while (m_IsStarted);
-}
-
-amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encoder_frame*& frame) {
-	AMF_RESULT res = AMF_UNEXPECTED;
-	amf::AMFSurfacePtr pSurface = nullptr;
-	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
-		amf::AMF_SURFACE_NV12,
-		amf::AMF_SURFACE_YUV420P,
-		amf::AMF_SURFACE_RGBA
-	};
-	amf::AMF_MEMORY_TYPE memoryTypeToAMF[] = {
-		amf::AMF_MEMORY_HOST,
-		amf::AMF_MEMORY_DX11,
-		amf::AMF_MEMORY_OPENGL
-	};
-
-	if (m_MemoryType == VCEMemoryType_Host) {
-		#pragma region Host Memory Type
-		size_t planeCount;
-
-		AMF_SYNC_LOCK(res = m_AMFContext->AllocSurface(
-			memoryTypeToAMF[m_MemoryType], surfaceFormatToAMF[m_SurfaceFormat],
-			m_FrameSize.first, m_FrameSize.second,
-			&pSurface););
-		if (res != AMF_OK) // Unable to create Surface
-			ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame> Unable to create AMFSurface, error %ls (code %d).", res);
-
-		planeCount = pSurface->GetPlanesCount();
-		for (uint8_t i = 0; i < planeCount; i++) {
-			amf::AMFPlane* plane;
-			void* plane_nat;
-			int32_t height;
-			size_t hpitch;
-
-			AMF_SYNC_LOCK(plane = pSurface->GetPlaneAt(i););
-			AMF_SYNC_LOCK(plane_nat = plane->GetNative(););
-			height = plane->GetHeight();
-			hpitch = plane->GetHPitch();
-
-			for (int32_t py = 0; py < height; py++) {
-				size_t plane_off = py * hpitch;
-				size_t frame_off = py * frame->linesize[i];
-				std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
-			}
-		}
-		#pragma endregion Host Memory Type
-
-		// Convert Frame Index to Nanoseconds.
-		amf_pts amfPts = (int64_t)ceil((double_t)frame->pts * (m_FrameRateReverseDivisor * 10000000.0));
-		pSurface->SetPts(amfPts);
-		pSurface->SetProperty(L"Frame", frame->pts);
-	}
-
-	return pSurface;
-}
-
