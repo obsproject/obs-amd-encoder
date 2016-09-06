@@ -76,6 +76,8 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_Memor
 	m_FrameRateDivisor = ((double_t)m_FrameRate.first / (double_t)m_FrameRate.second);
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)(m_FrameRateDivisor * 3);
+	m_EmergencyQuit = false;
+	m_EmergencyQuit_KeyFrame.resize(10);
 
 	// AMF
 	m_AMF = AMF::GetInstance();
@@ -246,6 +248,7 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
 		m_ThreadedInput.queue.push(surface);
 	} else {
 		AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is full, aborting...");
+		m_EmergencyQuit = true;
 		return false;
 	}
 
@@ -272,27 +275,27 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 		throw std::exception(error);
 	}
 
+	// Emergency Quit
+	if (m_EmergencyQuit) {
+		*received_packet = true;
+		packet->data = m_EmergencyQuit_KeyFrame.data();
+		packet->size = m_EmergencyQuit_KeyFrame.size();
+		packet->keyframe = true;
+		return;
+	}
+
 	// Query Output
 	m_ThreadedOutput.condvar.notify_all();
 	
 	{ // Queue: Check if a Packet is available.
 		std::unique_lock<std::mutex> lock(m_ThreadedOutput.queuemutex);
 		if (m_ThreadedOutput.queue.size() == 0) {
-			if ((std::chrono::high_resolution_clock::now() - m_LastFrame_ReceivedAt) > std::chrono::milliseconds(2500)) { // OBS: Fix unnotified shutdown.
-				*received_packet = false;
-			} else {
-				*received_packet = true;
-
-				packet->data = m_LastFrame_KeyFrame.data();
-				packet->size = m_LastFrame_KeyFrame.size();
-				packet->keyframe = true;
-			}
-
+			*received_packet = false;
 			return;
 		}
 
 		pkt = m_ThreadedOutput.queue.front();
-		m_LastFrame_ReceivedAt = std::chrono::high_resolution_clock::now();
+		m_EmergencyQuit_LastFrameReceivedOn = std::chrono::high_resolution_clock::now();
 	}
 
 	// Submit Packet to OBS
@@ -320,9 +323,9 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 			packet->drop_priority = 3;				// Dropped IDR-Frames can only be replaced by the next IDR-Frame.
 
 			{ // OBS: Fix unnotified shutdown.
-				if (m_LastFrame_KeyFrame.size() == 0) {
-					m_LastFrame_KeyFrame.resize(packet->size);
-					std::memcpy(m_LastFrame_KeyFrame.data(), m_PacketDataBuffer.data(), packet->size);
+				if (m_EmergencyQuit_KeyFrame.size() == 0) {
+					m_EmergencyQuit_KeyFrame.resize(packet->size);
+					std::memcpy(m_EmergencyQuit_KeyFrame.data(), m_PacketDataBuffer.data(), packet->size);
 				}
 			}
 
@@ -347,9 +350,9 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 	}
 
 	// Debug: Packet Information
-	//#ifdef DEBUG
+	#ifdef DEBUG
 	AMF_LOG_INFO("Packet: Type(%d), PTS(%4d,%12d), DTS(%4d,%12d), Size(%8d)", pkt.type, pkt.pts, pkt.pts_usec, pkt.dts, pkt.dts_usec, pkt.data.size());
-	//#endif
+	#endif
 }
 
 bool Plugin::AMD::VCEEncoder::GetExtraData(uint8_t**& extra_data, size_t*& extra_data_size) {
@@ -473,7 +476,10 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 				// Create a Packet
 				pkt.data.resize(pBuffer->GetSize());
 				std::memcpy(pkt.data.data(), pBuffer->GetNative(), pkt.data.size());
-				{ // See: https://stackoverflow.com/questions/6044330/ffmpeg-c-what-are-pts-and-dts-what-does-this-code-block-do-in-ffmpeg-c
+				{
+					// See: https://stackoverflow.com/questions/6044330/ffmpeg-c-what-are-pts-and-dts-what-does-this-code-block-do-in-ffmpeg-c
+					// PTS may not be needed: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/17
+					
 					// GetPTS actually returns DTS.
 					double_t pts_as_usec = (double_t)(pData->GetPts() / 10.0);
 					pkt.pts_usec = pkt.dts_usec = (uint64_t)(pts_as_usec);
@@ -668,6 +674,50 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	try {
 		this->GetNumberOfTemporalEnhancementLayers();
 	} catch (...) {}
+}
+
+void Plugin::AMD::VCEEncoder::SetQualityPreset(VCEQualityPreset preset) {
+	static AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM CustomToAMF[] = {
+		AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED,
+		AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED,
+		AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY,
+		(AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM)3,
+	};
+	static char* CustomToName[] = {
+		"Speed",
+		"Balanced",
+		"Quality",
+		"Unknown"
+	};
+
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, (uint32_t)CustomToAMF[preset]);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetQualityPreset> Setting to %s failed with error %ls (code %d).", res, CustomToName[preset]);
+	}
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetQualityPreset> Set to %s.", CustomToName[preset]);
+}
+
+Plugin::AMD::VCEQualityPreset Plugin::AMD::VCEEncoder::GetQualityPreset() {
+	static VCEQualityPreset AMFToCustom[] = {
+		VCEQualityPreset_Balanced,
+		VCEQualityPreset_Speed,
+		VCEQualityPreset_Quality,
+		VCEQualityPreset_Unknown,
+	};
+	static char* CustomToName[] = {
+		"Speed",
+		"Balanced",
+		"Quality",
+		"Unknown"
+	};
+
+	uint32_t preset;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, &preset);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetQualityPreset> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetQualityPreset> Value is %s.", CustomToName[AMFToCustom[preset]]);
+	return AMFToCustom[preset];
 }
 
 void Plugin::AMD::VCEEncoder::SetUsage(VCEUsage usage) {
@@ -1355,46 +1405,6 @@ Plugin::AMD::VCEScanType Plugin::AMD::VCEEncoder::GetScanType() {
 	return (Plugin::AMD::VCEScanType)scanType;
 }
 
-void Plugin::AMD::VCEEncoder::SetQualityPreset(VCEQualityPreset preset) {
-	static AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM CustomToAMF[] = {
-		AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED,
-		AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED,
-		AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY,
-	};
-	static char* CustomToName[] = {
-		"Speed",
-		"Balanced",
-		"Quality",
-	};
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, (uint32_t)CustomToAMF[preset]);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetQualityPreset> Setting to %s failed with error %ls (code %d).", res, CustomToName[preset]);
-	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetQualityPreset> Set to %s.", CustomToName[preset]);
-}
-
-Plugin::AMD::VCEQualityPreset Plugin::AMD::VCEEncoder::GetQualityPreset() {
-	static VCEQualityPreset AMFToCustom[] = {
-		VCEQualityPreset_Balanced,
-		VCEQualityPreset_Speed,
-		VCEQualityPreset_Quality,
-	};
-	static char* CustomToName[] = {
-		"Speed",
-		"Balanced",
-		"Quality",
-	};
-
-	uint32_t preset;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, &preset);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetQualityPreset> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetQualityPreset> Value is %s.", CustomToName[AMFToCustom[preset]]);
-	return AMFToCustom[preset];
-}
-
 void Plugin::AMD::VCEEncoder::SetHalfPixelMotionEstimationEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, enabled);
 	if (res != AMF_OK) {
@@ -1449,4 +1459,96 @@ uint32_t Plugin::AMD::VCEEncoder::GetNumberOfTemporalEnhancementLayers() {
 	}
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetNumberOfTemporalEnhancementLayers> Value is %d.", layers);
 	return layers;
+}
+
+void Plugin::AMD::VCEEncoder::SetNominalRange(bool enabled) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"NominalRange", enabled);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetNominalRange> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
+	}
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetNominalRange> Set to %s.", enabled ? "Enabled" : "Disabled");
+}
+
+bool Plugin::AMD::VCEEncoder::GetNominalRange() {
+	bool enabled;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"NominalRange", &enabled);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetNominalRange> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetNominalRange> Value is %s.", enabled ? "Enabled" : "Disabled");
+	return enabled;
+}
+
+void Plugin::AMD::VCEEncoder::SetWaitForTask(bool enabled) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"WaitForTask", enabled);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetWaitForTask> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
+	}
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetWaitForTask> Set to %s.", enabled ? "Enabled" : "Disabled");
+}
+
+bool Plugin::AMD::VCEEncoder::GetWaitForTask() {
+	bool enabled;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"WaitForTask", &enabled);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetWaitForTask> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetWaitForTask> Value is %s.", enabled ? "Enabled" : "Disabled");
+	return enabled;
+}
+
+void Plugin::AMD::VCEEncoder::SetGOPSize(uint32_t size) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"GOPSize", (uint32_t)size);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetGOPSize> Setting to %d failed with error %ls (code %d).", res, size);
+	}
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetGOPSize> Set to %d.", size);
+}
+
+uint32_t Plugin::AMD::VCEEncoder::GetGOPSize() {
+	uint32_t size;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"GOPSize", &size);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetGOPSize> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetGOPSize> Value is %d.", size);
+	return size;
+}
+
+void Plugin::AMD::VCEEncoder::SetAspectRatio(uint32_t num, uint32_t den) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"AspectRatio", ::AMFConstructRate(num, den));
+	if (res != AMF_OK) {
+		std::vector<char> msgBuf;
+		sprintf(msgBuf.data(), "%d:%d", num, den);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetAspectRatio> Setting to %s failed with error %ls (code %d).", res, msgBuf.data());
+	}
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetAspectRatio> Set to %d:%d.", num, den);
+}
+
+std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetAspectRatio() {
+	AMFRate aspectRatio;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"AspectRatio", &aspectRatio);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetAspectRatio> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetAspectRatio> Value is %d:%d.", aspectRatio.num, aspectRatio.den);
+	return std::pair<uint32_t, uint32_t>(aspectRatio.num, aspectRatio.den);
+}
+
+void Plugin::AMD::VCEEncoder::SetCABACEnabled(bool enabled) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"CABACEnable", enabled);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetCABACEnabled> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
+	}
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetCABACEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
+}
+
+bool Plugin::AMD::VCEEncoder::IsCABACEnabled() {
+	bool enabled;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"CABACEnable", &enabled);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsCABACEnabled> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsCABACEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
+	return enabled;
 }

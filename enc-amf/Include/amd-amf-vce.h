@@ -119,6 +119,7 @@ namespace Plugin {
 			VCEQualityPreset_Speed,
 			VCEQualityPreset_Balanced,
 			VCEQualityPreset_Quality,
+			VCEQualityPreset_Unknown, // RE revealed a fourth QualityPreset.
 		};
 
 		class VCEEncoder {
@@ -163,16 +164,24 @@ namespace Plugin {
 			public:
 			void LogProperties();
 
-			/// Encoder Static Parameters
-			/*	Selects the AMF Usage */
+			/*	Quality Preset 
+			 *	Sets up the entire encoder to a specific set of properties.
+			 *	Must be called first if you want to override properties. */
+			void SetQualityPreset(VCEQualityPreset preset);
+			VCEQualityPreset GetQualityPreset();
+
+			/*	Usage Type */
 			void SetUsage(VCEUsage usage);
 			VCEUsage GetUsage();
-			/*	Selects the H.264 Profile */
+
+			/*	H.264 Profile */
 			void SetProfile(VCEProfile profile);
 			VCEProfile GetProfile();
-			/*	Selects the H.264 Profile Level */
+
+			/*	H.264 Profile Level */
 			void SetProfileLevel(VCEProfileLevel level);
 			VCEProfileLevel GetProfileLevel();
+
 			/*	The number of long-term references controlled by the user.
 			 *
 			 *	Remarks:
@@ -183,9 +192,11 @@ namespace Plugin {
 			 **/
 			void SetMaxLTRFrames(uint32_t maximumLTRFrames);	// Long-Term Reference Frames. If 0, Encoder decides, if non-0 B-Pictures and Intra-Refresh are not supported.
 			uint32_t GetMaxLTRFrames();
-			/// Encoder Resolution Parameters
+
+			/*	Output Resolution */
 			void SetFrameSize(uint32_t width, uint32_t height);
 			std::pair<uint32_t, uint32_t> GetFrameSize();
+
 			/// Encoder Rate Control
 			/*	Selects the rate control method:
 			 *	- CQP – Constrained QP,
@@ -285,9 +296,6 @@ namespace Plugin {
 			/*	Selects progressive or interlaced scan */
 			void SetScanType(VCEScanType scanType);
 			VCEScanType GetScanType();
-			/*	Selects the quality preset */
-			void SetQualityPreset(VCEQualityPreset preset);
-			VCEQualityPreset GetQualityPreset();
 			/// Encoder Motion Estimation Parameters
 			/*	Turns on/off half-pixel motion estimation */
 			void SetHalfPixelMotionEstimationEnabled(bool enabled);
@@ -316,44 +324,30 @@ namespace Plugin {
 			uint32_t GetCurrentTemporalQualityLayer();
 
 			/// Hidden Parameters
-			void SetTier(uint32_t tier);
-			uint32_t GetTier();
-			void SetMinimumIFrameQP(uint8_t qp);
-			uint8_t GetMinimumIFrameQP();
-			void SetMaximumIFrameQP(uint8_t qp);
-			uint8_t GetMaximumIFrameQP();
-			void SetMinimumPFrameQP(uint8_t qp);
-			uint8_t GetMinimumPFrameQP();
-			void SetMaximumPFrameQP(uint8_t qp);
-			uint8_t GetMaximumPFrameQP();
-			void SetQPCBOffset(uint32_t offset);
-			uint32_t GetQPCBOffset();
-			void SetQPCROffset(uint32_t offset);
-			uint32_t GetQPCROffset();
-			void SetGOPType(uint32_t gopType); // GOP_ALIGNED, IDR_ALIGNED?
-			uint32_t GetGOPType();
-			void SetGOPPerIDR(bool gopPerIDR);
-			bool GetGOPPerIDR();
+			void SetNominalRange(bool enabled);
+			bool GetNominalRange();
+			void SetWaitForTask(bool enabled);
+			bool GetWaitForTask();
 			void SetGOPSize(uint32_t size);
 			uint32_t GetGOPSize();
-			void SetMinimumGOPSize(uint32_t size);
-			uint32_t GetMinimumGOPSize();
-			void SetMaximumGOPSize(uint32_t size);
-			uint32_t GetMaximumGOPSize();
 			void SetAspectRatio(uint32_t x, uint32_t y);
 			std::pair<uint32_t, uint32_t> GetAspectRatio();
-			void SetNominalRange(uint32_t range);
-			uint32_t GetNominalRange();
-			void SetIntraRefreshMode(uint32_t mode);
-			uint32_t GetIntraRefreshMode();
-			void SetGOPAlignmentEnabled(bool enabled);
-			bool IsGOPAlignmentEnabled();
-			void SetSliceControlMode(uint32_t mode);
-			uint32_t GetSliceControlMode();
-			void SetSliceControlSize(uint32_t size);
-			uint32_t GetSliceControlSize();
 			void SetCABACEnabled(bool enabled);
 			bool IsCABACEnabled();
+			//void SetQualityEnhancementMode(uint32_t qualityEnhancementMode);
+			//uint32_t GetQualityEnhancementMode();
+			
+			// VCE Parameters
+			// - SliceControlMode: AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB_ROW, AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB
+
+			// HEVC Parameters
+			// - MinQP_I, MaxQP_I
+			// - MinQP_P, MaxQP_P
+			// - QPCBOFFSET, QPCROFFSET
+			// - GOPPerIDR
+			// - GOPSizeMin, GOPSizeMax
+			// - EnableGOPAlignment
+
 			#pragma endregion AMF Properties
 			
 			#pragma endregion Methods
@@ -379,8 +373,9 @@ namespace Plugin {
 			uint32_t m_TimerPeriod;
 
 			// OBS: Fix unnotified shutdown.
-			std::chrono::high_resolution_clock::time_point m_LastFrame_ReceivedAt;
-			std::vector<uint8_t> m_LastFrame_KeyFrame;
+			std::chrono::high_resolution_clock::time_point m_EmergencyQuit_LastFrameReceivedOn;
+			std::vector<uint8_t> m_EmergencyQuit_KeyFrame;
+			bool m_EmergencyQuit;
 
 			// Threading
 			bool m_IsStarted;
