@@ -126,7 +126,7 @@ Plugin::AMD::AMF::AMF() {
 	}
 
 	// Initialize AMF Libraries
-	res = AMFInit(m_AMFVersion_Compiler, &m_AMFFactory);
+	res = AMFInit(0xFFFFFFFFFFFFFFFFul, &m_AMFFactory);
 	if (res != AMF_OK) {
 		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Initializing AMF Library failed with error code %d.", res);
 		throw std::exception("", res);
