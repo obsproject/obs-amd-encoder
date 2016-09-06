@@ -624,10 +624,10 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 	m_VideoEncoder = new VCEEncoder(VCEEncoderType_AVC, VCEMemoryType_Host, format);
 	
 	/// Usage & Quality Preset
-	m_VideoEncoder->SetUsage((VCEUsage)obs_data_get_int(settings, AMF_H264_USAGE));
 	value = obs_data_get_int(settings, AMF_H264_QUALITY_PRESET);
 	if (value != -1)
 		m_VideoEncoder->SetQualityPreset((VCEQualityPreset)value);
+	m_VideoEncoder->SetUsage((VCEUsage)obs_data_get_int(settings, AMF_H264_USAGE));
 
 	// Profile & Level
 	/// Profile
