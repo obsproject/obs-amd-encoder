@@ -64,3 +64,14 @@ Before installing this Version, please uninstall any previous versions. If you u
 * Fixed: Advanced Interface now applies properties in the same order as the Simple Interface.
 * Fixed: Crash in Simple Interface on Cards that don't support B-Pictures.
 * Updated: Languages en-US (American English), de-DE (German), Vi-VN (Vietnamese).
+
+*1.3.0pre8*
+
+* Fixed: Fixed some values not being applied in 32-Bit.
+* Fixed: "Enforce streaming service encoder settings" is now properly used, thanks to Jim.
+* Fixed: Simple Interface will now correctly update when a setting is modified.
+* Changed: Temporary workaround for how PTS and DTS are calculated, see issue: https://obsproject.com/mantis/view.php?id=614.
+* Changed: Reduced log output length for readability.
+* Changed: Threads are now forcefully terminating if they are stuck instead of freezing OBS.
+* Added: Fail-Safe so that Stop Streaming/Recording still works even when GetOutput fails.
+* Added: Experimental capability logging for future HEVC implementation.
