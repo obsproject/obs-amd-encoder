@@ -486,7 +486,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 					int64_t dts_usec = (pData->GetPts() / 10);
 					
 					// Decode Timestamp
-					pkt.dts_usec = (int64_t)(dts_usec);// -(frTimeStep << 1)); // DTS starts at -2.
+					pkt.dts_usec = (int64_t)(dts_usec);
 					pkt.dts = (int64_t)(pkt.dts_usec / frTimeStep);
 
 					// Presentation Timestamp
