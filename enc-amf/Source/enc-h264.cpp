@@ -886,5 +886,48 @@ bool Plugin::Interface::H264Interface::update_properties(obs_data_t* settings) {
 			m_VideoEncoder->SetCABACEnabled(value != 0);
 	} catch (...) {}
 
+
+	// OBS: Enforce streaming service encoder settings
+	const char* t_str = obs_data_get_string(settings, "rate_control");
+	if (strcmp(t_str, "") != 0) {
+		if (strcmp(t_str, "CBR") == 0) {
+			m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_ConstantBitrate);
+			m_VideoEncoder->SetFillerDataEnabled(true);
+		} else if (strcmp(t_str, "VBR") == 0) {
+			m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_VariableBitrate_PeakConstrained);
+		} else if (strcmp(t_str, "CQP") == 0) {
+			m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_ConstantQP);
+		}
+	} else {
+		switch (m_VideoEncoder->GetRateControlMethod()) {
+			case VCERateControlMethod_ConstantBitrate:
+				obs_data_set_string(settings, "rate_control", "CBR");
+				break;
+			case VCERateControlMethod_VariableBitrate_PeakConstrained:
+				obs_data_set_string(settings, "rate_control", "VBR");
+				break;
+			case VCERateControlMethod_VariableBitrate_LatencyConstrained:
+				obs_data_set_string(settings, "rate_control", "VBR_LAT");
+				break;
+			case VCERateControlMethod_ConstantQP:
+				obs_data_set_string(settings, "rate_control", "CQP");
+				break;
+		}
+	}
+	if (obs_data_get_int(settings, "bitrate") != -1) {
+		m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(settings, "bitrate"));
+		m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(settings, "bitrate"));
+		m_VideoEncoder->SetVBVBufferSize((uint32_t)obs_data_get_int(settings, "bitrate"));
+	} else {
+		obs_data_set_int(settings, "bitrate", m_VideoEncoder->GetTargetBitrate());
+	}
+	uint32_t fpsNum = m_VideoEncoder->GetFrameRate().first;
+	uint32_t fpsDen = m_VideoEncoder->GetFrameRate().second;
+	if (obs_data_get_int(settings, "keyint_sec") != -1) {
+		m_VideoEncoder->SetIDRPeriod((uint32_t)(obs_data_get_int(settings, "keyint_sec") * ((double_t)fpsNum / (double_t)fpsDen)));
+	} else {
+		obs_data_set_int(settings, "keyint_sec", (uint64_t)(m_VideoEncoder->GetIDRPeriod() / ((double_t)fpsNum / (double_t)fpsDen)));
+	}
+
 	return true;
 }

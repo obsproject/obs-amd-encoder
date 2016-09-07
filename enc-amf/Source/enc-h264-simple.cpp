@@ -285,6 +285,9 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 				obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 1 : 0));
 				obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 1);
 				obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
+				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE, false);
+				obs_data_set_int(data, AMF_H264_GOP_SIZE, 60);
+				obs_data_set_bool(data, AMF_H264_CABAC, true);
 				break;
 			case 1: // Twitch
 				obs_data_set_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 2);
@@ -302,6 +305,9 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 				obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 1 : 0));
 				obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 1);
 				obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
+				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE, false);
+				obs_data_set_int(data, AMF_H264_GOP_SIZE, 60);
+				obs_data_set_bool(data, AMF_H264_CABAC, true);
 				break;
 			case 2: // YouTube
 				obs_data_set_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 2);
@@ -319,6 +325,9 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 				obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 1 : 0));
 				obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 1);
 				obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
+				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE, false);
+				obs_data_set_int(data, AMF_H264_GOP_SIZE, 60);
+				obs_data_set_bool(data, AMF_H264_CABAC, true);
 				break;
 		}
 		obs_data_set_int(data, AMF_H264SIMPLE_PRESET, -1);
@@ -550,7 +559,7 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 
 	/// Encoder Picture Control Parameters
 	//m_VideoEncoder->SetHeaderInsertionSpacing((uint32_t)obs_data_get_int(settings, AMF_VCE_H264_KEYFRAME_INTERVAL) * (uint32_t)((double_t)fpsNum / (double_t)fpsDen));
-	m_VideoEncoder->SetIDRPeriod((uint32_t)(obs_data_get_int(settings, AMF_H264SIMPLE_KEYFRAME_INTERVAL) * ((double_t)fpsNum / (double_t)fpsDen)));
+	m_VideoEncoder->SetIDRPeriod((uint32_t)((double_t)obs_data_get_int(settings, AMF_H264SIMPLE_KEYFRAME_INTERVAL) * ((double_t)fpsNum / (double_t)fpsDen)));
 	m_VideoEncoder->SetDeBlockingFilterEnabled(obs_data_get_int(settings, AMF_H264_DEBLOCKINGFILTER) != 0);
 	try {
 		m_VideoEncoder->SetBPicturePattern((VCEBPicturePattern)obs_data_get_int(settings, AMF_H264_BPICTURE_PATTERN));
