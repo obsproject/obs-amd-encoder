@@ -593,7 +593,7 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 
 	// Experimental
 	m_VideoEncoder->SetNominalRange(true);
-	//m_VideoEncoder->SetWaitForTask(true);
+	m_VideoEncoder->SetWaitForTask(true);
 
 	// OBS: Enforce streaming service encoder settings
 	const char* t_str = obs_data_get_string(settings, "rate_control");
