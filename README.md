@@ -1,24 +1,4 @@
-# AMD Advanced Media Framework Plugin for OBS Studio
-This is a Plugin for OBS Studio to enable native AMF integration.
-
-# Troubleshooting
-
-## Frequently Asked Questions
-These are common Questions that are repeatedly asked. If you see someone asking one of these questions, link them here.
-
-### Q: I can't find the Encoder!
-You need to select "Advanced" as the Output Mode for it to show up.
-
-### Q: There are two encoders called the same, what do I do?!
-Select the one that is called "H264 Encoder (AMD Advanced Media Framework)".
-
-### Q: My Video is blocky or has a low framerate!
-The first step is to increase the bitrate or lower the QP values. Additionally make sure that you enter the values in the correct format, advanced interface needs bits/s while simple interface needs kbit/s. If neither helped, see the entry "Reporting Issues".
-
-## Reporting Issues
-
-Before reporting an Issue, please [read this first](https://github.com/Xaymar/OBS-AMD-Media-Framework/wiki/Reporting-Issues).
-You will not get help unless you include all necessary information listed on that page.
+This Plugin adds support for AMDs Hardware Encoder for H264 and HEVC. It is based on the MIT licensed AMF SDK.
 
 # Contributing
 
