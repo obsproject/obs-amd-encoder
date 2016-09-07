@@ -449,7 +449,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 
 void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles Querying
 	std::unique_lock<std::mutex> lock(m_ThreadedOutput.mutex);
-	double_t frameRateDivisor = (m_FrameRateReverseDivisor * 10000000.0);
+	double_t frTimeStep = (m_FrameRateReverseDivisor * 10000000.0);
 
 	do {
 		m_ThreadedOutput.condvar.wait(lock);
@@ -459,7 +459,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 			continue;
 
 		// Update divisor.
-		frameRateDivisor = (m_FrameRateReverseDivisor * 1000000.0);
+		frTimeStep = (m_FrameRateReverseDivisor * 1000000.0);
 
 		AMF_RESULT res = AMF_OK;
 		while (res == AMF_OK) { // Repeat until impossible.
@@ -479,15 +479,17 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 				{
 					// See: https://stackoverflow.com/questions/6044330/ffmpeg-c-what-are-pts-and-dts-what-does-this-code-block-do-in-ffmpeg-c
 					// PTS may not be needed: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/17
-					
-					// GetPTS actually returns DTS.
-					double_t pts_as_usec = (((double_t)pData->GetPts()) / 10.0) - 1000000.0; // DTS needs to be further in the past than PTS.
-					pkt.pts_usec = pkt.dts_usec = (uint64_t)ceil(pts_as_usec);
-					pkt.pts = pkt.dts = (uint64_t)ceil(pts_as_usec / frameRateDivisor);
 
-					// Touching PTS here will mess up. Why? No fucking clue.
+					// Retrieve Decode-Timestamp from AMF and convert it to micro-seconds.
+					double_t dts_usec = (((double_t)pData->GetPts()) / 10.0);
+					
+					// Decode Timestamp
+					pkt.dts_usec = (uint64_t)ceil(dts_usec) - (5 * frTimeStep);
+					pkt.dts = (uint64_t)ceil(dts_usec / frTimeStep) - 5;
+
+					// Presentation Timestamp
 					pBuffer->GetProperty(L"Frame", &pkt.pts);
-					pkt.pts_usec = (uint64_t)(pkt.pts * frameRateDivisor);
+					pkt.pts_usec = (uint64_t)(pkt.pts * frTimeStep);
 				}
 				{ // Read Packet Type
 					uint64_t pktType;
