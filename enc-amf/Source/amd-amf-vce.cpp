@@ -125,7 +125,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_Memor
 	m_EncoderType = p_Type;
 	m_MemoryType = p_MemoryType;
 	m_SurfaceFormat = p_SurfaceFormat;
-
+	
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::VCEEncoder> Initialization complete!");
 }
 
@@ -449,7 +449,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 
 void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles Querying
 	std::unique_lock<std::mutex> lock(m_ThreadedOutput.mutex);
-	double_t frTimeStep = 0;
+	uint64_t frTimeStep = 0;
 
 	do {
 		m_ThreadedOutput.condvar.wait(lock);
@@ -459,7 +459,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 			continue;
 
 		// Update divisor.
-		frTimeStep = (m_FrameRateReverseDivisor * 1000000.0);
+		frTimeStep = (uint64_t)(m_FrameRateReverseDivisor * 1e6);
 
 		AMF_RESULT res = AMF_OK;
 		while (res == AMF_OK) { // Repeat until impossible.
@@ -481,11 +481,11 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 					// PTS may not be needed: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/17
 
 					// Retrieve Decode-Timestamp from AMF and convert it to micro-seconds.
-					double_t dts_usec = (((double_t)pData->GetPts()) / 10.0);
+					uint64_t dts_usec = (pData->GetPts() / 10);
 					
 					// Decode Timestamp
-					pkt.dts_usec = (uint64_t)ceil(dts_usec - (5.0 * frTimeStep));
-					pkt.dts = (uint64_t)ceil(dts_usec / frTimeStep) - 5;
+					pkt.dts_usec = (uint64_t)(dts_usec - (5 * frTimeStep));
+					pkt.dts = (uint64_t)(pkt.dts_usec / frTimeStep);
 
 					// Presentation Timestamp
 					pBuffer->GetProperty(L"Frame", &pkt.pts);
