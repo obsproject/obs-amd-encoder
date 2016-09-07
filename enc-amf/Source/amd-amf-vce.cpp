@@ -282,7 +282,7 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 		packet->data = m_EmergencyQuit_KeyFrame.data();
 		packet->size = m_EmergencyQuit_KeyFrame.size();
 		packet->keyframe = true;
-		packet->sys_dts_usec = packet->dts_usec = packet->dts = packet->pts = 0xFFFFFFFFFFFFFFFFull;
+		packet->sys_dts_usec = packet->dts_usec = packet->dts = packet->pts = 0x0FFFFFFFFFFFFFFFll;
 		return;
 	}
 
