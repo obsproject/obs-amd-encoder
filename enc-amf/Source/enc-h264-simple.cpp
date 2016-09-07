@@ -255,7 +255,8 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void* d
 	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_TOGGLE_DISABLED), 0);
 	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_TOGGLE_ENABLED), 1);
 	/// GOP Size
-	obs_properties_add_bool(props, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE, obs_module_text(AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE));
+	p = obs_properties_add_bool(props, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE, obs_module_text(AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE));
+	obs_property_set_modified_callback(p, &ui_modified);
 	obs_properties_add_int(props, AMF_H264_GOP_SIZE, obs_module_text(AMF_H264_GOP_SIZE), 1, 1000, 1);
 	/// CABAC
 	obs_properties_add_bool(props, AMF_H264_CABAC, obs_module_text(AMF_H264_CABAC));
