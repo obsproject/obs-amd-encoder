@@ -371,12 +371,13 @@ namespace Plugin {
 			double_t m_FrameRateDivisor, m_FrameRateReverseDivisor;
 			uint32_t m_InputQueueLimit;
 			uint32_t m_TimerPeriod;
-
+			bool m_Flag_RequirePTSReordering;
+			bool m_Flag_EmergencyQuit;
+			
 			// OBS: Fix unnotified shutdown.
 			std::chrono::high_resolution_clock::time_point m_EmergencyQuit_LastFrameReceivedOn;
 			std::vector<uint8_t> m_EmergencyQuit_KeyFrame;
-			bool m_EmergencyQuit;
-
+			
 			// Threading
 			bool m_IsStarted;
 			struct ThreadData {

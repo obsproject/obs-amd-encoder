@@ -76,7 +76,8 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_Memor
 	m_FrameRateDivisor = ((double_t)m_FrameRate.first / (double_t)m_FrameRate.second);
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)(m_FrameRateDivisor * 3);
-	m_EmergencyQuit = false;
+	m_Flag_EmergencyQuit = false;
+	m_Flag_RequirePTSReordering = false;
 	m_EmergencyQuit_KeyFrame.resize(10);
 
 	// AMF
@@ -248,7 +249,7 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
 		m_ThreadedInput.queue.push(surface);
 	} else {
 		AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is full, aborting...");
-		m_EmergencyQuit = true;
+		m_Flag_EmergencyQuit = true;
 		return false;
 	}
 
@@ -276,7 +277,7 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 	}
 
 	// Emergency Quit
-	if (m_EmergencyQuit) {
+	if (m_Flag_EmergencyQuit) {
 		*received_packet = true;
 		packet->data = m_EmergencyQuit_KeyFrame.data();
 		packet->size = m_EmergencyQuit_KeyFrame.size();
@@ -488,7 +489,11 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 					pkt.dts = (uint64_t)(pkt.dts_usec / frTimeStep);
 
 					// Presentation Timestamp
-					pBuffer->GetProperty(L"Frame", &pkt.pts);
+					if (m_Flag_RequirePTSReordering) {
+						pBuffer->GetProperty(L"Frame", &pkt.pts);
+					} else {
+						pkt.pts = pkt.dts;
+					}
 					pkt.pts_usec = (uint64_t)(pkt.pts * frTimeStep);
 				}
 				{ // Read Packet Type
@@ -557,7 +562,7 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 		#pragma endregion Host Memory Type
 
 		// Convert Frame Index to Nanoseconds.
-		amf_pts amfPts = (int64_t)ceil((double_t)frame->pts * (m_FrameRateReverseDivisor * 10000000.0));
+		amf_pts amfPts = (int64_t)(frame->pts * (m_FrameRateReverseDivisor * 10000000.0));
 		pSurface->SetPts(amfPts);
 		pSurface->SetProperty(L"Frame", frame->pts);
 	}
@@ -568,6 +573,9 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::LogProperties> Current Properties:");
 	/// Encoder Static Parameters
+	try {
+		this->GetQualityPreset();
+	} catch (...) {}
 	try {
 		this->GetUsage();
 	} catch (...) {}
@@ -661,9 +669,6 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	/// Encoder Miscellaneos Parameters
 	try {
 		this->GetScanType();
-	} catch (...) {}
-	try {
-		this->GetQualityPreset();
 	} catch (...) {}
 	/// Encoder Motion Estimation Parameters
 	try {
@@ -1344,6 +1349,7 @@ void Plugin::AMD::VCEEncoder::SetBPicturePattern(VCEBPicturePattern pattern) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetBPicturesPattern> Setting to %d failed with error %ls (code %d).", res, pattern);
 	}
+	m_Flag_RequirePTSReordering = (pattern != VCEBPicturePattern_None);
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetBPicturesPattern> Set to %d.", pattern);
 }
 
@@ -1353,6 +1359,7 @@ Plugin::AMD::VCEBPicturePattern Plugin::AMD::VCEEncoder::GetBPicturesPattern() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetBPicturesPattern> Failed with error %ls (code %d).", res);
 	}
+	m_Flag_RequirePTSReordering = (pattern != VCEBPicturePattern_None);
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetBPicturesPattern> Value is %d.", pattern);
 	return (Plugin::AMD::VCEBPicturePattern)pattern;
 }
