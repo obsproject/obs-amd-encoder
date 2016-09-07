@@ -144,7 +144,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, AMF_H264_QP_BPICTURE_DELTA, -11);
 	obs_data_set_default_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, -11);
 
-	//// Picture Control Properties
+	// Picture Control Properties
 	obs_data_set_default_int(data, AMF_H264_BPICTURE_PATTERN, -1);
 	obs_data_set_default_int(data, AMF_H264_BPICTURE_REFERENCE, -1);
 	obs_data_set_default_int(data, AMF_H264ADVANCED_HEADER_INSERTION_SPACING, -1);
@@ -153,11 +153,15 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, AMF_H264ADVANCED_INTRAREFRESHNUMMBPERSLOT, -1);
 	obs_data_set_default_int(data, AMF_H264ADVANCED_SLICESPERFRAME, -1);
 
-	//// Motion Estimation
+	// Motion Estimation
 	obs_data_set_default_int(data, AMF_H264ADVANCED_MOTIONESTIMATION, -1);
 
+	// Other
+	obs_data_set_default_int(data, AMF_H264_GOP_SIZE, -1);
+	obs_data_set_default_int(data, AMF_H264_CABAC, -1);
+
 	/// Debug Mode
-	obs_data_set_default_bool(data, "Debug", false);
+	obs_data_set_default_bool(data, AMF_H264_DEBUGTRACING, false);
 }
 
 obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) {
@@ -334,6 +338,17 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) {
 	obs_property_list_add_int(list, obs_module_text(AMF_H264ADVANCED_MOTIONESTIMATION_HALF), 1);
 	obs_property_list_add_int(list, obs_module_text(AMF_H264ADVANCED_MOTIONESTIMATION_QUARTER), 2);
 	obs_property_list_add_int(list, obs_module_text(AMF_H264ADVANCED_MOTIONESTIMATION_BOTH), 3);
+
+	//////////////////////////////////////////////////////////////////////////
+	// Other Parameters
+	//////////////////////////////////////////////////////////////////////////
+	/// GOP Size
+	obs_properties_add_int_slider(props, AMF_H264_GOP_SIZE, obs_module_text(AMF_H264_GOP_SIZE), -1, 1000, 1);
+	/// CABAC
+	list = obs_properties_add_list(props, AMF_H264_CABAC, obs_module_text(AMF_H264_CABAC), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_DEFAULT), -1);
+	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_TOGGLE_DISABLED), 0);
+	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_TOGGLE_ENABLED), 1);
 
 	//////////////////////////////////////////////////////////////////////////
 	// Debug
@@ -856,6 +871,19 @@ bool Plugin::Interface::H264Interface::update_properties(obs_data_t* settings) {
 		value = obs_data_get_int(settings, AMF_H264ADVANCED_SLICESPERFRAME);
 		if (value != -1)
 			m_VideoEncoder->SetSlicesPerFrame((uint32_t)value);
+	} catch (...) {}
+
+	/// GOP Size
+	try {
+		value = obs_data_get_int(settings, AMF_H264_GOP_SIZE);
+		if (value != -1)
+			m_VideoEncoder->SetGOPSize((uint32_t)value);
+	} catch (...) {}
+	/// CABAC
+	try {
+		value = obs_data_get_int(settings, AMF_H264_CABAC);
+		if (value != -1)
+			m_VideoEncoder->SetCABACEnabled(value != 0);
 	} catch (...) {}
 
 	return true;

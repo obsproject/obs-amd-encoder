@@ -116,6 +116,8 @@ SOFTWARE.
 #define AMF_H264_SCANTYPE_INTERLACED			TEXT_AMF_H264("ScanType.Interlaced")
 #define AMF_H264_BPICTURE_PATTERN				TEXT_AMF_H264("BPicture.Pattern")
 #define AMF_H264_BPICTURE_REFERENCE				TEXT_AMF_H264("BPicture.Reference")
+#define AMF_H264_GOP_SIZE						TEXT_AMF_H264("GOPSize")
+#define AMF_H264_CABAC							TEXT_AMF_H264("CABAC")
 #define AMF_H264_DEBUGTRACING					TEXT_AMF_H264("DebugTracing")
 
 // Utility
