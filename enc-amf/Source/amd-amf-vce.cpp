@@ -282,6 +282,7 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 		packet->data = m_EmergencyQuit_KeyFrame.data();
 		packet->size = m_EmergencyQuit_KeyFrame.size();
 		packet->keyframe = true;
+		packet->sys_dts_usec = packet->dts_usec = packet->dts = packet->pts = 0xFFFFFFFFFFFFFFFFull;
 		return;
 	}
 
@@ -450,7 +451,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 
 void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles Querying
 	std::unique_lock<std::mutex> lock(m_ThreadedOutput.mutex);
-	uint64_t frTimeStep = 0;
+	int64_t frTimeStep = 0;
 
 	do {
 		m_ThreadedOutput.condvar.wait(lock);
@@ -460,7 +461,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 			continue;
 
 		// Update divisor.
-		frTimeStep = (uint64_t)(m_FrameRateReverseDivisor * 1e6);
+		frTimeStep = (int64_t)(m_FrameRateReverseDivisor * 1e6);
 
 		AMF_RESULT res = AMF_OK;
 		while (res == AMF_OK) { // Repeat until impossible.
@@ -482,11 +483,11 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 					// PTS may not be needed: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/17
 
 					// Retrieve Decode-Timestamp from AMF and convert it to micro-seconds.
-					uint64_t dts_usec = (pData->GetPts() / 10);
+					int64_t dts_usec = (pData->GetPts() / 10);
 					
 					// Decode Timestamp
-					pkt.dts_usec = (uint64_t)(dts_usec - (5 * frTimeStep));
-					pkt.dts = (uint64_t)(pkt.dts_usec / frTimeStep);
+					pkt.dts_usec = (int64_t)(dts_usec - (frTimeStep << 1)); // DTS starts at -2.
+					pkt.dts = (int64_t)(pkt.dts_usec / frTimeStep);
 
 					// Presentation Timestamp
 					if (m_Flag_RequirePTSReordering) {
@@ -494,7 +495,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 					} else {
 						pkt.pts = pkt.dts;
 					}
-					pkt.pts_usec = (uint64_t)(pkt.pts * frTimeStep);
+					pkt.pts_usec = (int64_t)(pkt.pts * frTimeStep);
 				}
 				{ // Read Packet Type
 					uint64_t pktType;
@@ -1269,7 +1270,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetHeaderInsertionSpacing() {
 
 void Plugin::AMD::VCEEncoder::SetIDRPeriod(uint32_t period) {
 	// Clamp Value
-	period = max(min(period, m_FrameRate.second * 1000), 0);
+	period = max(min(period, m_FrameRate.second * 1000), 1); // 1-1000 so that OBS can actually quit.
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, (uint32_t)period);
 	if (res != AMF_OK) {
@@ -1349,7 +1350,7 @@ void Plugin::AMD::VCEEncoder::SetBPicturePattern(VCEBPicturePattern pattern) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetBPicturesPattern> Setting to %d failed with error %ls (code %d).", res, pattern);
 	}
-	m_Flag_RequirePTSReordering = (pattern != VCEBPicturePattern_None);
+	m_Flag_RequirePTSReordering = true;// (pattern != VCEBPicturePattern_None);
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetBPicturesPattern> Set to %d.", pattern);
 }
 
@@ -1359,7 +1360,7 @@ Plugin::AMD::VCEBPicturePattern Plugin::AMD::VCEEncoder::GetBPicturesPattern() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetBPicturesPattern> Failed with error %ls (code %d).", res);
 	}
-	m_Flag_RequirePTSReordering = (pattern != VCEBPicturePattern_None);
+	m_Flag_RequirePTSReordering = true;// (pattern != VCEBPicturePattern_None);
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetBPicturesPattern> Value is %d.", pattern);
 	return (Plugin::AMD::VCEBPicturePattern)pattern;
 }
