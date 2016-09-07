@@ -1351,7 +1351,7 @@ void Plugin::AMD::VCEEncoder::SetBPicturePattern(VCEBPicturePattern pattern) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetBPicturesPattern> Setting to %d failed with error %ls (code %d).", res, pattern);
 	}
-	m_Flag_RequirePTSReordering = true;// (pattern != VCEBPicturePattern_None);
+	m_Flag_RequirePTSReordering = (pattern != VCEBPicturePattern_None);
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetBPicturesPattern> Set to %d.", pattern);
 }
 
@@ -1361,7 +1361,7 @@ Plugin::AMD::VCEBPicturePattern Plugin::AMD::VCEEncoder::GetBPicturesPattern() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetBPicturesPattern> Failed with error %ls (code %d).", res);
 	}
-	m_Flag_RequirePTSReordering = true;// (pattern != VCEBPicturePattern_None);
+	m_Flag_RequirePTSReordering = (pattern != VCEBPicturePattern_None);
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetBPicturesPattern> Value is %d.", pattern);
 	return (Plugin::AMD::VCEBPicturePattern)pattern;
 }
