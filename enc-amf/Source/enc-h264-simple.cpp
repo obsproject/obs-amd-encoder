@@ -551,10 +551,10 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	m_VideoEncoder->LogProperties();
 
 	// Experimental
-	m_VideoEncoder->SetGOPSize(30);
+	/*m_VideoEncoder->SetGOPSize(30);
 	m_VideoEncoder->SetCABACEnabled(true);
-	m_VideoEncoder->SetNominalRange(true);
-	m_VideoEncoder->SetWaitForTask(true);
+	m_VideoEncoder->SetNominalRange(false);
+	m_VideoEncoder->SetWaitForTask(true);*/
 
 	// OBS: Enforce streaming service encoder settings
 	const char* t_str = obs_data_get_string(settings, "rate_control");
