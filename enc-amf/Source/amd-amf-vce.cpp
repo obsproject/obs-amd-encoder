@@ -449,7 +449,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 
 void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles Querying
 	std::unique_lock<std::mutex> lock(m_ThreadedOutput.mutex);
-	double_t frTimeStep = (m_FrameRateReverseDivisor * 10000000.0);
+	double_t frTimeStep = 0;
 
 	do {
 		m_ThreadedOutput.condvar.wait(lock);
@@ -484,7 +484,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 					double_t dts_usec = (((double_t)pData->GetPts()) / 10.0);
 					
 					// Decode Timestamp
-					pkt.dts_usec = (uint64_t)ceil(dts_usec) - (5 * frTimeStep);
+					pkt.dts_usec = (uint64_t)ceil(dts_usec - (5.0 * frTimeStep));
 					pkt.dts = (uint64_t)ceil(dts_usec / frTimeStep) - 5;
 
 					// Presentation Timestamp
