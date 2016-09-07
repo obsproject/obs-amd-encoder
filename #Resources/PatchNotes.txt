@@ -1,6 +1,6 @@
 1.3.0 - The AMF SDK Path
 
-AMD updated the SDK and the plugin shall follow in it's footsteps. With this new SDK (an an actual documentation) the plugin can now finally be more accurate in it's usage - no more guesswork.
+AMD updated the SDK and the plugin shall follow in it's footsteps. With this new SDK (and an actual documentation) the plugin can now finally be more accurate in it's usage - no more guesswork.
 
 **Notes**
 
@@ -70,7 +70,7 @@ Before installing this Version, please uninstall any previous versions. If you u
 * Fixed: Fixed some values not being applied in 32-Bit.
 * Fixed: "Enforce streaming service encoder settings" is now properly used, thanks to Jim.
 * Fixed: Simple Interface will now correctly update when a setting is modified.
-* Changed: Temporary workaround for how PTS and DTS are calculated, see issue: https://obsproject.com/mantis/view.php?id=614.
+* Fixed: Decode and Presentation Timestamps are now correct, thanks to Jim.
 * Changed: Reduced log output length for readability.
 * Changed: Threads are now forcefully terminating if they are stuck instead of freezing OBS.
 * Added: Fail-Safe so that Stop Streaming/Recording still works even when GetOutput fails.
