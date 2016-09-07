@@ -486,12 +486,13 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 					int64_t dts_usec = (pData->GetPts() / 10);
 					
 					// Decode Timestamp
-					pkt.dts_usec = (int64_t)(dts_usec - (frTimeStep << 1)); // DTS starts at -2.
+					pkt.dts_usec = (int64_t)(dts_usec);// -(frTimeStep << 1)); // DTS starts at -2.
 					pkt.dts = (int64_t)(pkt.dts_usec / frTimeStep);
 
 					// Presentation Timestamp
 					if (m_Flag_RequirePTSReordering) {
 						pBuffer->GetProperty(L"Frame", &pkt.pts);
+						pkt.pts += 2;
 					} else {
 						pkt.pts = pkt.dts;
 					}
