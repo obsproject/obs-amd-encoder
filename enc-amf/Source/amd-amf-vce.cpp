@@ -481,13 +481,13 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 					// PTS may not be needed: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/17
 					
 					// GetPTS actually returns DTS.
-					double_t pts_as_usec = (double_t)(pData->GetPts() / 10.0);
-					pkt.pts_usec = pkt.dts_usec = (uint64_t)(pts_as_usec);
-					pkt.pts = pkt.dts = (uint64_t)(pts_as_usec / frameRateDivisor);
+					double_t pts_as_usec = (((double_t)pData->GetPts()) / 10.0) - 1000000.0; // DTS needs to be further in the past than PTS.
+					pkt.pts_usec = pkt.dts_usec = (uint64_t)ceil(pts_as_usec);
+					pkt.pts = pkt.dts = (uint64_t)ceil(pts_as_usec / frameRateDivisor);
 
 					// Touching PTS here will mess up. Why? No fucking clue.
-					//pBuffer->GetProperty(L"Frame", &pkt.pts);
-					//pkt.pts_usec = (uint64_t)(pkt.pts * frameRateDivisor);
+					pBuffer->GetProperty(L"Frame", &pkt.pts);
+					pkt.pts_usec = (uint64_t)(pkt.pts * frameRateDivisor);
 				}
 				{ // Read Packet Type
 					uint64_t pktType;
