@@ -257,7 +257,7 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
 	m_ThreadedInput.condvar.notify_all();
 
 	#ifdef DEBUG
-	if (queueSize % 5 == 4)
+	if (queueSize > 0 && (queueSize % 5 == 0))
 		AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::InputThreadLogic> Input Queue is filling up. (%d of %d)", queueSize, m_InputQueueLimit);
 	#endif
 
@@ -486,16 +486,16 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 					int64_t dts_usec = (pData->GetPts() / 10);
 					
 					// Decode Timestamp
-					pkt.dts_usec = (int64_t)(dts_usec);
+					pkt.dts_usec = (int64_t)(dts_usec - (frTimeStep * 2));
 					pkt.dts = (int64_t)(pkt.dts_usec / frTimeStep);
 
 					// Presentation Timestamp
-					if (m_Flag_RequirePTSReordering) {
-						pBuffer->GetProperty(L"Frame", &pkt.pts);
-						pkt.pts += 2;
-					} else {
-						pkt.pts = pkt.dts;
-					}
+					//if (m_Flag_RequirePTSReordering) {
+					pBuffer->GetProperty(L"Frame", &pkt.pts);
+					//	pkt.pts += 2;
+					//} else {
+					//	pkt.pts = pkt.dts;
+					//}
 					pkt.pts_usec = (int64_t)(pkt.pts * frTimeStep);
 				}
 				{ // Read Packet Type
