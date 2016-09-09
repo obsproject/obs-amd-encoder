@@ -199,7 +199,7 @@ namespace Plugin {
 
 			/// Encoder Rate Control
 			/*	Selects the rate control method:
-			 *	- CQP – Constrained QP,
+			 *	- CQP - Constrained QP,
 			 *	- CBR - Constant Bitrate,
 			 *	- VBR - Peak Constrained VBR,
 			 *	- VBR_LAT - Latency Constrained VBR
@@ -371,10 +371,9 @@ namespace Plugin {
 			double_t m_FrameRateDivisor, m_FrameRateReverseDivisor;
 			uint32_t m_InputQueueLimit;
 			uint32_t m_TimerPeriod;
-			bool m_Flag_RequirePTSReordering;
 			bool m_Flag_EmergencyQuit;
 			
-			// OBS: Fix unnotified shutdown.
+			// Emergency Quit Stuff
 			std::chrono::high_resolution_clock::time_point m_EmergencyQuit_LastFrameReceivedOn;
 			std::vector<uint8_t> m_EmergencyQuit_KeyFrame;
 			

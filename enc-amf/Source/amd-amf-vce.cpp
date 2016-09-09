@@ -77,7 +77,6 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_Memor
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)(m_FrameRateDivisor * 3);
 	m_Flag_EmergencyQuit = false;
-	m_Flag_RequirePTSReordering = false;
 	m_EmergencyQuit_KeyFrame.resize(10);
 
 	// AMF
@@ -490,12 +489,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 					pkt.dts = (int64_t)(pkt.dts_usec / frTimeStep);
 
 					// Presentation Timestamp
-					//if (m_Flag_RequirePTSReordering) {
 					pBuffer->GetProperty(L"Frame", &pkt.pts);
-					//	pkt.pts += 2;
-					//} else {
-					//	pkt.pts = pkt.dts;
-					//}
 					pkt.pts_usec = (int64_t)(pkt.pts * frTimeStep);
 				}
 				{ // Read Packet Type
@@ -1351,7 +1345,6 @@ void Plugin::AMD::VCEEncoder::SetBPicturePattern(VCEBPicturePattern pattern) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetBPicturesPattern> Setting to %d failed with error %ls (code %d).", res, pattern);
 	}
-	m_Flag_RequirePTSReordering = (pattern != VCEBPicturePattern_None);
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetBPicturesPattern> Set to %d.", pattern);
 }
 
@@ -1361,7 +1354,6 @@ Plugin::AMD::VCEBPicturePattern Plugin::AMD::VCEEncoder::GetBPicturesPattern() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetBPicturesPattern> Failed with error %ls (code %d).", res);
 	}
-	m_Flag_RequirePTSReordering = (pattern != VCEBPicturePattern_None);
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetBPicturesPattern> Value is %d.", pattern);
 	return (Plugin::AMD::VCEBPicturePattern)pattern;
 }
