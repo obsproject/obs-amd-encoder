@@ -28,6 +28,11 @@ SOFTWARE.
 #include "amd-amf-vce.h"
 #include "amd-amf-vce-capabilities.h"
 
+#if (defined _WIN32) | (defined _WIN64)
+#include <windows.h>
+#include <VersionHelpers.h>
+#endif
+
 //////////////////////////////////////////////////////////////////////////
 // Defines
 //////////////////////////////////////////////////////////////////////////
@@ -63,7 +68,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadMain(Plugin::AMD::VCEEncoder* p_this) 
 	p_this->OutputThreadLogic();
 }
 
-Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_MemoryType, VCESurfaceFormat p_SurfaceFormat) {
+Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat) {
 	AMF_RESULT res;
 
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::VCEEncoder> Initializing...");
@@ -87,22 +92,17 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_Memor
 		AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::VCEEncoder> Creating a context object failed with error code %d.", res);
 		throw;
 	}
-	switch (p_MemoryType) {
-		case VCEMemoryType_Host:
-			break;
-		case VCEMemoryType_DirectX9:
-			m_AMFContext->InitDX9(nullptr);
-			break;
-		case VCEMemoryType_DirectX11:
-			m_AMFContext->InitDX11(nullptr);
-			break;
-		case VCEMemoryType_OpenGL:
-			m_AMFContext->InitOpenGL(nullptr, nullptr, nullptr);
-			break;
-		case VCEMemoryType_OpenCL:
-			m_AMFContext->InitOpenCL(nullptr);
-			break;
-	}
+
+	/// System Specific stuff
+	#if (defined _WIN32) | (defined _WIN64)
+	if (IsWindows7OrGreater())
+		m_AMFContext->InitDX11(nullptr);
+	else
+		m_AMFContext->InitDX9(nullptr);
+	#endif
+	m_AMFContext->InitOpenCL(nullptr);
+	m_MemoryType = VCEMemoryType_OpenCL;
+
 	/// AMF Component (Encoder)
 	switch (p_Type) {
 		case VCEEncoderType_AVC:
@@ -122,7 +122,6 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_Memor
 	}
 
 	m_EncoderType = p_Type;
-	m_MemoryType = p_MemoryType;
 	m_SurfaceFormat = p_SurfaceFormat;
 
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::VCEEncoder> Initialization complete!");
@@ -225,21 +224,23 @@ void Plugin::AMD::VCEEncoder::Stop() {
 
 	// Clear Queues, Data
 	if (m_ThreadedInput.queue.size() > 0) {
-		do {
-			amf::AMFSurfacePtr surface = m_ThreadedInput.queue.front();
-			surface->Release();
-			m_ThreadedInput.queue.pop();
-		} while (m_ThreadedInput.queue.size() > 0);
+		std::queue<amf::AMFSurfacePtr>().swap(m_ThreadedInput.queue);
+		//do {
+		//	amf::AMFSurfacePtr surface = m_ThreadedInput.queue.front();
+		//	surface->Release();
+		//	m_ThreadedInput.queue.pop();
+		//} while (m_ThreadedInput.queue.size() > 0);
 	}
 	if (m_ThreadedOutput.queue.size() > 0) {
-		do {
-			ThreadData data = m_ThreadedOutput.queue.front();
-			data.data.clear();
-			m_ThreadedOutput.queue.pop();
-		} while (m_ThreadedInput.queue.size() > 0);
+		std::queue<ThreadData>().swap(m_ThreadedOutput.queue);
+		//do {
+		//	ThreadData data = m_ThreadedOutput.queue.front();
+		//	data.data.clear();
+		//	m_ThreadedOutput.queue.pop();
+		//} while (m_ThreadedInput.queue.size() > 0);
 	}
 	m_PacketDataBuffer.clear();
-	m_ExtraDataBuffer.clear();	
+	m_ExtraDataBuffer.clear();
 }
 
 bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
@@ -266,15 +267,12 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
 		{
 			std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
 			m_ThreadedInput.queue.push(surface);
-			surface->Acquire();
 		}
 
 		if (queueSize > 0 && (queueSize % 5 == 0))
 			AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::InputThreadLogic> Input Queue is large. (%d/%d)", queueSize, m_InputQueueLimit);
 	} else {
 		AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is full, dropping frame...");
-		//m_Flag_EmergencyQuit = true;
-		//return false;
 	}
 
 	/// Signal Thread Wakeup
@@ -442,6 +440,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 
 		// Skip to next wait if queue is empty.
 		AMF_RESULT res = AMF_OK;
+		int32_t __amf_input_full_repeat = 0;
 		while (res == AMF_OK) { // Repeat until impossible.
 			amf::AMFSurfacePtr surface;
 
@@ -452,14 +451,20 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 				surface = m_ThreadedInput.queue.front();
 			}
 
+			AMF_SYNC_LOCK(surface->Convert(amf::AMF_MEMORY_OPENCL););
 			AMF_SYNC_LOCK(res = m_AMFEncoder->SubmitInput(surface););
 			if (res == AMF_OK) {
-				surface->Release();
 				{ // Remove Surface from Queue
 					std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
 					m_ThreadedInput.queue.pop();
 				}
-			} else if (res != AMF_INPUT_FULL) {
+			} else if (res == AMF_INPUT_FULL) { // Try submitting for 5 milliseconds
+				std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
+				if (__amf_input_full_repeat < 5) {
+					res = AMF_OK;
+					__amf_input_full_repeat++;
+				}
+			} else {
 				std::vector<char> msgBuf(128);
 				FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
 				AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::InputThreadLogic> SubmitInput failed with error %s.", msgBuf.data());
@@ -547,49 +552,51 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 	};
 	amf::AMF_MEMORY_TYPE memoryTypeToAMF[] = {
 		amf::AMF_MEMORY_HOST,
+		amf::AMF_MEMORY_DX9,
 		amf::AMF_MEMORY_DX11,
-		amf::AMF_MEMORY_OPENGL
+		amf::AMF_MEMORY_OPENGL,
+		amf::AMF_MEMORY_OPENCL,
 	};
 
-	if (m_MemoryType == VCEMemoryType_Host) {
-		#pragma region Host Memory Type
-		size_t planeCount;
+	size_t planeCount;
 
-		AMF_SYNC_LOCK(res = m_AMFContext->AllocSurface(
-			memoryTypeToAMF[m_MemoryType], surfaceFormatToAMF[m_SurfaceFormat],
-			m_FrameSize.first, m_FrameSize.second,
-			&pSurface););
-		if (res != AMF_OK) // Unable to create Surface
-			ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame> Unable to create AMFSurface, error %ls (code %d).", res);
+	AMF_SYNC_LOCK(res = m_AMFContext->AllocSurface(
+		amf::AMF_MEMORY_HOST, surfaceFormatToAMF[m_SurfaceFormat],
+		m_FrameSize.first, m_FrameSize.second,
+		&pSurface););
+	if (res != AMF_OK) // Unable to create Surface
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame> Unable to create AMFSurface, error %ls (code %d).", res);
 
-		planeCount = pSurface->GetPlanesCount();
-		for (uint8_t i = 0; i < planeCount; i++) {
-			amf::AMFPlane* plane;
-			void* plane_nat;
-			int32_t height;
-			size_t hpitch;
+	planeCount = pSurface->GetPlanesCount();
+	for (uint8_t i = 0; i < planeCount; i++) {
+		amf::AMFPlane* plane;
+		void* plane_nat;
+		int32_t height;
+		size_t hpitch;
 
-			AMF_SYNC_LOCK(plane = pSurface->GetPlaneAt(i););
-			AMF_SYNC_LOCK(plane_nat = plane->GetNative(););
-			height = plane->GetHeight();
-			hpitch = plane->GetHPitch();
+		AMF_SYNC_LOCK(plane = pSurface->GetPlaneAt(i););
+		AMF_SYNC_LOCK(plane_nat = plane->GetNative(););
+		height = plane->GetHeight();
+		hpitch = plane->GetHPitch();
 
-			for (int32_t py = 0; py < height; py++) {
-				size_t plane_off = py * hpitch;
-				size_t frame_off = py * frame->linesize[i];
-				std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
-			}
+		for (int32_t py = 0; py < height; py++) {
+			size_t plane_off = py * hpitch;
+			size_t frame_off = py * frame->linesize[i];
+			std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
 		}
-		#pragma endregion Host Memory Type
-
-		// Convert Frame Index to Nanoseconds.
-		amf_pts amfPts = (int64_t)(frame->pts * (m_FrameRateReverseDivisor * 10000000.0));
-		pSurface->SetPts(amfPts);
-		pSurface->SetProperty(L"Frame", frame->pts);
 	}
+
+	// Convert Frame Index to Nanoseconds.
+	amf_pts amfPts = (int64_t)(frame->pts * (m_FrameRateReverseDivisor * 10000000.0));
+	pSurface->SetPts(amfPts);
+	pSurface->SetProperty(L"Frame", frame->pts);
 
 	return pSurface;
 }
+
+//////////////////////////////////////////////////////////////////////////
+// AMF Properties
+//////////////////////////////////////////////////////////////////////////
 
 void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::LogProperties> Current Properties:");
@@ -704,50 +711,6 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	} catch (...) {}
 }
 
-void Plugin::AMD::VCEEncoder::SetQualityPreset(VCEQualityPreset preset) {
-	static AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM CustomToAMF[] = {
-		AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED,
-		AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED,
-		AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY,
-		(AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM)3,
-	};
-	static char* CustomToName[] = {
-		"Speed",
-		"Balanced",
-		"Quality",
-		"Unknown"
-	};
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, (uint32_t)CustomToAMF[preset]);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetQualityPreset> Setting to %s failed with error %ls (code %d).", res, CustomToName[preset]);
-	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetQualityPreset> Set to %s.", CustomToName[preset]);
-}
-
-Plugin::AMD::VCEQualityPreset Plugin::AMD::VCEEncoder::GetQualityPreset() {
-	static VCEQualityPreset AMFToCustom[] = {
-		VCEQualityPreset_Balanced,
-		VCEQualityPreset_Speed,
-		VCEQualityPreset_Quality,
-		VCEQualityPreset_Unknown,
-	};
-	static char* CustomToName[] = {
-		"Speed",
-		"Balanced",
-		"Quality",
-		"Unknown"
-	};
-
-	uint32_t preset;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, &preset);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetQualityPreset> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetQualityPreset> Value is %s.", CustomToName[AMFToCustom[preset]]);
-	return AMFToCustom[preset];
-}
-
 void Plugin::AMD::VCEEncoder::SetUsage(VCEUsage usage) {
 	static AMF_VIDEO_ENCODER_USAGE_ENUM customToAMF[] = {
 		AMF_VIDEO_ENCODER_USAGE_TRANSCONDING,
@@ -791,6 +754,47 @@ Plugin::AMD::VCEUsage Plugin::AMD::VCEEncoder::GetUsage() {
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetUsage> Value is %s.", customToName[AMFToCustom[usage]]);
 	return AMFToCustom[usage];
 }
+
+void Plugin::AMD::VCEEncoder::SetQualityPreset(VCEQualityPreset preset) {
+	static AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM CustomToAMF[] = {
+		AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED,
+		AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED,
+		AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY,
+	};
+	static char* CustomToName[] = {
+		"Speed",
+		"Balanced",
+		"Quality",
+	};
+
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, (uint32_t)CustomToAMF[preset]);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetQualityPreset> Setting to %s failed with error %ls (code %d).", res, CustomToName[preset]);
+	}
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetQualityPreset> Set to %s.", CustomToName[preset]);
+}
+
+Plugin::AMD::VCEQualityPreset Plugin::AMD::VCEEncoder::GetQualityPreset() {
+	static VCEQualityPreset AMFToCustom[] = {
+		VCEQualityPreset_Balanced,
+		VCEQualityPreset_Speed,
+		VCEQualityPreset_Quality,
+	};
+	static char* CustomToName[] = {
+		"Speed",
+		"Balanced",
+		"Quality",
+	};
+
+	uint32_t preset;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, &preset);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetQualityPreset> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetQualityPreset> Value is %s.", CustomToName[AMFToCustom[preset]]);
+	return AMFToCustom[preset];
+}
+
 
 void Plugin::AMD::VCEEncoder::SetProfile(VCEProfile profile) {
 	if ((profile != VCEProfile_High) && (profile != VCEProfile_Main) && (profile != VCEProfile_Baseline)) {

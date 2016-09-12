@@ -119,7 +119,6 @@ namespace Plugin {
 			VCEQualityPreset_Speed,
 			VCEQualityPreset_Balanced,
 			VCEQualityPreset_Quality,
-			VCEQualityPreset_Unknown, // RE revealed a fourth QualityPreset.
 		};
 
 		class VCEEncoder {
@@ -137,7 +136,7 @@ namespace Plugin {
 			#pragma region Initializer & Finalizer
 			//////////////////////////////////////////////////////////////////////////
 			public:
-			VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_MemoryType, VCESurfaceFormat p_SurfaceFormat);
+			VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat);
 			~VCEEncoder();
 			#pragma endregion Initializer & Finalizer
 
@@ -164,16 +163,16 @@ namespace Plugin {
 			public:
 			void LogProperties();
 
-			/*	Quality Preset 
+			/*	Usage Type
 			 *	Sets up the entire encoder to a specific set of properties.
 			 *	Must be called first if you want to override properties. */
-			void SetQualityPreset(VCEQualityPreset preset);
-			VCEQualityPreset GetQualityPreset();
-
-			/*	Usage Type */
 			void SetUsage(VCEUsage usage);
 			VCEUsage GetUsage();
 
+			/*	Quality Preset */
+			void SetQualityPreset(VCEQualityPreset preset);
+			VCEQualityPreset GetQualityPreset();
+			
 			/*	H.264 Profile */
 			void SetProfile(VCEProfile profile);
 			VCEProfile GetProfile();
