@@ -69,15 +69,14 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_Memor
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::VCEEncoder> Initializing...");
 
 	// Solve the optimized away issue.
-	m_IsStarted = false;
+	m_Flag_IsStarted = false;
+	m_Flag_EmergencyQuit = false;
 	m_SurfaceFormat = VCESurfaceFormat_NV12;
 	m_FrameSize.first = 64;	m_FrameSize.second = 64;
 	m_FrameRate.first = 30; m_FrameRate.second = 1;
 	m_FrameRateDivisor = ((double_t)m_FrameRate.first / (double_t)m_FrameRate.second);
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)(m_FrameRateDivisor * 3);
-	m_Flag_EmergencyQuit = false;
-	m_EmergencyQuit_KeyFrame.resize(10);
 
 	// AMF
 	m_AMF = AMF::GetInstance();
@@ -125,12 +124,12 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCEMemoryType p_Memor
 	m_EncoderType = p_Type;
 	m_MemoryType = p_MemoryType;
 	m_SurfaceFormat = p_SurfaceFormat;
-	
+
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::VCEEncoder> Initialization complete!");
 }
 
 Plugin::AMD::VCEEncoder::~VCEEncoder() {
-	if (m_IsStarted)
+	if (m_Flag_IsStarted)
 		Stop();
 
 	// AMF
@@ -170,65 +169,84 @@ void Plugin::AMD::VCEEncoder::Start() {
 
 	// Threading
 	/// Create and start Threads
-	m_IsStarted = true;
+	m_Flag_IsStarted = true;
 	m_ThreadedInput.thread = std::thread(&(Plugin::AMD::VCEEncoder::InputThreadMain), this);
 	m_ThreadedOutput.thread = std::thread(&(Plugin::AMD::VCEEncoder::OutputThreadMain), this);
 }
 
 void Plugin::AMD::VCEEncoder::Stop() {
-	m_IsStarted = false;
+	m_Flag_IsStarted = false;
 
 	// Restore Timer precision.
 	if (m_TimerPeriod != 0) {
 		timeEndPeriod(m_TimerPeriod);
 	}
 
+	// Stop AMF Encoder
+	m_AMFEncoder->Drain();
+	m_AMFEncoder->Flush();
+
 	// Threading
 	m_ThreadedOutput.condvar.notify_all();
 	#if defined _WIN32 || defined _WIN64
 	{ // Windows: Force terminate Thread after 1 second of waiting.
-		uint32_t res = WaitForSingleObject(m_ThreadedOutput.thread.native_handle(), 1000);
+		std::thread::native_handle_type hnd = m_ThreadedOutput.thread.native_handle();
+
+		uint32_t res = WaitForSingleObject((HANDLE)hnd, 1000);
 		switch (res) {
 			case WAIT_OBJECT_0:
 				m_ThreadedOutput.thread.join();
 				break;
 			default:
-				TerminateThread(m_ThreadedOutput.thread.native_handle(), -1);
-				m_ThreadedOutput.thread.join();
+				m_ThreadedOutput.thread.detach();
+				TerminateThread((HANDLE)hnd, 0);
 				break;
 		}
 	}
-	#else
-	m_ThreadedOutput.thread.join();
 	#endif
+
 	m_ThreadedInput.condvar.notify_all();
 	#if defined _WIN32 || defined _WIN64
 	{ // Windows: Force terminate Thread after 1 second of waiting.
-		uint32_t res = WaitForSingleObject(m_ThreadedInput.thread.native_handle(), 1000);
+		std::thread::native_handle_type hnd = m_ThreadedInput.thread.native_handle();
+
+		uint32_t res = WaitForSingleObject((HANDLE)hnd, 1000);
 		switch (res) {
 			case WAIT_OBJECT_0:
 				m_ThreadedInput.thread.join();
 				break;
 			default:
-				TerminateThread(m_ThreadedInput.thread.native_handle(), -1);
-				m_ThreadedInput.thread.join();
+				m_ThreadedInput.thread.detach();
+				TerminateThread((HANDLE)hnd, 0);
 				break;
 		}
 	}
-	#else
-	m_ThreadedOutput.thread.join();
 	#endif
 
-	// Stop AMF Encoder
-	m_AMFEncoder->Drain();
-	m_AMFEncoder->Flush();
+	// Clear Queues, Data
+	if (m_ThreadedInput.queue.size() > 0) {
+		do {
+			amf::AMFSurfacePtr surface = m_ThreadedInput.queue.front();
+			surface->Release();
+			m_ThreadedInput.queue.pop();
+		} while (m_ThreadedInput.queue.size() > 0);
+	}
+	if (m_ThreadedOutput.queue.size() > 0) {
+		do {
+			ThreadData data = m_ThreadedOutput.queue.front();
+			data.data.clear();
+			m_ThreadedOutput.queue.pop();
+		} while (m_ThreadedInput.queue.size() > 0);
+	}
+	m_PacketDataBuffer.clear();
+	m_ExtraDataBuffer.clear();	
 }
 
 bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 
 	// Early-Exception if not encoding.
-	if (!m_IsStarted) {
+	if (!m_Flag_IsStarted) {
 		const char* error = "<Plugin::AMD::VCEEncoder::SendInput> Attempted to send input while not running.";
 		AMF_LOG_ERROR("%s", error);
 		throw std::exception(error);
@@ -245,20 +263,22 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
 	/// Only create a Surface if there is room left for it.
 	if (queueSize < m_InputQueueLimit) {
 		surface = CreateSurfaceFromFrame(frame);
-		m_ThreadedInput.queue.push(surface);
+		{
+			std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
+			m_ThreadedInput.queue.push(surface);
+			surface->Acquire();
+		}
+
+		if (queueSize > 0 && (queueSize % 5 == 0))
+			AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::InputThreadLogic> Input Queue is large. (%d/%d)", queueSize, m_InputQueueLimit);
 	} else {
-		AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is full, aborting...");
-		m_Flag_EmergencyQuit = true;
-		return false;
+		AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is full, dropping frame...");
+		//m_Flag_EmergencyQuit = true;
+		//return false;
 	}
 
 	/// Signal Thread Wakeup
 	m_ThreadedInput.condvar.notify_all();
-
-	#ifdef DEBUG
-	if (queueSize > 0 && (queueSize % 5 == 0))
-		AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::InputThreadLogic> Input Queue is filling up. (%d of %d)", queueSize, m_InputQueueLimit);
-	#endif
 
 	return true;
 }
@@ -269,7 +289,7 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 	ThreadData pkt;
 
 	// Early-Exception if not encoding.
-	if (!m_IsStarted) {
+	if (!m_Flag_IsStarted) {
 		const char* error = "<Plugin::AMD::VCEEncoder::GetOutput> Attempted to send input while not running.";
 		AMF_LOG_ERROR("%s", error);
 		throw std::exception(error);
@@ -278,8 +298,8 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 	// Emergency Quit
 	if (m_Flag_EmergencyQuit) {
 		*received_packet = true;
-		packet->data = m_EmergencyQuit_KeyFrame.data();
-		packet->size = m_EmergencyQuit_KeyFrame.size();
+		packet->data = m_PacketDataBuffer.data();
+		packet->size = 1;
 		packet->keyframe = true;
 		packet->sys_dts_usec = packet->dts_usec = packet->dts = packet->pts = 0x0FFFFFFFFFFFFFFFll;
 		return;
@@ -287,19 +307,20 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 
 	// Query Output
 	m_ThreadedOutput.condvar.notify_all();
-	
-	{ // Queue: Check if a Packet is available.
-		std::unique_lock<std::mutex> lock(m_ThreadedOutput.queuemutex);
-		if (m_ThreadedOutput.queue.size() == 0) {
-			*received_packet = false;
-			return;
-		}
 
-		pkt = m_ThreadedOutput.queue.front();
-		m_EmergencyQuit_LastFrameReceivedOn = std::chrono::high_resolution_clock::now();
+	/// Check if an output packet is queued.
+	if (m_ThreadedOutput.queue.size() == 0) {
+		*received_packet = false;
+		return;
 	}
 
 	// Submit Packet to OBS
+	/// Retrieve Packet from Queue
+	{
+		std::unique_lock<std::mutex> qlock(m_ThreadedOutput.queuemutex);
+		pkt = m_ThreadedOutput.queue.front();
+	}
+
 	/// Copy to Static Buffer
 	size_t bufferSize = pkt.data.size();
 	if (m_PacketDataBuffer.size() < bufferSize) {
@@ -322,14 +343,6 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 			packet->keyframe = true;				// IDR-Frames are Key-Frames that contain a lot of information.
 			packet->priority = 3;					// Highest priority, always continue streaming with these.
 			packet->drop_priority = 3;				// Dropped IDR-Frames can only be replaced by the next IDR-Frame.
-
-			{ // OBS: Fix unnotified shutdown.
-				if (m_EmergencyQuit_KeyFrame.size() == 0) {
-					m_EmergencyQuit_KeyFrame.resize(packet->size);
-					std::memcpy(m_EmergencyQuit_KeyFrame.data(), m_PacketDataBuffer.data(), packet->size);
-				}
-			}
-
 			break;
 		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_I:	// I-Frames need only a previous I- or IDR-Frame.
 			packet->priority = 2;					// I- and IDR-Frames will most likely be present.
@@ -344,8 +357,9 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 			packet->drop_priority = 1;				// So require a P-Frame or better to continue streaming.
 			break;
 	}
-	
-	{ // Queue: Remove submitted element.
+
+	/// Remove submitted element from Queue
+	{
 		std::unique_lock<std::mutex> lock(m_ThreadedOutput.queuemutex);
 		m_ThreadedOutput.queue.pop();
 	}
@@ -360,7 +374,7 @@ bool Plugin::AMD::VCEEncoder::GetExtraData(uint8_t**& extra_data, size_t*& extra
 	if (!m_AMFContext || !m_AMFEncoder)
 		throw std::exception("<Plugin::AMD::VCEEncoder::GetExtraData> Called while not initialized.");
 
-	if (!m_IsStarted)
+	if (!m_Flag_IsStarted)
 		throw std::exception("<Plugin::AMD::VCEEncoder::GetExtraData> Called while not encoding.");
 
 	amf::AMFVariant var;
@@ -384,7 +398,7 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 	if (!m_AMFContext || !m_AMFEncoder)
 		throw std::exception("<Plugin::AMD::VCEEncoder::GetVideoInfo> Called while not initialized.");
 
-	if (!m_IsStarted)
+	if (!m_Flag_IsStarted)
 		throw std::exception("<Plugin::AMD::VCEEncoder::GetVideoInfo> Called while not encoding.");
 
 	switch (m_SurfaceFormat) {
@@ -414,11 +428,16 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles Surface Submission
 	std::unique_lock<std::mutex> lock(m_ThreadedInput.mutex);
 
+	// Assign Thread Name
+	static const char* __threadName = "enc-amf Input Thread";
+	SetThreadName(__threadName);
+
+	// Core Loop
 	do {
 		m_ThreadedInput.condvar.wait(lock);
 
 		// Skip to check if isStarted is false.
-		if (!m_IsStarted)
+		if (!m_Flag_IsStarted)
 			continue;
 
 		// Skip to next wait if queue is empty.
@@ -435,6 +454,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 
 			AMF_SYNC_LOCK(res = m_AMFEncoder->SubmitInput(surface););
 			if (res == AMF_OK) {
+				surface->Release();
 				{ // Remove Surface from Queue
 					std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
 					m_ThreadedInput.queue.pop();
@@ -445,18 +465,23 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 				AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::InputThreadLogic> SubmitInput failed with error %s.", msgBuf.data());
 			}
 		}
-	} while (m_IsStarted);
+	} while (m_Flag_IsStarted);
 }
 
 void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles Querying
 	std::unique_lock<std::mutex> lock(m_ThreadedOutput.mutex);
 	int64_t frTimeStep = 0;
 
+	// Assign Thread Name
+	static const char* __threadName = "enc-amf Output Thread";
+	SetThreadName(__threadName);
+
+	// Core Loop
 	do {
 		m_ThreadedOutput.condvar.wait(lock);
 
 		// Skip to check if isStarted is false.
-		if (!m_IsStarted)
+		if (!m_Flag_IsStarted)
 			continue;
 
 		// Update divisor.
@@ -483,7 +508,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 
 					// Retrieve Decode-Timestamp from AMF and convert it to micro-seconds.
 					int64_t dts_usec = (pData->GetPts() / 10);
-					
+
 					// Decode Timestamp
 					pkt.dts_usec = (int64_t)(dts_usec - (frTimeStep * 2));
 					pkt.dts = (int64_t)(pkt.dts_usec / frTimeStep);
@@ -491,8 +516,8 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 					// Presentation Timestamp
 					pBuffer->GetProperty(L"Frame", &pkt.pts);
 					pkt.pts_usec = (int64_t)(pkt.pts * frTimeStep);
-				}
-				{ // Read Packet Type
+
+					// Read Packet Type
 					uint64_t pktType;
 					pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &pktType);
 					pkt.type = (AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)pktType;
@@ -509,7 +534,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 				AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::OutputThreadLogic> QueryOutput failed with error %s.", msgBuf.data());
 			}
 		}
-	} while (m_IsStarted);
+	} while (m_Flag_IsStarted);
 }
 
 amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encoder_frame*& frame) {
@@ -1074,7 +1099,7 @@ void Plugin::AMD::VCEEncoder::SetFrameRate(uint32_t num, uint32_t den) {
 	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor * 3);
 	//AMF_LOG_INFO("%f div, %f revdiv", m_FrameRateDivisor, m_FrameRateReverseDivisor);
 
-	if (m_IsStarted) { // Change Timer precision if encoding.
+	if (m_Flag_IsStarted) { // Change Timer precision if encoding.
 		if (m_TimerPeriod != 0) {
 			// Restore Timer precision.
 			timeEndPeriod(m_TimerPeriod);

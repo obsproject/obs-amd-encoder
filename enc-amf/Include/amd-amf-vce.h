@@ -364,6 +364,8 @@ namespace Plugin {
 			amf::AMFComponentPtr m_AMFEncoder;
 
 			// Internal Properties
+			bool m_Flag_IsStarted,
+				m_Flag_EmergencyQuit;
 			VCEEncoderType m_EncoderType;
 			VCEMemoryType m_MemoryType;
 			VCESurfaceFormat m_SurfaceFormat;
@@ -371,14 +373,8 @@ namespace Plugin {
 			double_t m_FrameRateDivisor, m_FrameRateReverseDivisor;
 			uint32_t m_InputQueueLimit;
 			uint32_t m_TimerPeriod;
-			bool m_Flag_EmergencyQuit;
-			
-			// Emergency Quit Stuff
-			std::chrono::high_resolution_clock::time_point m_EmergencyQuit_LastFrameReceivedOn;
-			std::vector<uint8_t> m_EmergencyQuit_KeyFrame;
 			
 			// Threading
-			bool m_IsStarted;
 			struct ThreadData {
 				std::vector<uint8_t> data;
 				int64_t dts, dts_usec;
@@ -389,6 +385,7 @@ namespace Plugin {
 				std::thread thread;
 				std::mutex mutex;
 				std::condition_variable condvar;
+
 				std::mutex queuemutex;
 				std::queue<amf::AMFSurfacePtr> queue;
 			} m_ThreadedInput;
@@ -396,6 +393,7 @@ namespace Plugin {
 				std::thread thread;
 				std::mutex mutex;
 				std::condition_variable condvar;
+
 				std::mutex queuemutex;
 				std::queue<ThreadData> queue;
 			} m_ThreadedOutput;
