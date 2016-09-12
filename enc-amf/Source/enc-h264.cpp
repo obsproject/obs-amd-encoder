@@ -422,7 +422,7 @@ bool Plugin::Interface::H264Interface::update_from_amf(obs_properties_t *props, 
 	obs_data_set_bool(settings, AMF_H264ADVANCED_UPDATE, false);
 
 	try {
-		VCEEncoder* vce = new VCEEncoder(VCEEncoderType_AVC, VCEMemoryType_Host, VCESurfaceFormat_NV12);
+		VCEEncoder* vce = new VCEEncoder(VCEEncoderType_AVC, VCESurfaceFormat_NV12);
 
 		// Usage & Quality Preset
 		int64_t usage = obs_data_get_int(settings, AMF_H264_USAGE);
@@ -636,7 +636,7 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 			format = VCESurfaceFormat_RGBA;
 			break;
 	}
-	m_VideoEncoder = new VCEEncoder(VCEEncoderType_AVC, VCEMemoryType_Host, format);
+	m_VideoEncoder = new VCEEncoder(VCEEncoderType_AVC, format);
 	
 	/// Usage & Quality Preset
 	m_VideoEncoder->SetUsage((VCEUsage)obs_data_get_int(settings, AMF_H264_USAGE));
