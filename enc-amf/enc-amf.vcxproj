@@ -198,11 +198,6 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-  <Target Name="CustomBuild">
-    <CallTarget Targets="CopyResources" />
-    <CallTarget Targets="Build" />
-    <CallTarget Targets="CopyBinaries" />
-  </Target>
   <Target Name="CopyResources" BeforeTargets="Build">
     <ItemGroup>
       <Resources Include="$(ProjectDir)\Resources\**\*.*" />
