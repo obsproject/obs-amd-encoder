@@ -29,6 +29,7 @@ SOFTWARE.
 #include <inttypes.h>
 #include <exception>
 #include <stdexcept>
+#include <thread>
 
 // Open Broadcaster Software
 #include "libobs/obs-module.h"
@@ -43,7 +44,7 @@ SOFTWARE.
 
 #define PLUGIN_VERSION_MAJOR			1
 #define PLUGIN_VERSION_MINOR			3
-#define PLUGIN_VERSION_RELEASE			0rc2
+#define PLUGIN_VERSION_RELEASE			0rc3
 #define PLUGIN_VERSION_FULL				(((uint64_t)PLUGIN_VERSION_MAJOR << 48ull) | ((uint64_t)PLUGIN_VERSION_MINOR << 16ull) | ((uint64_t)PLUGIN_VERSION_RELEASE))
 #define PLUGIN_VERSION_TEXT				vstr(PLUGIN_VERSION_MAJOR) "." vstr(PLUGIN_VERSION_MINOR) "." vstr(PLUGIN_VERSION_RELEASE) "-" vstr(AMF_VERSION_MAJOR) "." vstr(AMF_VERSION_MINOR) "." vstr(AMF_VERSION_RELEASE) "." vstr(AMF_VERSION_BUILD_NUM)
 
@@ -124,3 +125,18 @@ SOFTWARE.
 #define AMF_UTIL_DEFAULT						TEXT_AMF_UTIL("Default")
 #define AMF_UTIL_TOGGLE_DISABLED				TEXT_AMF_UTIL("Toggle.Disabled")
 #define AMF_UTIL_TOGGLE_ENABLED					TEXT_AMF_UTIL("Toggle.Enabled")
+
+//////////////////////////////////////////////////////////////////////////
+// Threading Specific
+//////////////////////////////////////////////////////////////////////////
+
+#if (defined _WIN32) | (defined _WIN64)
+void SetThreadName(uint32_t dwThreadID, const char* threadName);
+void SetThreadName(const char* threadName);
+void SetThreadName(std::thread* thread, const char* threadName);
+
+#else
+void SetThreadName(std::thread* thread, const char* threadName);
+void SetThreadName(const char* threadName);
+
+#endif
