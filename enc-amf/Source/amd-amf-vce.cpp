@@ -85,7 +85,6 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type) {
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)(m_FrameRateDivisor * 3);
 
-
 	// AMF
 	m_AMF = AMF::GetInstance();
 	m_AMFFactory = m_AMF->GetFactory();
@@ -262,14 +261,15 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
 			}
 
 			if (m_InputQueueLastSize != queueSize) {
+				int32_t delta = ((int32_t)queueSize - (int32_t)m_InputQueueLastSize);
 				if (queueSize == 0) {
-					AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is empty. (%d/%d)", queueSize, m_InputQueueLimit);
+					AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is empty. (%d/%d/%d)", queueSize, (queueSize - m_InputQueueLastSize), m_InputQueueLimit);
 					m_InputQueueLastSize = queueSize;
-				} else if ((queueSize - m_InputQueueLastSize) <= -5) {
-					AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is shrinking. (%d/%d)", queueSize, m_InputQueueLimit);
+				} else if (delta > 0) {
+					AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is growing. (%d/%d/%d)", queueSize, (queueSize - m_InputQueueLastSize), m_InputQueueLimit);
 					m_InputQueueLastSize = queueSize;
-				} else if ((queueSize - m_InputQueueLastSize) >= 5) {
-					AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is growing. (%d/%d)", queueSize, m_InputQueueLimit);
+				} else if (delta < 0) {
+					AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is shrinking. (%d/%d/%d)", queueSize, (queueSize - m_InputQueueLastSize), m_InputQueueLimit);
 					m_InputQueueLastSize = queueSize;
 				}
 			}	
