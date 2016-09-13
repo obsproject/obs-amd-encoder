@@ -146,8 +146,11 @@ Plugin::AMD::AMF::AMF() {
 		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Retrieving Debug object failed with error code %ls (code %d).", res);
 		throw std::exception("", res);
 	}
-
+	#ifdef DEBUG
+	m_AMFTrace->SetGlobalLevel(AMF_TRACE_TEST);
+	#else
 	m_AMFTrace->SetGlobalLevel(AMF_TRACE_WARNING);
+	#endif
 	m_AMFTrace->RegisterWriter(L"OBSWriter", new CustomWriter(), true);
 
 	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Initialized.");
