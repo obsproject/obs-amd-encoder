@@ -75,7 +75,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type) {
 
 	// Solve the optimized away issue.
 	m_EncoderType = p_Type;
-	m_SurfaceFormat = VCESurfaceFormat_RGBA;
+	m_SurfaceFormat = VCESurfaceFormat_NV12;
 	m_MemoryType = VCEMemoryType_OpenCL;
 	m_Flag_IsStarted = false;
 	m_Flag_EmergencyQuit = false;
@@ -97,13 +97,18 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type) {
 	}
 
 	/// System Specific stuff
-	//#if (defined _WIN32) | (defined _WIN64)
-	//if (IsWindows7OrGreater())
-	//	m_AMFContext->InitDX11(nullptr);
-	//else
-	//	m_AMFContext->InitDX9(nullptr);
-	//#endif
-	m_AMFContext->InitOpenCL(nullptr);
+	#if (defined _WIN32) | (defined _WIN64)
+	if (IsWindows7OrGreater()) {
+		res = m_AMFContext->InitDX11(nullptr);
+	} else {
+		res = m_AMFContext->InitDX9(nullptr);
+	}
+	if (res != AMF_OK)
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> InitDX failed with error %ls (code %d)", res);
+	#endif
+	res = m_AMFContext->InitOpenCL(nullptr);
+	if (res != AMF_OK)
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> InitOpenCL failed with error %ls (code %d)", res);
 
 	/// AMF Component (Encoder)
 	switch (p_Type) {
@@ -151,7 +156,7 @@ void Plugin::AMD::VCEEncoder::Start() {
 
 	// Create Encoder
 	AMF_RESULT res;
-	switch (m_SurfaceFormat) {
+	/*switch (m_SurfaceFormat) {
 		case VCESurfaceFormat_NV12:
 			res = m_AMFEncoder->Init(amf::AMF_SURFACE_NV12, m_FrameSize.first, m_FrameSize.second);
 			break;
@@ -161,7 +166,8 @@ void Plugin::AMD::VCEEncoder::Start() {
 		case VCESurfaceFormat_RGBA:
 			res = m_AMFEncoder->Init(amf::AMF_SURFACE_RGBA, m_FrameSize.first, m_FrameSize.second);
 			break;
-	}
+	}*/
+	res = m_AMFEncoder->Init(amf::AMF_SURFACE_NV12, m_FrameSize.first, m_FrameSize.second);
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::Start> Initialization failed with error %ls (code %d).", res);
 
@@ -249,13 +255,17 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
 	/// Only create a Surface if there is room left for it.
 	if (queueSize < m_InputQueueLimit) {
 		surface = CreateSurfaceFromFrame(frame);
-		{
-			std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
-			m_ThreadedInput.queue.push(surface);
-		}
+		if (surface != nullptr) {
+			{
+				std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
+				m_ThreadedInput.queue.push(surface);
+			}
 
-		if (queueSize > 0 && (queueSize % 5 == 0))
-			AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::InputThreadLogic> Input Queue is large. (%d/%d)", queueSize, m_InputQueueLimit);
+			if (queueSize > 0 && (queueSize % 5 == 0))
+				AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is large. (%d/%d)", queueSize, m_InputQueueLimit);
+		} else {
+			AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::SendInput> Failed to create surface from frame.");
+		}
 	} else {
 		AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is full, dropping frame...");
 	}
@@ -349,7 +359,7 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 
 	// Debug: Packet Information
 	#ifdef DEBUG
-	AMF_LOG_INFO("Packet: Type(%d), PTS(%4d,%12d), DTS(%4d,%12d), Size(%8d)", pkt.type, pkt.pts, pkt.pts_usec, pkt.dts, pkt.dts_usec, pkt.data.size());
+	//AMF_LOG_INFO("Packet: Type(%d), PTS(%4d,%12d), DTS(%4d,%12d), Size(%8d)", pkt.type, pkt.pts, pkt.pts_usec, pkt.dts, pkt.dts_usec, pkt.data.size());
 	#endif
 }
 
@@ -388,7 +398,7 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 
 			// AMF requires Partial Range for some reason.
 			// Also Colorspace is automatic, see: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/6#issuecomment-243473568
-			vsi->range = VIDEO_RANGE_PARTIAL; 
+			vsi->range = VIDEO_RANGE_PARTIAL;
 			if (vsi->height < 780)
 				vsi->colorspace = VIDEO_CS_601;
 			else
@@ -442,7 +452,16 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 				surface = m_ThreadedInput.queue.front();
 			}
 
-			AMF_SYNC_LOCK(surface->Convert(amf::AMF_MEMORY_OPENCL););
+			/// Convert to OpenCL Surface
+			AMF_SYNC_LOCK(res = surface->Convert(amf::AMF_MEMORY_OPENCL););
+			if (res != AMF_OK) {
+				std::vector<char> msgBuf(128);
+				FormatTextWithAMFError(&msgBuf, "%ls (code %d)", AMD::AMF::AMF::GetInstance()->GetTrace()->GetResultText(res), res);
+				AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::InputThreadLogic> Convert failed with error %s.)", msgBuf.data());
+				continue;
+			}
+
+			/// Submit to AMF
 			AMF_SYNC_LOCK(res = m_AMFEncoder->SubmitInput(surface););
 			if (res == AMF_OK) {
 				{ // Remove Surface from Queue
@@ -454,11 +473,15 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 				if (__amf_input_full_repeat < 5) {
 					res = AMF_OK;
 					__amf_input_full_repeat++;
+					continue;
+				} else {
+					__amf_input_full_repeat = 0;
 				}
 			} else {
 				std::vector<char> msgBuf(128);
-				FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
+				FormatTextWithAMFError(&msgBuf, "%ls (code %d)", AMD::AMF::AMF::GetInstance()->GetTrace()->GetResultText(res), res);
 				AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::InputThreadLogic> SubmitInput failed with error %s.", msgBuf.data());
+				continue;
 			}
 		}
 	} while (m_Flag_IsStarted);
@@ -474,7 +497,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 
 	// Core Loop
 	do {
-		m_ThreadedOutput.condvar.wait(lock);
+		//m_ThreadedOutput.condvar.wait(lock);
 
 		// Skip to check if isStarted is false.
 		if (!m_Flag_IsStarted)
@@ -530,6 +553,8 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 				AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::OutputThreadLogic> QueryOutput failed with error %s.", msgBuf.data());
 			}
 		}
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	} while (m_Flag_IsStarted);
 }
 
