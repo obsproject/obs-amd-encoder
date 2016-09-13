@@ -149,7 +149,7 @@ Plugin::AMD::VCEEncoder::~VCEEncoder() {
 
 void Plugin::AMD::VCEEncoder::Start() {
 	// Set proper Timer resolution.
-	m_TimerPeriod = (uint32_t)m_FrameRateReverseDivisor * 500;
+	m_TimerPeriod = 1;// (uint32_t)(m_FrameRateReverseDivisor * 500);
 	while (timeBeginPeriod(m_TimerPeriod) == TIMERR_NOCANDO) {
 		++m_TimerPeriod;
 	}
@@ -261,8 +261,18 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
 				m_ThreadedInput.queue.push(surface);
 			}
 
-			if (queueSize > 0 && (queueSize % 5 == 0))
-				AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is large. (%d/%d)", queueSize, m_InputQueueLimit);
+			if (m_InputQueueLastSize != queueSize) {
+				if (queueSize == 0) {
+					AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is empty. (%d/%d)", queueSize, m_InputQueueLimit);
+					m_InputQueueLastSize = queueSize;
+				} else if ((queueSize - m_InputQueueLastSize) <= -5) {
+					AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is shrinking. (%d/%d)", queueSize, m_InputQueueLimit);
+					m_InputQueueLastSize = queueSize;
+				} else if ((queueSize - m_InputQueueLastSize) >= 5) {
+					AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is growing. (%d/%d)", queueSize, m_InputQueueLimit);
+					m_InputQueueLastSize = queueSize;
+				}
+			}	
 		} else {
 			AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::SendInput> Failed to create surface from frame.");
 		}
@@ -468,14 +478,15 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 					std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
 					m_ThreadedInput.queue.pop();
 				}
+
+				// Reset AMF_INPUT_FULL retries.
+				__amf_input_full_repeat = 0;
 			} else if (res == AMF_INPUT_FULL) { // Try submitting for 5 milliseconds
 				std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
 				if (__amf_input_full_repeat < 5) {
 					res = AMF_OK;
 					__amf_input_full_repeat++;
 					continue;
-				} else {
-					__amf_input_full_repeat = 0;
 				}
 			} else {
 				std::vector<char> msgBuf(128);
@@ -1124,7 +1135,7 @@ void Plugin::AMD::VCEEncoder::SetFrameRate(uint32_t num, uint32_t den) {
 			timeEndPeriod(m_TimerPeriod);
 		}
 
-		m_TimerPeriod = (uint32_t)m_FrameRateReverseDivisor * 500;
+		m_TimerPeriod = 1;// (uint32_t)m_FrameRateReverseDivisor * 500;
 		while (timeBeginPeriod(m_TimerPeriod) == TIMERR_NOCANDO) {
 			++m_TimerPeriod;
 		}

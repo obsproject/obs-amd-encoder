@@ -370,7 +370,8 @@ namespace Plugin {
 			VCESurfaceFormat m_SurfaceFormat;
 			std::pair<uint32_t, uint32_t> m_FrameSize, m_FrameRate;
 			double_t m_FrameRateDivisor, m_FrameRateReverseDivisor;
-			uint32_t m_InputQueueLimit;
+			size_t m_InputQueueLimit,
+				m_InputQueueLastSize;
 			uint32_t m_TimerPeriod;
 			
 			// Threading
