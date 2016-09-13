@@ -467,25 +467,13 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	} else {
 		t_amf->GetDebug()->AssertsEnable(false);
 		t_amf->GetDebug()->EnablePerformanceMonitor(false);
-		t_amf->GetTrace()->TraceEnableAsync(false);
+		t_amf->GetTrace()->TraceEnableAsync(true);
 		t_amf->GetTrace()->SetGlobalLevel(AMF_TRACE_ERROR);
 		t_amf->GetTrace()->SetWriterLevel(L"OBSWriter", AMF_TRACE_ERROR);
 	}
 
 	// Encoder Static Parameters
-	VCESurfaceFormat format = VCESurfaceFormat_NV12;
-	switch (voi->format) {
-		case VIDEO_FORMAT_NV12:
-			format = VCESurfaceFormat_NV12;
-			break;
-		case VIDEO_FORMAT_I420:
-			format = VCESurfaceFormat_I420;
-			break;
-		case VIDEO_FORMAT_RGBA:
-			format = VCESurfaceFormat_RGBA;
-			break;
-	}
-	m_VideoEncoder = new Plugin::AMD::VCEEncoder(VCEEncoderType_AVC, format);
+	m_VideoEncoder = new Plugin::AMD::VCEEncoder(VCEEncoderType_AVC);
 
 	/// Encoder Static Parameters
 	m_VideoEncoder->SetUsage(VCEUsage_Transcoding);
@@ -500,7 +488,7 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 
 	/// Encoder Rate Control
 	m_VideoEncoder->SetRateControlMethod((VCERateControlMethod)obs_data_get_int(settings, AMF_H264_RATECONTROLMETHOD));
-	m_VideoEncoder->SetRateControlSkipFrameEnabled(obs_data_get_int(settings, AMF_H264_FRAMESKIPPING) != 0);
+	m_VideoEncoder->SetRateControlSkipFrameEnabled(!!obs_data_get_int(settings, AMF_H264_FRAMESKIPPING));
 
 	m_VideoEncoder->SetMinimumQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_MINIMUM));
 	m_VideoEncoder->SetMaximumQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_MAXIMUM));
@@ -572,7 +560,7 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 		}
 		m_VideoEncoder->SetInitialVBVBufferFullness(1.0);
 	}
-	m_VideoEncoder->SetFillerDataEnabled(obs_data_get_int(settings, AMF_H264_FILLERDATA) == 1);
+	m_VideoEncoder->SetFillerDataEnabled(!!obs_data_get_int(settings, AMF_H264_FILLERDATA));
 
 	if (obs_data_get_int(settings, AMF_H264_ENFORCEHRDCOMPATIBILITY) != -1)
 		m_VideoEncoder->SetEnforceHRDRestrictionsEnabled(!!obs_data_get_int(settings, AMF_H264_ENFORCEHRDCOMPATIBILITY));
