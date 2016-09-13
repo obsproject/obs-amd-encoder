@@ -68,20 +68,23 @@ void Plugin::AMD::VCEEncoder::OutputThreadMain(Plugin::AMD::VCEEncoder* p_this) 
 	p_this->OutputThreadLogic();
 }
 
-Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat) {
+Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type) {
 	AMF_RESULT res;
 
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::VCEEncoder> Initializing...");
 
 	// Solve the optimized away issue.
+	m_EncoderType = p_Type;
+	m_SurfaceFormat = VCESurfaceFormat_RGBA;
+	m_MemoryType = VCEMemoryType_OpenCL;
 	m_Flag_IsStarted = false;
 	m_Flag_EmergencyQuit = false;
-	m_SurfaceFormat = VCESurfaceFormat_NV12;
 	m_FrameSize.first = 64;	m_FrameSize.second = 64;
 	m_FrameRate.first = 30; m_FrameRate.second = 1;
 	m_FrameRateDivisor = ((double_t)m_FrameRate.first / (double_t)m_FrameRate.second);
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)(m_FrameRateDivisor * 3);
+
 
 	// AMF
 	m_AMF = AMF::GetInstance();
@@ -94,14 +97,13 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 	}
 
 	/// System Specific stuff
-	#if (defined _WIN32) | (defined _WIN64)
-	if (IsWindows7OrGreater())
-		m_AMFContext->InitDX11(nullptr);
-	else
-		m_AMFContext->InitDX9(nullptr);
-	#endif
+	//#if (defined _WIN32) | (defined _WIN64)
+	//if (IsWindows7OrGreater())
+	//	m_AMFContext->InitDX11(nullptr);
+	//else
+	//	m_AMFContext->InitDX9(nullptr);
+	//#endif
 	m_AMFContext->InitOpenCL(nullptr);
-	m_MemoryType = VCEMemoryType_OpenCL;
 
 	/// AMF Component (Encoder)
 	switch (p_Type) {
@@ -120,9 +122,6 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 		AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::VCEEncoder> Creating a component object failed with error code %d.", res);
 		throw;
 	}
-
-	m_EncoderType = p_Type;
-	m_SurfaceFormat = p_SurfaceFormat;
 
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::VCEEncoder> Initialization complete!");
 }
@@ -223,22 +222,8 @@ void Plugin::AMD::VCEEncoder::Stop() {
 	#endif
 
 	// Clear Queues, Data
-	if (m_ThreadedInput.queue.size() > 0) {
-		std::queue<amf::AMFSurfacePtr>().swap(m_ThreadedInput.queue);
-		//do {
-		//	amf::AMFSurfacePtr surface = m_ThreadedInput.queue.front();
-		//	surface->Release();
-		//	m_ThreadedInput.queue.pop();
-		//} while (m_ThreadedInput.queue.size() > 0);
-	}
-	if (m_ThreadedOutput.queue.size() > 0) {
-		std::queue<ThreadData>().swap(m_ThreadedOutput.queue);
-		//do {
-		//	ThreadData data = m_ThreadedOutput.queue.front();
-		//	data.data.clear();
-		//	m_ThreadedOutput.queue.pop();
-		//} while (m_ThreadedInput.queue.size() > 0);
-	}
+	std::queue<amf::AMFSurfacePtr>().swap(m_ThreadedInput.queue);
+	std::queue<ThreadData>().swap(m_ThreadedOutput.queue);
 	m_PacketDataBuffer.clear();
 	m_ExtraDataBuffer.clear();
 }
@@ -385,8 +370,6 @@ bool Plugin::AMD::VCEEncoder::GetExtraData(uint8_t**& extra_data, size_t*& extra
 		std::memcpy(m_ExtraDataBuffer.data(), buf->GetNative(), *extra_data_size);
 		*extra_data = m_ExtraDataBuffer.data();
 
-		//buf->Release();
-
 		return true;
 	}
 	return false;
@@ -402,25 +385,33 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 	switch (m_SurfaceFormat) {
 		case VCESurfaceFormat_NV12:
 			vsi->format = VIDEO_FORMAT_NV12;
+
+			// AMF requires Partial Range for some reason.
+			// Also Colorspace is automatic, see: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/6#issuecomment-243473568
+			vsi->range = VIDEO_RANGE_PARTIAL; 
+			if (vsi->height < 780)
+				vsi->colorspace = VIDEO_CS_601;
+			else
+				vsi->colorspace = VIDEO_CS_709;
 			break;
 		case VCESurfaceFormat_I420:
 			vsi->format = VIDEO_FORMAT_I420;
+
+			// AMF requires Partial Range for some reason.
+			// Also Colorspace is automatic, see: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/6#issuecomment-243473568
+			vsi->range = VIDEO_RANGE_PARTIAL;
+			if (vsi->height < 780)
+				vsi->colorspace = VIDEO_CS_601;
+			else
+				vsi->colorspace = VIDEO_CS_709;
 			break;
 		case VCESurfaceFormat_RGBA:
 			vsi->format = VIDEO_FORMAT_RGBA;
-			break;
-		default:
-			vsi->format = VIDEO_FORMAT_NV12;
+
+			vsi->range = VIDEO_RANGE_FULL;
+			vsi->colorspace = VIDEO_CS_709;
 			break;
 	}
-
-	// Fix AMF stupidity: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/6
-	vsi->range = VIDEO_RANGE_PARTIAL; // Because AMF is stupid. - Xaymar 2016
-	if (vsi->height < 780) // See: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/6#issuecomment-243473568
-		vsi->colorspace = VIDEO_CS_601;
-	else
-		vsi->colorspace = VIDEO_CS_709;
-	// HEVC will fix it. Or not. We don't even have Two Pass Encoding yet! AMD what the hell?
 }
 
 void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles Surface Submission
@@ -794,7 +785,6 @@ Plugin::AMD::VCEQualityPreset Plugin::AMD::VCEEncoder::GetQualityPreset() {
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetQualityPreset> Value is %s.", CustomToName[AMFToCustom[preset]]);
 	return AMFToCustom[preset];
 }
-
 
 void Plugin::AMD::VCEEncoder::SetProfile(VCEProfile profile) {
 	if ((profile != VCEProfile_High) && (profile != VCEProfile_Main) && (profile != VCEProfile_Baseline)) {
