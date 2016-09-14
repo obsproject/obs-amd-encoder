@@ -361,6 +361,7 @@ namespace Plugin {
 			amf::AMFFactory* m_AMFFactory;
 			amf::AMFContextPtr m_AMFContext;
 			amf::AMFComponentPtr m_AMFEncoder;
+			amf::AMFComputePtr m_AMFCompute;
 
 			// Internal Properties
 			bool m_Flag_IsStarted,

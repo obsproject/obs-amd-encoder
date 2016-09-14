@@ -76,7 +76,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type) {
 	// Solve the optimized away issue.
 	m_EncoderType = p_Type;
 	m_SurfaceFormat = VCESurfaceFormat_NV12;
-	m_MemoryType = VCEMemoryType_OpenCL;
+	m_MemoryType = VCEMemoryType_Host;
 	m_Flag_IsStarted = false;
 	m_Flag_EmergencyQuit = false;
 	m_FrameSize.first = 64;	m_FrameSize.second = 64;
@@ -84,6 +84,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type) {
 	m_FrameRateDivisor = ((double_t)m_FrameRate.first / (double_t)m_FrameRate.second);
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)(m_FrameRateDivisor * 3);
+	m_TimerPeriod = (uint32_t)(m_FrameRateReverseDivisor * 250);
 
 	// AMF
 	m_AMF = AMF::GetInstance();
@@ -99,8 +100,10 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type) {
 	#if (defined _WIN32) | (defined _WIN64)
 	if (IsWindows7OrGreater()) {
 		res = m_AMFContext->InitDX11(nullptr);
+		m_MemoryType = VCEMemoryType_DirectX11;
 	} else {
 		res = m_AMFContext->InitDX9(nullptr);
+		m_MemoryType = VCEMemoryType_DirectX9;
 	}
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> InitDX failed with error %ls (code %d)", res);
@@ -108,6 +111,8 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type) {
 	res = m_AMFContext->InitOpenCL(nullptr);
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> InitOpenCL failed with error %ls (code %d)", res);
+	//m_MemoryType = VCEMemoryType_OpenCL;
+	m_AMFContext->GetCompute(amf::AMF_MEMORY_OPENCL, &m_AMFCompute);
 
 	/// AMF Component (Encoder)
 	switch (p_Type) {
@@ -148,7 +153,7 @@ Plugin::AMD::VCEEncoder::~VCEEncoder() {
 
 void Plugin::AMD::VCEEncoder::Start() {
 	// Set proper Timer resolution.
-	m_TimerPeriod = 1;// (uint32_t)(m_FrameRateReverseDivisor * 500);
+	m_TimerPeriod = 1;
 	while (timeBeginPeriod(m_TimerPeriod) == TIMERR_NOCANDO) {
 		++m_TimerPeriod;
 	}
@@ -169,7 +174,7 @@ void Plugin::AMD::VCEEncoder::Start() {
 	res = m_AMFEncoder->Init(amf::AMF_SURFACE_NV12, m_FrameSize.first, m_FrameSize.second);
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::Start> Initialization failed with error %ls (code %d).", res);
-
+	
 	// Threading
 	/// Create and start Threads
 	m_Flag_IsStarted = true;
@@ -435,6 +440,14 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 }
 
 void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles Surface Submission
+	static amf::AMF_MEMORY_TYPE memoryTypeToAMF[] = {
+		amf::AMF_MEMORY_HOST,
+		amf::AMF_MEMORY_DX9,
+		amf::AMF_MEMORY_DX11,
+		amf::AMF_MEMORY_OPENGL,
+		amf::AMF_MEMORY_OPENCL,
+	};
+	
 	std::unique_lock<std::mutex> lock(m_ThreadedInput.mutex);
 
 	// Assign Thread Name
@@ -443,7 +456,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 
 	// Core Loop
 	do {
-		m_ThreadedInput.condvar.wait(lock);
+		//m_ThreadedInput.condvar.wait(lock);
 
 		// Skip to check if isStarted is false.
 		if (!m_Flag_IsStarted)
@@ -462,17 +475,8 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 				surface = m_ThreadedInput.queue.front();
 			}
 
-			/// Convert to OpenCL Surface
-			AMF_SYNC_LOCK(res = surface->Convert(amf::AMF_MEMORY_OPENCL););
-			if (res != AMF_OK) {
-				std::vector<char> msgBuf(128);
-				FormatTextWithAMFError(&msgBuf, "%ls (code %d)", AMD::AMF::AMF::GetInstance()->GetTrace()->GetResultText(res), res);
-				AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::InputThreadLogic> Convert failed with error %s.)", msgBuf.data());
-				continue;
-			}
-
 			/// Submit to AMF
-			AMF_SYNC_LOCK(res = m_AMFEncoder->SubmitInput(surface););
+			AMF_SYNC_LOCK(res = m_AMFEncoder->SubmitInput(surface));
 			if (res == AMF_OK) {
 				{ // Remove Surface from Queue
 					std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
@@ -495,6 +499,8 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 				continue;
 			}
 		}
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	} while (m_Flag_IsStarted);
 }
 
@@ -570,8 +576,6 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 }
 
 amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encoder_frame*& frame) {
-	AMF_RESULT res = AMF_UNEXPECTED;
-	amf::AMFSurfacePtr pSurface = nullptr;
 	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
 		amf::AMF_SURFACE_NV12,
 		amf::AMF_SURFACE_YUV420P,
@@ -585,33 +589,46 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 		amf::AMF_MEMORY_OPENCL,
 	};
 
-	size_t planeCount;
+	AMF_RESULT res = AMF_UNEXPECTED;
+	amf::AMFSurfacePtr pSurface = nullptr;
+	//size_t planeCount;
 
-	AMF_SYNC_LOCK(res = m_AMFContext->AllocSurface(
-		amf::AMF_MEMORY_HOST, surfaceFormatToAMF[m_SurfaceFormat],
-		m_FrameSize.first, m_FrameSize.second,
-		&pSurface););
-	if (res != AMF_OK) // Unable to create Surface
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame> Unable to create AMFSurface, error %ls (code %d).", res);
+	//AMF_SYNC_LOCK(res = m_AMFContext->AllocSurface(
+	//	amf::AMF_MEMORY_HOST, surfaceFormatToAMF[m_SurfaceFormat],
+	//	m_FrameSize.first, m_FrameSize.second,
+	//	&pSurface););
+	//if (res != AMF_OK) // Unable to create Surface
+	//	ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame> Unable to create AMFSurface, error %ls (code %d).", res);
 
-	planeCount = pSurface->GetPlanesCount();
-	for (uint8_t i = 0; i < planeCount; i++) {
-		amf::AMFPlane* plane;
-		void* plane_nat;
-		int32_t height;
-		size_t hpitch;
+	//planeCount = pSurface->GetPlanesCount();
+	//for (uint8_t i = 0; i < planeCount; i++) {
+	//	amf::AMFPlane* plane;
+	//	void* plane_nat;
+	//	int32_t height;
+	//	size_t hpitch;
 
-		AMF_SYNC_LOCK(plane = pSurface->GetPlaneAt(i););
-		AMF_SYNC_LOCK(plane_nat = plane->GetNative(););
-		height = plane->GetHeight();
-		hpitch = plane->GetHPitch();
+	//	AMF_SYNC_LOCK(plane = pSurface->GetPlaneAt(i););
+	//	AMF_SYNC_LOCK(plane_nat = plane->GetNative(););
+	//	height = plane->GetHeight();
+	//	hpitch = plane->GetHPitch();
 
-		for (int32_t py = 0; py < height; py++) {
-			size_t plane_off = py * hpitch;
-			size_t frame_off = py * frame->linesize[i];
-			std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
-		}
-	}
+	//	for (int32_t py = 0; py < height; py++) {
+	//		size_t plane_off = py * hpitch;
+	//		size_t frame_off = py * frame->linesize[i];
+	//		std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+	//	}
+	//}
+	
+	amf_size l_size0[] = { m_FrameSize.first, m_FrameSize.second, 0 };
+	amf_size l_size1[] = { m_FrameSize.first, m_FrameSize.second >> 1, 0 };
+
+	res = m_AMFContext->AllocSurface(amf::AMF_MEMORY_DX11, surfaceFormatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second, &pSurface);
+	pSurface->Convert(amf::AMF_MEMORY_OPENCL);
+	m_AMFCompute->CopyPlaneFromHost(&frame->data[0], l_size0, l_size0, frame->linesize[0], pSurface->GetPlaneAt(0), true);
+	m_AMFCompute->CopyPlaneFromHost(&frame->data[1], l_size1, l_size1, frame->linesize[1], pSurface->GetPlaneAt(1), true);
+	m_AMFCompute->FinishQueue();
+	pSurface->Convert(amf::AMF_MEMORY_DX11);
+	AMF_LOG_DEBUG("-- Surface Done --");
 
 	// Convert Frame Index to Nanoseconds.
 	amf_pts amfPts = (int64_t)(frame->pts * (m_FrameRateReverseDivisor * 10000000.0));
@@ -1135,7 +1152,7 @@ void Plugin::AMD::VCEEncoder::SetFrameRate(uint32_t num, uint32_t den) {
 			timeEndPeriod(m_TimerPeriod);
 		}
 
-		m_TimerPeriod = 1;// (uint32_t)m_FrameRateReverseDivisor * 500;
+		m_TimerPeriod = 1;
 		while (timeBeginPeriod(m_TimerPeriod) == TIMERR_NOCANDO) {
 			++m_TimerPeriod;
 		}
