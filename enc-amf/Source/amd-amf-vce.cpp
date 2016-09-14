@@ -418,6 +418,7 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 				vsi->colorspace = VIDEO_CS_601;
 			else
 				vsi->colorspace = VIDEO_CS_709;
+
 			break;
 		case VCESurfaceFormat_I420:
 			vsi->format = VIDEO_FORMAT_I420;
@@ -429,6 +430,7 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 				vsi->colorspace = VIDEO_CS_601;
 			else
 				vsi->colorspace = VIDEO_CS_709;
+
 			break;
 		case VCESurfaceFormat_RGBA:
 			vsi->format = VIDEO_FORMAT_RGBA;
