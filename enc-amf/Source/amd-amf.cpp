@@ -43,10 +43,10 @@ using namespace Plugin::AMD;
 class CustomWriter : public amf::AMFTraceWriter {
 	public:
 	virtual void Write(const wchar_t* scope, const wchar_t* message) override {
-		const wchar_t* realmsg = &(message[(33 + wcslen(scope) + 2)]);
-		size_t msgLen = wcslen(realmsg) - (sizeof(wchar_t));
+		//const wchar_t* realmsg = &(message[(33 + wcslen(scope) + 2)]);
+		size_t msgLen = wcslen(message) - (sizeof(wchar_t));
 
-		blog(LOG_INFO, "[AMFTrace::%ls] %.*ls", scope, msgLen, realmsg);
+		blog(LOG_INFO, "[AMFTrace] %.*ls", msgLen, message);
 	}
 
 	virtual void Flush() override {}
