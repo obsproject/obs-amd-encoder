@@ -58,6 +58,8 @@ namespace Plugin {
 			amf::AMFTrace* GetTrace();
 			amf::AMFDebug* GetDebug();
 
+			void EnableDebugTrace(bool enable);
+
 			private:
 			uint32_t m_TimerPeriod; /// High-Precision Timer Accuracy (nanoseconds)
 			
