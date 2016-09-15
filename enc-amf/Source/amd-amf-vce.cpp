@@ -108,10 +108,10 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type) {
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> InitDX failed with error %ls (code %d)", res);
 	#endif
-	//res = m_AMFContext->InitOpenCL(nullptr);
-	//if (res != AMF_OK)
-	//	ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> InitOpenCL failed with error %ls (code %d)", res);
-	//m_MemoryType = VCEMemoryType_OpenCL;
+	res = m_AMFContext->InitOpenCL(nullptr);
+	if (res != AMF_OK)
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> InitOpenCL failed with error %ls (code %d)", res);
+	m_MemoryType = VCEMemoryType_OpenCL;
 	//m_AMFContext->GetCompute(amf::AMF_MEMORY_OPENCL, &m_AMFCompute);
 
 	/// AMF Component (Encoder)
@@ -174,7 +174,7 @@ void Plugin::AMD::VCEEncoder::Start() {
 	res = m_AMFEncoder->Init(amf::AMF_SURFACE_NV12, m_FrameSize.first, m_FrameSize.second);
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::Start> Initialization failed with error %ls (code %d).", res);
-	
+
 	// Threading
 	/// Create and start Threads
 	m_Flag_IsStarted = true;
@@ -277,7 +277,7 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
 					AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is shrinking. (%d/%d/%d)", queueSize, (queueSize - m_InputQueueLastSize), m_InputQueueLimit);
 					m_InputQueueLastSize = queueSize;
 				}
-			}	
+			}
 		} else {
 			AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::SendInput> Failed to create surface from frame.");
 		}
@@ -410,35 +410,22 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 	switch (m_SurfaceFormat) {
 		case VCESurfaceFormat_NV12:
 			vsi->format = VIDEO_FORMAT_NV12;
-
-			// AMF requires Partial Range for some reason.
-			// Also Colorspace is automatic, see: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/6#issuecomment-243473568
-			vsi->range = VIDEO_RANGE_PARTIAL;
-			if (vsi->height < 780)
-				vsi->colorspace = VIDEO_CS_601;
-			else
-				vsi->colorspace = VIDEO_CS_709;
-
 			break;
 		case VCESurfaceFormat_I420:
 			vsi->format = VIDEO_FORMAT_I420;
-
-			// AMF requires Partial Range for some reason.
-			// Also Colorspace is automatic, see: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/6#issuecomment-243473568
-			vsi->range = VIDEO_RANGE_PARTIAL;
-			if (vsi->height < 780)
-				vsi->colorspace = VIDEO_CS_601;
-			else
-				vsi->colorspace = VIDEO_CS_709;
-
 			break;
 		case VCESurfaceFormat_RGBA:
 			vsi->format = VIDEO_FORMAT_RGBA;
-
-			vsi->range = VIDEO_RANGE_FULL;
-			vsi->colorspace = VIDEO_CS_709;
 			break;
 	}
+
+	// AMF requires Partial Range for some reason.
+	// Also Colorspace is automatic, see: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/6#issuecomment-243473568
+	vsi->range = VIDEO_RANGE_PARTIAL;
+	if (vsi->height <= 780)
+		vsi->colorspace = VIDEO_CS_601;
+	else
+		vsi->colorspace = VIDEO_CS_709;
 }
 
 void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles Surface Submission
@@ -449,7 +436,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 		amf::AMF_MEMORY_OPENGL,
 		amf::AMF_MEMORY_OPENCL,
 	};
-	
+
 	std::unique_lock<std::mutex> lock(m_ThreadedInput.mutex);
 
 	// Assign Thread Name
@@ -548,7 +535,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 					int64_t dts_usec = (pData->GetPts() / 10);
 
 					// Decode Timestamp
-					pkt.dts_usec = (int64_t)(dts_usec - (frTimeStep * 2));
+					pkt.dts_usec = (int64_t)(dts_usec - (frTimeStep << 3));
 					pkt.dts = (int64_t)(pkt.dts_usec / frTimeStep);
 
 					// Presentation Timestamp
@@ -603,14 +590,12 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 	size_t planeCount = pSurface->GetPlanesCount();
 	for (uint8_t i = 0; i < planeCount; i++) {
 		amf::AMFPlane* plane;
-		void* plane_nat;
-		int32_t height;
-		size_t hpitch;
-
 		AMF_SYNC_LOCK(plane = pSurface->GetPlaneAt(i););
+		size_t height = plane->GetHeight();
+		size_t hpitch = plane->GetHPitch();
+
+		void* plane_nat;
 		AMF_SYNC_LOCK(plane_nat = plane->GetNative(););
-		height = plane->GetHeight();
-		hpitch = plane->GetHPitch();
 
 		for (int32_t py = 0; py < height; py++) {
 			size_t plane_off = py * hpitch;
@@ -618,20 +603,6 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 			std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
 		}
 	}
-	
-	/*amf_size l_origin[] = { 0, 0, 0 };
-	amf_size l_size0[] = { m_FrameSize.first, m_FrameSize.second, 0 };
-	amf_size l_size1[] = { m_FrameSize.first >> 1, m_FrameSize.second >> 1, 0 };
-
-	amf::AMFComputeSyncPointPtr pSyncPoint;
-	m_AMFCompute->PutSyncPoint(&pSyncPoint);
-	res = m_AMFContext->AllocSurface(amf::AMF_MEMORY_DX11, surfaceFormatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second, &pSurface);
-	pSurface->Convert(amf::AMF_MEMORY_OPENCL);
-	m_AMFCompute->CopyPlaneFromHost(&frame->data[0], l_origin, l_size0, frame->linesize[0], pSurface->GetPlaneAt(0), false);
-	m_AMFCompute->CopyPlaneFromHost(&frame->data[1], l_origin, l_size1, frame->linesize[1], pSurface->GetPlaneAt(1), false);
-	pSyncPoint->Wait();
-	m_AMFCompute->FinishQueue();
-	pSurface->Convert(amf::AMF_MEMORY_DX11);*/
 
 	// Convert Frame Index to Nanoseconds.
 	amf_pts amfPts = (int64_t)(frame->pts * (m_FrameRateReverseDivisor * 10000000.0));
@@ -649,7 +620,20 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 //////////////////////////////////////////////////////////////////////////
 
 void Plugin::AMD::VCEEncoder::LogProperties() {
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::LogProperties> Current Properties:");
+	static const char* usageToString[] = {
+		"Transcoding",
+		"Ultra Low Latency",
+		"Low Latency",
+		"Webcam"
+	};
+
+	AMF_LOG_INFO("-- AMD Advanced Media Framework VCE Encoder --");
+
+	AMF_LOG_INFO("Static Parameters: ");
+	AMF_LOG_INFO("- Usage: %s", usageToString[this->GetUsage()]);
+
+
+
 	/// Encoder Static Parameters
 	try {
 		this->GetQualityPreset();
@@ -779,7 +763,7 @@ void Plugin::AMD::VCEEncoder::SetUsage(VCEUsage usage) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetUsage> Setting to %s failed with error %ls (code %d).", res, customToName[usage]);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetUsage> Set to %s.", customToName[usage]);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetUsage> Set to %s.", customToName[usage]);
 }
 
 Plugin::AMD::VCEUsage Plugin::AMD::VCEEncoder::GetUsage() {
@@ -801,7 +785,7 @@ Plugin::AMD::VCEUsage Plugin::AMD::VCEEncoder::GetUsage() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetUsage> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetUsage> Value is %s.", customToName[AMFToCustom[usage]]);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetUsage> Value is %s.", customToName[AMFToCustom[usage]]);
 	return AMFToCustom[usage];
 }
 
@@ -821,7 +805,7 @@ void Plugin::AMD::VCEEncoder::SetQualityPreset(VCEQualityPreset preset) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetQualityPreset> Setting to %s failed with error %ls (code %d).", res, CustomToName[preset]);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetQualityPreset> Set to %s.", CustomToName[preset]);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetQualityPreset> Set to %s.", CustomToName[preset]);
 }
 
 Plugin::AMD::VCEQualityPreset Plugin::AMD::VCEEncoder::GetQualityPreset() {
@@ -841,7 +825,7 @@ Plugin::AMD::VCEQualityPreset Plugin::AMD::VCEEncoder::GetQualityPreset() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetQualityPreset> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetQualityPreset> Value is %s.", CustomToName[AMFToCustom[preset]]);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetQualityPreset> Value is %s.", CustomToName[AMFToCustom[preset]]);
 	return AMFToCustom[preset];
 }
 
@@ -854,7 +838,7 @@ void Plugin::AMD::VCEEncoder::SetProfile(VCEProfile profile) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetProfile> Setting to %s failed with error %ls (code %d).", res, (profile == 100 ? "High" : (profile == 77 ? "Main" : "Baseline")));
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetProfile> Set to %s.", (profile == 100 ? "High" : (profile == 77 ? "Main" : "Baseline")));
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetProfile> Set to %s.", (profile == 100 ? "High" : (profile == 77 ? "Main" : "Baseline")));
 }
 
 Plugin::AMD::VCEProfile Plugin::AMD::VCEEncoder::GetProfile() {
@@ -863,7 +847,7 @@ Plugin::AMD::VCEProfile Plugin::AMD::VCEEncoder::GetProfile() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetProfile> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetProfile> Value is %s.", (profile == 100 ? "High" : (profile == 77 ? "Main" : "Baseline")));
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetProfile> Value is %s.", (profile == 100 ? "High" : (profile == 77 ? "Main" : "Baseline")));
 	return (VCEProfile)profile;
 }
 
@@ -872,7 +856,7 @@ void Plugin::AMD::VCEEncoder::SetProfileLevel(VCEProfileLevel level) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetProfile> Setting to %d failed with error %ls (code %d).", res, level);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetProfile> Set to %d.", level);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetProfile> Set to %d.", level);
 }
 
 Plugin::AMD::VCEProfileLevel Plugin::AMD::VCEEncoder::GetProfileLevel() {
@@ -881,7 +865,7 @@ Plugin::AMD::VCEProfileLevel Plugin::AMD::VCEEncoder::GetProfileLevel() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetProfileLevel> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetProfileLevel> Value is %d.", profileLevel);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetProfileLevel> Value is %d.", profileLevel);
 	return (VCEProfileLevel)(profileLevel);
 }
 
@@ -893,7 +877,7 @@ void Plugin::AMD::VCEEncoder::SetMaxLTRFrames(uint32_t maximumLTRFrames) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetMaxLTRFrames> Setting to %d failed with error %ls (code %d).", res, maximumLTRFrames);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetMaxLTRFrames> Set to %d.", maximumLTRFrames);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetMaxLTRFrames> Set to %d.", maximumLTRFrames);
 }
 
 uint32_t Plugin::AMD::VCEEncoder::GetMaxLTRFrames() {
@@ -902,7 +886,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetMaxLTRFrames() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetMaxLTRFrames> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetMaxLTRFrames> Value is %d.", maximumLTRFrames);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetMaxLTRFrames> Value is %d.", maximumLTRFrames);
 	return maximumLTRFrames;
 }
 
@@ -913,7 +897,7 @@ void Plugin::AMD::VCEEncoder::SetFrameSize(uint32_t width, uint32_t height) {
 		sprintf(msgBuf.data(), "%dx%d", width, height);
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetFrameSize> Setting to %s failed with error %ls (code %d).", res, msgBuf.data());
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetFrameSize> Set to %dx%d.", width, height);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetFrameSize> Set to %dx%d.", width, height);
 }
 
 std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameSize() {
@@ -922,7 +906,7 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameSize() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetFrameSize> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetFrameSize> Value is %dx%d.", frameSize.width, frameSize.height);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetFrameSize> Value is %dx%d.", frameSize.width, frameSize.height);
 	m_FrameSize.first = frameSize.width;
 	m_FrameSize.second = frameSize.height;
 	return std::pair<uint32_t, uint32_t>(m_FrameSize);
@@ -936,7 +920,7 @@ void Plugin::AMD::VCEEncoder::SetTargetBitrate(uint32_t bitrate) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetTargetBitrate> Setting to %d bits failed with error %ls (code %d).", res, bitrate);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetTargetBitrate> Set to %d bits.", bitrate);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetTargetBitrate> Set to %d bits.", bitrate);
 }
 
 uint32_t Plugin::AMD::VCEEncoder::GetTargetBitrate() {
@@ -945,7 +929,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetTargetBitrate() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetTargetBitrate> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetTargetBitrate> Value is %d bits.", bitrate);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetTargetBitrate> Value is %d bits.", bitrate);
 	return bitrate;
 }
 
@@ -957,7 +941,7 @@ void Plugin::AMD::VCEEncoder::SetPeakBitrate(uint32_t bitrate) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetPeakBitrate> Setting to %d bits failed with error %ls (code %d).", res, bitrate);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetPeakBitrate> Set to %d bits.", bitrate);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetPeakBitrate> Set to %d bits.", bitrate);
 }
 
 uint32_t Plugin::AMD::VCEEncoder::GetPeakBitrate() {
@@ -966,7 +950,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetPeakBitrate() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetPeakBitrate> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetPeakBitrate> Value is %d bits.", bitrate);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetPeakBitrate> Value is %d bits.", bitrate);
 	return bitrate;
 }
 
@@ -988,7 +972,7 @@ void Plugin::AMD::VCEEncoder::SetRateControlMethod(VCERateControlMethod method) 
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetRateControlMethod> Setting to %s failed with error %ls (code %d).", res, CustomToName[method]);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetRateControlMethod> Set to %s.", CustomToName[method]);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetRateControlMethod> Set to %s.", CustomToName[method]);
 }
 
 Plugin::AMD::VCERateControlMethod Plugin::AMD::VCEEncoder::GetRateControlMethod() {
@@ -1010,7 +994,7 @@ Plugin::AMD::VCERateControlMethod Plugin::AMD::VCEEncoder::GetRateControlMethod(
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetRateControlMethod> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetRateControlMethod> Value is %s.", CustomToName[AMFToCustom[method]]);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetRateControlMethod> Value is %s.", CustomToName[AMFToCustom[method]]);
 	return AMFToCustom[method];
 }
 
@@ -1019,7 +1003,7 @@ void Plugin::AMD::VCEEncoder::SetRateControlSkipFrameEnabled(bool enabled) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetRateControlSkipFrameEnabled> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetRateControlSkipFrameEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetRateControlSkipFrameEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
 bool Plugin::AMD::VCEEncoder::IsRateControlSkipFrameEnabled() {
@@ -1028,7 +1012,7 @@ bool Plugin::AMD::VCEEncoder::IsRateControlSkipFrameEnabled() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsRateControlSkipFrameEnabled> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsRateControlSkipFrameEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::IsRateControlSkipFrameEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 
@@ -1040,7 +1024,7 @@ void Plugin::AMD::VCEEncoder::SetMinimumQP(uint8_t qp) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetMinimumQP> Setting to %d failed with error %ls (code %d).", res, qp);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetMinimumQP> Set to %d.", qp);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetMinimumQP> Set to %d.", qp);
 }
 
 uint8_t Plugin::AMD::VCEEncoder::GetMinimumQP() {
@@ -1049,7 +1033,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetMinimumQP() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetMinimumQP> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetMinimumQP> Value is %d.", qp);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetMinimumQP> Value is %d.", qp);
 	return qp;
 }
 
@@ -1061,7 +1045,7 @@ void Plugin::AMD::VCEEncoder::SetMaximumQP(uint8_t qp) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetMaximumQP> Setting to %d failed with error %ls (code %d).", res, qp);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetMaximumQP> Set to %d.", qp);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetMaximumQP> Set to %d.", qp);
 }
 
 uint8_t Plugin::AMD::VCEEncoder::GetMaximumQP() {
@@ -1070,7 +1054,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetMaximumQP() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetMaximumQP> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetMaximumQP> Value is %d.", qp);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetMaximumQP> Value is %d.", qp);
 	return qp;
 }
 
@@ -1082,7 +1066,7 @@ void Plugin::AMD::VCEEncoder::SetIFrameQP(uint8_t qp) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetIFrameQP> Setting to %d failed with error %ls (code %d).", res, qp);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetIFrameQP> Set to %d.", qp);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetIFrameQP> Set to %d.", qp);
 }
 
 uint8_t Plugin::AMD::VCEEncoder::GetIFrameQP() {
@@ -1091,7 +1075,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetIFrameQP() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetIFrameQP> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetIFrameQP> Value is %d.", qp);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetIFrameQP> Value is %d.", qp);
 	return qp;
 }
 
@@ -1103,7 +1087,7 @@ void Plugin::AMD::VCEEncoder::SetPFrameQP(uint8_t qp) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetPFrameQP> Setting to %d failed with error %ls (code %d).", res, qp);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetPFrameQP> Set to %d.", qp);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetPFrameQP> Set to %d.", qp);
 }
 
 uint8_t Plugin::AMD::VCEEncoder::GetPFrameQP() {
@@ -1112,7 +1096,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetPFrameQP() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetPFrameQP> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetPFrameQP> Value is %d.", qp);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetPFrameQP> Value is %d.", qp);
 	return qp;
 }
 
@@ -1124,7 +1108,7 @@ void Plugin::AMD::VCEEncoder::SetBFrameQP(uint8_t qp) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetBFrameQP> Setting to %d failed with error %ls (code %d).", res, qp);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetBFrameQP> Set to %d.", qp);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetBFrameQP> Set to %d.", qp);
 }
 
 uint8_t Plugin::AMD::VCEEncoder::GetBFrameQP() {
@@ -1133,7 +1117,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetBFrameQP() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetBFrameQP> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetBFrameQP> Value is %d.", qp);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetBFrameQP> Value is %d.", qp);
 	return qp;
 }
 
@@ -1144,13 +1128,13 @@ void Plugin::AMD::VCEEncoder::SetFrameRate(uint32_t num, uint32_t den) {
 		sprintf(msgBuf.data(), "%d/%d", num, den);
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetFrameRate> Setting to %s failed with error %ls (code %d).", res, msgBuf.data());
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetFrameRate> Set to %d/%d.", num, den);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetFrameRate> Set to %d/%d.", num, den);
 	m_FrameRate.first = num;
 	m_FrameRate.second = den;
 	m_FrameRateDivisor = (double_t)m_FrameRate.first / (double_t)m_FrameRate.second;
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor * 3);
-	//AMF_LOG_INFO("%f div, %f revdiv", m_FrameRateDivisor, m_FrameRateReverseDivisor);
+	//AMF_LOG_DEBUG("%f div, %f revdiv", m_FrameRateDivisor, m_FrameRateReverseDivisor);
 
 	if (m_Flag_IsStarted) { // Change Timer precision if encoding.
 		if (m_TimerPeriod != 0) {
@@ -1171,7 +1155,7 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameRate() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetFrameRate> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetFrameRate> Value is %d/%d.", frameRate.num, frameRate.den);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetFrameRate> Value is %d/%d.", frameRate.num, frameRate.den);
 	m_FrameRate.first = frameRate.num;
 	m_FrameRate.second = frameRate.den;
 	m_FrameRateDivisor = (double_t)frameRate.num / (double_t)frameRate.den;
@@ -1187,7 +1171,7 @@ void Plugin::AMD::VCEEncoder::SetVBVBufferSize(uint32_t size) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetVBVBufferSize> Setting to %d bits failed with error %ls (code %d).", res, size);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetVBVBufferSize> Set to %d bits.", size);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetVBVBufferSize> Set to %d bits.", size);
 }
 
 uint32_t Plugin::AMD::VCEEncoder::GetVBVBufferSize() {
@@ -1196,7 +1180,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetVBVBufferSize() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetVBVBufferSize> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetVBVBufferSize> Value is %d.", size);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetVBVBufferSize> Value is %d.", size);
 	return size;
 }
 
@@ -1208,7 +1192,7 @@ void Plugin::AMD::VCEEncoder::SetInitialVBVBufferFullness(double_t fullness) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetVBVBufferFullness> Setting to %f%% failed with error %ls (code %d).", res, fullness * 100);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetVBVBufferFullness> Set to %f%%.", fullness * 100);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetVBVBufferFullness> Set to %f%%.", fullness * 100);
 }
 
 double_t Plugin::AMD::VCEEncoder::GetInitialVBVBufferFullness() {
@@ -1217,7 +1201,7 @@ double_t Plugin::AMD::VCEEncoder::GetInitialVBVBufferFullness() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetInitialVBVBufferFullness> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetInitialVBVBufferFullness> Value is %f%%.", vbvBufferFullness / 64.0 * 100.0);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetInitialVBVBufferFullness> Value is %f%%.", vbvBufferFullness / 64.0 * 100.0);
 	return ((double_t)vbvBufferFullness / 64.0);
 }
 
@@ -1226,7 +1210,7 @@ void Plugin::AMD::VCEEncoder::SetEnforceHRDRestrictionsEnabled(bool enabled) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetEnforceHRD> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetEnforceHRD> Set to %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetEnforceHRD> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
 bool Plugin::AMD::VCEEncoder::IsEnforceHRDRestrictionsEnabled() {
@@ -1235,7 +1219,7 @@ bool Plugin::AMD::VCEEncoder::IsEnforceHRDRestrictionsEnabled() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetEnforceHRD> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetEnforceHRD> Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetEnforceHRD> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 
@@ -1244,7 +1228,7 @@ void Plugin::AMD::VCEEncoder::SetFillerDataEnabled(bool enabled) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetFillerDataEnabled> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetFillerDataEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetFillerDataEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
 bool Plugin::AMD::VCEEncoder::IsFillerDataEnabled() {
@@ -1253,7 +1237,7 @@ bool Plugin::AMD::VCEEncoder::IsFillerDataEnabled() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsFillerDataEnabled> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsFillerDataEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::IsFillerDataEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 
@@ -1265,7 +1249,7 @@ void Plugin::AMD::VCEEncoder::SetMaximumAccessUnitSize(uint32_t size) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetMaxAUSize> Setting to %d bits failed with error %ls (code %d).", res, size);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetMaxAUSize> Set to %d bits.", size);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetMaxAUSize> Set to %d bits.", size);
 }
 
 uint32_t Plugin::AMD::VCEEncoder::GetMaximumAccessUnitSize() {
@@ -1274,7 +1258,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetMaximumAccessUnitSize() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetMaxAUSize> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetMaxAUSize> Value is %d.", size);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetMaxAUSize> Value is %d.", size);
 	return size;
 }
 
@@ -1286,7 +1270,7 @@ void Plugin::AMD::VCEEncoder::SetBPictureDeltaQP(int8_t qp) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetBPictureDeltaQP> Setting to %d failed with error %ls (code %d).", res, qp);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetBPictureDeltaQP> Set to %d.", qp);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetBPictureDeltaQP> Set to %d.", qp);
 }
 
 int8_t Plugin::AMD::VCEEncoder::GetBPictureDeltaQP() {
@@ -1295,7 +1279,7 @@ int8_t Plugin::AMD::VCEEncoder::GetBPictureDeltaQP() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetBPictureDeltaQP> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetBPictureDeltaQP> Value is %d.", qp);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetBPictureDeltaQP> Value is %d.", qp);
 	return qp;
 }
 
@@ -1307,7 +1291,7 @@ void Plugin::AMD::VCEEncoder::SetReferenceBPictureDeltaQP(int8_t qp) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetReferenceBPictureDeltaQP> Setting to %d failed with error %ls (code %d).", res, qp);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetReferenceBPictureDeltaQP> Set to %d.", qp);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetReferenceBPictureDeltaQP> Set to %d.", qp);
 }
 
 int8_t Plugin::AMD::VCEEncoder::GetReferenceBPictureDeltaQP() {
@@ -1316,7 +1300,7 @@ int8_t Plugin::AMD::VCEEncoder::GetReferenceBPictureDeltaQP() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetReferenceBPictureDeltaQP> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetReferenceBPictureDeltaQP> Value is %d.", qp);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetReferenceBPictureDeltaQP> Value is %d.", qp);
 	return qp;
 }
 
@@ -1328,7 +1312,7 @@ void Plugin::AMD::VCEEncoder::SetHeaderInsertionSpacing(uint32_t spacing) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetHeaderInsertionSpacing> Setting to %d failed with error %ls (code %d).", res, spacing);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetHeaderInsertionSpacing> Set to %d.", spacing);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetHeaderInsertionSpacing> Set to %d.", spacing);
 }
 
 uint32_t Plugin::AMD::VCEEncoder::GetHeaderInsertionSpacing() {
@@ -1337,7 +1321,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetHeaderInsertionSpacing() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetHeaderInsertionSpacing> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetHeaderInsertionSpacing> Value is %d.", headerInsertionSpacing);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetHeaderInsertionSpacing> Value is %d.", headerInsertionSpacing);
 	return headerInsertionSpacing;
 }
 
@@ -1349,7 +1333,7 @@ void Plugin::AMD::VCEEncoder::SetIDRPeriod(uint32_t period) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetIDRPeriod> Setting to %d failed with error %ls (code %d).", res, period);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetIDRPeriod> Set to %d.", period);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetIDRPeriod> Set to %d.", period);
 }
 
 uint32_t Plugin::AMD::VCEEncoder::GetIDRPeriod() {
@@ -1358,7 +1342,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetIDRPeriod() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetIDRPeriod> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetIDRPeriod> Value is %d.", period);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetIDRPeriod> Value is %d.", period);
 	return period;
 }
 
@@ -1367,7 +1351,7 @@ void Plugin::AMD::VCEEncoder::SetDeBlockingFilterEnabled(bool enabled) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetDeBlockingFilterEnabled> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetDeBlockingFilterEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetDeBlockingFilterEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
 bool Plugin::AMD::VCEEncoder::IsDeBlockingFilterEnabled() {
@@ -1376,7 +1360,7 @@ bool Plugin::AMD::VCEEncoder::IsDeBlockingFilterEnabled() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsDeBlockingFilterEnabled> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsDeBlockingFilterEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::IsDeBlockingFilterEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 
@@ -1385,7 +1369,7 @@ void Plugin::AMD::VCEEncoder::SetIntraRefreshMBsNumberPerSlot(uint32_t mbs) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetIntraRefreshMBsNumberPerSlot> Setting to %d failed with error %ls (code %d).", res, mbs);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetIntraRefreshMBsNumberPerSlot> Set to %d.", mbs);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetIntraRefreshMBsNumberPerSlot> Set to %d.", mbs);
 }
 
 uint32_t Plugin::AMD::VCEEncoder::GetIntraRefreshMBsNumberPerSlot() {
@@ -1394,7 +1378,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetIntraRefreshMBsNumberPerSlot() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetIntraRefreshMBsNumberPerSlot> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetIntraRefreshMBsNumberPerSlot> Value is %d.", mbs);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetIntraRefreshMBsNumberPerSlot> Value is %d.", mbs);
 	return mbs;
 }
 
@@ -1405,7 +1389,7 @@ void Plugin::AMD::VCEEncoder::SetSlicesPerFrame(uint32_t slices) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetSlicesPerFrame> Setting to %d failed with error %ls (code %d).", res, slices);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetSlicesPerFrame> Set to %d.", slices);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetSlicesPerFrame> Set to %d.", slices);
 }
 
 uint32_t Plugin::AMD::VCEEncoder::GetSlicesPerFrame() {
@@ -1414,7 +1398,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetSlicesPerFrame() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetSlicesPerFrame> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetSlicesPerFrame> Value is %d.", slices);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetSlicesPerFrame> Value is %d.", slices);
 	return slices;
 }
 
@@ -1423,7 +1407,7 @@ void Plugin::AMD::VCEEncoder::SetBPicturePattern(VCEBPicturePattern pattern) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetBPicturesPattern> Setting to %d failed with error %ls (code %d).", res, pattern);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetBPicturesPattern> Set to %d.", pattern);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetBPicturesPattern> Set to %d.", pattern);
 }
 
 Plugin::AMD::VCEBPicturePattern Plugin::AMD::VCEEncoder::GetBPicturesPattern() {
@@ -1432,7 +1416,7 @@ Plugin::AMD::VCEBPicturePattern Plugin::AMD::VCEEncoder::GetBPicturesPattern() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetBPicturesPattern> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetBPicturesPattern> Value is %d.", pattern);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetBPicturesPattern> Value is %d.", pattern);
 	return (Plugin::AMD::VCEBPicturePattern)pattern;
 }
 
@@ -1441,7 +1425,7 @@ void Plugin::AMD::VCEEncoder::SetBPictureReferenceEnabled(bool enabled) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetBReferenceEnabled> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetBReferenceEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetBReferenceEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
 bool Plugin::AMD::VCEEncoder::IsBReferenceEnabled() {
@@ -1450,7 +1434,7 @@ bool Plugin::AMD::VCEEncoder::IsBReferenceEnabled() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsBReferenceEnabled> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsBReferenceEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::IsBReferenceEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 
@@ -1468,7 +1452,7 @@ void Plugin::AMD::VCEEncoder::SetScanType(VCEScanType scanType) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetScanType> Setting to %s failed with error %ls (code %d).", res, CustomToName[scanType]);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetScanType> Set to %s.", CustomToName[scanType]);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetScanType> Set to %s.", CustomToName[scanType]);
 }
 
 Plugin::AMD::VCEScanType Plugin::AMD::VCEEncoder::GetScanType() {
@@ -1482,7 +1466,7 @@ Plugin::AMD::VCEScanType Plugin::AMD::VCEEncoder::GetScanType() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetScanType> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetScanType> Value is %s.", CustomToName[scanType]);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetScanType> Value is %s.", CustomToName[scanType]);
 	return (Plugin::AMD::VCEScanType)scanType;
 }
 
@@ -1491,7 +1475,7 @@ void Plugin::AMD::VCEEncoder::SetHalfPixelMotionEstimationEnabled(bool enabled) 
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetHalfPixelMotionEstimationEnabled> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetHalfPixelMotionEstimationEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetHalfPixelMotionEstimationEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
 bool Plugin::AMD::VCEEncoder::IsHalfPixelMotionEstimationEnabled() {
@@ -1500,7 +1484,7 @@ bool Plugin::AMD::VCEEncoder::IsHalfPixelMotionEstimationEnabled() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsHalfPixelMotionEstimationEnabled> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsHalfPixelMotionEstimationEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::IsHalfPixelMotionEstimationEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 
@@ -1509,7 +1493,7 @@ void Plugin::AMD::VCEEncoder::SetQuarterPixelMotionEstimationEnabled(bool enable
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetQuarterPixelMotionEstimationEnabled> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetQuarterPixelMotionEstimationEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetQuarterPixelMotionEstimationEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
 bool Plugin::AMD::VCEEncoder::IsQuarterPixelMotionEstimationEnabled() {
@@ -1518,7 +1502,7 @@ bool Plugin::AMD::VCEEncoder::IsQuarterPixelMotionEstimationEnabled() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsQuarterPixelMotionEstimationEnabled> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsQuarterPixelMotionEstimationEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::IsQuarterPixelMotionEstimationEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 
@@ -1529,7 +1513,7 @@ void Plugin::AMD::VCEEncoder::SetNumberOfTemporalEnhancementLayers(uint32_t laye
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetNumberOfTemporalEnhancementLayers> Setting to %d failed with error %ls (code %d).", res, layers);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetNumberOfTemporalEnhancementLayers> Set to %d.", layers);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetNumberOfTemporalEnhancementLayers> Set to %d.", layers);
 }
 
 uint32_t Plugin::AMD::VCEEncoder::GetNumberOfTemporalEnhancementLayers() {
@@ -1538,7 +1522,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetNumberOfTemporalEnhancementLayers() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetNumberOfTemporalEnhancementLayers> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetNumberOfTemporalEnhancementLayers> Value is %d.", layers);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetNumberOfTemporalEnhancementLayers> Value is %d.", layers);
 	return layers;
 }
 
@@ -1547,7 +1531,7 @@ void Plugin::AMD::VCEEncoder::SetNominalRange(bool enabled) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetNominalRange> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetNominalRange> Set to %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetNominalRange> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
 bool Plugin::AMD::VCEEncoder::GetNominalRange() {
@@ -1556,7 +1540,7 @@ bool Plugin::AMD::VCEEncoder::GetNominalRange() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetNominalRange> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetNominalRange> Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetNominalRange> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 
@@ -1565,7 +1549,7 @@ void Plugin::AMD::VCEEncoder::SetWaitForTask(bool enabled) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetWaitForTask> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetWaitForTask> Set to %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetWaitForTask> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
 bool Plugin::AMD::VCEEncoder::GetWaitForTask() {
@@ -1574,7 +1558,7 @@ bool Plugin::AMD::VCEEncoder::GetWaitForTask() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetWaitForTask> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetWaitForTask> Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetWaitForTask> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 
@@ -1583,7 +1567,7 @@ void Plugin::AMD::VCEEncoder::SetGOPSize(uint32_t size) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetGOPSize> Setting to %d failed with error %ls (code %d).", res, size);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetGOPSize> Set to %d.", size);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetGOPSize> Set to %d.", size);
 }
 
 uint32_t Plugin::AMD::VCEEncoder::GetGOPSize() {
@@ -1592,7 +1576,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetGOPSize() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetGOPSize> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetGOPSize> Value is %d.", size);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetGOPSize> Value is %d.", size);
 	return size;
 }
 
@@ -1603,7 +1587,7 @@ void Plugin::AMD::VCEEncoder::SetAspectRatio(uint32_t num, uint32_t den) {
 		sprintf(msgBuf.data(), "%d:%d", num, den);
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetAspectRatio> Setting to %s failed with error %ls (code %d).", res, msgBuf.data());
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetAspectRatio> Set to %d:%d.", num, den);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetAspectRatio> Set to %d:%d.", num, den);
 }
 
 std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetAspectRatio() {
@@ -1612,7 +1596,7 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetAspectRatio() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetAspectRatio> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::GetAspectRatio> Value is %d:%d.", aspectRatio.num, aspectRatio.den);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetAspectRatio> Value is %d:%d.", aspectRatio.num, aspectRatio.den);
 	return std::pair<uint32_t, uint32_t>(aspectRatio.num, aspectRatio.den);
 }
 
@@ -1621,7 +1605,7 @@ void Plugin::AMD::VCEEncoder::SetCABACEnabled(bool enabled) {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetCABACEnabled> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SetCABACEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetCABACEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
 bool Plugin::AMD::VCEEncoder::IsCABACEnabled() {
@@ -1630,6 +1614,6 @@ bool Plugin::AMD::VCEEncoder::IsCABACEnabled() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsCABACEnabled> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::IsCABACEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::IsCABACEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
