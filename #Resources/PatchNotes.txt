@@ -100,3 +100,10 @@ Before installing this Version, please uninstall any previous versions. If you u
 * Fixed: Plugin should no longer crash on shut down due to requesting to join a terminated thread.
 * Fixed: Memory Leak when stopping streaming and/or recording.
 * Fixed: 'Enforce Streaming Service Settings' no longer applies permanently.
+
+*1.3.0rc4*
+
+* Changed: Now using OpenCL to copy the frame from RAM to VRAM to speed up submission.
+* Changed: Increased queue delta needed to reduce log spam.
+* Changed: Threads will internally wake up each other if a specific event happened.
+* Updated: Presets in Simple Interface will always attempt to use Quality encoding.
