@@ -540,7 +540,7 @@ bool Plugin::Interface::H264Interface::update_from_amf(obs_properties_t *props, 
 		} catch (...) {}
 		try {
 			if (obs_data_get_int(settings, AMF_H264_BPICTURE_PATTERN) == -1)
-				obs_data_set_int(settings, AMF_H264_BPICTURE_PATTERN, vce->GetBPicturesPattern());
+				obs_data_set_int(settings, AMF_H264_BPICTURE_PATTERN, vce->GetBPicturePattern());
 		} catch (...) {}
 		try {
 			if (obs_data_get_int(settings, AMF_H264_DEBLOCKINGFILTER) == -1)
@@ -548,7 +548,7 @@ bool Plugin::Interface::H264Interface::update_from_amf(obs_properties_t *props, 
 		} catch (...) {}
 		try {
 			if (obs_data_get_int(settings, AMF_H264_BPICTURE_REFERENCE) == -1)
-				obs_data_set_int(settings, AMF_H264_BPICTURE_REFERENCE, vce->IsBReferenceEnabled() ? 1 : 0);
+				obs_data_set_int(settings, AMF_H264_BPICTURE_REFERENCE, vce->IsBPictureReferenceEnabled() ? 1 : 0);
 		} catch (...) {}
 		try {
 			if (obs_data_get_int(settings, AMF_H264ADVANCED_IDR_PERIOD) == -1)
