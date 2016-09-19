@@ -448,7 +448,7 @@ bool Plugin::Interface::H264Interface::update_from_amf(obs_properties_t *props, 
 		// Other
 		try {
 			if (obs_data_get_int(settings, AMF_H264ADVANCED_MAX_LTR_FRAMES) == -1)
-				obs_data_set_int(settings, AMF_H264ADVANCED_MAX_LTR_FRAMES, vce->GetMaxLTRFrames());
+				obs_data_set_int(settings, AMF_H264ADVANCED_MAX_LTR_FRAMES, vce->GetMaximumLongTermReferenceFrames());
 		} catch (...) {}
 		try {
 			if (obs_data_get_int(settings, AMF_H264_SCANTYPE) == -1)
@@ -646,7 +646,7 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 	/// Maximum Long-Term-Reference Frames
 	value = obs_data_get_int(settings, AMF_H264ADVANCED_MAX_LTR_FRAMES);
 	if (value != -1)
-		m_VideoEncoder->SetMaxLTRFrames((uint32_t)value);
+		m_VideoEncoder->SetMaximumLongTermReferenceFrames((uint32_t)value);
 	/// Scan Type
 	value = obs_data_get_int(settings, AMF_H264_SCANTYPE);
 	if (value != -1)
