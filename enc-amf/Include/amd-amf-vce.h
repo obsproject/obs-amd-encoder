@@ -190,8 +190,8 @@ namespace Plugin {
 			 *	- With user control of LTR, B-pictures and Intra-refresh features are not supported.
 			 *	- The actual maximum number of LTRs allowed depends on H.264 Annex A Table A-1 Level limits, which defines dependencies between the H.264 Level number, encoding resolution, and DPB size. The DPB size limit impacts the maximum number of LTR allowed.
 			 **/
-			void SetMaxLTRFrames(uint32_t maximumLTRFrames);	// Long-Term Reference Frames. If 0, Encoder decides, if non-0 B-Pictures and Intra-Refresh are not supported.
-			uint32_t GetMaxLTRFrames();
+			void SetMaximumLongTermReferenceFrames(uint32_t maximumLTRFrames);	// Long-Term Reference Frames. If 0, Encoder decides, if non-0 B-Pictures and Intra-Refresh are not supported.
+			uint32_t GetMaximumLongTermReferenceFrames();
 
 			/*	Output Resolution */
 			void SetFrameSize(uint32_t width, uint32_t height);
