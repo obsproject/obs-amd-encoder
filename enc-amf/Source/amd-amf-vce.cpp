@@ -689,7 +689,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("Static Parameters: ");
 	AMF_LOG_INFO("  Usage: %s", usageToString[this->GetUsage()]);
 	AMF_LOG_INFO("  Quality Preset: %s", qualityPresetToString[this->GetQualityPreset()]);
-	AMF_LOG_INFO("  Profile: %s %d.%d", profileToString[this->GetProfile()], this->GetProfileLevel() / 10, this->GetProfileLevel() % 10);
+	AMF_LOG_INFO("  Profile: %s %d.%d", this->GetProfile() == 66 ? "Baseline" : (this->GetProfile() == 77 ? "Main" : "High"), this->GetProfileLevel() / 10, this->GetProfileLevel() % 10);
 	AMF_LOG_INFO("  Maximum Long-Term Reference Frames: %d", this->GetMaximumLongTermReferenceFrames());
 	AMF_LOG_INFO("Frame Parameters: ");
 	AMF_LOG_INFO("  Frame Size: %dx%d", this->GetFrameSize().first, this->GetFrameSize().second);

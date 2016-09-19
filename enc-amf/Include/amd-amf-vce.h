@@ -288,10 +288,10 @@ namespace Plugin {
 			uint32_t GetSlicesPerFrame();
 			/*	Sets the number of consecutive B-pictures in a GOP. BPicturesPattern = 0 indicates that B-pictures are not used */
 			void SetBPicturePattern(VCEBPicturePattern pattern);
-			VCEBPicturePattern GetBPicturesPattern();
+			VCEBPicturePattern GetBPicturePattern();
 			/*	Enables or disables using B-pictures as references */
 			void SetBPictureReferenceEnabled(bool enabled);
-			bool IsBReferenceEnabled();
+			bool IsBPictureReferenceEnabled();
 			/// Encoder Miscellaneous Parameters
 			/*	Selects progressive or interlaced scan */
 			void SetScanType(VCEScanType scanType);
