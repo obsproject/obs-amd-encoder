@@ -457,7 +457,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 
 	// Core Loop
 	do {
-		//m_ThreadedInput.condvar.wait(lock);
+		m_ThreadedInput.condvar.wait(lock);
 
 		// Skip to check if isStarted is false.
 		if (!m_Flag_IsStarted)
@@ -487,6 +487,8 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 				// Reset AMF_INPUT_FULL retries.
 				__amf_input_full_repeat = 0;
 			} else if (res == AMF_INPUT_FULL) { // Try submitting for 5 milliseconds
+				m_ThreadedOutput.condvar.notify_all(); // Signal Querying Thread
+
 				std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
 				if (__amf_input_full_repeat < 5) {
 					res = AMF_OK;
@@ -500,8 +502,6 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 				continue;
 			}
 		}
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
 	} while (m_Flag_IsStarted);
 }
 
@@ -515,7 +515,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 
 	// Core Loop
 	do {
-		//m_ThreadedOutput.condvar.wait(lock);
+		m_ThreadedOutput.condvar.wait(lock);
 
 		// Skip to check if isStarted is false.
 		if (!m_Flag_IsStarted)
@@ -565,14 +565,15 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 					std::unique_lock<std::mutex> qlock(m_ThreadedOutput.queuemutex);
 					m_ThreadedOutput.queue.push(pkt);
 				}
-			} else if (res != AMF_REPEAT) {
+			} else if (res == AMF_REPEAT) {
+				m_ThreadedInput.condvar.notify_all();
+				std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
+			} else {
 				std::vector<char> msgBuf(128);
 				FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
 				AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::OutputThreadLogic> QueryOutput failed with error %s.", msgBuf.data());
 			}
 		}
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
 	} while (m_Flag_IsStarted);
 }
 
