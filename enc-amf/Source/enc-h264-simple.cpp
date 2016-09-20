@@ -133,7 +133,7 @@ void Plugin::Interface::H264SimpleInterface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_string(data, "rate_control", "");
 }
 
-obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void* data) {
+obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void*) {
 	obs_properties* props = obs_properties_create();
 	obs_property_t* list;
 	obs_property_t* p;
@@ -275,7 +275,7 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void* d
 	return props;
 }
 
-bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props, obs_property_t *property, obs_data_t *data) {
+bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data) {
 	if (obs_data_get_int(data, AMF_H264SIMPLE_PRESET) != -1) {
 		switch (obs_data_get_int(data, AMF_H264SIMPLE_PRESET)) {
 			case 0: // Recording
@@ -662,6 +662,7 @@ Plugin::Interface::H264SimpleInterface::~H264SimpleInterface() {
 }
 
 bool Plugin::Interface::H264SimpleInterface::update(obs_data_t* settings) {
+	// settings is not flagged as a unused here, since a future update may add support for this.
 	return false;
 }
 

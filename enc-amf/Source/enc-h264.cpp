@@ -80,7 +80,7 @@ void Plugin::Interface::H264Interface::encoder_register() {
 	obs_register_encoder(encoder_info);
 }
 
-const char* Plugin::Interface::H264Interface::get_name(void* type_data) {
+const char* Plugin::Interface::H264Interface::get_name(void*) {
 	return obs_module_text(AMF_H264ADVANCED_NAME);
 }
 
@@ -164,7 +164,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_bool(data, AMF_H264_DEBUGTRACING, false);
 }
 
-obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) {
+obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	obs_properties* props = obs_properties_create();
 	obs_property_t* list;
 	obs_property_t* p;
@@ -359,7 +359,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) {
 	return props;
 }
 
-bool Plugin::Interface::H264Interface::reset_callback(obs_properties_t *props, obs_property_t *property, obs_data_t *settings) {
+bool Plugin::Interface::H264Interface::reset_callback(obs_properties_t *props, obs_property_t *, obs_data_t *settings) {
 	if (obs_data_get_bool(settings, AMF_H264ADVANCED_RESET) == false)
 		return false;
 	obs_data_set_bool(settings, AMF_H264ADVANCED_RESET, false);
@@ -416,7 +416,7 @@ bool Plugin::Interface::H264Interface::reset_callback(obs_properties_t *props, o
 	return true;
 }
 
-bool Plugin::Interface::H264Interface::update_from_amf(obs_properties_t *props, obs_property_t *property, obs_data_t *settings) {
+bool Plugin::Interface::H264Interface::update_from_amf(obs_properties_t *, obs_property_t *, obs_data_t *settings) {
 	if (obs_data_get_bool(settings, AMF_H264ADVANCED_UPDATE) == false)
 		return false;
 	obs_data_set_bool(settings, AMF_H264ADVANCED_UPDATE, false);
