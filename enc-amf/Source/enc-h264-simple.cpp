@@ -77,7 +77,7 @@ void Plugin::Interface::H264SimpleInterface::encoder_register() {
 	obs_register_encoder(encoder_info);
 }
 
-const char* Plugin::Interface::H264SimpleInterface::get_name(void* type_data) {
+const char* Plugin::Interface::H264SimpleInterface::get_name(void*) {
 	return obs_module_text(AMF_H264SIMPLE_NAME);
 }
 
