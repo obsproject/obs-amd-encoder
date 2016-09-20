@@ -100,7 +100,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 	/// Autodetect best setting depending on platform.
 	if (m_MemoryType == VCEMemoryType_Auto) {
 		#if (defined _WIN32) | (defined _WIN64)
-		if (IsWindows7OrGreater()) {
+		if (IsWindows8OrGreater()) {
 			m_MemoryType = VCEMemoryType_DirectX11;
 		} else {
 			m_MemoryType = VCEMemoryType_DirectX9;
@@ -119,7 +119,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 			res = m_AMFContext->InitDX9(nullptr);
 			break;
 		case VCEMemoryType_OpenGL:
-			res = m_AMFContext->InitOpenCL(nullptr);
+			res = m_AMFContext->InitOpenGL(nullptr, nullptr, nullptr);
 			break;
 	}
 	if (res != AMF_OK)
