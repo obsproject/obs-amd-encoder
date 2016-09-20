@@ -1,17 +1,27 @@
-PROJECT(enc-amf)
-
 OPTION(AMDAMF_Disable "Disable AMD Advanced Media Framework support" OFF)
-SET(AMDAMF_SDKDir "AMD AMF SDK" CACHE PATH "AMD Advanced Media Framework SDK Directory")
+SET(AMDAMF_SDKDir "" CACHE PATH "AMD Advanced Media Framework SDK Directory")
 
 if(AMDAMF_Disable)
 	message(STATUS "AMD AMF support disabled")
 	return()
 endif()
 
+if(AMDAMF_SDKDir STREQUAL "")
+	message(STATUS "AMDAMF_SDKDir not set!  enc-amf plugin disabled.")
+	return()
+endif()
+
+if(NOT EXISTS "${AMDAMF_SDKDir}/amf/public/include/components/VideoEncoderVCE.h")
+	message(STATUS "AMDAMF_SDKDir invalid!  enc-amf plugin disabled.")
+	return()
+endif()
+
+PROJECT(enc-amf)
+
 INCLUDE_DIRECTORIES(
 	SYSTEM "${CMAKE_SOURCE_DIR}"
-	SYSTEM "${CMAKE_SOURCE_DIR}/plugins/enc-amf/enc-amf/Include"
-	SYSTEM "${CMAKE_SOURCE_DIR}/plugins/enc-amf/enc-amf/Source"
+	SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/enc-amf/Include"
+	SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/enc-amf/Source"
 	SYSTEM "${AMDAMF_SDKDir}/amf/public/include"
 )
 
@@ -39,7 +49,7 @@ add_library(enc-amf MODULE
 )
 target_link_libraries(enc-amf
 	libobs
-	winmm.lib
+	winmm
 )
 
-install_obs_plugin_with_data(enc-amf enc-amf/enc-amf/Resources)
+install_obs_plugin_with_data(enc-amf enc-amf/Resources)
