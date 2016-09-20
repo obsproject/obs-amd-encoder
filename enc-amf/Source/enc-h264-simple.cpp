@@ -166,44 +166,44 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void*) 
 	list = obs_properties_add_list(props, AMF_H264_PROFILELEVEL, obs_module_text(AMF_H264_PROFILELEVEL), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	switch (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxProfileLevel) {
 		case 62:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(62)), VCEProfileLevel_62);
+			obs_property_list_add_int(list, "6.2", VCEProfileLevel_62);
 		case 61:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(61)), VCEProfileLevel_61);
+			obs_property_list_add_int(list, "6.1", VCEProfileLevel_61);
 		case 60:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(60)), VCEProfileLevel_60);
+			obs_property_list_add_int(list, "6.0", VCEProfileLevel_60);
 		case 52:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(52)), VCEProfileLevel_52);
+			obs_property_list_add_int(list, "5.2", VCEProfileLevel_52);
 		case 51:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(51)), VCEProfileLevel_51);
+			obs_property_list_add_int(list, "5.1", VCEProfileLevel_51);
 		case 50:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(50)), VCEProfileLevel_50);
+			obs_property_list_add_int(list, "5.0", VCEProfileLevel_50);
 		case 42: // Some VCE 2.0 Cards.
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(42)), VCEProfileLevel_42);
+			obs_property_list_add_int(list, "4.2", VCEProfileLevel_42);
 		case 41: // Some APUs and VCE 1.0 Cards.
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(41)), VCEProfileLevel_41);
+			obs_property_list_add_int(list, "4.1", VCEProfileLevel_41);
 		case 40: // These should in theory be supported by all VCE 1.0 devices and APUs.
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(40)), VCEProfileLevel_40);
+			obs_property_list_add_int(list, "4.0", VCEProfileLevel_40);
 		case 32:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(32)), VCEProfileLevel_32);
+			obs_property_list_add_int(list, "3.2", VCEProfileLevel_32);
 		case 31:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(31)), VCEProfileLevel_31);
+			obs_property_list_add_int(list, "3.1", VCEProfileLevel_31);
 		case 30:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(30)), VCEProfileLevel_30);
+			obs_property_list_add_int(list, "3.0", VCEProfileLevel_30);
 		case 22:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(22)), VCEProfileLevel_22);
+			obs_property_list_add_int(list, "2.2", VCEProfileLevel_22);
 		case 21:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(21)), VCEProfileLevel_21);
+			obs_property_list_add_int(list, "2.1", VCEProfileLevel_21);
 		case 20:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(20)), VCEProfileLevel_20);
+			obs_property_list_add_int(list, "2.0", VCEProfileLevel_20);
 		case 13:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(13)), VCEProfileLevel_13);
+			obs_property_list_add_int(list, "1.3", VCEProfileLevel_13);
 		case 12:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(12)), VCEProfileLevel_12);
+			obs_property_list_add_int(list, "1.2", VCEProfileLevel_12);
 		case 11:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(11)), VCEProfileLevel_11);
+			obs_property_list_add_int(list, "1.1", VCEProfileLevel_11);
 		case 10:
 		default:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILELEVEL2(10)), VCEProfileLevel_10);
+			obs_property_list_add_int(list, "1.0", VCEProfileLevel_10);
 	}
 
 	/// Rate Control
