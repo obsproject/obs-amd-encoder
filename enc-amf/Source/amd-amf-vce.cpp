@@ -251,8 +251,6 @@ void Plugin::AMD::VCEEncoder::Stop() {
 }
 
 bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
-	AMF_RESULT res = AMF_UNEXPECTED;
-
 	// Early-Exception if not encoding.
 	if (!m_Flag_IsStarted) {
 		const char* error = "<Plugin::AMD::VCEEncoder::SendInput> Attempted to send input while not running.";
@@ -304,7 +302,6 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
 }
 
 void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& received_packet) {
-	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFDataPtr pData;
 	ThreadData pkt;
 
@@ -497,7 +494,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 				}
 			} else {
 				std::vector<char> msgBuf(128);
-				FormatTextWithAMFError(&msgBuf, "%ls (code %d)", AMD::AMF::AMF::GetInstance()->GetTrace()->GetResultText(res), res);
+				FormatTextWithAMFError(&msgBuf, "%ls (code %d)", Plugin::AMD::AMF::GetInstance()->GetTrace()->GetResultText(res), res);
 				AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::InputThreadLogic> SubmitInput failed with error %s.", msgBuf.data());
 				continue;
 			}
@@ -1031,7 +1028,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetMinimumQP() {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetMinimumQP> Failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetMinimumQP> Value is %d.", qp);
-	return qp;
+	return (uint8_t)qp;
 }
 
 void Plugin::AMD::VCEEncoder::SetMaximumQP(uint8_t qp) {
@@ -1052,7 +1049,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetMaximumQP() {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetMaximumQP> Failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetMaximumQP> Value is %d.", qp);
-	return qp;
+	return (uint8_t)qp;
 }
 
 void Plugin::AMD::VCEEncoder::SetIFrameQP(uint8_t qp) {
@@ -1073,7 +1070,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetIFrameQP() {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetIFrameQP> Failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetIFrameQP> Value is %d.", qp);
-	return qp;
+	return (uint8_t)qp;
 }
 
 void Plugin::AMD::VCEEncoder::SetPFrameQP(uint8_t qp) {
@@ -1094,7 +1091,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetPFrameQP() {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetPFrameQP> Failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetPFrameQP> Value is %d.", qp);
-	return qp;
+	return (uint8_t)qp;
 }
 
 void Plugin::AMD::VCEEncoder::SetBFrameQP(uint8_t qp) {
@@ -1115,7 +1112,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetBFrameQP() {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetBFrameQP> Failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetBFrameQP> Value is %d.", qp);
-	return qp;
+	return (uint8_t)qp;
 }
 
 void Plugin::AMD::VCEEncoder::SetFrameRate(uint32_t num, uint32_t den) {
@@ -1277,7 +1274,7 @@ int8_t Plugin::AMD::VCEEncoder::GetBPictureDeltaQP() {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetBPictureDeltaQP> Failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetBPictureDeltaQP> Value is %d.", qp);
-	return qp;
+	return (int8_t)qp;
 }
 
 void Plugin::AMD::VCEEncoder::SetReferenceBPictureDeltaQP(int8_t qp) {
@@ -1298,7 +1295,7 @@ int8_t Plugin::AMD::VCEEncoder::GetReferenceBPictureDeltaQP() {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetReferenceBPictureDeltaQP> Failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetReferenceBPictureDeltaQP> Value is %d.", qp);
-	return qp;
+	return (int8_t)qp;
 }
 
 void Plugin::AMD::VCEEncoder::SetHeaderInsertionSpacing(uint32_t spacing) {

@@ -74,7 +74,7 @@ void Plugin::AMD::VCECapabilities::ReportCapabilities() {
 	VCECapabilities::EncoderCaps* capsEnc[3] = { &caps->m_AVCCaps, &caps->m_SVCCaps, &caps->m_HEVCCaps };
 	for (uint8_t i = 0; i < 3; i++) {
 		// Encoder Acceleration
-		char* accelType;
+		char* accelType = "";
 		switch (capsEnc[i]->acceleration_type) {
 			case amf::AMF_ACCEL_NOT_SUPPORTED:
 				accelType = "None";
