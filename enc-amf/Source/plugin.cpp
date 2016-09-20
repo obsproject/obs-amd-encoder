@@ -45,7 +45,7 @@ BOOL WINAPI DllMain(HINSTANCE , DWORD , LPVOID ) {
 
 OBS_DECLARE_MODULE();
 OBS_MODULE_AUTHOR("Michael Fabian Dirks");
-OBS_MODULE_USE_DEFAULT_LOCALE("win-amf", "en-US");
+OBS_MODULE_USE_DEFAULT_LOCALE("enc-amf", "en-US");
 
 /**
 * Required: Called when the module is loaded.  Use this function to load all
