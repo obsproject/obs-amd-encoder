@@ -613,6 +613,8 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 			m_VideoEncoder->SetFillerDataEnabled(true);
 		} else if (strcmp(t_str, "VBR") == 0) {
 			m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_VariableBitrate_PeakConstrained);
+		} else if (strcmp(t_str, "VBR_LAT") == 0) {
+			m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_VariableBitrate_LatencyConstrained);
 		} else if (strcmp(t_str, "CQP") == 0) {
 			m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_ConstantQP);
 		}
