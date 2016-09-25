@@ -71,8 +71,8 @@ void Plugin::AMD::VCECapabilities::ReportCapabilities() {
 		"FSM",
 		"Instance #");
 
-	VCECapabilities::EncoderCaps* capsEnc[] = { &caps->m_AVCCaps, &caps->m_SVCCaps, &caps->m_HWAVCCaps, &caps->m_HEVCCaps };
-	for (uint8_t i = 0; i < 4; i++) {
+	VCECapabilities::EncoderCaps* capsEnc[] = { &caps->m_AVCCaps, &caps->m_SVCCaps, &caps->m_HEVCCaps };
+	for (uint8_t i = 0; i < 3; i++) {
 		// Encoder Acceleration
 		char* accelType = "";
 		switch (capsEnc[i]->acceleration_type) {
@@ -93,7 +93,7 @@ void Plugin::AMD::VCECapabilities::ReportCapabilities() {
 		// Print to log
 		sprintf(msgBuf.data(),
 			" %4s | %8s | %11d | %8d | %11d | %9d | %7s | %4d - %4d | %7d | %3s | %10d ",
-			(i == 0 ? "AVC" : (i == 1 ? "SVC" : (i == 2 ? "HAVC" : "HEVC"))),
+			(i == 0 ? "AVC" : (i == 1 ? "SVC" : "HEVC")),
 			accelType,
 			capsEnc[i]->maxBitrate,
 			capsEnc[i]->maxNumOfStreams,
@@ -110,7 +110,7 @@ void Plugin::AMD::VCECapabilities::ReportCapabilities() {
 	// Type | Flow   | Min. Res. | Max. Res. | S.I | Align | Formats | Surface Types
 	//      |  Input |   64x  64 | 4096x4096 | Yes | 8     | ... | ...
 	//      | Output |   64x  64 | 4096x4096 | No  | 8     | ... | ...
-	AMF_LOG_INFO(" %4s | %6s | %9s | %9s | %3s | %5s | %s | %s",
+	AMF_LOG_INFO(" %4s | %6s | %9s | %9s | %3s | %5s | %7s | %12s",
 		"Type",
 		"Flow",
 		"Min. Res.",
@@ -119,7 +119,7 @@ void Plugin::AMD::VCECapabilities::ReportCapabilities() {
 		"Align",
 		"Formats",
 		"Memory Types");
-	for (uint8_t i = 0; i < 4; i++) {
+	for (uint8_t i = 0; i < 3; i++) {
 		VCECapabilities::EncoderCaps::IOCaps* capsIO[2] = { &capsEnc[i]->input, &capsEnc[i]->output };
 		for (uint8_t j = 0; j < 2; j++) {
 			std::shared_ptr<AMF> t_amf = AMF::GetInstance();
@@ -147,8 +147,8 @@ void Plugin::AMD::VCECapabilities::ReportCapabilities() {
 
 			// Print to log
 			sprintf(msgBuf.data(),
-				" %4s | %6s | %4dx%4d | %4dx%4d | %3s | %5d | %s | %s",
-				(i == 0 ? "AVC" : (i == 1 ? "SVC" : (i == 2 ? "HAVC" : "HEVC"))),
+				" %4s | %6s | %4dx%4d | %4dx%4d | %3s | %5d | %7s | %12s",
+				(i == 0 ? "AVC" : (i == 1 ? "SVC" : "HEVC")),
 				(j == 0 ? "Input" : "Output"),
 				capsIO[j]->minWidth, capsIO[j]->minHeight,
 				capsIO[j]->maxWidth, capsIO[j]->maxHeight,
@@ -185,9 +185,9 @@ bool Plugin::AMD::VCECapabilities::RefreshCapabilities() {
 	//////////////////////////////////////////////////////////////////////////
 	// Get Encoder Capabilities
 	//////////////////////////////////////////////////////////////////////////
-	EncoderCaps* caps[] = { &m_AVCCaps, &m_SVCCaps, &m_HWAVCCaps, &m_HEVCCaps };
-	const wchar_t* capsString[] = { AMFVideoEncoderVCE_AVC , AMFVideoEncoderVCE_SVC, L"AMFVideoEncoderHW_AVC", L"AMFVideoEncoderHW_HEVC" };
-	for (uint8_t capsIndex = 0; capsIndex < 4; capsIndex++) {
+	EncoderCaps* caps[] = { &m_AVCCaps, &m_SVCCaps, &m_HEVCCaps };
+	const wchar_t* capsString[] = { AMFVideoEncoderVCE_AVC , AMFVideoEncoderVCE_SVC, L"AMFVideoEncoderHW_HEVC" };
+	for (uint8_t capsIndex = 0; capsIndex < 3; capsIndex++) {
 		// Null Values
 		caps[capsIndex]->acceleration_type = amf::AMF_ACCEL_NOT_SUPPORTED;
 		caps[capsIndex]->maxBitrate =
