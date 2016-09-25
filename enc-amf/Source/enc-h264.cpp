@@ -909,12 +909,12 @@ bool Plugin::Interface::H264Interface::update_properties(obs_data_t* settings) {
 		}
 	}
 	if (obs_data_get_int(settings, "bitrate") != -1) {
-		m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(settings, "bitrate"));
-		m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(settings, "bitrate"));
-		m_VideoEncoder->SetVBVBufferSize((uint32_t)obs_data_get_int(settings, "bitrate"));
+		m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(settings, "bitrate") * 1000);
+		m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(settings, "bitrate") * 1000);
+		m_VideoEncoder->SetVBVBufferSize((uint32_t)obs_data_get_int(settings, "bitrate") * 1000);
 		obs_data_set_int(settings, "bitrate", -1);
 	} else {
-		obs_data_set_int(settings, "bitrate", m_VideoEncoder->GetTargetBitrate());
+		obs_data_set_int(settings, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
 	}
 	if (obs_data_get_int(settings, "keyint_sec") != -1) {
 		m_VideoEncoder->SetIDRPeriod((uint32_t)(obs_data_get_int(settings, "keyint_sec") * ((double_t)fpsNum / (double_t)fpsDen)));
