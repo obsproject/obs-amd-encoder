@@ -197,14 +197,14 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-  <Target Name="CopyBinaries" AfterTargets="Build" Condition="'$(Configuration)'=='Release'">
+  <Target Name="CopyBinaries" AfterTargets="Build">
     <ItemGroup>
       <Resources Include="$(ProjectDir)\Resources\**\*.*" />
       <Binaries Include="$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\*.dll" />
       <Binaries Include="$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\*.pdb" />
     </ItemGroup>
-    <Copy SourceFiles="@(Resources)" DestinationFiles="@(Resources->'$(TargetDir)..\..\data\obs-plugins\$(ProjectName)\%(RecursiveDir)\%(Filename)%(Extension)')" SkipUnchangedFiles="True" UseHardlinksIfPossible="True" />
-    <Copy SourceFiles="@(Resources)" DestinationFiles="@(Resources->'$(SolutionDir)\#Resources\Package\data\obs-plugins\$(ProjectName)\%(RecursiveDir)\%(Filename)%(Extension)')" SkipUnchangedFiles="True" UseHardlinksIfPossible="True" />
-    <Copy SourceFiles="@(Binaries)" DestinationFiles="@(Binaries->'$(SolutionDir)\#Resources\Package\obs-plugins\$(PlatformArchitecture)bit\%(RecursiveDir)\%(Filename)%(Extension)')" SkipUnchangedFiles="True" UseHardlinksIfPossible="True" />
+    <Copy SourceFiles="@(Resources)" DestinationFiles="@(Resources->'$(ProjectDir)#Build\$(Configuration)\data\obs-plugins\$(ProjectName)\%(RecursiveDir)\%(Filename)%(Extension)')" SkipUnchangedFiles="False" UseHardlinksIfPossible="False" />
+    <Copy SourceFiles="@(Resources)" DestinationFiles="@(Resources->'$(SolutionDir)\#Resources\Package\data\obs-plugins\$(ProjectName)\%(RecursiveDir)\%(Filename)%(Extension)')" SkipUnchangedFiles="False" UseHardlinksIfPossible="False" />
+    <Copy SourceFiles="@(Binaries)" DestinationFiles="@(Binaries->'$(SolutionDir)\#Resources\Package\obs-plugins\$(PlatformArchitecture)bit\%(RecursiveDir)\%(Filename)%(Extension)')" SkipUnchangedFiles="False" UseHardlinksIfPossible="False" />
   </Target>
 </Project>
