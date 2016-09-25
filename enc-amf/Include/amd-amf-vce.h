@@ -60,6 +60,7 @@ namespace Plugin {
 			VCEMemoryType_OpenGLOpenCL,		// OpenGL + OpenCL
 
 			VCEMemoryType_Auto = -1,
+			VCEMemoryType_AutoOpenCL = -1,
 		};
 		enum VCESurfaceFormat {
 			VCESurfaceFormat_NV12,	// NV12
@@ -141,7 +142,7 @@ namespace Plugin {
 			#pragma region Initializer & Finalizer
 			//////////////////////////////////////////////////////////////////////////
 			public:
-			VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat = VCESurfaceFormat_NV12, VCEMemoryType p_MemoryType = VCEMemoryType_Host);
+			VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat = VCESurfaceFormat_NV12, VCEMemoryType p_MemoryType = VCEMemoryType_Auto);
 			~VCEEncoder();
 			#pragma endregion Initializer & Finalizer
 

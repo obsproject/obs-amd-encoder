@@ -104,7 +104,18 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 		#else
 		m_MemoryType = VCEMemoryType_OpenGL;
 		#endif
+	} else if (m_MemoryType == VCEMemoryType_AutoOpenCL) {
+		#if (defined _WIN32) | (defined _WIN64)
+		if (IsWindows8OrGreater()) {
+			m_MemoryType = VCEMemoryType_DirectX11OpenCL;
+		} else {
+			m_MemoryType = VCEMemoryType_DirectX9OpenCL;
+		}
+		#else
+		m_MemoryType = VCEMemoryType_OpenGLOpenCL;
+		#endif
 	}
+
 	switch (m_MemoryType) {
 		case VCEMemoryType_Host:
 			res = AMF_OK;
