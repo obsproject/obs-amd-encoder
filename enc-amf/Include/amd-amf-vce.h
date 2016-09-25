@@ -64,9 +64,16 @@ namespace Plugin {
 			VCEComputeType_DirectCompute, // DirectCompute
 		};
 		enum VCESurfaceFormat {
+			// 4:2:0 Formats
 			VCESurfaceFormat_NV12,	// NV12
 			VCESurfaceFormat_I420,	// YUV 4:2:0
+			// 4:2:2 Formats
+			VCESurfaceFormat_YUY2,
+			// Uncompressed
+			VCESurfaceFormat_BGRA,	// ARGB
 			VCESurfaceFormat_RGBA,	// RGBA
+			// Other
+			VCESurfaceFormat_GRAY,
 		};
 
 		// Static Properties
@@ -369,7 +376,7 @@ namespace Plugin {
 			amf::AMFContextPtr m_AMFContext;
 			amf::AMFComponentPtr m_AMFEncoder;
 			amf::AMFComputePtr m_AMFCompute;
-			bool m_IsMultithreaded;
+			bool m_Flag_Threading;
 
 			// Internal Properties
 			VCEEncoderType m_EncoderType;

@@ -68,12 +68,13 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 	m_ComputeType = p_ComputeType;
 	m_Flag_IsStarted = false;
 	m_Flag_EmergencyQuit = false;
+	m_Flag_Threading = true;
 	m_FrameSize.first = 64;	m_FrameSize.second = 64;
 	m_FrameRate.first = 30; m_FrameRate.second = 1;
 	m_FrameRateDivisor = ((double_t)m_FrameRate.first / (double_t)m_FrameRate.second);
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)(m_FrameRateDivisor * 3);
-	m_TimerPeriod = (uint32_t)(m_FrameRateReverseDivisor * 250);
+	m_TimerPeriod = 1;
 
 	// AMF
 	m_AMF = AMF::GetInstance();
@@ -154,7 +155,6 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> Creating a component object failed with error %ls (code %d).", res);
 
-
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::VCEEncoder> Initialization complete!");
 }
 
@@ -175,10 +175,17 @@ Plugin::AMD::VCEEncoder::~VCEEncoder() {
 }
 
 void Plugin::AMD::VCEEncoder::Start() {
-	static amf::AMF_SURFACE_FORMAT surfaceformatToAMF[] = {
+	static amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
+		// 4:2:0 Formats
 		amf::AMF_SURFACE_NV12,
 		amf::AMF_SURFACE_YUV420P,
+		// 4:2:2 Formats
+		amf::AMF_SURFACE_YUY2,
+		// Uncompressed
+		amf::AMF_SURFACE_BGRA,
 		amf::AMF_SURFACE_RGBA,
+		// Other
+		amf::AMF_SURFACE_GRAY8,
 	};
 
 	// Set proper Timer resolution.
@@ -188,13 +195,13 @@ void Plugin::AMD::VCEEncoder::Start() {
 	}
 
 	// Create Encoder
-	AMF_RESULT res = m_AMFEncoder->Init(surfaceformatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second);
+	AMF_RESULT res = m_AMFEncoder->Init(surfaceFormatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second);
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::Start> Initialization failed with error %ls (code %d).", res);
 
 	m_Flag_IsStarted = true;
 
-	if (m_IsMultithreaded) { // Threading
+	if (m_Flag_Threading) { // Threading
 		m_Input.thread = std::thread(&(Plugin::AMD::VCEEncoder::InputThreadMain), this);
 		m_Output.thread = std::thread(&(Plugin::AMD::VCEEncoder::OutputThreadMain), this);
 	}
@@ -212,7 +219,7 @@ void Plugin::AMD::VCEEncoder::Stop() {
 	m_AMFEncoder->Drain();
 	m_AMFEncoder->Flush();
 
-	if (m_IsMultithreaded) { // Threading
+	if (m_Flag_Threading) { // Threading
 		m_Output.condvar.notify_all();
 		#if defined _WIN32 || defined _WIN64
 		{ // Windows: Force terminate Thread after 1 second of waiting.
@@ -298,7 +305,7 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 		}
 	}
 
-	if (m_IsMultithreaded) { // Threading
+	if (m_Flag_Threading) { // Threading
 		/// Signal Thread Wakeup
 		m_Input.condvar.notify_all();
 	} else { // No Threading
@@ -336,10 +343,12 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 		throw std::exception(error);
 	}
 
-	if (m_IsMultithreaded) { // Threading
+	if (m_Flag_Threading) { // Threading
 		// Query Output
 		m_Output.condvar.notify_all();
 	} else { // No Threading
+		int64_t __amf_repeat_count = 0;
+
 		AMF_RESULT res = AMF_OK;
 		while (res == AMF_OK) {
 			amf::AMFDataPtr pAMFData;
@@ -348,8 +357,18 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 				std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
 				m_Output.queue.push(pAMFData);
 			} else if (res == AMF_REPEAT) {
-				if (received_packet != nullptr)
-					SendInput(nullptr);
+				if (m_Input.queue.size() == 0)
+					continue;
+				if (__amf_repeat_count < 5) {
+					if (received_packet != nullptr) {
+						SendInput(nullptr);
+
+						res = AMF_OK;
+						__amf_repeat_count++;
+					}
+				} else {
+					__amf_repeat_count = 0;
+				}
 			} else {
 				AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::GetOutput> QueryOutput returned error %ls (code %d).", m_AMF->GetTrace()->GetResultText(res), res);
 			}
@@ -465,14 +484,27 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 		throw std::exception("<Plugin::AMD::VCEEncoder::GetVideoInfo> Called while not encoding.");
 
 	switch (m_SurfaceFormat) {
+		// 4:2:0 Formats
 		case VCESurfaceFormat_NV12:
 			vsi->format = VIDEO_FORMAT_NV12;
 			break;
 		case VCESurfaceFormat_I420:
 			vsi->format = VIDEO_FORMAT_I420;
 			break;
+		// 4:2:2 Formats
+		case VCESurfaceFormat_YUY2:
+			vsi->format = VIDEO_FORMAT_YUY2;
+			break;
+		// Uncompressed
 		case VCESurfaceFormat_RGBA:
 			vsi->format = VIDEO_FORMAT_RGBA;
+			break;
+		case VCESurfaceFormat_BGRA:
+			vsi->format = VIDEO_FORMAT_BGRA;
+			break;
+		// Other
+		case VCESurfaceFormat_GRAY:
+			vsi->format = VIDEO_FORMAT_Y800;
 			break;
 	}
 
@@ -582,10 +614,17 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 }
 
 amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encoder_frame*& frame) {
-	amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
+	static amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
+		// 4:2:0 Formats
 		amf::AMF_SURFACE_NV12,
 		amf::AMF_SURFACE_YUV420P,
-		amf::AMF_SURFACE_RGBA
+		// 4:2:2 Formats
+		amf::AMF_SURFACE_YUY2,
+		// Uncompressed
+		amf::AMF_SURFACE_BGRA,
+		amf::AMF_SURFACE_RGBA,
+		// Other
+		amf::AMF_SURFACE_GRAY8,
 	};
 	amf::AMF_MEMORY_TYPE memoryTypeToAMF[] = {
 		amf::AMF_MEMORY_HOST,
@@ -645,7 +684,7 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 	}
 
 	// Convert Frame Index to Nanoseconds.
-	amf_pts amfPts = (int64_t)(frame->pts * (m_FrameRateReverseDivisor * 10000000.0));
+	amf_pts amfPts = (int64_t)(frame->pts * (m_FrameRateReverseDivisor * 1e7));
 	pSurface->SetPts(amfPts);
 	pSurface->SetProperty(L"Frame", frame->pts);
 
