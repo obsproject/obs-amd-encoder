@@ -79,7 +79,7 @@ namespace Plugin {
 					std::vector<std::pair<amf::AMF_SURFACE_FORMAT, bool>> formats;
 					std::vector<std::pair<amf::AMF_MEMORY_TYPE, bool>> memoryTypes;
 				} input, output;
-			} m_AVCCaps, m_SVCCaps, m_HEVCCaps;
+			} m_AVCCaps, m_SVCCaps, m_HWAVCCaps, m_HEVCCaps;
 			
 			VCECapabilities();
 			~VCECapabilities();
