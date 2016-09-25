@@ -436,10 +436,10 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 			packet->dts_usec = (int64_t)(dts_usec - dtsTimeOffset);
 			packet->dts = (int64_t)(packet->dts_usec / frameTimeStep);
 			/// Presentation Timestamp
-			/*pAMFBuffer->GetProperty(L"Frame", &pkt.pts);
-			pkt.pts_usec = (int64_t)(pkt.pts * frTimeStep);*/
+			pAMFBuffer->GetProperty(L"Frame", &packet->pts);
+			//pkt.pts_usec = (int64_t)(pkt.pts * frTimeStep);
 			//packet->pts_usec = pkt.dts_usec;
-			packet->pts = packet->dts;
+			//packet->pts = packet->dts;
 
 			// See: https://stackoverflow.com/questions/6044330/ffmpeg-c-what-are-pts-and-dts-what-does-this-code-block-do-in-ffmpeg-c
 			// PTS may not be needed: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/17
