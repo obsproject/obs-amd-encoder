@@ -112,6 +112,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	/// Memory Type & Compute Type
 	obs_data_set_default_int(data, AMF_H264_MEMORYTYPE, VCEMemoryType_Host);
 	obs_data_set_default_int(data, AMF_H264_COMPUTETYPE, VCEComputeType_None);
+	obs_data_set_default_int(data, AMF_H264_SURFACEFORMAT, -1);
 	/// Usage & Quality Preset
 	obs_data_set_default_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
 	obs_data_set_default_int(data, AMF_H264_QUALITY_PRESET, -1);
@@ -192,9 +193,35 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	obs_property_list_add_int(list, "OpenGL", VCEMemoryType_OpenGL);
 	/// Compute Type
 	list = obs_properties_add_list(props, AMF_H264_COMPUTETYPE, obs_module_text(AMF_H264_COMPUTETYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_DEFAULT), VCEComputeType_None);
+	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_TOGGLE_DISABLED), VCEComputeType_None);
 	obs_property_list_add_int(list, "DirectCompute", VCEComputeType_DirectCompute);
 	obs_property_list_add_int(list, "OpenCL", VCEComputeType_OpenCL);
+	/// Surface Format
+	list = obs_properties_add_list(props, AMF_H264_SURFACEFORMAT, obs_module_text(AMF_H264_SURFACEFORMAT), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_AUTOMATIC), -1);
+	auto formats = Plugin::AMD::VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->input.formats;
+	for (auto format = formats.begin(); format != formats.end(); format++) {
+		switch (format->first) {
+			case amf::AMF_SURFACE_NV12:
+				obs_property_list_add_int(list, "NV12 (4:2:0)", VCESurfaceFormat_NV12);
+				break;
+			case amf::AMF_SURFACE_YUV420P:
+				obs_property_list_add_int(list, "I420 (4:2:0)", VCESurfaceFormat_I420);
+				break;
+			case amf::AMF_SURFACE_YUY2:
+				obs_property_list_add_int(list, "YUY2 (4:2:2)", VCESurfaceFormat_YUY2);
+				break;
+			case amf::AMF_SURFACE_BGRA:
+				obs_property_list_add_int(list, "BGRA (Uncompressed)", VCESurfaceFormat_BGRA);
+				break;
+			case amf::AMF_SURFACE_RGBA:
+				obs_property_list_add_int(list, "RGBA (Uncompressed)", VCESurfaceFormat_RGBA);
+				break;
+			case amf::AMF_SURFACE_GRAY8:
+				obs_property_list_add_int(list, "Y800 (Gray)", VCESurfaceFormat_GRAY);
+				break;
+		}
+	}
 	/// Usage
 	list = obs_properties_add_list(props, AMF_H264_USAGE, obs_module_text(AMF_H264_USAGE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_H264_USAGE_TRANSCODING), VCEUsage_Transcoding);
@@ -583,7 +610,7 @@ bool Plugin::Interface::H264Interface::update_from_amf(obs_properties_t *, obs_p
 			if (obs_data_get_int(settings, AMF_H264ADVANCED_MOTIONESTIMATION) == -1)
 				obs_data_set_int(settings, AMF_H264ADVANCED_MOTIONESTIMATION, (vce->IsHalfPixelMotionEstimationEnabled() ? 1 : 0) + (vce->IsQuarterPixelMotionEstimationEnabled() ? 2 : 0));
 		} catch (...) {}
-		
+
 		// Remove Instance again.
 		delete vce;
 	} catch (...) {
@@ -620,29 +647,37 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 	uint32_t m_cfgFPSden = voi->fps_den;
 
 	// AMF Setup
-	auto t_amf = Plugin::AMD::AMF::GetInstance();
-	t_amf->EnableDebugTrace(obs_data_get_bool(settings, AMF_H264_DEBUGTRACING));
+	Plugin::AMD::AMF::GetInstance()->EnableDebugTrace(obs_data_get_bool(settings, AMF_H264_DEBUGTRACING));
 
 	//////////////////////////////////////////////////////////////////////////
 	// Static Properties (Can't be changed during Encoding)
 	//////////////////////////////////////////////////////////////////////////
 	// Encoder
-	VCESurfaceFormat surfFormat = VCESurfaceFormat_NV12;
-	switch (voi->format) {
-		case VIDEO_FORMAT_NV12:
-			surfFormat = VCESurfaceFormat_NV12;
-			break;
-		case VIDEO_FORMAT_I420:
-			surfFormat = VCESurfaceFormat_I420;
-			break;
-		case VIDEO_FORMAT_RGBA:
-		case VIDEO_FORMAT_BGRA:
-		case VIDEO_FORMAT_BGRX:
-			surfFormat = VCESurfaceFormat_RGBA;
-			break;
+	VCESurfaceFormat surfFormat = (VCESurfaceFormat)obs_data_get_int(settings, AMF_H264_SURFACEFORMAT);
+	if (surfFormat == -1) {
+		switch (voi->format) {
+			case VIDEO_FORMAT_NV12:
+				surfFormat = VCESurfaceFormat_NV12;
+				break;
+			case VIDEO_FORMAT_I420:
+				surfFormat = VCESurfaceFormat_I420;
+				break;
+			case VIDEO_FORMAT_RGBA:
+				surfFormat = VCESurfaceFormat_RGBA;
+				break;
+			case VIDEO_FORMAT_BGRA:
+				surfFormat = VCESurfaceFormat_BGRA;
+				break;
+			case VIDEO_FORMAT_Y800:
+				surfFormat = VCESurfaceFormat_GRAY;
+				break;
+			default:
+				surfFormat = VCESurfaceFormat_NV12;
+				break;
+		}
 	}
 	m_VideoEncoder = new VCEEncoder(VCEEncoderType_AVC, surfFormat, (VCEMemoryType)obs_data_get_int(settings, AMF_H264_MEMORYTYPE), (VCEComputeType)obs_data_get_int(settings, AMF_H264_COMPUTETYPE));
-	
+
 	/// Usage & Quality Preset
 	m_VideoEncoder->SetUsage((VCEUsage)obs_data_get_int(settings, AMF_H264_USAGE));
 	value = obs_data_get_int(settings, AMF_H264_QUALITY_PRESET);
@@ -741,7 +776,7 @@ bool Plugin::Interface::H264Interface::update_properties(obs_data_t* settings) {
 		if (value != -1)
 			m_VideoEncoder->SetMaximumQP((uint8_t)value);
 	} catch (...) {}
-	
+
 	/// Bitrate
 	try {
 		value = obs_data_get_int(settings, AMF_H264_BITRATE_TARGET);
@@ -753,7 +788,7 @@ bool Plugin::Interface::H264Interface::update_properties(obs_data_t* settings) {
 		if (value != -1)
 			m_VideoEncoder->SetPeakBitrate((uint32_t)value);
 	} catch (...) {}
-	
+
 	/// I-, P-, B-Frame QP
 	try {
 		value = obs_data_get_int(settings, AMF_H264_QP_IFRAME);
@@ -894,7 +929,7 @@ bool Plugin::Interface::H264Interface::update_properties(obs_data_t* settings) {
 
 	uint32_t fpsNum = m_VideoEncoder->GetFrameRate().first;
 	uint32_t fpsDen = m_VideoEncoder->GetFrameRate().second;
-	
+
 	// OBS: Enforce streaming service encoder settings
 	const char* t_str = obs_data_get_string(settings, "rate_control");
 	if (strcmp(t_str, "") != 0) {
