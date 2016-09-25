@@ -119,9 +119,12 @@ SOFTWARE.
 #define AMF_H264_GOP_SIZE						TEXT_AMF_H264("GOPSize")
 #define AMF_H264_CABAC							TEXT_AMF_H264("CABAC")
 #define AMF_H264_DEBUGTRACING					TEXT_AMF_H264("DebugTracing")
+#define AMF_H264_MEMORYTYPE						TEXT_AMF_H264("MemoryType")
+#define AMF_H264_COMPUTETYPE					TEXT_AMF_H264("ComputeType")
 
 // Utility
 #define AMF_UTIL_DEFAULT						TEXT_AMF_UTIL("Default")
+#define AMF_UTIL_AUTOMATIC						TEXT_AMF_UTIL("Automatic")
 #define AMF_UTIL_TOGGLE_DISABLED				TEXT_AMF_UTIL("Toggle.Disabled")
 #define AMF_UTIL_TOGGLE_ENABLED					TEXT_AMF_UTIL("Toggle.Enabled")
 
