@@ -55,12 +55,13 @@ namespace Plugin {
 			VCEMemoryType_DirectX9,		// DirectX9
 			VCEMemoryType_DirectX11,	// DirectX11
 			VCEMemoryType_OpenGL,		// OpenGL
-			VCEMemoryType_DirectX9OpenCL,	// DirectX9 + OpenCL
-			VCEMemoryType_DirectX11OpenCL,	// DirectX11 + OpenCL
-			VCEMemoryType_OpenGLOpenCL,		// OpenGL + OpenCL
 
-			VCEMemoryType_Auto = -1,
-			VCEMemoryType_AutoOpenCL = -1,
+			VCEMemoryType_Auto = -1,	// Autodetect without OpenCL
+		};
+		enum VCEComputeType {
+			VCEComputeType_None, // Default
+			VCEComputeType_OpenCL, // OpenCL
+			VCEComputeType_DirectCompute, // DirectCompute
 		};
 		enum VCESurfaceFormat {
 			VCESurfaceFormat_NV12,	// NV12
@@ -142,7 +143,7 @@ namespace Plugin {
 			#pragma region Initializer & Finalizer
 			//////////////////////////////////////////////////////////////////////////
 			public:
-			VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat = VCESurfaceFormat_NV12, VCEMemoryType p_MemoryType = VCEMemoryType_Auto);
+			VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat = VCESurfaceFormat_NV12, VCEMemoryType p_MemoryType = VCEMemoryType_Auto, VCEComputeType p_ComputeType = VCEComputeType_None);
 			~VCEEncoder();
 			#pragma endregion Initializer & Finalizer
 
@@ -371,11 +372,14 @@ namespace Plugin {
 			bool m_IsMultithreaded;
 
 			// Internal Properties
-			bool m_Flag_IsStarted,
-				m_Flag_EmergencyQuit;
 			VCEEncoderType m_EncoderType;
 			VCEMemoryType m_MemoryType;
+			VCEComputeType m_ComputeType;
 			VCESurfaceFormat m_SurfaceFormat;
+			
+			bool m_Flag_IsStarted,
+				m_Flag_EmergencyQuit;
+			
 			std::pair<uint32_t, uint32_t> m_FrameSize, m_FrameRate;
 			double_t m_FrameRateDivisor, m_FrameRateReverseDivisor;
 			size_t m_InputQueueLimit,

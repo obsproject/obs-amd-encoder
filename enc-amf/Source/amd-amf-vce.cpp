@@ -34,15 +34,6 @@ SOFTWARE.
 #endif
 
 //////////////////////////////////////////////////////////////////////////
-// Defines
-//////////////////////////////////////////////////////////////////////////
-//#define AMF_SYNC_LOCK(x) { \
-//		std::unique_lock<std::mutex> amflock(m_AMFSyncLock); \
-//		x; \
-//	};
-#define AMF_SYNC_LOCK(x) x;
-
-//////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
 
@@ -65,7 +56,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadMain(Plugin::AMD::VCEEncoder* p_this) 
 	p_this->OutputThreadLogic();
 }
 
-Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat /*= VCESurfaceFormat_NV12*/, VCEMemoryType p_MemoryType /*= VCEMemoryType_Auto*/) {
+Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat /*= VCESurfaceFormat_NV12*/, VCEMemoryType p_MemoryType /*= VCEMemoryType_Auto*/, VCEComputeType p_ComputeType /*= VCEComputeType_None*/) {
 	AMF_RESULT res;
 
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::VCEEncoder> Initializing...");
@@ -74,6 +65,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 	m_EncoderType = p_Type;
 	m_SurfaceFormat = p_SurfaceFormat;
 	m_MemoryType = p_MemoryType;
+	m_ComputeType = p_ComputeType;
 	m_Flag_IsStarted = false;
 	m_Flag_EmergencyQuit = false;
 	m_FrameSize.first = 64;	m_FrameSize.second = 64;
@@ -104,16 +96,6 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 		#else
 		m_MemoryType = VCEMemoryType_OpenGL;
 		#endif
-	} else if (m_MemoryType == VCEMemoryType_AutoOpenCL) {
-		#if (defined _WIN32) | (defined _WIN64)
-		if (IsWindows8OrGreater()) {
-			m_MemoryType = VCEMemoryType_DirectX11OpenCL;
-		} else {
-			m_MemoryType = VCEMemoryType_DirectX9OpenCL;
-		}
-		#else
-		m_MemoryType = VCEMemoryType_OpenGLOpenCL;
-		#endif
 	}
 
 	switch (m_MemoryType) {
@@ -133,22 +115,33 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> Initializing 3D queue failed with error %ls (code %d)", res);
 
-	switch (m_MemoryType) {
-		case VCEMemoryType_DirectX11OpenCL:
-		case VCEMemoryType_DirectX9OpenCL:
-		case VCEMemoryType_OpenGLOpenCL:
+	switch (m_ComputeType) {
+		case VCEComputeType_None:
+			break;
+		case VCEComputeType_OpenCL:
 			res = m_AMFContext->InitOpenCL(nullptr);
 			if (res != AMF_OK)
 				ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> InitOpenCL failed with error %ls (code %d)", res);
 			m_AMFContext->GetCompute(amf::AMF_MEMORY_OPENCL, &m_AMFCompute);
+			break;
+		case VCEComputeType_DirectCompute:
+			switch (m_MemoryType) {
+				case VCEMemoryType_DirectX9:
+					m_AMFContext->GetCompute(amf::AMF_MEMORY_COMPUTE_FOR_DX9, &m_AMFCompute);
+					break;
+				case VCEMemoryType_DirectX11:
+					m_AMFContext->GetCompute(amf::AMF_MEMORY_COMPUTE_FOR_DX11, &m_AMFCompute);
+					break;
+				default:
+					AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::VCEEncoder> Unsupported Compute Type for this Memory Type.");
+					p_ComputeType = VCEComputeType_None;
+			}
 			break;
 	}
 
 	/// AMF Component (Encoder)
 	switch (p_Type) {
 		case VCEEncoderType_AVC:
-			//res = m_AMFFactory->CreateComponent(m_AMFContext, L"AMFVideoEncoderHW_AVC", &m_AMFEncoder);
-			// HW_AVC can't do 1920x1080, so what is it for?
 			res = m_AMFFactory->CreateComponent(m_AMFContext, AMFVideoEncoderVCE_AVC, &m_AMFEncoder);
 			break;
 		case VCEEncoderType_SVC:
@@ -431,7 +424,7 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 
 	// Debug: Packet Information
 	#ifdef DEBUG
-	AMF_LOG_INFO("Packet: Type(%d), PTS(%4d,%12d), DTS(%4d,%12d), Size(%8d)", pkt.type, pkt.pts, pkt.pts_usec, pkt.dts, pkt.dts_usec, pkt.data.size());
+	AMF_LOG_INFO("Packet: Type(%d), PTS(%4d), DTS(%4d), Size(%8d)", packet->priority, packet->pts, packet->dts, packet->size);
 	#endif
 }
 
@@ -486,14 +479,6 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 }
 
 void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles Surface Submission
-	static amf::AMF_MEMORY_TYPE memoryTypeToAMF[] = {
-		amf::AMF_MEMORY_HOST,
-		amf::AMF_MEMORY_DX9,
-		amf::AMF_MEMORY_DX11,
-		amf::AMF_MEMORY_OPENGL,
-		amf::AMF_MEMORY_OPENCL,
-	};
-
 	// Assign Thread Name
 	static const char* __threadName = "enc-amf Input Thread";
 	SetThreadName(__threadName);
@@ -521,7 +506,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 			}
 
 			/// Submit to AMF
-			AMF_SYNC_LOCK(res = m_AMFEncoder->SubmitInput(surface));
+			res = m_AMFEncoder->SubmitInput(surface);
 			if (res == AMF_OK) {
 				{ // Remove Surface from Queue
 					std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
@@ -567,11 +552,11 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 		while (res == AMF_OK) { // Repeat until impossible.
 			amf::AMFDataPtr pData;
 
-			AMF_SYNC_LOCK(res = m_AMFEncoder->QueryOutput(&pData););
+			res = m_AMFEncoder->QueryOutput(&pData);
 			if (res == AMF_OK) {
-				if (pData->GetMemoryType() != amf::AMF_MEMORY_HOST) {
-					AMF_SYNC_LOCK(pData->Convert(amf::AMF_MEMORY_HOST););
-				}
+				/*if (pData->GetMemoryType() != amf::AMF_MEMORY_HOST) {
+					pData->Convert(amf::AMF_MEMORY_HOST);
+				}*/
 
 				// Queue
 				{
@@ -600,34 +585,37 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 		amf::AMF_MEMORY_DX9,
 		amf::AMF_MEMORY_DX11,
 		amf::AMF_MEMORY_OPENGL,
-		amf::AMF_MEMORY_DX9,
-		amf::AMF_MEMORY_DX11,
-		amf::AMF_MEMORY_OPENGL,
 	};
 
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFSurfacePtr pSurface = nullptr;
-	if ((m_MemoryType == VCEMemoryType_DirectX11OpenCL)
-		|| (m_MemoryType == VCEMemoryType_DirectX9OpenCL)
-		|| (m_MemoryType == VCEMemoryType_OpenGLOpenCL)) {
+	if (m_ComputeType != VCEComputeType_None) {
 		amf_size l_origin[] = { 0, 0, 0 };
 		amf_size l_size0[] = { m_FrameSize.first, m_FrameSize.second, 1 };
 		amf_size l_size1[] = { m_FrameSize.first >> 1, m_FrameSize.second >> 1, 1 };
 
 		amf::AMFComputeSyncPointPtr pSyncPoint;
 		res = m_AMFContext->AllocSurface(memoryTypeToAMF[m_MemoryType], surfaceFormatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second, &pSurface);
-		pSurface->Convert(amf::AMF_MEMORY_OPENCL);
+		if (m_ComputeType == VCEComputeType_DirectCompute) {
+			if (m_MemoryType == VCEMemoryType_DirectX9) {
+				pSurface->Convert(amf::AMF_MEMORY_COMPUTE_FOR_DX9);
+			} else if (m_MemoryType == VCEMemoryType_DirectX11) {
+				pSurface->Convert(amf::AMF_MEMORY_COMPUTE_FOR_DX11);
+			}
+		} else if (m_ComputeType == VCEComputeType_OpenCL) {
+			pSurface->Convert(amf::AMF_MEMORY_OPENCL);
+		}
 		m_AMFCompute->PutSyncPoint(&pSyncPoint);
 		m_AMFCompute->CopyPlaneFromHost(frame->data[0], l_origin, l_size0, frame->linesize[0], pSurface->GetPlaneAt(0), false);
 		m_AMFCompute->CopyPlaneFromHost(frame->data[1], l_origin, l_size1, frame->linesize[1], pSurface->GetPlaneAt(1), false);
 		m_AMFCompute->FinishQueue();
 		pSyncPoint->Wait();
-		pSurface->Convert(memoryTypeToAMF[m_MemoryType]);
 
 		// Convert to AMF native type.
 		pSurface->Convert(memoryTypeToAMF[m_MemoryType]);
+
 	} else {
-		res = m_AMFContext->AllocSurface(memoryTypeToAMF[m_MemoryType], surfaceFormatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second, &pSurface);
+		res = m_AMFContext->AllocSurface(amf::AMF_MEMORY_HOST, surfaceFormatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second, &pSurface);
 		if (res != AMF_OK) // Unable to create Surface
 			ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame> Unable to create AMFSurface, error %ls (code %d).", res);
 
@@ -638,15 +626,16 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 			size_t height = plane->GetHeight();
 			size_t hpitch = plane->GetHPitch();
 
-			void* plane_nat;
-			plane_nat = plane->GetNative();
-
+			void* plane_nat = plane->GetNative();
 			for (int32_t py = 0; py < height; py++) {
 				size_t plane_off = py * hpitch;
 				size_t frame_off = py * frame->linesize[i];
 				std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
 			}
 		}
+
+		// Convert to AMF native type.
+		pSurface->Convert(memoryTypeToAMF[m_MemoryType]);
 	}
 
 	// Convert Frame Index to Nanoseconds.
@@ -662,6 +651,22 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 //////////////////////////////////////////////////////////////////////////
 
 void Plugin::AMD::VCEEncoder::LogProperties() {
+	static const char* memoryTypeToString[] = {
+		"Host",
+		"DirectX9",
+		"DirectX11",
+		"OpenGL",
+	};
+	static const char* computeTypeToString[] = {
+		"None",
+		"OpenCL",
+		"DirectCompute",
+	};
+	static const char* surfaceFormatToString[] = {
+		"NV12",
+		"I420",
+		"RGBA",
+	};
 	static const char* usageToString[] = {
 		"Transcoding",
 		"Ultra Low Latency",
@@ -686,6 +691,10 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	};
 
 	AMF_LOG_INFO("-- AMD Advanced Media Framework VCE Encoder --");
+	AMF_LOG_INFO("Initialization Parameters: ");
+	AMF_LOG_INFO("  Memory Type: %s", memoryTypeToString[m_MemoryType]);
+	AMF_LOG_INFO("  Compute Type: %s", computeTypeToString[m_ComputeType]);
+	AMF_LOG_INFO("  Surface Format: %s", surfaceFormatToString[m_SurfaceFormat]);
 	AMF_LOG_INFO("Static Parameters: ");
 	AMF_LOG_INFO("  Usage: %s", usageToString[this->GetUsage()]);
 	AMF_LOG_INFO("  Quality Preset: %s", qualityPresetToString[this->GetQualityPreset()]);
