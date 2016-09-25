@@ -257,7 +257,7 @@ void Plugin::AMD::VCEEncoder::Stop() {
 	m_ExtraDataBuffer.clear();
 }
 
-bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
+bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 	// Early-Exception if not encoding.
 	if (!m_Flag_IsStarted) {
 		const char* error = "<Plugin::AMD::VCEEncoder::SendInput> Attempted to send input while not running.";
@@ -266,7 +266,7 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
 	}
 
 	// Convert Frame into a Surface and queue it.
-	{
+	if (frame != nullptr) {
 		amf::AMFSurfacePtr pAMFSurface = CreateSurfaceFromFrame(frame);
 		if (pAMFSurface) {
 			std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
@@ -280,13 +280,13 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
 				if (m_InputQueueLastSize != uiQueueSize) {
 					int32_t delta = ((int32_t)uiQueueSize - (int32_t)m_InputQueueLastSize);
 					if (uiQueueSize == 0) {
-						AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is empty. (%d/%d/%d)", uiQueueSize, (uiQueueSize - m_InputQueueLastSize), m_InputQueueLimit);
+						AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is empty. (%d/%d/%d)", uiQueueSize, (uiQueueSize - m_InputQueueLastSize), m_InputQueueLimit);
 						m_InputQueueLastSize = uiQueueSize;
 					} else if (delta >= 5) {
 						AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is growing. (%d/%d/%d)", uiQueueSize, (uiQueueSize - m_InputQueueLastSize), m_InputQueueLimit);
 						m_InputQueueLastSize = uiQueueSize;
 					} else if (delta <= -5) {
-						AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is shrinking. (%d/%d/%d)", uiQueueSize, (uiQueueSize - m_InputQueueLastSize), m_InputQueueLimit);
+						AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is shrinking. (%d/%d/%d)", uiQueueSize, (uiQueueSize - m_InputQueueLastSize), m_InputQueueLimit);
 						m_InputQueueLastSize = uiQueueSize;
 					}
 				}
@@ -304,6 +304,11 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
 	} else { // No Threading
 		AMF_RESULT res = AMF_OK;
 		while (res == AMF_OK) {
+			if (m_Input.queue.size() == 0) {
+				res = AMF_NEED_MORE_INPUT;
+				break;
+			}
+
 			// Dequeue a Surface.
 			amf::AMFSurfacePtr pAMFSurface = m_Input.queue.front();
 			if (pAMFSurface) {
@@ -311,7 +316,8 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
 				if (res == AMF_OK) {
 					m_Input.queue.pop();
 				} else if (res == AMF_INPUT_FULL) {
-					// Need GetOutput to be called.
+					if (frame != nullptr)
+						GetOutput(nullptr, nullptr);
 				} else {
 					AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::SendInput> SubmitInput returned error %ls (code %d).", m_AMF->GetTrace()->GetResultText(res), res);
 				}
@@ -322,7 +328,7 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
 	return true;
 }
 
-void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& received_packet) {
+void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* received_packet) {
 	// Early-Exception if not encoding.
 	if (!m_Flag_IsStarted) {
 		const char* error = "<Plugin::AMD::VCEEncoder::GetOutput> Attempted to send input while not running.";
@@ -342,14 +348,15 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 				std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
 				m_Output.queue.push(pAMFData);
 			} else if (res == AMF_REPEAT) {
-				// Need SubmitInput to be called.
+				if (received_packet != nullptr)
+					SendInput(nullptr);
 			} else {
 				AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::GetOutput> QueryOutput returned error %ls (code %d).", m_AMF->GetTrace()->GetResultText(res), res);
 			}
 		}
 	}
 
-	{
+	if (received_packet != nullptr) {
 		amf::AMFDataPtr pAMFData;
 		{ // Attempt to dequeue an Item.
 			std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
@@ -420,12 +427,12 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 		}
 
 		*received_packet = true;
-	}
 
-	// Debug: Packet Information
-	#ifdef DEBUG
-	AMF_LOG_INFO("Packet: Type(%d), PTS(%4d), DTS(%4d), Size(%8d)", packet->priority, packet->pts, packet->dts, packet->size);
-	#endif
+		// Debug: Packet Information
+		#ifdef DEBUG
+		AMF_LOG_INFO("Packet: Type(%d), PTS(%4d), DTS(%4d), Size(%8d)", packet->priority, packet->pts, packet->dts, packet->size);
+		#endif
+	}
 }
 
 bool Plugin::AMD::VCEEncoder::GetExtraData(uint8_t**& extra_data, size_t*& extra_data_size) {
@@ -621,15 +628,14 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 
 		size_t planeCount = pSurface->GetPlanesCount();
 		for (uint8_t i = 0; i < planeCount; i++) {
-			amf::AMFPlane* plane;
-			plane = pSurface->GetPlaneAt(i);
-			size_t height = plane->GetHeight();
-			size_t hpitch = plane->GetHPitch();
-
+			amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
 			void* plane_nat = plane->GetNative();
+			int32_t height = plane->GetHeight();
+			int32_t hpitch = plane->GetHPitch();
+
 			for (int32_t py = 0; py < height; py++) {
-				size_t plane_off = py * hpitch;
-				size_t frame_off = py * frame->linesize[i];
+				int32_t plane_off = py * hpitch;
+				int32_t frame_off = py * frame->linesize[i];
 				std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
 			}
 		}

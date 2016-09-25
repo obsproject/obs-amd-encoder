@@ -153,8 +153,8 @@ namespace Plugin {
 			public:
 			void Start();
 			void Stop();
-			bool SendInput(struct encoder_frame*& frame);
-			void GetOutput(struct encoder_packet*& packet, bool*& received_packet);
+			bool SendInput(struct encoder_frame* frame);
+			void GetOutput(struct encoder_packet* packet, bool* received_packet);
 			bool GetExtraData(uint8_t**& data, size_t*& size);
 			void GetVideoInfo(struct video_scale_info*& vsi);
 			
