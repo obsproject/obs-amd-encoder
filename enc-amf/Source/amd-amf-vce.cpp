@@ -36,10 +36,11 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Defines
 //////////////////////////////////////////////////////////////////////////
-#define AMF_SYNC_LOCK(x) { \
-		std::unique_lock<std::mutex> amflock(m_AMFSyncLock); \
-		x; \
-	};
+//#define AMF_SYNC_LOCK(x) { \
+//		std::unique_lock<std::mutex> amflock(m_AMFSyncLock); \
+//		x; \
+//	};
+#define AMF_SYNC_LOCK(x) x;
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -380,9 +381,9 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 	}
 
 	// Debug: Packet Information
-	#ifdef DEBUG
+	//#ifdef DEBUG
 	AMF_LOG_INFO("Packet: Type(%d), PTS(%4d,%12d), DTS(%4d,%12d), Size(%8d)", pkt.type, pkt.pts, pkt.pts_usec, pkt.dts, pkt.dts_usec, pkt.data.size());
-	#endif
+	//#endif
 }
 
 bool Plugin::AMD::VCEEncoder::GetExtraData(uint8_t**& extra_data, size_t*& extra_data_size) {
@@ -483,7 +484,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 			} else if (res == AMF_INPUT_FULL) { // Try submitting for 5 milliseconds
 				m_ThreadedOutput.condvar.notify_all(); // Signal Querying Thread
 
-				std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
 				if (__amf_input_full_repeat < 5) {
 					res = AMF_OK;
 					__amf_input_full_repeat++;
@@ -547,8 +548,8 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 				/// Presentation Timestamp
 				pBuffer->GetProperty(L"Frame", &pkt.pts);
 				pkt.pts_usec = (int64_t)(pkt.pts * frTimeStep);
-				/*pkt.pts_usec = pkt.dts_usec;
-				pkt.pts = pkt.dts;*/
+				pkt.pts_usec = pkt.dts_usec;
+				pkt.pts = pkt.dts;
 
 				// Read Packet Type
 				uint64_t pktType;
@@ -562,7 +563,6 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 				}
 			} else if (res == AMF_REPEAT) {
 				m_ThreadedInput.condvar.notify_all();
-				std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
 			} else {
 				std::vector<char> msgBuf(128);
 				FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);

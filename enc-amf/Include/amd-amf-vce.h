@@ -138,7 +138,7 @@ namespace Plugin {
 			#pragma region Initializer & Finalizer
 			//////////////////////////////////////////////////////////////////////////
 			public:
-			VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat = VCESurfaceFormat_NV12, VCEMemoryType p_MemoryType = VCEMemoryType_Auto);
+			VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat = VCESurfaceFormat_NV12, VCEMemoryType p_MemoryType = VCEMemoryType_Host);
 			~VCEEncoder();
 			#pragma endregion Initializer & Finalizer
 
