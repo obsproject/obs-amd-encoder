@@ -109,6 +109,9 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_bool(data, AMF_H264ADVANCED_UPDATE, false);
 
 	// Static Properties
+	/// Memory Type & Compute Type
+	obs_data_set_default_int(data, AMF_H264_MEMORYTYPE, VCEMemoryType_Host);
+	obs_data_set_default_int(data, AMF_H264_COMPUTETYPE, VCEComputeType_None);
 	/// Usage & Quality Preset
 	obs_data_set_default_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
 	obs_data_set_default_int(data, AMF_H264_QUALITY_PRESET, -1);
@@ -180,6 +183,18 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	//////////////////////////////////////////////////////////////////////////
 	// Encoder Static Parameters
 	//////////////////////////////////////////////////////////////////////////
+	/// Memory Type
+	list = obs_properties_add_list(props, AMF_H264_MEMORYTYPE, obs_module_text(AMF_H264_MEMORYTYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_AUTOMATIC), VCEMemoryType_Auto);
+	obs_property_list_add_int(list, "Host", VCEMemoryType_Auto);
+	obs_property_list_add_int(list, "DirectX 9", VCEMemoryType_DirectX9);
+	obs_property_list_add_int(list, "DirectX 11", VCEMemoryType_DirectX11);
+	obs_property_list_add_int(list, "OpenGL", VCEMemoryType_OpenGL);
+	/// Compute Type
+	list = obs_properties_add_list(props, AMF_H264_COMPUTETYPE, obs_module_text(AMF_H264_COMPUTETYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_DEFAULT), VCEComputeType_None);
+	obs_property_list_add_int(list, "DirectCompute", VCEComputeType_DirectCompute);
+	obs_property_list_add_int(list, "OpenCL", VCEComputeType_OpenCL);
 	/// Usage
 	list = obs_properties_add_list(props, AMF_H264_USAGE, obs_module_text(AMF_H264_USAGE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_H264_USAGE_TRANSCODING), VCEUsage_Transcoding);
@@ -606,25 +621,27 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 
 	// AMF Setup
 	auto t_amf = Plugin::AMD::AMF::GetInstance();
-	if (obs_data_get_bool(settings, AMF_H264_DEBUGTRACING)) {
-		t_amf->GetDebug()->AssertsEnable(true);
-		t_amf->GetDebug()->EnablePerformanceMonitor(true);
-		t_amf->GetTrace()->TraceEnableAsync(true);
-		t_amf->GetTrace()->SetGlobalLevel(AMF_TRACE_TEST);
-		t_amf->GetTrace()->SetWriterLevel(L"OBSWriter", AMF_TRACE_TEST);
-	} else {
-		t_amf->GetDebug()->AssertsEnable(false);
-		t_amf->GetDebug()->EnablePerformanceMonitor(false);
-		t_amf->GetTrace()->TraceEnableAsync(false);
-		t_amf->GetTrace()->SetGlobalLevel(AMF_TRACE_ERROR);
-		t_amf->GetTrace()->SetWriterLevel(L"OBSWriter", AMF_TRACE_ERROR);
-	}
+	t_amf->EnableDebugTrace(obs_data_get_bool(settings, AMF_H264_DEBUGTRACING));
 
 	//////////////////////////////////////////////////////////////////////////
 	// Static Properties (Can't be changed during Encoding)
 	//////////////////////////////////////////////////////////////////////////
 	// Encoder
-	m_VideoEncoder = new VCEEncoder(VCEEncoderType_AVC);
+	VCESurfaceFormat surfFormat = VCESurfaceFormat_NV12;
+	switch (voi->format) {
+		case VIDEO_FORMAT_NV12:
+			surfFormat = VCESurfaceFormat_NV12;
+			break;
+		case VIDEO_FORMAT_I420:
+			surfFormat = VCESurfaceFormat_I420;
+			break;
+		case VIDEO_FORMAT_RGBA:
+		case VIDEO_FORMAT_BGRA:
+		case VIDEO_FORMAT_BGRX:
+			surfFormat = VCESurfaceFormat_RGBA;
+			break;
+	}
+	m_VideoEncoder = new VCEEncoder(VCEEncoderType_AVC, surfFormat, (VCEMemoryType)obs_data_get_int(settings, AMF_H264_MEMORYTYPE), (VCEComputeType)obs_data_get_int(settings, AMF_H264_COMPUTETYPE));
 	
 	/// Usage & Quality Preset
 	m_VideoEncoder->SetUsage((VCEUsage)obs_data_get_int(settings, AMF_H264_USAGE));
