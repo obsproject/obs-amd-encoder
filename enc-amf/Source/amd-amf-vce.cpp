@@ -94,8 +94,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 	}
 
 	// Initialize Memory
-	/// Autodetect best setting depending on platform.
-	if (m_MemoryType == VCEMemoryType_Auto) {
+	if (m_MemoryType == VCEMemoryType_Auto) { /// Autodetect best setting depending on platform.
 		#if (defined _WIN32) | (defined _WIN64)
 		if (IsWindows8OrGreater()) {
 			m_MemoryType = VCEMemoryType_DirectX11;
@@ -108,6 +107,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 	}
 	switch (m_MemoryType) {
 		case VCEMemoryType_Host:
+			res = AMF_OK;
 			break;
 		case VCEMemoryType_DirectX11:
 			res = m_AMFContext->InitDX11(nullptr);
@@ -122,30 +122,34 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> Initializing 3D queue failed with error %ls (code %d)", res);
 
-	#ifdef OPENCL
-	res = m_AMFContext->InitOpenCL(nullptr);
-	if (res != AMF_OK)
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> InitOpenCL failed with error %ls (code %d)", res);
-	m_AMFContext->GetCompute(amf::AMF_MEMORY_OPENCL, &m_AMFCompute);
-	#endif
+	switch (m_MemoryType) {
+		case VCEMemoryType_DirectX11OpenCL:
+		case VCEMemoryType_DirectX9OpenCL:
+		case VCEMemoryType_OpenGLOpenCL:
+			res = m_AMFContext->InitOpenCL(nullptr);
+			if (res != AMF_OK)
+				ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> InitOpenCL failed with error %ls (code %d)", res);
+			m_AMFContext->GetCompute(amf::AMF_MEMORY_OPENCL, &m_AMFCompute);
+			break;
+	}
 
 	/// AMF Component (Encoder)
 	switch (p_Type) {
 		case VCEEncoderType_AVC:
+			//res = m_AMFFactory->CreateComponent(m_AMFContext, L"AMFVideoEncoderHW_AVC", &m_AMFEncoder);
+			// HW_AVC can't do 1920x1080, so what is it for?
 			res = m_AMFFactory->CreateComponent(m_AMFContext, AMFVideoEncoderVCE_AVC, &m_AMFEncoder);
 			break;
 		case VCEEncoderType_SVC:
 			res = m_AMFFactory->CreateComponent(m_AMFContext, AMFVideoEncoderVCE_SVC, &m_AMFEncoder);
 			break;
 		case VCEEncoderType_HEVC:
-			//res = m_AMFFactory->CreateComponent(m_AMFContext, L"AMFVideoEncoderHW_AVC", &m_AMFEncoder);
 			res = m_AMFFactory->CreateComponent(m_AMFContext, L"AMFVideoEncoderHW_HEVC", &m_AMFEncoder);
 			break;
 	}
-	if (res != AMF_OK) {
-		AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::VCEEncoder> Creating a component object failed with error code %d.", res);
-		throw;
-	}
+	if (res != AMF_OK)
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> Creating a component object failed with error %ls (code %d).", res);
+
 
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::VCEEncoder> Initialization complete!");
 }
@@ -180,17 +184,16 @@ void Plugin::AMD::VCEEncoder::Start() {
 	}
 
 	// Create Encoder
-	AMF_RESULT res;
-
-	res = m_AMFEncoder->Init(surfaceformatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second);
+	AMF_RESULT res = m_AMFEncoder->Init(surfaceformatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second);
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::Start> Initialization failed with error %ls (code %d).", res);
 
-	// Threading
-	/// Create and start Threads
 	m_Flag_IsStarted = true;
-	m_ThreadedInput.thread = std::thread(&(Plugin::AMD::VCEEncoder::InputThreadMain), this);
-	m_ThreadedOutput.thread = std::thread(&(Plugin::AMD::VCEEncoder::OutputThreadMain), this);
+
+	if (m_IsMultithreaded) { // Threading
+		m_Input.thread = std::thread(&(Plugin::AMD::VCEEncoder::InputThreadMain), this);
+		m_Output.thread = std::thread(&(Plugin::AMD::VCEEncoder::OutputThreadMain), this);
+	}
 }
 
 void Plugin::AMD::VCEEncoder::Stop() {
@@ -205,46 +208,47 @@ void Plugin::AMD::VCEEncoder::Stop() {
 	m_AMFEncoder->Drain();
 	m_AMFEncoder->Flush();
 
-	// Threading
-	m_ThreadedOutput.condvar.notify_all();
-	#if defined _WIN32 || defined _WIN64
-	{ // Windows: Force terminate Thread after 1 second of waiting.
-		std::thread::native_handle_type hnd = m_ThreadedOutput.thread.native_handle();
+	if (m_IsMultithreaded) { // Threading
+		m_Output.condvar.notify_all();
+		#if defined _WIN32 || defined _WIN64
+		{ // Windows: Force terminate Thread after 1 second of waiting.
+			std::thread::native_handle_type hnd = m_Output.thread.native_handle();
 
-		uint32_t res = WaitForSingleObject((HANDLE)hnd, 1000);
-		switch (res) {
-			case WAIT_OBJECT_0:
-				m_ThreadedOutput.thread.join();
-				break;
-			default:
-				m_ThreadedOutput.thread.detach();
-				TerminateThread((HANDLE)hnd, 0);
-				break;
+			uint32_t res = WaitForSingleObject((HANDLE)hnd, 1000);
+			switch (res) {
+				case WAIT_OBJECT_0:
+					m_Output.thread.join();
+					break;
+				default:
+					m_Output.thread.detach();
+					TerminateThread((HANDLE)hnd, 0);
+					break;
+			}
 		}
-	}
-	#endif
+		#endif
 
-	m_ThreadedInput.condvar.notify_all();
-	#if defined _WIN32 || defined _WIN64
-	{ // Windows: Force terminate Thread after 1 second of waiting.
-		std::thread::native_handle_type hnd = m_ThreadedInput.thread.native_handle();
+		m_Input.condvar.notify_all();
+		#if defined _WIN32 || defined _WIN64
+		{ // Windows: Force terminate Thread after 1 second of waiting.
+			std::thread::native_handle_type hnd = m_Input.thread.native_handle();
 
-		uint32_t res = WaitForSingleObject((HANDLE)hnd, 1000);
-		switch (res) {
-			case WAIT_OBJECT_0:
-				m_ThreadedInput.thread.join();
-				break;
-			default:
-				m_ThreadedInput.thread.detach();
-				TerminateThread((HANDLE)hnd, 0);
-				break;
+			uint32_t res = WaitForSingleObject((HANDLE)hnd, 1000);
+			switch (res) {
+				case WAIT_OBJECT_0:
+					m_Input.thread.join();
+					break;
+				default:
+					m_Input.thread.detach();
+					TerminateThread((HANDLE)hnd, 0);
+					break;
+			}
 		}
+		#endif
 	}
-	#endif
 
 	// Clear Queues, Data
-	std::queue<amf::AMFSurfacePtr>().swap(m_ThreadedInput.queue);
-	std::queue<ThreadData>().swap(m_ThreadedOutput.queue);
+	std::queue<amf::AMFSurfacePtr>().swap(m_Input.queue);
+	std::queue<amf::AMFDataPtr>().swap(m_Output.queue);
 	m_PacketDataBuffer.clear();
 	m_ExtraDataBuffer.clear();
 }
@@ -257,53 +261,64 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame*& frame) {
 		throw std::exception(error);
 	}
 
-	// Submit Input
-	amf::AMFSurfacePtr surface;
-	size_t queueSize = m_InputQueueLimit;
+	// Convert Frame into a Surface and queue it.
 	{
-		std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
-		queueSize = m_ThreadedInput.queue.size();
-	}
+		amf::AMFSurfacePtr pAMFSurface = CreateSurfaceFromFrame(frame);
+		if (pAMFSurface) {
+			std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
+			size_t uiQueueSize = m_Input.queue.size();
 
-	/// Only create a Surface if there is room left for it.
-	if (queueSize < m_InputQueueLimit) {
-		surface = CreateSurfaceFromFrame(frame);
-		if (surface != nullptr) {
-			{
-				std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
-				m_ThreadedInput.queue.push(surface);
-			}
+			if (uiQueueSize >= m_InputQueueLimit) {
+				AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is full, dropping frame...");
+			} else {
+				m_Input.queue.push(pAMFSurface);
 
-			if (m_InputQueueLastSize != queueSize) {
-				int32_t delta = ((int32_t)queueSize - (int32_t)m_InputQueueLastSize);
-				if (queueSize == 0) {
-					AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is empty. (%d/%d/%d)", queueSize, (queueSize - m_InputQueueLastSize), m_InputQueueLimit);
-					m_InputQueueLastSize = queueSize;
-				} else if (delta >= 5) {
-					AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is growing. (%d/%d/%d)", queueSize, (queueSize - m_InputQueueLastSize), m_InputQueueLimit);
-					m_InputQueueLastSize = queueSize;
-				} else if (delta <= -5) {
-					AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is shrinking. (%d/%d/%d)", queueSize, (queueSize - m_InputQueueLastSize), m_InputQueueLimit);
-					m_InputQueueLastSize = queueSize;
+				if (m_InputQueueLastSize != uiQueueSize) {
+					int32_t delta = ((int32_t)uiQueueSize - (int32_t)m_InputQueueLastSize);
+					if (uiQueueSize == 0) {
+						AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is empty. (%d/%d/%d)", uiQueueSize, (uiQueueSize - m_InputQueueLastSize), m_InputQueueLimit);
+						m_InputQueueLastSize = uiQueueSize;
+					} else if (delta >= 5) {
+						AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is growing. (%d/%d/%d)", uiQueueSize, (uiQueueSize - m_InputQueueLastSize), m_InputQueueLimit);
+						m_InputQueueLastSize = uiQueueSize;
+					} else if (delta <= -5) {
+						AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is shrinking. (%d/%d/%d)", uiQueueSize, (uiQueueSize - m_InputQueueLastSize), m_InputQueueLimit);
+						m_InputQueueLastSize = uiQueueSize;
+					}
 				}
 			}
 		} else {
-			AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::SendInput> Failed to create surface from frame.");
+			AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::SendInput> Critical error while trying to create a frame.");
+			m_Flag_EmergencyQuit = true;
+			return false;
 		}
-	} else {
-		AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::SendInput> Input Queue is full, dropping frame...");
 	}
 
-	/// Signal Thread Wakeup
-	m_ThreadedInput.condvar.notify_all();
+	if (m_IsMultithreaded) { // Threading
+		/// Signal Thread Wakeup
+		m_Input.condvar.notify_all();
+	} else { // No Threading
+		AMF_RESULT res = AMF_OK;
+		while (res == AMF_OK) {
+			// Dequeue a Surface.
+			amf::AMFSurfacePtr pAMFSurface = m_Input.queue.front();
+			if (pAMFSurface) {
+				res = m_AMFEncoder->SubmitInput(pAMFSurface);
+				if (res == AMF_OK) {
+					m_Input.queue.pop();
+				} else if (res == AMF_INPUT_FULL) {
+					// Need GetOutput to be called.
+				} else {
+					AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::SendInput> SubmitInput returned error %ls (code %d).", m_AMF->GetTrace()->GetResultText(res), res);
+				}
+			}
+		}
+	}
 
 	return true;
 }
 
 void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& received_packet) {
-	amf::AMFDataPtr pData;
-	ThreadData pkt;
-
 	// Early-Exception if not encoding.
 	if (!m_Flag_IsStarted) {
 		const char* error = "<Plugin::AMD::VCEEncoder::GetOutput> Attempted to send input while not running.";
@@ -311,79 +326,102 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet*& packet, bool*& r
 		throw std::exception(error);
 	}
 
-	// Emergency Quit
-	if (m_Flag_EmergencyQuit) {
-		*received_packet = true;
+	if (m_IsMultithreaded) { // Threading
+		// Query Output
+		m_Output.condvar.notify_all();
+	} else { // No Threading
+		AMF_RESULT res = AMF_OK;
+		while (res == AMF_OK) {
+			amf::AMFDataPtr pAMFData;
+			res = m_AMFEncoder->QueryOutput(&pAMFData);
+			if (res == AMF_OK) {
+				std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
+				m_Output.queue.push(pAMFData);
+			} else if (res == AMF_REPEAT) {
+				// Need SubmitInput to be called.
+			} else {
+				AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::GetOutput> QueryOutput returned error %ls (code %d).", m_AMF->GetTrace()->GetResultText(res), res);
+			}
+		}
+	}
+
+	{
+		amf::AMFDataPtr pAMFData;
+		{ // Attempt to dequeue an Item.
+			std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
+			if (m_Output.queue.size() == 0)
+				return;
+
+			pAMFData = m_Output.queue.front();
+			m_Output.queue.pop();
+		}
+
+		amf::AMFBufferPtr pAMFBuffer = amf::AMFBufferPtr(pAMFData);
+
+		// Assemble Packet
+		packet->type = OBS_ENCODER_VIDEO;
+		size_t uiBufferSize = pAMFBuffer->GetSize();
+		if (m_PacketDataBuffer.size() < uiBufferSize) {
+			size_t newSize = (size_t)exp2(ceil(log2(uiBufferSize)));
+			m_PacketDataBuffer.resize(newSize);
+			AMF_LOG_WARNING("<AMFEncoder::VCE::GetOutput> Resized Packet Buffer to %d.", newSize);
+		}
 		packet->data = m_PacketDataBuffer.data();
-		packet->size = 1;
-		packet->keyframe = true;
-		packet->sys_dts_usec = packet->dts_usec = packet->dts = packet->pts = 0x0FFFFFFFFFFFFFFFll;
-		return;
-	}
+		packet->size = uiBufferSize;
+		std::memcpy(packet->data, pAMFBuffer->GetNative(), packet->size);
 
-	// Query Output
-	m_ThreadedOutput.condvar.notify_all();
+		{ // What Type of Frame is it?
+			  // Read Packet Type
+			uint64_t pktType;
+			pAMFData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &pktType);
 
-	/// Check if an output packet is queued.
-	if (m_ThreadedOutput.queue.size() == 0) {
-		*received_packet = false;
-		return;
-	}
+			switch ((AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)pktType) {
+				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR://
+					packet->keyframe = true;				// IDR-Frames are Key-Frames that contain a lot of information.
+					packet->priority = 3;					// Highest priority, always continue streaming with these.
+					packet->drop_priority = 3;				// Dropped IDR-Frames can only be replaced by the next IDR-Frame.
+					break;
+				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_I:	// I-Frames need only a previous I- or IDR-Frame.
+					packet->priority = 2;					// I- and IDR-Frames will most likely be present.
+					packet->drop_priority = 2;				// So we can continue with a I-Frame when streaming.
+					break;
+				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_P:	// P-Frames need either a previous P-, I- or IDR-Frame.
+					packet->priority = 1;					// We can safely assume that at least one of these is present.
+					packet->drop_priority = 1;				// So we can continue with a P-Frame when streaming.
+					break;
+				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_B:	// B-Frames need either a parent B-, P-, I- or IDR-Frame.
+					packet->priority = 0;					// We don't know if the last non-dropped frame was a B-Frame.
+					packet->drop_priority = 1;				// So require a P-Frame or better to continue streaming.
+					break;
+			}
+		}
 
-	// Submit Packet to OBS
-	/// Retrieve Packet from Queue
-	{
-		std::unique_lock<std::mutex> qlock(m_ThreadedOutput.queuemutex);
-		pkt = m_ThreadedOutput.queue.front();
-	}
+		{ // Timestamps
+			int64_t frameTimeStep = (int64_t)(m_FrameRateReverseDivisor * 1e6);
+			int64_t dtsTimeOffset = frameTimeStep << 1;
 
-	/// Copy to Static Buffer
-	size_t bufferSize = pkt.data.size();
-	if (m_PacketDataBuffer.size() < bufferSize) {
-		size_t newSize = (size_t)exp2(ceil(log2(bufferSize)));
-		m_PacketDataBuffer.resize(newSize);
-		AMF_LOG_WARNING("<AMFEncoder::VCE::GetOutput> Resized Packet Buffer to %d.", newSize);
-	}
-	if ((bufferSize > 0) && (m_PacketDataBuffer.data()))
-		std::memcpy(m_PacketDataBuffer.data(), pkt.data.data(), bufferSize);
+			 /// Retrieve Decode-Timestamp from AMF and convert it to micro-seconds.
+			int64_t dts_usec = (pAMFData->GetPts() / 10);
+			/// Decode Timestamp
+			packet->dts_usec = (int64_t)(dts_usec - dtsTimeOffset);
+			packet->dts = (int64_t)(packet->dts_usec / frameTimeStep);
+			/// Presentation Timestamp
+			/*pAMFBuffer->GetProperty(L"Frame", &pkt.pts);
+			pkt.pts_usec = (int64_t)(pkt.pts * frTimeStep);*/
+			//packet->pts_usec = pkt.dts_usec;
+			packet->pts = packet->dts;
 
-	/// Set up Packet Information
-	*received_packet = true;
-	packet->type = OBS_ENCODER_VIDEO;
-	packet->size = bufferSize;
-	packet->data = m_PacketDataBuffer.data();
-	packet->pts = pkt.pts; //packet->pts_usec = pkt.pts_usec;
-	packet->dts = pkt.dts; packet->dts_usec = pkt.dts_usec;
-	switch (pkt.type) {
-		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR://
-			packet->keyframe = true;				// IDR-Frames are Key-Frames that contain a lot of information.
-			packet->priority = 3;					// Highest priority, always continue streaming with these.
-			packet->drop_priority = 3;				// Dropped IDR-Frames can only be replaced by the next IDR-Frame.
-			break;
-		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_I:	// I-Frames need only a previous I- or IDR-Frame.
-			packet->priority = 2;					// I- and IDR-Frames will most likely be present.
-			packet->drop_priority = 2;				// So we can continue with a I-Frame when streaming.
-			break;
-		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_P:	// P-Frames need either a previous P-, I- or IDR-Frame.
-			packet->priority = 1;					// We can safely assume that at least one of these is present.
-			packet->drop_priority = 1;				// So we can continue with a P-Frame when streaming.
-			break;
-		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_B:	// B-Frames need either a parent B-, P-, I- or IDR-Frame.
-			packet->priority = 0;					// We don't know if the last non-dropped frame was a B-Frame.
-			packet->drop_priority = 1;				// So require a P-Frame or better to continue streaming.
-			break;
-	}
+			// See: https://stackoverflow.com/questions/6044330/ffmpeg-c-what-are-pts-and-dts-what-does-this-code-block-do-in-ffmpeg-c
+			// PTS may not be needed: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/17
+		}
 
-	/// Remove submitted element from Queue
-	{
-		std::unique_lock<std::mutex> lock(m_ThreadedOutput.queuemutex);
-		m_ThreadedOutput.queue.pop();
+		*received_packet = true;
 	}
 
 	// Debug: Packet Information
-	//#ifdef DEBUG
+	#ifdef DEBUG
 	AMF_LOG_INFO("Packet: Type(%d), PTS(%4d,%12d), DTS(%4d,%12d), Size(%8d)", pkt.type, pkt.pts, pkt.pts_usec, pkt.dts, pkt.dts_usec, pkt.data.size());
-	//#endif
+	#endif
 }
 
 bool Plugin::AMD::VCEEncoder::GetExtraData(uint8_t**& extra_data, size_t*& extra_data_size) {
@@ -450,9 +488,9 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 	SetThreadName(__threadName);
 
 	// Core Loop
-	std::unique_lock<std::mutex> lock(m_ThreadedInput.mutex);
+	std::unique_lock<std::mutex> lock(m_Input.mutex);
 	do {
-		m_ThreadedInput.condvar.wait(lock);
+		m_Input.condvar.wait(lock);
 
 		// Skip to check if isStarted is false.
 		if (!m_Flag_IsStarted)
@@ -465,24 +503,24 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 			amf::AMFSurfacePtr surface;
 
 			{ // Dequeue Surface
-				std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
-				if (m_ThreadedInput.queue.size() == 0)
+				std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
+				if (m_Input.queue.size() == 0)
 					break;
-				surface = m_ThreadedInput.queue.front();
+				surface = m_Input.queue.front();
 			}
 
 			/// Submit to AMF
 			AMF_SYNC_LOCK(res = m_AMFEncoder->SubmitInput(surface));
 			if (res == AMF_OK) {
 				{ // Remove Surface from Queue
-					std::unique_lock<std::mutex> qlock(m_ThreadedInput.queuemutex);
-					m_ThreadedInput.queue.pop();
+					std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
+					m_Input.queue.pop();
 				}
 
 				// Reset AMF_INPUT_FULL retries.
 				__amf_input_full_repeat = 0;
 			} else if (res == AMF_INPUT_FULL) { // Try submitting for 5 milliseconds
-				m_ThreadedOutput.condvar.notify_all(); // Signal Querying Thread
+				m_Output.condvar.notify_all(); // Signal Querying Thread
 
 				std::this_thread::sleep_for(std::chrono::milliseconds(1));
 				if (__amf_input_full_repeat < 5) {
@@ -506,17 +544,13 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 	SetThreadName(__threadName);
 
 	// Core Loop
-	std::unique_lock<std::mutex> lock(m_ThreadedOutput.mutex);
+	std::unique_lock<std::mutex> lock(m_Output.mutex);
 	do {
-		m_ThreadedOutput.condvar.wait(lock);
+		m_Output.condvar.wait(lock);
 
 		// Skip to check if isStarted is false.
 		if (!m_Flag_IsStarted)
 			continue;
-
-		// Update divisor.
-		int64_t frTimeStep = (int64_t)(m_FrameRateReverseDivisor * 1e6);
-		int64_t timeOffset = 0;// frTimeStep << 1;
 
 		AMF_RESULT res = AMF_OK;
 		while (res == AMF_OK) { // Repeat until impossible.
@@ -524,45 +558,17 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 
 			AMF_SYNC_LOCK(res = m_AMFEncoder->QueryOutput(&pData););
 			if (res == AMF_OK) {
-				amf::AMFVariant variant;
-
-				// Construct Output Packet
-				ThreadData pkt = ThreadData();
 				if (pData->GetMemoryType() != amf::AMF_MEMORY_HOST) {
 					AMF_SYNC_LOCK(pData->Convert(amf::AMF_MEMORY_HOST););
 				}
-				amf::AMFBufferPtr pBuffer(pData);
-				/// Resize Data to fit contents.
-				pkt.data.resize(pBuffer->GetSize());
-				/// Read Contents
-				std::memcpy(pkt.data.data(), pBuffer->GetNative(), pkt.data.size());
-				
-				// See: https://stackoverflow.com/questions/6044330/ffmpeg-c-what-are-pts-and-dts-what-does-this-code-block-do-in-ffmpeg-c
-				// PTS may not be needed: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/17
-
-				/// Retrieve Decode-Timestamp from AMF and convert it to micro-seconds.
-				int64_t dts_usec = (pData->GetPts() / 10);
-				/// Decode Timestamp
-				pkt.dts_usec = (int64_t)(dts_usec - timeOffset);
-				pkt.dts = (int64_t)(pkt.dts_usec / frTimeStep);
-				/// Presentation Timestamp
-				pBuffer->GetProperty(L"Frame", &pkt.pts);
-				pkt.pts_usec = (int64_t)(pkt.pts * frTimeStep);
-				pkt.pts_usec = pkt.dts_usec;
-				pkt.pts = pkt.dts;
-
-				// Read Packet Type
-				uint64_t pktType;
-				pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &pktType);
-				pkt.type = (AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)pktType;
 
 				// Queue
 				{
-					std::unique_lock<std::mutex> qlock(m_ThreadedOutput.queuemutex);
-					m_ThreadedOutput.queue.push(pkt);
+					std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
+					m_Output.queue.push(pData);
 				}
 			} else if (res == AMF_REPEAT) {
-				m_ThreadedInput.condvar.notify_all();
+				m_Input.condvar.notify_all();
 			} else {
 				std::vector<char> msgBuf(128);
 				FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
@@ -583,58 +589,59 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 		amf::AMF_MEMORY_DX9,
 		amf::AMF_MEMORY_DX11,
 		amf::AMF_MEMORY_OPENGL,
-		amf::AMF_MEMORY_OPENCL,
+		amf::AMF_MEMORY_DX9,
+		amf::AMF_MEMORY_DX11,
+		amf::AMF_MEMORY_OPENGL,
 	};
 
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFSurfacePtr pSurface = nullptr;
-	#ifdef OPENCL
-	amf_size l_origin[] = { 0, 0, 0 };
-	amf_size l_size0[] = { m_FrameSize.first, m_FrameSize.second, 1 };
-	amf_size l_size1[] = { m_FrameSize.first >> 1, m_FrameSize.second >> 1, 1 };
+	if ((m_MemoryType == VCEMemoryType_DirectX11OpenCL)
+		|| (m_MemoryType == VCEMemoryType_DirectX9OpenCL)
+		|| (m_MemoryType == VCEMemoryType_OpenGLOpenCL)) {
+		amf_size l_origin[] = { 0, 0, 0 };
+		amf_size l_size0[] = { m_FrameSize.first, m_FrameSize.second, 1 };
+		amf_size l_size1[] = { m_FrameSize.first >> 1, m_FrameSize.second >> 1, 1 };
 
-	amf::AMFComputeSyncPointPtr pSyncPoint;
-	res = m_AMFContext->AllocSurface(memoryTypeToAMF[m_MemoryType], surfaceFormatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second, &pSurface);
-	pSurface->Convert(amf::AMF_MEMORY_OPENCL);
-	m_AMFCompute->PutSyncPoint(&pSyncPoint);
-	m_AMFCompute->CopyPlaneFromHost(frame->data[0], l_origin, l_size0, frame->linesize[0], pSurface->GetPlaneAt(0), false);
-	m_AMFCompute->CopyPlaneFromHost(frame->data[1], l_origin, l_size1, frame->linesize[1], pSurface->GetPlaneAt(1), false);
-	m_AMFCompute->FinishQueue();
-	pSyncPoint->Wait();
-	pSurface->Convert(memoryTypeToAMF[m_MemoryType]);
+		amf::AMFComputeSyncPointPtr pSyncPoint;
+		res = m_AMFContext->AllocSurface(memoryTypeToAMF[m_MemoryType], surfaceFormatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second, &pSurface);
+		pSurface->Convert(amf::AMF_MEMORY_OPENCL);
+		m_AMFCompute->PutSyncPoint(&pSyncPoint);
+		m_AMFCompute->CopyPlaneFromHost(frame->data[0], l_origin, l_size0, frame->linesize[0], pSurface->GetPlaneAt(0), false);
+		m_AMFCompute->CopyPlaneFromHost(frame->data[1], l_origin, l_size1, frame->linesize[1], pSurface->GetPlaneAt(1), false);
+		m_AMFCompute->FinishQueue();
+		pSyncPoint->Wait();
+		pSurface->Convert(memoryTypeToAMF[m_MemoryType]);
+
+		// Convert to AMF native type.
+		pSurface->Convert(memoryTypeToAMF[m_MemoryType]);
+	} else {
+		res = m_AMFContext->AllocSurface(memoryTypeToAMF[m_MemoryType], surfaceFormatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second, &pSurface);
+		if (res != AMF_OK) // Unable to create Surface
+			ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame> Unable to create AMFSurface, error %ls (code %d).", res);
+
+		size_t planeCount = pSurface->GetPlanesCount();
+		for (uint8_t i = 0; i < planeCount; i++) {
+			amf::AMFPlane* plane;
+			plane = pSurface->GetPlaneAt(i);
+			size_t height = plane->GetHeight();
+			size_t hpitch = plane->GetHPitch();
+
+			void* plane_nat;
+			plane_nat = plane->GetNative();
+
+			for (int32_t py = 0; py < height; py++) {
+				size_t plane_off = py * hpitch;
+				size_t frame_off = py * frame->linesize[i];
+				std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+			}
+		}
+	}
 
 	// Convert Frame Index to Nanoseconds.
 	amf_pts amfPts = (int64_t)(frame->pts * (m_FrameRateReverseDivisor * 10000000.0));
 	pSurface->SetPts(amfPts);
 	pSurface->SetProperty(L"Frame", frame->pts);
-
-	// Convert to AMF native type.
-	pSurface->Convert(memoryTypeToAMF[m_MemoryType]);
-	#else
-	AMF_SYNC_LOCK(res = m_AMFContext->AllocSurface(
-		amf::AMF_MEMORY_HOST, surfaceFormatToAMF[m_SurfaceFormat],
-		m_FrameSize.first, m_FrameSize.second,
-		&pSurface););
-	if (res != AMF_OK) // Unable to create Surface
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame> Unable to create AMFSurface, error %ls (code %d).", res);
-
-	size_t planeCount = pSurface->GetPlanesCount();
-	for (uint8_t i = 0; i < planeCount; i++) {
-		amf::AMFPlane* plane;
-		AMF_SYNC_LOCK(plane = pSurface->GetPlaneAt(i););
-		size_t height = plane->GetHeight();
-		size_t hpitch = plane->GetHPitch();
-
-		void* plane_nat;
-		AMF_SYNC_LOCK(plane_nat = plane->GetNative(););
-
-		for (int32_t py = 0; py < height; py++) {
-			size_t plane_off = py * hpitch;
-			size_t frame_off = py * frame->linesize[i];
-			std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
-		}
-	}
-	#endif
 
 	return pSurface;
 }
@@ -872,7 +879,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetMaximumLongTermReferenceFrames() {
 void Plugin::AMD::VCEEncoder::SetFrameSize(uint32_t width, uint32_t height) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, ::AMFConstructSize(width, height));
 	if (res != AMF_OK) {
-		std::vector<char> msgBuf;
+		std::vector<char> msgBuf(128);
 		sprintf(msgBuf.data(), "%dx%d", width, height);
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetFrameSize> Setting to %s failed with error %ls (code %d).", res, msgBuf.data());
 	}

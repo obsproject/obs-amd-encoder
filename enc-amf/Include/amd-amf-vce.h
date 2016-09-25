@@ -55,6 +55,9 @@ namespace Plugin {
 			VCEMemoryType_DirectX9,		// DirectX9
 			VCEMemoryType_DirectX11,	// DirectX11
 			VCEMemoryType_OpenGL,		// OpenGL
+			VCEMemoryType_DirectX9OpenCL,	// DirectX9 + OpenCL
+			VCEMemoryType_DirectX11OpenCL,	// DirectX11 + OpenCL
+			VCEMemoryType_OpenGLOpenCL,		// OpenGL + OpenCL
 
 			VCEMemoryType_Auto = -1,
 		};
@@ -363,9 +366,8 @@ namespace Plugin {
 			amf::AMFFactory* m_AMFFactory;
 			amf::AMFContextPtr m_AMFContext;
 			amf::AMFComponentPtr m_AMFEncoder;
-			#ifdef OPENCL
 			amf::AMFComputePtr m_AMFCompute;
-			#endif
+			bool m_IsMultithreaded;
 
 			// Internal Properties
 			bool m_Flag_IsStarted,
@@ -378,30 +380,26 @@ namespace Plugin {
 			size_t m_InputQueueLimit,
 				m_InputQueueLastSize;
 			uint32_t m_TimerPeriod;
-			
-			// Threading
-			struct ThreadData {
-				std::vector<uint8_t> data;
-				int64_t dts, dts_usec;
-				int64_t pts, pts_usec;
-				AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM type;
-			};
-			struct {
-				std::thread thread;
-				std::mutex mutex;
-				std::condition_variable condvar;
 
-				std::mutex queuemutex;
+			// Structured Queue
+			struct {
 				std::queue<amf::AMFSurfacePtr> queue;
-			} m_ThreadedInput;
-			struct {
+
+				// Threading
 				std::thread thread;
 				std::mutex mutex;
 				std::condition_variable condvar;
-
 				std::mutex queuemutex;
-				std::queue<ThreadData> queue;
-			} m_ThreadedOutput;
+			} m_Input;
+			struct {
+				std::queue<amf::AMFDataPtr> queue;
+
+				// Threading
+				std::thread thread;
+				std::mutex mutex;
+				std::condition_variable condvar;
+				std::mutex queuemutex;
+			} m_Output;
 			std::mutex m_AMFSyncLock;
 
 			// Static Buffers

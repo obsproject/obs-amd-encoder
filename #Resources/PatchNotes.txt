@@ -2,8 +2,6 @@
 
 It has been a long time since we've seen a version without any attachments to the number, hasn't it? But now is finally the time! We've come a long way since 1.1.2, going through two rewrites, one to make it easier for me and one to update to a new SDK - and it was worth it. Now we have arrived at a plugin for OBS Studio that manages solid 4K at 60 fps while still being light on the CPU side.
 
-This version comes with two interfaces: a Simple one with presets for those wanting to quickly get going and an Advanced one that allows much more customization options. Both provide the same functionality and with identical settings will provide the same output. Whatever you choose, may the encoding gods be with you.
-
 ### Notes
 
 Before installing this Version, please uninstall any previous versions. If you used the installer, it is as simple as using the Uninstaller entry it created. If you extracted it, you will need to manually remove the extracted files.
