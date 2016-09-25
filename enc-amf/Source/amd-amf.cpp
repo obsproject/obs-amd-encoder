@@ -193,14 +193,14 @@ void Plugin::AMD::AMF::EnableDebugTrace(bool enable) {
 	if (enable) {
 		m_AMFDebug->AssertsEnable(true);
 		m_AMFDebug->EnablePerformanceMonitor(true);
-		m_AMFTrace->TraceEnableAsync(true);
+		//m_AMFTrace->TraceEnableAsync(true);
 		m_AMFTrace->SetGlobalLevel(AMF_TRACE_TEST);
 		m_AMFTrace->SetWriterLevel(L"OBSWriter", AMF_TRACE_TEST);
 	} else {
 		m_AMFDebug->AssertsEnable(false);
 		m_AMFDebug->EnablePerformanceMonitor(false);
-		m_AMFTrace->TraceEnableAsync(true);
-		m_AMFTrace->SetGlobalLevel(AMF_TRACE_ERROR);
-		m_AMFTrace->SetWriterLevel(L"OBSWriter", AMF_TRACE_ERROR);
+		//m_AMFTrace->TraceEnableAsync(true);
+		m_AMFTrace->SetGlobalLevel(AMF_TRACE_INFO);
+		m_AMFTrace->SetWriterLevel(L"OBSWriter", AMF_TRACE_INFO);
 	}
 }
