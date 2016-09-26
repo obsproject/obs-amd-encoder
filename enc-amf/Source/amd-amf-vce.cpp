@@ -125,19 +125,6 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 				ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> InitOpenCL failed with error %ls (code %d)", res);
 			m_AMFContext->GetCompute(amf::AMF_MEMORY_OPENCL, &m_AMFCompute);
 			break;
-		case VCEComputeType_DirectCompute:
-			switch (m_MemoryType) {
-				case VCEMemoryType_DirectX9:
-					m_AMFContext->GetCompute(amf::AMF_MEMORY_COMPUTE_FOR_DX9, &m_AMFCompute);
-					break;
-				case VCEMemoryType_DirectX11:
-					m_AMFContext->GetCompute(amf::AMF_MEMORY_COMPUTE_FOR_DX11, &m_AMFCompute);
-					break;
-				default:
-					AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::VCEEncoder> Unsupported Compute Type for this Memory Type.");
-					p_ComputeType = VCEComputeType_None;
-			}
-			break;
 	}
 
 	/// AMF Component (Encoder)
@@ -642,13 +629,7 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 
 		amf::AMFComputeSyncPointPtr pSyncPoint;
 		res = m_AMFContext->AllocSurface(memoryTypeToAMF[m_MemoryType], surfaceFormatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second, &pSurface);
-		if (m_ComputeType == VCEComputeType_DirectCompute) {
-			if (m_MemoryType == VCEMemoryType_DirectX9) {
-				pSurface->Convert(amf::AMF_MEMORY_COMPUTE_FOR_DX9);
-			} else if (m_MemoryType == VCEMemoryType_DirectX11) {
-				pSurface->Convert(amf::AMF_MEMORY_COMPUTE_FOR_DX11);
-			}
-		} else if (m_ComputeType == VCEComputeType_OpenCL) {
+		if (m_ComputeType == VCEComputeType_OpenCL) {
 			pSurface->Convert(amf::AMF_MEMORY_OPENCL);
 		}
 		m_AMFCompute->PutSyncPoint(&pSyncPoint);

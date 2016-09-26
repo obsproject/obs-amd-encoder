@@ -286,7 +286,6 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void*) 
 		/// Compute Type
 		list = obs_properties_add_list(props, AMF_H264_COMPUTETYPE, obs_module_text(AMF_H264_COMPUTETYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 		obs_property_list_add_int(list, obs_module_text(AMF_UTIL_TOGGLE_DISABLED), VCEComputeType_None);
-		obs_property_list_add_int(list, "DirectCompute", VCEComputeType_DirectCompute);
 		obs_property_list_add_int(list, "OpenCL", VCEComputeType_OpenCL);
 		
 		/// Surface Format

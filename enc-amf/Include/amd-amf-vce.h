@@ -61,7 +61,6 @@ namespace Plugin {
 		enum VCEComputeType {
 			VCEComputeType_None, // Default
 			VCEComputeType_OpenCL, // OpenCL
-			VCEComputeType_DirectCompute, // DirectCompute
 		};
 		enum VCESurfaceFormat {
 			// 4:2:0 Formats
