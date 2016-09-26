@@ -145,6 +145,10 @@ void Plugin::Interface::H264SimpleInterface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, "keyint_sec", -1);
 	obs_data_set_default_string(data, "rate_control", "");
 	obs_data_set_default_string(data, "profile", "");
+	obs_data_set_int(data, "bitrate", -1);
+	obs_data_set_int(data, "keyint_sec", -1);
+	obs_data_set_string(data, "rate_control", "");
+	obs_data_set_string(data, "profile", "");
 }
 
 obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void*) {
@@ -285,7 +289,7 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void*) 
 		/// Memory Type
 		list = obs_properties_add_list(props, AMF_H264_MEMORYTYPE, obs_module_text(AMF_H264_MEMORYTYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 		obs_property_list_add_int(list, obs_module_text(AMF_UTIL_AUTOMATIC), VCEMemoryType_Auto);
-		obs_property_list_add_int(list, "Host", VCEMemoryType_Auto);
+		obs_property_list_add_int(list, "Host", VCEMemoryType_Host);
 		if (IsWindowsXPOrGreater()) {
 			obs_property_list_add_int(list, "DirectX 9", VCEMemoryType_DirectX9);
 			if (IsWindows8OrGreater()) {
