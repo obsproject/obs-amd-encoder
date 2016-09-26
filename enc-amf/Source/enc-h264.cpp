@@ -23,7 +23,15 @@ SOFTWARE.
 */
 
 #pragma once
+
+//////////////////////////////////////////////////////////////////////////
+// Includes
+//////////////////////////////////////////////////////////////////////////
 #include "enc-h264.h"
+
+#if (defined _WIN32) | (defined _WIN64)
+#include <VersionHelpers.h>
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 // Defines
@@ -188,8 +196,12 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	list = obs_properties_add_list(props, AMF_H264_MEMORYTYPE, obs_module_text(AMF_H264_MEMORYTYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_AUTOMATIC), VCEMemoryType_Auto);
 	obs_property_list_add_int(list, "Host", VCEMemoryType_Auto);
-	obs_property_list_add_int(list, "DirectX 9", VCEMemoryType_DirectX9);
-	obs_property_list_add_int(list, "DirectX 11", VCEMemoryType_DirectX11);
+	if (IsWindowsXPOrGreater()) {
+		obs_property_list_add_int(list, "DirectX 9", VCEMemoryType_DirectX9);
+		if (IsWindows8OrGreater()) {
+			obs_property_list_add_int(list, "DirectX 11", VCEMemoryType_DirectX11);
+		}
+	}
 	obs_property_list_add_int(list, "OpenGL", VCEMemoryType_OpenGL);
 	/// Compute Type
 	list = obs_properties_add_list(props, AMF_H264_COMPUTETYPE, obs_module_text(AMF_H264_COMPUTETYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);

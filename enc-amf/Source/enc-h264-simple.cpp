@@ -27,6 +27,10 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 #include "enc-h264-simple.h"
 
+#if (defined _WIN32) | (defined _WIN64)
+#include <VersionHelpers.h>
+#endif
+
 //////////////////////////////////////////////////////////////////////////
 // Defines
 //////////////////////////////////////////////////////////////////////////
@@ -279,15 +283,19 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void*) 
 		list = obs_properties_add_list(props, AMF_H264_MEMORYTYPE, obs_module_text(AMF_H264_MEMORYTYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 		obs_property_list_add_int(list, obs_module_text(AMF_UTIL_AUTOMATIC), VCEMemoryType_Auto);
 		obs_property_list_add_int(list, "Host", VCEMemoryType_Auto);
-		obs_property_list_add_int(list, "DirectX 9", VCEMemoryType_DirectX9);
-		obs_property_list_add_int(list, "DirectX 11", VCEMemoryType_DirectX11);
+		if (IsWindowsXPOrGreater()) {
+			obs_property_list_add_int(list, "DirectX 9", VCEMemoryType_DirectX9);
+			if (IsWindows8OrGreater()) {
+				obs_property_list_add_int(list, "DirectX 11", VCEMemoryType_DirectX11);
+			}
+		}
 		obs_property_list_add_int(list, "OpenGL", VCEMemoryType_OpenGL);
 
 		/// Compute Type
 		list = obs_properties_add_list(props, AMF_H264_COMPUTETYPE, obs_module_text(AMF_H264_COMPUTETYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 		obs_property_list_add_int(list, obs_module_text(AMF_UTIL_TOGGLE_DISABLED), VCEComputeType_None);
 		obs_property_list_add_int(list, "OpenCL", VCEComputeType_OpenCL);
-		
+
 		/// Surface Format
 		list = obs_properties_add_list(props, AMF_H264_SURFACEFORMAT, obs_module_text(AMF_H264_SURFACEFORMAT), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 		obs_property_list_add_int(list, obs_module_text(AMF_UTIL_AUTOMATIC), -1);
@@ -575,14 +583,14 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	// Static Parameters
 	/// Usage - Always Transcoding
 	m_VideoEncoder->SetUsage(VCEUsage_Transcoding);
-	
+
 	/// Quality Preset - User Defined
 	m_VideoEncoder->SetQualityPreset((VCEQualityPreset)obs_data_get_int(settings, AMF_H264_QUALITY_PRESET));
-	
+
 	/// Frame Size, Frame Rate - Taken from OBS
 	m_VideoEncoder->SetFrameSize(width, height);
 	m_VideoEncoder->SetFrameRate(fpsNum, fpsDen);
-	
+
 	/// Profile, Profile Level - User Defined
 	m_VideoEncoder->SetProfile((VCEProfile)obs_data_get_int(settings, AMF_H264_PROFILE));
 	m_VideoEncoder->SetProfileLevel((VCEProfileLevel)obs_data_get_int(settings, AMF_H264_PROFILELEVEL));
@@ -590,7 +598,7 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	// Static Parameters
 	/// Rate Control Method - User Defined
 	m_VideoEncoder->SetRateControlMethod((VCERateControlMethod)obs_data_get_int(settings, AMF_H264_RATECONTROLMETHOD));
-	
+
 	/// Frame Skipping - User Defined
 	m_VideoEncoder->SetRateControlSkipFrameEnabled(!!obs_data_get_int(settings, AMF_H264_FRAMESKIPPING));
 
@@ -670,17 +678,17 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 		}
 		m_VideoEncoder->SetInitialVBVBufferFullness(1.0);
 	}
-	
+
 	/// Filler Data - User Defined
 	m_VideoEncoder->SetFillerDataEnabled(!!obs_data_get_int(settings, AMF_H264_FILLERDATA));
-	
+
 	/// Enforce HRD Compatibility - User Defined or Default
 	if (obs_data_get_int(settings, AMF_H264_ENFORCEHRDCOMPATIBILITY) != -1)
 		m_VideoEncoder->SetEnforceHRDRestrictionsEnabled(!!obs_data_get_int(settings, AMF_H264_ENFORCEHRDCOMPATIBILITY));
-	
+
 	/// IDR Period - User Defined (Full Second Granularity)
 	m_VideoEncoder->SetIDRPeriod((uint32_t)((double_t)obs_data_get_int(settings, AMF_H264SIMPLE_KEYFRAME_INTERVAL) * ((double_t)fpsNum / (double_t)fpsDen)));
-	
+
 	/// Deblocking Filter - User Defined or Default
 	if (obs_data_get_int(settings, AMF_H264_DEBLOCKINGFILTER) != -1)
 		m_VideoEncoder->SetDeBlockingFilterEnabled(!!obs_data_get_int(settings, AMF_H264_DEBLOCKINGFILTER));
