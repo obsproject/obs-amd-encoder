@@ -138,10 +138,13 @@ void Plugin::Interface::H264SimpleInterface::get_defaults(obs_data_t *data) {
 	// Debug Mode
 	obs_data_set_default_bool(data, AMF_H264_DEBUGTRACING, false);
 
-	// OBS: Enforce streaming service encoder settings
+	//////////////////////////////////////////////////////////////////////////
+	// OBS - Enforce Streaming Service Restrictions
+	//////////////////////////////////////////////////////////////////////////
 	obs_data_set_default_int(data, "bitrate", -1);
 	obs_data_set_default_int(data, "keyint_sec", -1);
 	obs_data_set_default_string(data, "rate_control", "");
+	obs_data_set_default_string(data, "profile", "");
 }
 
 obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void*) {
@@ -721,55 +724,84 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	m_VideoEncoder->SetFrameSize(width, height);
 	m_VideoEncoder->SetFrameRate(fpsNum, fpsDen);
 
+	//////////////////////////////////////////////////////////////////////////
+	// OBS - Enforce Streaming Service Restrictions
+	//////////////////////////////////////////////////////////////////////////
+	{
+		// OBS: Enforce streaming service encoder settings
+		const char* p_str = obs_data_get_string(settings, "profile");
+		if (strcmp(p_str, "") != 0) {
+			if (strcmp(p_str, "baseline")) {
+				m_VideoEncoder->SetProfile(VCEProfile_Baseline);
+			} else if (strcmp(p_str, "main")) {
+				m_VideoEncoder->SetProfile(VCEProfile_Main);
+			} else if (strcmp(p_str, "high")) {
+				m_VideoEncoder->SetProfile(VCEProfile_High);
+			}
+			obs_data_set_string(settings, "profile", "");
+		}
+
+		const char* t_str = obs_data_get_string(settings, "rate_control");
+		if (strcmp(t_str, "") != 0) {
+			if (strcmp(t_str, "CBR") == 0) {
+				m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_ConstantBitrate);
+				m_VideoEncoder->SetFillerDataEnabled(true);
+			} else if (strcmp(t_str, "VBR") == 0) {
+				m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_VariableBitrate_PeakConstrained);
+			} else if (strcmp(t_str, "VBR_LAT") == 0) {
+				m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_VariableBitrate_LatencyConstrained);
+			} else if (strcmp(t_str, "CQP") == 0) {
+				m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_ConstantQP);
+			}
+			obs_data_set_string(settings, "rate_control", "");
+		} else {
+			switch (m_VideoEncoder->GetRateControlMethod()) {
+				case VCERateControlMethod_ConstantBitrate:
+					obs_data_set_string(settings, "rate_control", "CBR");
+					break;
+				case VCERateControlMethod_VariableBitrate_PeakConstrained:
+					obs_data_set_string(settings, "rate_control", "VBR");
+					break;
+				case VCERateControlMethod_VariableBitrate_LatencyConstrained:
+					obs_data_set_string(settings, "rate_control", "VBR_LAT");
+					break;
+				case VCERateControlMethod_ConstantQP:
+					obs_data_set_string(settings, "rate_control", "CQP");
+					break;
+			}
+		}
+
+		uint64_t bitrateOvr = obs_data_get_int(settings, "bitrate") * 1000;
+		if (bitrateOvr != -1) {
+			if (m_VideoEncoder->GetTargetBitrate() > bitrateOvr) {
+				m_VideoEncoder->SetTargetBitrate(bitrateOvr);
+			}
+			if (m_VideoEncoder->GetPeakBitrate() > bitrateOvr) {
+				m_VideoEncoder->SetPeakBitrate(bitrateOvr);
+			}
+			obs_data_set_int(settings, "bitrate", obs_data_get_default_int(settings, "bitrate"));
+		} else {
+			obs_data_set_int(settings, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
+		}
+
+		uint32_t fpsNum = m_VideoEncoder->GetFrameRate().first;
+		uint32_t fpsDen = m_VideoEncoder->GetFrameRate().second;
+		if (obs_data_get_int(settings, "keyint_sec") != -1) {
+			m_VideoEncoder->SetIDRPeriod((uint32_t)(obs_data_get_int(settings, "keyint_sec") * ((double_t)fpsNum / (double_t)fpsDen)));
+			obs_data_set_int(settings, "keyint_sec", obs_data_get_default_int(settings, "keyint_sec"));
+		} else {
+			obs_data_set_int(settings, "keyint_sec", (uint64_t)(m_VideoEncoder->GetIDRPeriod() / ((double_t)fpsNum / (double_t)fpsDen)));
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
 	// Verify
+	//////////////////////////////////////////////////////////////////////////
 	m_VideoEncoder->LogProperties();
 
-	// OBS: Enforce streaming service encoder settings
-	const char* t_str = obs_data_get_string(settings, "rate_control");
-	if (strcmp(t_str, "") != 0) {
-		if (strcmp(t_str, "CBR") == 0) {
-			m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_ConstantBitrate);
-			m_VideoEncoder->SetFillerDataEnabled(true);
-		} else if (strcmp(t_str, "VBR") == 0) {
-			m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_VariableBitrate_PeakConstrained);
-		} else if (strcmp(t_str, "VBR_LAT") == 0) {
-			m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_VariableBitrate_LatencyConstrained);
-		} else if (strcmp(t_str, "CQP") == 0) {
-			m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_ConstantQP);
-		}
-		obs_data_set_string(settings, "rate_control", "");
-	} else {
-		switch (m_VideoEncoder->GetRateControlMethod()) {
-			case VCERateControlMethod_ConstantBitrate:
-				obs_data_set_string(settings, "rate_control", "CBR");
-				break;
-			case VCERateControlMethod_VariableBitrate_PeakConstrained:
-				obs_data_set_string(settings, "rate_control", "VBR");
-				break;
-			case VCERateControlMethod_VariableBitrate_LatencyConstrained:
-				obs_data_set_string(settings, "rate_control", "VBR_LAT");
-				break;
-			case VCERateControlMethod_ConstantQP:
-				obs_data_set_string(settings, "rate_control", "CQP");
-				break;
-		}
-	}
-	if (obs_data_get_int(settings, "bitrate") != -1) {
-		m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(settings, "bitrate") * 1000);
-		m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(settings, "bitrate") * 1000);
-		m_VideoEncoder->SetVBVBufferSize((uint32_t)obs_data_get_int(settings, "bitrate") * 1000);
-		obs_data_set_int(settings, "bitrate", -1);
-	} else {
-		obs_data_set_int(settings, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
-	}
-	if (obs_data_get_int(settings, "keyint_sec") != -1) {
-		m_VideoEncoder->SetIDRPeriod((uint32_t)(obs_data_get_int(settings, "keyint_sec") * ((double_t)fpsNum / (double_t)fpsDen)));
-		obs_data_set_int(settings, "keyint_sec", -1);
-	} else {
-		obs_data_set_int(settings, "keyint_sec", (uint64_t)(m_VideoEncoder->GetIDRPeriod() / ((double_t)fpsNum / (double_t)fpsDen)));
-	}
-
+	//////////////////////////////////////////////////////////////////////////
 	// Start Encoding
+	//////////////////////////////////////////////////////////////////////////
 	m_VideoEncoder->Start();
 
 	AMF_LOG_INFO("<AMFEncoder::H264SimpleInterface::H264SimpleInterface> Initialized.");
