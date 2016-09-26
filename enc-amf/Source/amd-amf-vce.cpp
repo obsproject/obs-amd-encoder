@@ -91,8 +91,10 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 		#if (defined _WIN32) | (defined _WIN64)
 		if (IsWindows8OrGreater()) {
 			m_MemoryType = VCEMemoryType_DirectX11;
-		} else {
+		} else if (IsWindowsXPOrGreater()) {
 			m_MemoryType = VCEMemoryType_DirectX9;
+		} else {
+			m_MemoryType = VCEMemoryType_Host;
 		}
 		#else
 		m_MemoryType = VCEMemoryType_OpenGL;
@@ -104,10 +106,20 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 			res = AMF_OK;
 			break;
 		case VCEMemoryType_DirectX11:
-			res = m_AMFContext->InitDX11(nullptr);
+			if (IsWindows8OrGreater()) {
+				res = m_AMFContext->InitDX11(nullptr);
+			} else {
+				AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::VCEEncoder> DirectX 11 is only supported on Windows 8 or newer, using Host Memory Type instead.");
+				m_MemoryType = VCEMemoryType_Host;
+			}
 			break;
 		case VCEMemoryType_DirectX9:
-			res = m_AMFContext->InitDX9(nullptr);
+			if (IsWindowsXPOrGreater()) {
+				res = m_AMFContext->InitDX9(nullptr);
+			} else {
+				AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::VCEEncoder> DirectX 11 is only supported on Windows 8 or newer, using Host Memory Type instead.");
+				m_MemoryType = VCEMemoryType_Host;
+			}
 			break;
 		case VCEMemoryType_OpenGL:
 			res = m_AMFContext->InitOpenGL(nullptr, nullptr, nullptr);
