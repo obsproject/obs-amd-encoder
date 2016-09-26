@@ -754,7 +754,18 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 			} else if (strcmp(p_str, "high")) {
 				m_VideoEncoder->SetProfile(VCEProfile_High);
 			}
-			obs_data_set_string(settings, "profile", "");
+		} else {
+			switch (m_VideoEncoder->GetProfile()) {
+				case VCEProfile_Baseline:
+					obs_data_set_string(settings, "profile", "baseline");
+					break;
+				case VCEProfile_Main:
+					obs_data_set_string(settings, "profile", "main");
+					break;
+				case VCEProfile_High:
+					obs_data_set_string(settings, "profile", "high");
+					break;
+			}
 		}
 
 		const char* t_str = obs_data_get_string(settings, "rate_control");
@@ -769,7 +780,6 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 			} else if (strcmp(t_str, "CQP") == 0) {
 				m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_ConstantQP);
 			}
-			obs_data_set_string(settings, "rate_control", "");
 		} else {
 			switch (m_VideoEncoder->GetRateControlMethod()) {
 				case VCERateControlMethod_ConstantBitrate:
@@ -789,13 +799,13 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 
 		uint64_t bitrateOvr = obs_data_get_int(settings, "bitrate") * 1000;
 		if (bitrateOvr != -1) {
-			if (m_VideoEncoder->GetTargetBitrate() > bitrateOvr) {
+			if (m_VideoEncoder->GetTargetBitrate() > bitrateOvr)
 				m_VideoEncoder->SetTargetBitrate(bitrateOvr);
-			}
-			if (m_VideoEncoder->GetPeakBitrate() > bitrateOvr) {
+
+			if (m_VideoEncoder->GetPeakBitrate() > bitrateOvr)
 				m_VideoEncoder->SetPeakBitrate(bitrateOvr);
-			}
-			obs_data_set_int(settings, "bitrate", obs_data_get_default_int(settings, "bitrate"));
+
+			obs_data_set_int(settings, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
 		} else {
 			obs_data_set_int(settings, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
 		}
@@ -804,7 +814,6 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 		uint32_t fpsDen = m_VideoEncoder->GetFrameRate().second;
 		if (obs_data_get_int(settings, "keyint_sec") != -1) {
 			m_VideoEncoder->SetIDRPeriod((uint32_t)(obs_data_get_int(settings, "keyint_sec") * ((double_t)fpsNum / (double_t)fpsDen)));
-			obs_data_set_int(settings, "keyint_sec", obs_data_get_default_int(settings, "keyint_sec"));
 		} else {
 			obs_data_set_int(settings, "keyint_sec", (uint64_t)(m_VideoEncoder->GetIDRPeriod() / ((double_t)fpsNum / (double_t)fpsDen)));
 		}
