@@ -190,16 +190,28 @@ amf::AMFDebug* Plugin::AMD::AMF::GetDebug() {
 }
 
 void Plugin::AMD::AMF::EnableDebugTrace(bool enable) {
+	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, false);
+	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_CONSOLE, AMF_TRACE_ERROR);
+	#ifdef DEBUG
+	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, true);
+	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, AMF_TRACE_TEST);
+	#else
+	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, false);
+	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, AMF_TRACE_ERROR);
+	#endif
+	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_FILE, false);
+	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_FILE, AMF_TRACE_ERROR);
+
 	if (enable) {
 		m_AMFDebug->AssertsEnable(true);
 		m_AMFDebug->EnablePerformanceMonitor(true);
-		//m_AMFTrace->TraceEnableAsync(true);
+		m_AMFTrace->TraceEnableAsync(true);
 		m_AMFTrace->SetGlobalLevel(AMF_TRACE_TEST);
 		m_AMFTrace->SetWriterLevel(L"OBSWriter", AMF_TRACE_TEST);
 	} else {
 		m_AMFDebug->AssertsEnable(false);
 		m_AMFDebug->EnablePerformanceMonitor(false);
-		//m_AMFTrace->TraceEnableAsync(true);
+		m_AMFTrace->TraceEnableAsync(true);
 		m_AMFTrace->SetGlobalLevel(AMF_TRACE_INFO);
 		m_AMFTrace->SetWriterLevel(L"OBSWriter", AMF_TRACE_INFO);
 	}
