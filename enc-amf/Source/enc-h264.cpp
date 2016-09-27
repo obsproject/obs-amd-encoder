@@ -96,19 +96,28 @@ void* Plugin::Interface::H264Interface::create(obs_data_t* settings, obs_encoder
 	try {
 		Plugin::Interface::H264Interface* enc = new Plugin::Interface::H264Interface(settings, encoder);
 		return enc;
-	} catch (std::exception e) {
+	} catch (...) {
+		AMF_LOG_ERROR("Unable to create Encoder, see log for more information.");
 		return NULL;
 	}
 }
 
 void Plugin::Interface::H264Interface::destroy(void* data) {
-	Plugin::Interface::H264Interface* enc = static_cast<Plugin::Interface::H264Interface*>(data);
-	delete enc;
-	data = nullptr;
+	try {
+		Plugin::Interface::H264Interface* enc = static_cast<Plugin::Interface::H264Interface*>(data);
+		delete enc;
+		data = nullptr;
+	} catch (...) {
+		AMF_LOG_ERROR("Unable to destroy Encoder, see log for more information.");
+	}
 }
 
 bool Plugin::Interface::H264Interface::encode(void *data, struct encoder_frame *frame, struct encoder_packet *packet, bool *received_packet) {
-	return static_cast<Plugin::Interface::H264Interface*>(data)->encode(frame, packet, received_packet);
+	try {
+		return static_cast<Plugin::Interface::H264Interface*>(data)->encode(frame, packet, received_packet);
+	} catch (...) {
+		AMF_LOG_ERROR("Unable to encode, see log for more information.");
+	}
 }
 
 void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
@@ -642,15 +651,27 @@ bool Plugin::Interface::H264Interface::update_from_amf(obs_properties_t *, obs_p
 }
 
 bool Plugin::Interface::H264Interface::update(void *data, obs_data_t *settings) {
-	return static_cast<Plugin::Interface::H264Interface*>(data)->update(settings);
+	try {
+		return static_cast<Plugin::Interface::H264Interface*>(data)->update(settings);
+	} catch (...) {
+		AMF_LOG_ERROR("Unable to update Encoder, see log for more information.");
+	}
 }
 
 void Plugin::Interface::H264Interface::get_video_info(void *data, struct video_scale_info *info) {
-	return static_cast<Plugin::Interface::H264Interface*>(data)->get_video_info(info);
+	try {
+		return static_cast<Plugin::Interface::H264Interface*>(data)->get_video_info(info);
+	} catch (...) {
+		AMF_LOG_ERROR("Unable to get video info, see log for more information.");
+	}
 }
 
 bool Plugin::Interface::H264Interface::get_extra_data(void *data, uint8_t** extra_data, size_t* size) {
-	return static_cast<Plugin::Interface::H264Interface*>(data)->get_extra_data(extra_data, size);
+	try {
+		return static_cast<Plugin::Interface::H264Interface*>(data)->get_extra_data(extra_data, size);
+	} catch (...) {
+		AMF_LOG_ERROR("Unable to get extra data, see log for more information.");
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -744,7 +765,7 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 	// OBS - Enforce Streaming Service Restrictions
 	//////////////////////////////////////////////////////////////////////////
 	{
-		// OBS: Enforce streaming service encoder settings
+		// Profile
 		const char* p_str = obs_data_get_string(settings, "profile");
 		if (strcmp(p_str, "") != 0) {
 			if (strcmp(p_str, "baseline")) {
@@ -768,6 +789,7 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 			}
 		}
 
+		// Rate Control Method
 		const char* t_str = obs_data_get_string(settings, "rate_control");
 		if (strcmp(t_str, "") != 0) {
 			if (strcmp(t_str, "CBR") == 0) {
@@ -797,6 +819,7 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 			}
 		}
 
+		// Bitrate
 		uint64_t bitrateOvr = obs_data_get_int(settings, "bitrate") * 1000;
 		if (bitrateOvr != -1) {
 			if (m_VideoEncoder->GetTargetBitrate() > bitrateOvr)
@@ -810,6 +833,7 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 			obs_data_set_int(settings, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
 		}
 
+		// IDR-Period (Keyframes)
 		uint32_t fpsNum = m_VideoEncoder->GetFrameRate().first;
 		uint32_t fpsDen = m_VideoEncoder->GetFrameRate().second;
 		if (obs_data_get_int(settings, "keyint_sec") != -1) {
@@ -865,7 +889,6 @@ bool Plugin::Interface::H264Interface::get_extra_data(uint8_t** extra_data, size
 
 bool Plugin::Interface::H264Interface::update_properties(obs_data_t* settings) {
 	int64_t value; double_t valued;
-
 
 	/// Minimum & Maximum QP
 	try {
@@ -1013,7 +1036,6 @@ bool Plugin::Interface::H264Interface::update_properties(obs_data_t* settings) {
 			m_VideoEncoder->SetQuarterPixelMotionEstimationEnabled(!!(value & 0x2));
 		}
 	} catch (...) {}
-
 
 	/// Intra Refresh MBs Number Per Slot in Macroblocks
 	try {

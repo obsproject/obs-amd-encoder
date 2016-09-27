@@ -615,31 +615,51 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 void* Plugin::Interface::H264SimpleInterface::create(obs_data_t* settings, obs_encoder_t* encoder) {
 	try {
 		return new Plugin::Interface::H264SimpleInterface(settings, encoder);
-	} catch (std::exception e) {
+	} catch (...) {
 		AMF_LOG_ERROR("Unable to create Encoder, see log for more information.");
 		return NULL;
 	}
 }
 
 void Plugin::Interface::H264SimpleInterface::destroy(void* data) {
-	delete (static_cast<Plugin::Interface::H264SimpleInterface*>(data));
-	data = nullptr;
+	try {
+		delete (static_cast<Plugin::Interface::H264SimpleInterface*>(data));
+		data = nullptr;
+	} catch (...) {
+		AMF_LOG_ERROR("Unable to destroy Encoder, see log for more information.");
+	}
 }
 
 bool Plugin::Interface::H264SimpleInterface::update(void *data, obs_data_t *settings) {
-	return static_cast<Plugin::Interface::H264SimpleInterface*>(data)->update(settings);
+	try {
+		return static_cast<Plugin::Interface::H264SimpleInterface*>(data)->update(settings);
+	} catch (...) {
+		AMF_LOG_ERROR("Unable to update Encoder, see log for more information.");
+	}
 }
 
 bool Plugin::Interface::H264SimpleInterface::encode(void *data, struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
-	return static_cast<Plugin::Interface::H264SimpleInterface*>(data)->encode(frame, packet, received_packet);
+	try {
+		return static_cast<Plugin::Interface::H264SimpleInterface*>(data)->encode(frame, packet, received_packet);
+	} catch (...) {
+		AMF_LOG_ERROR("Unable to encode, see log for more information.");
+	}
 }
 
 void Plugin::Interface::H264SimpleInterface::get_video_info(void *data, struct video_scale_info *info) {
-	static_cast<Plugin::Interface::H264SimpleInterface*>(data)->get_video_info(info);
+	try {
+		static_cast<Plugin::Interface::H264SimpleInterface*>(data)->get_video_info(info);
+	} catch (...) {
+		AMF_LOG_ERROR("Unable to get video info, see log for more information.");
+	}
 }
 
 bool Plugin::Interface::H264SimpleInterface::get_extra_data(void *data, uint8_t** extra_data, size_t* size) {
-	return static_cast<Plugin::Interface::H264SimpleInterface*>(data)->get_extra_data(extra_data, size);
+	try {
+		return static_cast<Plugin::Interface::H264SimpleInterface*>(data)->get_extra_data(extra_data, size);
+	} catch (...) {
+		AMF_LOG_ERROR("Unable to get extra data, see log for more information.");
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -832,7 +852,7 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	// OBS - Enforce Streaming Service Restrictions
 	//////////////////////////////////////////////////////////////////////////
 	{
-		// OBS: Enforce streaming service encoder settings
+		// Profile
 		const char* p_str = obs_data_get_string(settings, "profile");
 		if (strcmp(p_str, "") != 0) {
 			if (strcmp(p_str, "baseline")) {
@@ -856,6 +876,7 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 			}
 		}
 
+		// Rate Control Method
 		const char* t_str = obs_data_get_string(settings, "rate_control");
 		if (strcmp(t_str, "") != 0) {
 			if (strcmp(t_str, "CBR") == 0) {
@@ -885,12 +906,13 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 			}
 		}
 
+		// Bitrate
 		uint64_t bitrateOvr = obs_data_get_int(settings, "bitrate") * 1000;
 		if (bitrateOvr != -1) {
 			if (m_VideoEncoder->GetTargetBitrate() > bitrateOvr)
 				m_VideoEncoder->SetTargetBitrate((uint32_t)bitrateOvr);
 
-			if (m_VideoEncoder->GetPeakBitrate() > bitrateOvr) 
+			if (m_VideoEncoder->GetPeakBitrate() > bitrateOvr)
 				m_VideoEncoder->SetPeakBitrate((uint32_t)bitrateOvr);
 
 			obs_data_set_int(settings, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
@@ -898,8 +920,9 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 			obs_data_set_int(settings, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
 		}
 
-		//uint32_t fpsNum = m_VideoEncoder->GetFrameRate().first;
-		//uint32_t fpsDen = m_VideoEncoder->GetFrameRate().second;
+		// IDR-Period (Keyframes)
+		uint32_t fpsNum = m_VideoEncoder->GetFrameRate().first;
+		uint32_t fpsDen = m_VideoEncoder->GetFrameRate().second;
 		if (obs_data_get_int(settings, "keyint_sec") != -1) {
 			m_VideoEncoder->SetIDRPeriod((uint32_t)(obs_data_get_int(settings, "keyint_sec") * ((double_t)fpsNum / (double_t)fpsDen)));
 		} else {
