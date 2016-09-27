@@ -652,7 +652,6 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 
 		// Convert to AMF native type.
 		pSurface->Convert(memoryTypeToAMF[m_MemoryType]);
-
 	} else {
 		res = m_AMFContext->AllocSurface(amf::AMF_MEMORY_HOST, surfaceFormatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second, &pSurface);
 		if (res != AMF_OK) // Unable to create Surface
@@ -660,7 +659,7 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 
 		size_t planeCount = pSurface->GetPlanesCount();
 		for (uint8_t i = 0; i < planeCount; i++) {
-			amf::AMFPlane* plane = pSurface->GetPlaneAt(i);
+			amf::AMFPlanePtr plane = pSurface->GetPlaneAt(i);
 			void* plane_nat = plane->GetNative();
 			int32_t height = plane->GetHeight();
 			int32_t hpitch = plane->GetHPitch();

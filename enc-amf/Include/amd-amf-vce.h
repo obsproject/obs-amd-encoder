@@ -411,7 +411,6 @@ namespace Plugin {
 				std::condition_variable condvar;
 				std::mutex queuemutex;
 			} m_Output;
-			std::mutex m_AMFSyncLock;
 
 			// Static Buffers
 			std::vector<uint8_t> m_PacketDataBuffer;
