@@ -448,7 +448,7 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 
 		// Debug: Packet Information
 		#ifdef DEBUG
-		AMF_LOG_INFO("Packet: Type(%ld), PTS(%4ld), DTS(%4ld), Size(%8ld)", packet->priority, packet->pts, packet->dts, packet->size);
+		AMF_LOG_INFO("Packet: Type(%lld), PTS(%4lld), DTS(%4lld), Size(%8lld)", packet->priority, packet->pts, packet->dts, packet->size);
 		#endif
 	}
 }
