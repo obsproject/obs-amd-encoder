@@ -621,6 +621,8 @@ void* Plugin::Interface::H264SimpleInterface::create(obs_data_t* settings, obs_e
 	}
 }
 
+#pragma warning( push )
+#pragma warning( disable: 4702 )
 void Plugin::Interface::H264SimpleInterface::destroy(void* data) {
 	try {
 		delete (static_cast<Plugin::Interface::H264SimpleInterface*>(data));
@@ -629,12 +631,14 @@ void Plugin::Interface::H264SimpleInterface::destroy(void* data) {
 		AMF_LOG_ERROR("Unable to destroy Encoder, see log for more information.");
 	}
 }
+#pragma warning( pop )
 
 bool Plugin::Interface::H264SimpleInterface::update(void *data, obs_data_t *settings) {
 	try {
 		return static_cast<Plugin::Interface::H264SimpleInterface*>(data)->update(settings);
 	} catch (...) {
 		AMF_LOG_ERROR("Unable to update Encoder, see log for more information.");
+		return false;
 	}
 }
 
@@ -950,10 +954,13 @@ Plugin::Interface::H264SimpleInterface::~H264SimpleInterface() {
 	AMF_LOG_INFO("<AMFEncoder::H264SimpleInterface::~H264SimpleInterface> Complete.");
 }
 
+#pragma warning( push )
+#pragma warning( disable: 4100 )
 bool Plugin::Interface::H264SimpleInterface::update(obs_data_t* settings) {
 	// settings is not flagged as a unused here, since a future update may add support for this.
 	return false;
 }
+#pragma warning( pop )
 
 bool Plugin::Interface::H264SimpleInterface::encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
 	bool retVal = true;

@@ -102,6 +102,8 @@ void* Plugin::Interface::H264Interface::create(obs_data_t* settings, obs_encoder
 	}
 }
 
+#pragma warning( push )
+#pragma warning( disable: 4702 )
 void Plugin::Interface::H264Interface::destroy(void* data) {
 	try {
 		Plugin::Interface::H264Interface* enc = static_cast<Plugin::Interface::H264Interface*>(data);
@@ -111,6 +113,7 @@ void Plugin::Interface::H264Interface::destroy(void* data) {
 		AMF_LOG_ERROR("Unable to destroy Encoder, see log for more information.");
 	}
 }
+#pragma warning( pop )
 
 bool Plugin::Interface::H264Interface::encode(void *data, struct encoder_frame *frame, struct encoder_packet *packet, bool *received_packet) {
 	try {
@@ -656,6 +659,7 @@ bool Plugin::Interface::H264Interface::update(void *data, obs_data_t *settings) 
 		return static_cast<Plugin::Interface::H264Interface*>(data)->update(settings);
 	} catch (...) {
 		AMF_LOG_ERROR("Unable to update Encoder, see log for more information.");
+		return false;
 	}
 }
 

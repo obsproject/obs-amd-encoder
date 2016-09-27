@@ -32,11 +32,14 @@ SOFTWARE.
 // Plugin
 #include "plugin.h"
 
-// AMD AMF SDK
+// AMD AMF SDK 
+#pragma warning( push )
+#pragma warning( disable: 4458 )
 #include "core\Factory.h"
 #include "components\Component.h"
 #include "components\ComponentCaps.h"
 #include "components\VideoEncoderVCE.h"
+#pragma warning( pop )
 
 //////////////////////////////////////////////////////////////////////////
 // Code
