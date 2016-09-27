@@ -137,3 +137,8 @@ Before installing this Version, please uninstall any previous versions. If you u
 * Changed: 'Twitch' Preset in Simple interface now uses 'High' Profile.
 * Changed: Translations have been updated from CrowdIn.
 * Fixed: Memory Type 'Host' should now work properly.
+
+*1.3.0.1*
+
+* Removed: Translation string for Profiles (untranslateable).
+* Changed: Some internal changes to match remaining code.
