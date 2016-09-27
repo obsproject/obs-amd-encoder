@@ -147,3 +147,7 @@ Before installing this Version, please uninstall any previous versions. If you u
 
 * Changed: Internally restructured memory layout for fast access on low cache CPUs.
 * Changed: Added additional error checking code that should catch all errors instead of crashing OBS.
+
+*1.3.0.3*
+
+* Changed: Translations have been updated from CrowdIn.
