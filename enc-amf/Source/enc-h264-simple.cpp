@@ -643,6 +643,7 @@ bool Plugin::Interface::H264SimpleInterface::encode(void *data, struct encoder_f
 		return static_cast<Plugin::Interface::H264SimpleInterface*>(data)->encode(frame, packet, received_packet);
 	} catch (...) {
 		AMF_LOG_ERROR("Unable to encode, see log for more information.");
+		return false;
 	}
 }
 
@@ -659,6 +660,7 @@ bool Plugin::Interface::H264SimpleInterface::get_extra_data(void *data, uint8_t*
 		return static_cast<Plugin::Interface::H264SimpleInterface*>(data)->get_extra_data(extra_data, size);
 	} catch (...) {
 		AMF_LOG_ERROR("Unable to get extra data, see log for more information.");
+		return false;
 	}
 }
 
@@ -921,8 +923,6 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 		}
 
 		// IDR-Period (Keyframes)
-		uint32_t fpsNum = m_VideoEncoder->GetFrameRate().first;
-		uint32_t fpsDen = m_VideoEncoder->GetFrameRate().second;
 		if (obs_data_get_int(settings, "keyint_sec") != -1) {
 			m_VideoEncoder->SetIDRPeriod((uint32_t)(obs_data_get_int(settings, "keyint_sec") * ((double_t)fpsNum / (double_t)fpsDen)));
 		} else {

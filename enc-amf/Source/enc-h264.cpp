@@ -117,6 +117,7 @@ bool Plugin::Interface::H264Interface::encode(void *data, struct encoder_frame *
 		return static_cast<Plugin::Interface::H264Interface*>(data)->encode(frame, packet, received_packet);
 	} catch (...) {
 		AMF_LOG_ERROR("Unable to encode, see log for more information.");
+		return false;
 	}
 }
 
@@ -671,6 +672,7 @@ bool Plugin::Interface::H264Interface::get_extra_data(void *data, uint8_t** extr
 		return static_cast<Plugin::Interface::H264Interface*>(data)->get_extra_data(extra_data, size);
 	} catch (...) {
 		AMF_LOG_ERROR("Unable to get extra data, see log for more information.");
+		return false;
 	}
 }
 
