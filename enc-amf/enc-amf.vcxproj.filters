@@ -82,5 +82,44 @@
     <None Include="Resources\locale\nb-NO.ini">
       <Filter>Resource Files\locale</Filter>
     </None>
+    <None Include="Resources\locale\ca-ES.ini">
+      <Filter>Resource Files\locale</Filter>
+    </None>
+    <None Include="Resources\locale\cs-CZ.ini">
+      <Filter>Resource Files\locale</Filter>
+    </None>
+    <None Include="Resources\locale\eu-ES.ini">
+      <Filter>Resource Files\locale</Filter>
+    </None>
+    <None Include="Resources\locale\fi-FI.ini">
+      <Filter>Resource Files\locale</Filter>
+    </None>
+    <None Include="Resources\locale\fr-FR.ini">
+      <Filter>Resource Files\locale</Filter>
+    </None>
+    <None Include="Resources\locale\ja-JP.ini">
+      <Filter>Resource Files\locale</Filter>
+    </None>
+    <None Include="Resources\locale\ko-KR.ini">
+      <Filter>Resource Files\locale</Filter>
+    </None>
+    <None Include="Resources\locale\nl-NL.ini">
+      <Filter>Resource Files\locale</Filter>
+    </None>
+    <None Include="Resources\locale\pl-PL.ini">
+      <Filter>Resource Files\locale</Filter>
+    </None>
+    <None Include="Resources\locale\sv-SE.ini">
+      <Filter>Resource Files\locale</Filter>
+    </None>
+    <None Include="Resources\locale\uk-UA.ini">
+      <Filter>Resource Files\locale</Filter>
+    </None>
+    <None Include="Resources\locale\zh-CN.ini">
+      <Filter>Resource Files\locale</Filter>
+    </None>
+    <None Include="Resources\locale\zh-TW.ini">
+      <Filter>Resource Files\locale</Filter>
+    </None>
   </ItemGroup>
 </Project>

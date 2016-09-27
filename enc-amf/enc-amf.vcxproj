@@ -185,14 +185,27 @@
     <ClCompile Include="Source\plugin.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\locale\ca-ES.ini" />
+    <None Include="Resources\locale\cs-CZ.ini" />
     <None Include="Resources\locale\da-DK.ini" />
     <None Include="Resources\locale\de-DE.ini" />
     <None Include="Resources\locale\en-US.ini" />
     <None Include="Resources\locale\es-ES.ini" />
+    <None Include="Resources\locale\eu-ES.ini" />
+    <None Include="Resources\locale\fi-FI.ini" />
+    <None Include="Resources\locale\fr-FR.ini" />
     <None Include="Resources\locale\hu-HU.ini" />
+    <None Include="Resources\locale\ja-JP.ini" />
+    <None Include="Resources\locale\ko-KR.ini" />
     <None Include="Resources\locale\nb-NO.ini" />
+    <None Include="Resources\locale\nl-NL.ini" />
+    <None Include="Resources\locale\pl-PL.ini" />
     <None Include="Resources\locale\ru-RU.ini" />
+    <None Include="Resources\locale\sv-SE.ini" />
+    <None Include="Resources\locale\uk-UA.ini" />
     <None Include="Resources\locale\vi-VN.ini" />
+    <None Include="Resources\locale\zh-CN.ini" />
+    <None Include="Resources\locale\zh-TW.ini" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
