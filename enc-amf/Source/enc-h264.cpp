@@ -256,11 +256,11 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_DEFAULT), -1);
 	switch (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxProfile) {
 		case 100:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILE_HIGH), VCEProfile_High);
+			obs_property_list_add_int(list, "High", VCEProfile_High);
 		case 77:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILE_MAIN), VCEProfile_Main);
+			obs_property_list_add_int(list, "Main", VCEProfile_Main);
 		case 66:
-			obs_property_list_add_int(list, obs_module_text(AMF_H264_PROFILE_BASELINE), VCEProfile_Baseline);
+			obs_property_list_add_int(list, "Baseline", VCEProfile_Baseline);
 			break;
 	}
 	/// h264 Profile Level
@@ -800,10 +800,10 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 		uint64_t bitrateOvr = obs_data_get_int(settings, "bitrate") * 1000;
 		if (bitrateOvr != -1) {
 			if (m_VideoEncoder->GetTargetBitrate() > bitrateOvr)
-				m_VideoEncoder->SetTargetBitrate(bitrateOvr);
+				m_VideoEncoder->SetTargetBitrate((uint32_t)bitrateOvr);
 
 			if (m_VideoEncoder->GetPeakBitrate() > bitrateOvr)
-				m_VideoEncoder->SetPeakBitrate(bitrateOvr);
+				m_VideoEncoder->SetPeakBitrate((uint32_t)bitrateOvr);
 
 			obs_data_set_int(settings, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
 		} else {
