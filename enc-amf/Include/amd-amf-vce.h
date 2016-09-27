@@ -83,9 +83,9 @@ namespace Plugin {
 			VCEUsage_Webcam,			// For SVC
 		};
 		enum VCEProfile {
-			VCEProfile_Baseline	= 66,
-			VCEProfile_Main		= 77,
-			VCEProfile_High		= 100,
+			VCEProfile_Baseline = 66,
+			VCEProfile_Main = 77,
+			VCEProfile_High = 100,
 
 			VCEProfile_Unknown = -1,
 		};
@@ -163,7 +163,7 @@ namespace Plugin {
 			void GetOutput(struct encoder_packet* packet, bool* received_packet);
 			bool GetExtraData(uint8_t**& data, size_t*& size);
 			void GetVideoInfo(struct video_scale_info*& vsi);
-			
+
 			// Threading
 			private:
 			void InputThreadLogic();
@@ -171,7 +171,7 @@ namespace Plugin {
 
 			// Utility
 			inline amf::AMFSurfacePtr CreateSurfaceFromFrame(struct encoder_frame*& frame);
-			
+
 			#pragma region AMF Properties
 			public:
 			void LogProperties();
@@ -185,7 +185,7 @@ namespace Plugin {
 			/*	Quality Preset */
 			void SetQualityPreset(VCEQualityPreset preset);
 			VCEQualityPreset GetQualityPreset();
-			
+
 			/*	H.264 Profile */
 			void SetProfile(VCEProfile profile);
 			VCEProfile GetProfile();
@@ -348,7 +348,7 @@ namespace Plugin {
 			bool IsCABACEnabled();
 			//void SetQualityEnhancementMode(uint32_t qualityEnhancementMode);
 			//uint32_t GetQualityEnhancementMode();
-			
+
 			// VCE Parameters
 			// - SliceControlMode: AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB_ROW, AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB
 
@@ -361,7 +361,7 @@ namespace Plugin {
 			// - EnableGOPAlignment
 
 			#pragma endregion AMF Properties
-			
+
 			#pragma endregion Methods
 			//////////////////////////////////////////////////////////////////////////
 
@@ -369,28 +369,17 @@ namespace Plugin {
 			#pragma region Members
 			//////////////////////////////////////////////////////////////////////////
 			private:
+
 			// AMF Data References
 			std::shared_ptr<Plugin::AMD::AMF> m_AMF;
 			amf::AMFFactory* m_AMFFactory;
 			amf::AMFContextPtr m_AMFContext;
 			amf::AMFComponentPtr m_AMFEncoder;
 			amf::AMFComputePtr m_AMFCompute;
-			bool m_Flag_Threading;
 
-			// Internal Properties
-			VCEEncoderType m_EncoderType;
-			VCEMemoryType m_MemoryType;
-			VCEComputeType m_ComputeType;
-			VCESurfaceFormat m_SurfaceFormat;
-			
-			bool m_Flag_IsStarted,
-				m_Flag_EmergencyQuit;
-			
-			std::pair<uint32_t, uint32_t> m_FrameSize, m_FrameRate;
-			double_t m_FrameRateDivisor, m_FrameRateReverseDivisor;
-			size_t m_InputQueueLimit,
-				m_InputQueueLastSize;
-			uint32_t m_TimerPeriod;
+			// Static Buffers
+			std::vector<uint8_t> m_PacketDataBuffer;
+			std::vector<uint8_t> m_ExtraDataBuffer;
 
 			// Structured Queue
 			struct {
@@ -412,9 +401,19 @@ namespace Plugin {
 				std::mutex queuemutex;
 			} m_Output;
 
-			// Static Buffers
-			std::vector<uint8_t> m_PacketDataBuffer;
-			std::vector<uint8_t> m_ExtraDataBuffer;
+			// Internal Properties
+			VCEEncoderType m_EncoderType;
+			VCEMemoryType m_MemoryType;
+			VCEComputeType m_ComputeType;
+			VCESurfaceFormat m_SurfaceFormat;
+			bool m_Flag_IsStarted,
+				m_Flag_EmergencyQuit,
+				m_Flag_Threading;
+			std::pair<uint32_t, uint32_t> m_FrameSize, m_FrameRate;
+			double_t m_FrameRateDivisor, m_FrameRateReverseDivisor;
+			size_t m_InputQueueLimit,
+				m_InputQueueLastSize;
+			uint32_t m_TimerPeriod;
 
 			#pragma endregion Members
 			//////////////////////////////////////////////////////////////////////////
