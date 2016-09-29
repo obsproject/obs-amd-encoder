@@ -639,6 +639,8 @@ void Plugin::Interface::H264SimpleInterface::destroy(void* data) {
 }
 #pragma warning( pop )
 
+#pragma warning( push )
+#pragma warning( disable: 4702 )
 bool Plugin::Interface::H264SimpleInterface::update(void *data, obs_data_t *settings) {
 	try {
 		return static_cast<Plugin::Interface::H264SimpleInterface*>(data)->update(settings);
@@ -647,6 +649,7 @@ bool Plugin::Interface::H264SimpleInterface::update(void *data, obs_data_t *sett
 		return false;
 	}
 }
+#pragma warning( pop )
 
 bool Plugin::Interface::H264SimpleInterface::encode(void *data, struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
 	try {

@@ -23,6 +23,7 @@ SOFTWARE.
 */
 
 #pragma once
+
 //////////////////////////////////////////////////////////////////////////
 // Includes
 //////////////////////////////////////////////////////////////////////////
@@ -91,7 +92,7 @@ void Plugin::AMD::VCECapabilities::ReportCapabilities() {
 		}
 
 		// Print to log
-		sprintf(msgBuf.data(),
+		sprintf_s(msgBuf.data(), msgBuf.size(),
 			" %4s | %8s | %11d | %8d | %11d | %9d | %7s | %4d - %4d | %7d | %3s | %10d ",
 			(i == 0 ? "AVC" : (i == 1 ? "SVC" : "HEVC")),
 			accelType,
@@ -146,7 +147,7 @@ void Plugin::AMD::VCECapabilities::ReportCapabilities() {
 			}
 
 			// Print to log
-			sprintf(msgBuf.data(),
+			sprintf_s(msgBuf.data(), msgBuf.size(), 
 				" %4s | %6s | %4dx%4d | %4dx%4d | %3s | %5d | %7s | %12s",
 				(i == 0 ? "AVC" : (i == 1 ? "SVC" : "HEVC")),
 				(j == 0 ? "Input" : "Output"),
