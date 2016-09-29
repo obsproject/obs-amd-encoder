@@ -697,7 +697,6 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	static const char* computeTypeToString[] = {
 		"None",
 		"OpenCL",
-		"DirectCompute",
 	};
 	static const char* surfaceFormatToString[] = {
 		"NV12",
