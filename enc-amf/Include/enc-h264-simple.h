@@ -29,10 +29,6 @@ SOFTWARE.
 #include <stdint.h>
 #include <inttypes.h>
 
-// OBS
-#include "libobs/obs-module.h"
-#include "libobs/obs-encoder.h"
-
 // Plugin
 #include "plugin.h"
 #include "amd-amf.h"
