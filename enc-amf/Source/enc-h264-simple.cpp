@@ -479,7 +479,7 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 				obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxProfileLevel);
 				obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_VariableBitrate_LatencyConstrained);
 				obs_data_set_int(data, AMF_H264_QP_MINIMUM, 0);
-				obs_data_set_int(data, AMF_H264_QP_MAXIMUM, 21);
+				obs_data_set_int(data, AMF_H264_QP_MAXIMUM, 51);
 				obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 10000);
 				obs_data_set_int(data, AMF_H264_BITRATE_PEAK, 50000);
 				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_BUFFER_SIZE, false);
