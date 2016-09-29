@@ -32,8 +32,11 @@ SOFTWARE.
 #include <thread>
 
 // Open Broadcaster Software
+#pragma warning( push )
+#pragma warning( disable: 4201 )
 #include "libobs/obs-module.h"
 #include "libobs/obs-encoder.h"
+#pragma warning( pop )
 
 //////////////////////////////////////////////////////////////////////////
 // Defines
@@ -44,8 +47,8 @@ SOFTWARE.
 
 #define PLUGIN_VERSION_MAJOR			1
 #define PLUGIN_VERSION_MINOR			3
-#define PLUGIN_VERSION_PATCH			0
-#define PLUGIN_VERSION_BUILD			3
+#define PLUGIN_VERSION_PATCH			1
+#define PLUGIN_VERSION_BUILD			0
 #define PLUGIN_VERSION_FULL				(((uint64_t)PLUGIN_VERSION_MAJOR << 48ull) | ((uint64_t)PLUGIN_VERSION_MINOR << 32ull) | ((uint64_t)PLUGIN_VERSION_PATCH) | ((uint64_t)PLUGIN_VERSION_BUILD))
 #define PLUGIN_VERSION_TEXT				vstr(PLUGIN_VERSION_MAJOR) "." vstr(PLUGIN_VERSION_MINOR) "." vstr(PLUGIN_VERSION_PATCH) "." vstr(PLUGIN_VERSION_BUILD) "-" vstr(AMF_VERSION_MAJOR) "." vstr(AMF_VERSION_MINOR) "." vstr(AMF_VERSION_RELEASE) "." vstr(AMF_VERSION_BUILD_NUM)
 
