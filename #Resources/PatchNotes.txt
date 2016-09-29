@@ -151,3 +151,11 @@ Before installing this Version, please uninstall any previous versions. If you u
 *1.3.0.3*
 
 * Changed: Translations have been updated from CrowdIn.
+
+*1.3.1.0*
+
+* Fixed: Simple Interface will now permanently apply Presets.
+* Fixed: 'Indistinguishable' had Maximum QP at 21.
+* Changed: 'Recording' preset enables 'Frame Skipping' by default.
+* Changed: 'High Quality' Preset now uses CQP 16/19/21.
+* Changed: 'Indistinguishable' Preset now uses CQP 11/14/16.
