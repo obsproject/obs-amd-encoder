@@ -383,8 +383,8 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 				// Advanced Properties
 				obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 3 : 0));
 				//obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
-				obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, 0);
-				obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, 0);
+				obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, 4);
+				obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, 2);
 				obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 1);
 				obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 
@@ -409,8 +409,8 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 				// Advanced Properties
 				obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 3 : 0));
 				//obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
-				obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, 0);
-				obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, 0);
+				obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, 2);
+				obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, 1);
 				obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 1);
 				obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 
@@ -434,7 +434,7 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 
 				// Advanced Properties
 				obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 3 : 0));
-				obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
+				//obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
 				obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, 0);
 				obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, 0);
 				obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 1);
