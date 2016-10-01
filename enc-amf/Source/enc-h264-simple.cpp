@@ -373,20 +373,20 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 				obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
 				obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_41);
 				obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantBitrate);
-				obs_data_set_int(data, AMF_H264_QP_MINIMUM, 18);
+				obs_data_set_int(data, AMF_H264_QP_MINIMUM, 0);
 				obs_data_set_int(data, AMF_H264_QP_MAXIMUM, 51);
 				obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 3000);
 				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_BUFFER_SIZE, false);
 				obs_data_set_int(data, AMF_H264_FILLERDATA, 1);
-				obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 0);
+				//obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 0);
 
 				// Advanced Properties
-				obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, 0);
-				obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
+				obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 3 : 0));
+				//obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
 				obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, 0);
 				obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, 0);
 				obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 1);
-				obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, -1);
+				obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 
 				// Expert Properties
 				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE, false);
@@ -399,20 +399,20 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 				obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
 				obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_41);
 				obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantBitrate);
-				obs_data_set_int(data, AMF_H264_QP_MINIMUM, 18);
+				obs_data_set_int(data, AMF_H264_QP_MINIMUM, 0);
 				obs_data_set_int(data, AMF_H264_QP_MAXIMUM, 51);
 				obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 6000);
 				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_BUFFER_SIZE, false);
 				obs_data_set_int(data, AMF_H264_FILLERDATA, 1);
-				obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 0);
+				//obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 0);
 
 				// Advanced Properties
-				obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, 0);
-				obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
+				obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 3 : 0));
+				//obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
 				obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, 0);
 				obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, 0);
 				obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 1);
-				obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, -1);
+				obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 
 				// Expert Properties
 				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE, false);
@@ -430,15 +430,15 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 				obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / 1000);
 				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_BUFFER_SIZE, false);
 				obs_data_set_int(data, AMF_H264_FILLERDATA, 0);
-				obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 1);
+				//obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 1);
 
 				// Advanced Properties
 				obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 3 : 0));
-				obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 1 : 0));
+				obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
 				obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, 0);
 				obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, 0);
 				obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 1);
-				obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, -1);
+				obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 
 				// Expert Properties
 				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE, false);
@@ -460,15 +460,15 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 				obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / 1000);
 				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_BUFFER_SIZE, false);
 				obs_data_set_int(data, AMF_H264_FILLERDATA, 0);
-				obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 0);
+				//obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 0);
 
 				// Advanced Properties
 				obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 3 : 0));
-				obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 1 : 0));
+				//obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
 				obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, 0);
 				obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, 0);
 				obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 1);
-				obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, -1);
+				obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 
 				// Expert Properties
 				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE, false);
@@ -494,11 +494,11 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 
 				// Advanced Properties
 				obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 3 : 0));
-				obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 1 : 0));
+				//obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
 				obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, 0);
 				obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, 0);
 				obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 1);
-				obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, -1);
+				obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 
 				// Expert Properties
 				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE, false);
@@ -525,11 +525,11 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 
 				// Advanced Properties
 				obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 3 : 0));
-				obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 1 : 0));
+				//obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
 				obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, 0);
 				obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, 0);
 				obs_data_set_int(data, AMF_H264_DEBLOCKINGFILTER, 1);
-				obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, -1);
+				obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 
 				// Expert Properties
 				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE, false);
