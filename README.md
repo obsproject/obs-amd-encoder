@@ -1,25 +1,8 @@
 This Plugin adds support for AMDs Hardware Encoder for H264 and HEVC. It is based on the MIT licensed AMF SDK.
 
-# Contributing
+## Contributing
 
-## Pre-requisites
-* AMD Radeon Software Crimson Edition 16.7.3 (16.30.2311) or newer
-* Windows® 7 (SP1 with the Platform Update), Windows® 8.1, or Windows® 10
-* Visual Studio® 2013 or Visual Studio® 2015 (Community or better)
-* Windows 10 SDK (Version 10586 or better)
-* [OBS Studio](https://github.com/jp9000/obs-studio)
-* [AMF SDK](https://github.com/GPUOpen-LibrariesAndSDKs/AMF)
-
-## Getting Started
-1. Clone the Project to your Disk
-2. Set up any #ThirdParty directory junctions, see the README.md inside the folder for more info.
-3. Open the Solution
-4. Build the Solution (or Batch Build)
-5. Binaries should be located in /#Build/$(Configuration)/
-
-## Committing Changes
-
-Read [this wiki page for information](https://github.com/Xaymar/OBS-AMD-Advanced-Media-Framework/wiki/Contributing) and please follow it. Rebasing a bunch of pushed commits is not good.
+Read [CONTRIBUTING.md]() for a guide on how to start.
 
 # License
 
