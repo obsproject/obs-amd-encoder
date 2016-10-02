@@ -427,7 +427,7 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 
 		{ // Timestamps
 			int64_t frameTimeStep = (int64_t)(m_FrameRateReverseDivisor * 1e6);
-			int64_t dtsTimeOffset = frameTimeStep << 1;
+			int64_t dtsTimeOffset = frameTimeStep * 2;
 
 			 /// Retrieve Decode-Timestamp from AMF and convert it to micro-seconds.
 			int64_t dts_usec = (pAMFData->GetPts() / 10);
@@ -447,9 +447,12 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 		*received_packet = true;
 
 		// Debug: Packet Information
-		#ifdef DEBUG
-		AMF_LOG_INFO("Packet: Type(%lld), PTS(%4lld), DTS(%4lld), Size(%8lld)", packet->priority, packet->pts, packet->dts, packet->size);
-		#endif
+		std::vector<wchar_t> fileName(128);
+		mbstowcs(fileName.data(), __FILE__, fileName.size());
+		std::vector<wchar_t> functionName(128);
+		mbstowcs(functionName.data(), __FUNCTION__, functionName.size());
+		m_AMF->GetTrace()->TraceW(fileName.data(), __LINE__, AMF_TRACE_TRACE, L"Plugin::GetOutput", 4, L"Packet: Type(%lld), PTS(%4lld), DTS(%4lld), Size(%8lld)", (int64_t)packet->priority, (int64_t)packet->pts, (int64_t)packet->dts, (int64_t)packet->size);
+		//AMF_LOG_INFO("Packet: Type(%lld), PTS(%4lld), DTS(%4lld), Size(%8lld)", packet->priority, packet->pts, packet->dts, packet->size);
 	}
 }
 
