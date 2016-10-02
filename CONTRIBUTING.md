@@ -1,5 +1,49 @@
 So you want to get started with helping? Well then read this carefully.
 
+# Getting Started
+This plugin is included in the Open Broadcaster Studio project itself.  
+This is only necessary if you wish to verify functionality with a standalone build.
+
+## Pre-Requisites
+* [Visual Studio® 2013 or Visual Studio® 2015 (Community or better)](http://visualstudio.com/)
+* Windows 10 SDK (Version 10586 or better, bundled with Visual Studio)
+* [OBS Studio](https://github.com/jp9000/obs-studio)
+* [AMF SDK](https://github.com/GPUOpen-LibrariesAndSDKs/AMF)
+* [InnoSetup](http://www.jrsoftware.org/isinfo.php)
+
+### Step 1: Third Party Headers
+
+#### Open Broadcaster Studio
+1. Clone the [Open Broadcaster Studio Source Code](https://github.com/jp9000/obs-studio).
+2. Build both x86 and x64 with the same Visual Studio version you indent to use for the plugin.
+3. Create a *Soft Link* (Directory Junction) in /#ThirdParty/ to the cloned repository, call it 'OBS-Studio'.<br>
+Ex (Windows): mklink /J ./#ThirdParty/OBS-Studio C:/Src/OBS/
+4. Verify that it works by visiting the ./#ThirdParty/OBS-Studio directory.
+
+#### AMD Advanced Media Framework SDK (AMF SDK)
+1. Clone the [AMF SDK](https://github.com/GPUOpen-LibrariesAndSDKs/AMF).
+2. Create a *Soft Link* (Directory Junction) in /#ThirdParty/ to the cloned repository, call it 'AMD-AMF-SDK'.<br>
+Ex (Windows): mklink /J ./#ThirdParty/AMD-AMF-SDK C:/Src/AMF/
+3. Verify that it works by visiting the ./#ThirdParty/AMD-AMF-SDK directory.
+
+### Step 2: Build the Project
+
+1. Open the Visual Studio Solution file.
+2. Build for both x86 and x64 (Normal or Batch Build).
+3. Binaries should be located in /#Build/$(Configuration)/
+4. (Optional) Create Archives and an Installer with the package.bat in /#Resources/.
+
+If any errors during building or creating the archives and installer, start again from Step 1.
+
+### Step 3: Verify Functionality
+
+*[You can only do this with an AMD APU or GPU installed](https://github.com/Xaymar/OBS-AMD-Advanced-Media-Framework/wiki/Hardware,-GCN-and-VCE-Limits)*.  
+Install the plugin into your OBS Studio installation or test environment and select it in either Simple Output Mode or Advanced Output Mode. It should encode fine without crashing at any point.
+
+## Committing Changes
+
+Read [this wiki page for information](https://github.com/Xaymar/OBS-AMD-Advanced-Media-Framework/wiki/Contributing) and please follow it. Rebasing a bunch of pushed commits is terrible for anyone involved.
+
 # Coding Standard
 
 The entire Project is written in C++ and as such follows common C++ writing practices.
@@ -34,31 +78,3 @@ Members should be prefixed by 'm_' and then use a *Pascal Case* name. There is n
 
 Variables should be named in *camel Case*
 
-
-# Getting Started (Building)
-
-## Building Pre-Requisites
-* Visual Studio® 2013 or Visual Studio® 2015 (Community or better)
-* Windows 10 SDK (Version 10586 or better)
-* [OBS Studio](https://github.com/jp9000/obs-studio)
-* [AMF SDK](https://github.com/GPUOpen-LibrariesAndSDKs/AMF)
-* Time
-
-
-# Getting Started (Testing)
-
-## Testing Pre-Requisites
-* [AMD Radeon GPU or APU with VCE core](https://github.com/Xaymar/OBS-AMD-Advanced-Media-Framework/wiki/Hardware,-GCN-and-VCE-Limits)
-* Latest AMD Driver
-* Windows® 7 (SP1 with the Platform Update), Windows® 8.1, or Windows® 10
-
-## Getting Started
-1. Clone the Project to your Disk
-2. Set up any #ThirdParty directory junctions, see the README.md inside the folder for more info.
-3. Open the Solution
-4. Build the Solution (or Batch Build)
-5. Binaries should be located in /#Build/$(Configuration)/
-
-## Committing Changes
-
-Read [this wiki page for information](https://github.com/Xaymar/OBS-AMD-Advanced-Media-Framework/wiki/Contributing) and please follow it. Rebasing a bunch of pushed commits is not good.

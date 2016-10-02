@@ -1,4 +1,6 @@
-This Plugin adds support for AMDs Hardware Encoder for H264 and HEVC. It is based on the MIT licensed AMF SDK.
+This is a plugin for OBS Studio that enables almost fully native hardware encoding instead of passing things off to Media Foundation Transform which is known to have issues with some certain settings. The plugin is based on the new AMF SDK and thus will work with any future driver releases.
+
+[Read More on the Wiki](https://github.com/Xaymar/OBS-AMD-Advanced-Media-Framework/wiki)
 
 ## Contributing
 
