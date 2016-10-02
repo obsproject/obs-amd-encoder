@@ -2,9 +2,7 @@ This Plugin adds support for AMDs Hardware Encoder for H264 and HEVC. It is base
 
 ## Contributing
 
-Read [CONTRIBUTING.md]() for a guide on how to start.
-
-# License
+Read [CONTRIBUTING.md](https://github.com/Xaymar/OBS-AMD-Advanced-Media-Framework/blob/master/CONTRIBUTING.md) for a guide on how to start.
 
 ## MIT License
 
