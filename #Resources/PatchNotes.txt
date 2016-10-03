@@ -1,4 +1,4 @@
-# 1.3.0 - The AMF SDK Path
+1.3.2.0 - Massive Preset Updates
 
 It has been a long time since we've seen a version without any attachments to the number, hasn't it? But now is finally the time! We've come a long way since 1.1.2, going through two rewrites, one to make it easier for me and one to update to a new SDK - and it was worth it. Now we have arrived at a plugin for OBS Studio that manages solid 4K at 60 fps while still being light on the CPU side.
 
@@ -8,154 +8,12 @@ Before installing this Version, please uninstall any previous versions. If you u
 
 ### Changelog
 
-*1.3.0pre1*
-
-* Changed: Loading of required libraries was changed to match AMF documentation.
-* Changed: Shared Encoder is now using new Library linking class and was rewritten from the ground up.
-* Changed: Advanced Encoder is temporarily unavailable.
-
-*1.3.0pre2*
-
-* Added: In depth AMF tracing to the OBS log files, allowing me to spot bugs much faster than before.
-
-*1.3.0pre3*
-
-* Added: Preset selection (Simple Interface).
-* Added: Profile Level selection (Simple Interface).
-* Added: Further capability logging to startup.
-* Fixed: SetRateControlSkipFrameEnabled (Option: Frame Skipping) will no longer override the Rate Control Method.
-* Fixed: Fixes for the threading model, higher framerates/resolutions should now be possible.
-* Fixed: Advanced Interface is available again.
-
-*1.3.0pre5*
-
-* Skipped pre4 due to major issues.
-* Added: Checkbox to enable in depth tracing, to be used when reporting errors and crashes.
-* Changed: Default AMF Trace level is now ERROR instead of TEST.
-* Changed: Profile Level now goes to 6.2 if a GPU ever supports it (matches AMF values).
-* Changed: Simple Interface will calculate the best Buffer Size for your stream based on your settings.
-* Changed: Simple Interface will automatically set B-Pictures Pattern to 0 for best Quality.
-* Updated: Languages en-US, vi-VN and es-ES have been updated.
-* Fixed: Max LTR Frames slider only goes up to 2.
-* Fixed: Log Spam due to getting stuck on AMF_REPEAT or AMF_INPUT_FULL.
-* Fixed: Crash in SetProfile and GetProfile internal functions.
-* Fixed: Crash when clicking Update Values from AMF.
-* Fixed: Crash when clicking Apply in Advanced Interface.
-* Fixed: Constant QP will now apply the correct values.
-
-*1.3.0pre6*
-
-* Added: B-Picture settings for Simple Interface (only shown if supported).
-* Added: De-Blocking Filter setting for Simple Interface.
-* Added: Enforce HRD Compatibility setting for Simple Interface.
-* Changed: Language files have been massively simplified.
-* Changed: Timer Resolution is now half the expected frametime (1000 / framerate / 2) to reduce CPU usage and Power draw.
-* Updated: Languages en-US, vi-VN, ru-RU and es-ES.
-* Updated: Presets in Simpler Interface will now also set up advanced properties (if supported).
-* Fixed: Log messages from encoder will not come from an impossible source/class.
-* Fixed: 32-Bit now shows the correct Version number.
-
-*1.3.0pre7*
-
-* Fixed: Incorrect Packet order in Streams and Recordings.
-* Fixed: Crushed Colors in Streams and Recordings by forcing a specific set of color settings.
-* Fixed: High CPU usage due to increasing timer resolution too early.
-* Fixed: Slowness due to repeated Library loading, caused by lost references.
-* Fixed: Advanced Interface now applies properties in the same order as the Simple Interface.
-* Fixed: Crash in Simple Interface on Cards that don't support B-Pictures.
-* Updated: Languages en-US (American English), de-DE (German), Vi-VN (Vietnamese).
-
-*1.3.0pre8*
-
-* Fixed: Fixed some values not being applied in 32-Bit.
-* Fixed: "Enforce streaming service encoder settings" is now properly used, thanks to Jim.
-* Fixed: Simple Interface will now correctly update when a setting is modified.
-* Fixed: Decode and Presentation Timestamps are now correct, thanks to Jim.
-* Changed: Reduced log output length for readability.
-* Changed: Threads are now forcefully terminating if they are stuck instead of freezing OBS.
-* Added: Fail-Safe so that Stop Streaming/Recording still works even when GetOutput fails.
-* Added: Experimental capability logging for future HEVC implementation.
-
-*1.3.0rc1*
-
-* Updated: Languages en-US (American English), vi-VN (Vietnamese), de-DE (German).
-* Changed: Internally using 64-Bit Integers instead of Doubles to improve timestamp precision.
-* Fixed: Emergency Quit will now use a timestamp in the future so that OBS exits properly.
-* Fixed: Audio/Video desynchronization due to modifying presentation instead of decode timestamp.
-* Added: Options for CABAC and GOP Size, thanks to a bit of RE-work.
-
-*1.3.0rc2*
-
-* Updated: Languages vi-VN (Vietnamese), es-ES (Spanish).
-* Changed: Advanced Interface applies Parameters slightly differently now.
-* Added: 'Default' for Enforce HRD Compatibility, Deblocking Filter and CABAC.
-
-*1.3.0rc3*
-
-* Changed: Shared Encoder now initializes DirectX and OpenCL devices internally.
-* Changed: Always force NV12 color format for now, since other color formats are too slow.
-* Changed: Encoder will now drop frames instead of closing if the input queue grows too large.
-* Updated: Simple Interface Presets for Recording and Streaming.
-* Updated: Languages en-US (American English).
-* Fixed: Plugin should no longer crash on shut down due to requesting to join a terminated thread.
-* Fixed: Memory Leak when stopping streaming and/or recording.
-* Fixed: 'Enforce Streaming Service Settings' no longer applies permanently.
-
-*1.3.0rc4*
-
-* Changed: Now using OpenCL to copy the frame from RAM to VRAM to speed up submission.
-* Changed: Increased queue delta needed to reduce log spam.
-* Changed: Threads will internally wake up each other if a specific event happened.
-* Updated: Presets in Simple Interface will always attempt to use Quality encoding.
-
-*1.3.0rc4hf1*
-
-* Changed: Minimum requirement for DirectX11 backend is now Windows 8.
-
-*1.3.0rc5*
-
-* Fixed: Localization should now fall back to en-US instead of showing untranslated strings.
-* Fixed: Debug Tracing code in Advanced interface now matches Simple interface.
-* Fixed: Bitrate shown in FLV files should now match Target Bitrate.
-* Changed: Internally now using a Single-Threaded approach.
-* Changed: Some parameters have been moved to the expert category in the Simple interface.
-* Changed: Presentation and Decode Timestamp are now the same again (fixes ffmpeg muxing issue).
-* Updated: Languages en-US (American English), de-De (German) and es-ES (Spanish).
-* Added: Ability to select Backend (Memory and Compute Type).
-
-*1.3.0rc6*
-
-* Added: Ability to override Surface Format.
-* Changed: Presentation Timestamps are now properly calculated again to be standard compliant.
-
-*1.3.0*
-
-* Added: 'High Quality', 'Indistinguishable' and 'Lossless' preset to Simple interface.
-* Removed: DirectCompute Compute Type since it was a misunderstanding on my part.
-* Changed: DirectX 9 is now Windows XP or greater only, DirectX 11 is Windows 8 or greater only.
-* Changed: Internal Log logic to reduce disk-related encoding slowdown.
-* Changed: 'Twitch' Preset in Simple interface now uses 'High' Profile.
-* Changed: Translations have been updated from CrowdIn.
-* Fixed: Memory Type 'Host' should now work properly.
-
-*1.3.0.1*
-
-* Removed: Translation string for Profiles (untranslateable).
-* Changed: Some internal changes to match remaining code.
-
-*1.3.0.2*
-
-* Changed: Internally restructured memory layout for fast access on low cache CPUs.
-* Changed: Added additional error checking code that should catch all errors instead of crashing OBS.
-
-*1.3.0.3*
-
-* Changed: Translations have been updated from CrowdIn.
-
-*1.3.1.0*
-
-* Fixed: Simple Interface will now permanently apply Presets.
-* Fixed: 'Indistinguishable' had Maximum QP at 21.
-* Changed: 'Recording' preset enables 'Frame Skipping' by default.
-* Changed: 'High Quality' Preset now uses CQP 16/19/21.
-* Changed: 'Indistinguishable' Preset now uses CQP 11/14/16.
+* Changed: All Presets now default to use maximum available 'B-Picture Pattern' for higher quality at lower bitrates.
+* Changed: All Presets no longer override 'Frame Skipping', 'B-Picture Reference' and 'Custom Buffer'.
+* Changed: 'Twitch', 'YouTube' and 'Recording' Presets no longer override 'Target Bitrate' and 'Peak Bitrate'.
+* Changed: 'Twitch' and 'YouTube' Presets no longer override 'Minimum QP' and 'Maximum QP'. (Always forced to 0/51.)
+* Changed: 'Enforce HRD Compatibility' is now set to disabled for all Presets.
+* Changed: 'Debug Tracing' will now log additional information, it is recommended to disable this for non-test sessions.
+* Added: You can now override Preset parameters instead of having to manually deselect the Preset.
+* Fixed: Potential Crash when quitting OBS directly before the Encoder is completely initialized.
+* Fixed: Muxing issue after exactly 20:50 by using a simple but effective Workaround.
