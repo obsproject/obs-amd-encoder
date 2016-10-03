@@ -54,7 +54,8 @@ Well, he's my big brother. Could at least have responded. ;_; (just kidding)
 Kini nga luna alang sa abang.
 
 ### John Difool
-Acest spațiu de închiriat.
+John Difool der alte Sack
+[YouTube](https://www.youtube.com/channel/UC5FPsFLQh4ah0-vz-eoZlOA)
 
 ### Nuco
 Thanks AMD and Xaymar to make hardware encoding possible.
