@@ -414,6 +414,7 @@ namespace Plugin {
 			size_t m_InputQueueLimit,
 				m_InputQueueLastSize;
 			uint32_t m_TimerPeriod;
+			uint64_t m_DecodeTimestamp;
 
 			#pragma endregion Members
 			//////////////////////////////////////////////////////////////////////////

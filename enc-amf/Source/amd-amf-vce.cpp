@@ -28,6 +28,8 @@ SOFTWARE.
 #include "amd-amf-vce.h"
 #include "amd-amf-vce-capabilities.h"
 
+#include "OBS-Studio/libobs/util/util_uint128.h"
+
 #if (defined _WIN32) | (defined _WIN64)
 #include <windows.h>
 #include <VersionHelpers.h>
@@ -75,6 +77,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)(m_FrameRateDivisor * 3);
 	m_TimerPeriod = 1;
+	m_DecodeTimestamp = 0;
 
 	// AMF
 	m_AMF = AMF::GetInstance();
@@ -82,8 +85,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 	/// AMF Context
 	res = m_AMFFactory->CreateContext(&m_AMFContext);
 	if (res != AMF_OK) {
-		AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::VCEEncoder> Creating a context object failed with error code %d.", res);
-		throw;
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> Creating a context object failed with error %ls (code %d).", res);
 	}
 
 	// Initialize Memory
@@ -207,17 +209,18 @@ void Plugin::AMD::VCEEncoder::Start() {
 }
 
 void Plugin::AMD::VCEEncoder::Stop() {
-	m_Flag_IsStarted = false;
-
 	// Restore Timer precision.
 	if (m_TimerPeriod != 0) {
 		timeEndPeriod(m_TimerPeriod);
 	}
 
 	// Stop AMF Encoder
-	m_AMFEncoder->Drain();
-	m_AMFEncoder->Flush();
+	if (m_AMFEncoder && m_Flag_IsStarted) {
+		m_AMFEncoder->Drain();
+		m_AMFEncoder->Flush();
+	}
 
+	m_Flag_IsStarted = false;
 	if (m_Flag_Threading) { // Threading
 		m_Output.condvar.notify_all();
 		#if defined _WIN32 || defined _WIN64
@@ -400,7 +403,7 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 		std::memcpy(packet->data, pAMFBuffer->GetNative(), packet->size);
 
 		{ // What Type of Frame is it?
-			  // Read Packet Type
+			// Read Packet Type
 			uint64_t pktType;
 			pAMFData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &pktType);
 
@@ -426,24 +429,20 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 		}
 
 		{ // Timestamps
-			int64_t frameTimeStep = (int64_t)(m_FrameRateReverseDivisor * 1e6);
-			int64_t dtsTimeOffset = frameTimeStep * 2;
-
-			 /// Retrieve Decode-Timestamp from AMF and convert it to micro-seconds.
-			int64_t dts_usec = (pAMFData->GetPts() / 10);
+			//uint32_t frameTimeStep = (int64_t)(m_FrameRateReverseDivisor * 1e7);
+			//int64_t dtsTimeOffset = frameTimeStep * 2;
+			//
+			/// Retrieve Decode-Timestamp from AMF and convert it to micro-seconds.
+			//int64_t dts_usec = (pAMFData->GetPts() / 10);
 			/// Decode Timestamp
-			packet->dts_usec = (int64_t)(dts_usec - dtsTimeOffset);
-			packet->dts = (int64_t)(packet->dts_usec / frameTimeStep);
+			//packet->dts_usec = (dts_usec - dtsTimeOffset);
+			packet->dts = m_DecodeTimestamp++ - 2;
 			/// Presentation Timestamp
 			pAMFBuffer->GetProperty(L"Frame", &packet->pts);
-			//pkt.pts_usec = (int64_t)(pkt.pts * frTimeStep);
-			//packet->pts_usec = pkt.dts_usec;
-			//packet->pts = packet->dts;
 
 			// See: https://stackoverflow.com/questions/6044330/ffmpeg-c-what-are-pts-and-dts-what-does-this-code-block-do-in-ffmpeg-c
 			// PTS may not be needed: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/17
 		}
-
 		*received_packet = true;
 
 		// Debug: Packet Information
