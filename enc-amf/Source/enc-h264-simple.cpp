@@ -25,6 +25,9 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Includes
 //////////////////////////////////////////////////////////////////////////
+#include <string>
+#include <iostream>
+#include <sstream>
 #include "enc-h264-simple.h"
 
 #if (defined _WIN32) | (defined _WIN64)
@@ -111,7 +114,7 @@ void Plugin::Interface::H264SimpleInterface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_41);
 	/// Rate Control
 	obs_data_set_default_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantBitrate);
-	obs_data_set_default_int(data, AMF_H264_QP_MINIMUM, 18);
+	obs_data_set_default_int(data, AMF_H264_QP_MINIMUM, 0);
 	obs_data_set_default_int(data, AMF_H264_QP_MAXIMUM, 51);
 	/// Rate Control: CBR, VBR
 	obs_data_set_default_int(data, AMF_H264_BITRATE_TARGET, 2500);
@@ -387,11 +390,13 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void*) 
 }
 
 bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data) {
+	#pragma region Preset Code
 	if (obs_data_get_int(data, AMF_H264SIMPLE_PRESET) != -1) {
 		switch (obs_data_get_int(data, AMF_H264SIMPLE_PRESET)) {
 			case Preset_Twitch: // Twitch
+				#pragma region Preset: Twitch
 				obs_data_set_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 2);
-				//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
+				obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
 				obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
 				obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_41);
 				obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantBitrate);
@@ -414,7 +419,9 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE, false);
 				obs_data_set_int(data, AMF_H264_CABAC, -1);
 				break;
+				#pragma endregion Preset: Twitch
 			case Preset_YouTube: // YouTube
+				#pragma region Preset: YouTube
 				// Basic Properties
 				obs_data_set_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 2);
 				obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
@@ -440,7 +447,9 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE, false);
 				obs_data_set_int(data, AMF_H264_CABAC, -1);
 				break;
+				#pragma endregion Preset: YouTube
 			case Preset_Recording: // Recording
+				#pragma region Preset: Recording
 				obs_data_set_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 1);
 				obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
 				obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
@@ -466,7 +475,9 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE, false);
 				obs_data_set_int(data, AMF_H264_CABAC, -1);
 				break;
+				#pragma endregion Preset: Recording
 			case Preset_HighQuality:
+				#pragma region Preset: High Quality
 				// Basic Properties
 				obs_data_set_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 1);
 				obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
@@ -496,7 +507,9 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE, false);
 				obs_data_set_int(data, AMF_H264_CABAC, -1);
 				break;
+				#pragma endregion Preset: High Quality
 			case Preset_Indistinguishable:
+				#pragma region Preset: Indistinguishable
 				// Basic Properties
 				obs_data_set_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 1);
 				obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
@@ -526,7 +539,9 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE, false);
 				obs_data_set_int(data, AMF_H264_CABAC, -1);
 				break;
+				#pragma endregion Preset: Indistinguishable
 			case Preset_Lossless:
+				#pragma region Preset: Lossless
 				// Basic Properties
 				obs_data_set_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 1);
 				obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
@@ -557,10 +572,39 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 				obs_data_set_bool(data, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE, false);
 				obs_data_set_int(data, AMF_H264_CABAC, -1);
 				break;
+				#pragma endregion Preset: Lossless
 		}
-		//obs_data_set_int(data, AMF_H264SIMPLE_PRESET, -1);
 	}
 
+	// Update temporary value storage. Slight hack to fix an oversight in the modified callback API.
+	obs_property_t* prop = obs_properties_first(props);
+	do {
+		const char* propName = obs_property_name(prop);
+		switch (obs_property_get_type(prop)) {
+			case OBS_PROPERTY_BOOL:
+				obs_data_set_autoselect_bool(data, propName, obs_data_get_bool(data, propName));
+				break;
+			case OBS_PROPERTY_INT:
+				obs_data_set_autoselect_int(data, propName, obs_data_get_int(data, propName));
+				break;
+			case OBS_PROPERTY_FLOAT:
+				obs_data_set_autoselect_double(data, propName, obs_data_get_double(data, propName));
+				break;
+			case OBS_PROPERTY_LIST:
+				switch (obs_property_list_format(prop)) {
+					case OBS_COMBO_FORMAT_INT:
+						obs_data_set_autoselect_int(data, propName, obs_data_get_int(data, propName));
+						break;
+					case OBS_COMBO_FORMAT_FLOAT:
+						obs_data_set_autoselect_double(data, propName, obs_data_get_double(data, propName));
+						break;
+				}
+				break;
+		}
+	} while (obs_property_next(&prop));
+	#pragma endregion Preset Code
+
+	#pragma region Rate Control Settings
 	{ // Rate Control Settings
 		obs_property_set_visible(obs_properties_get(props, AMF_H264_BITRATE_PEAK), false);
 		obs_property_set_visible(obs_properties_get(props, AMF_H264_BITRATE_TARGET), false);
@@ -593,7 +637,9 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 				break;
 		}
 	}
+	#pragma endregion Rate Control Settings
 
+	#pragma region Buffer Size
 	{ // Buffer Size
 		obs_property_set_visible(obs_properties_get(props, AMF_H264SIMPLE_CUSTOM_BUFFER_SIZE), false);
 		obs_property_set_visible(obs_properties_get(props, AMF_H264SIMPLE_CUSTOM_BUFFER_FULLNESS), false);
@@ -602,7 +648,9 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 			obs_property_set_visible(obs_properties_get(props, AMF_H264SIMPLE_CUSTOM_BUFFER_FULLNESS), true);
 		}
 	}
+	#pragma endregion Buffer Size
 
+	#pragma region Advanced Properties
 	{ // Advanced Properties
 		obs_property_set_visible(obs_properties_get(props, AMF_H264_BPICTURE_PATTERN), false);
 		obs_property_set_visible(obs_properties_get(props, AMF_H264_BPICTURE_REFERENCE), false);
@@ -622,7 +670,9 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 			obs_property_set_visible(obs_properties_get(props, AMF_H264_ENFORCEHRDCOMPATIBILITY), true);
 		}
 	}
+	#pragma endregion Advanced Properties
 
+	#pragma region Expert Properties
 	{ // Expert Properties
 		obs_property_set_visible(obs_properties_get(props, AMF_H264_MEMORYTYPE), false);
 		obs_property_set_visible(obs_properties_get(props, AMF_H264_COMPUTETYPE), false);
@@ -645,46 +695,52 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 			obs_property_set_visible(obs_properties_get(props, AMF_H264_CABAC), true);
 		}
 	}
+	#pragma endregion Expert Properties
 
 	return true;
 }
 
-bool Plugin::Interface::H264SimpleInterface::override_preset(obs_properties_t* properties, obs_property_t* property, obs_data_t *settings) {
-	// There does not seem to be a way to access the value at what it was before this is called.
-	// Oversight in the API?
+bool Plugin::Interface::H264SimpleInterface::override_preset(obs_properties_t* props, obs_property_t* prop, obs_data_t *data) {
+	// There does not seem to be a way to access the old value. Oversight in the API?
 
 	bool overridePreset = false;
-	
-	switch (obs_property_get_type(property)) {
-		case OBS_PROPERTY_INVALID:
-			break;
+
+	const char* propName = obs_property_name(prop);
+	switch (obs_property_get_type(prop)) {
 		case OBS_PROPERTY_BOOL:
+			if (obs_data_get_bool(data, propName) != obs_data_get_autoselect_bool(data, propName)) {
+				overridePreset = true;
+			}
 			break;
 		case OBS_PROPERTY_INT:
+			if (obs_data_get_int(data, propName) != obs_data_get_autoselect_int(data, propName)) {
+				overridePreset = true;
+			}
 			break;
 		case OBS_PROPERTY_FLOAT:
-			break;
-		case OBS_PROPERTY_TEXT:
-			break;
-		case OBS_PROPERTY_PATH:
+			if (obs_data_get_double(data, propName) != obs_data_get_autoselect_double(data, propName)) {
+				overridePreset = true;
+			}
 			break;
 		case OBS_PROPERTY_LIST:
-			break;
-		case OBS_PROPERTY_COLOR:
-			break;
-		case OBS_PROPERTY_BUTTON:
-			break;
-		case OBS_PROPERTY_FONT:
-			break;
-		case OBS_PROPERTY_EDITABLE_LIST:
-			break;
-		case OBS_PROPERTY_FRAME_RATE:
+			switch (obs_property_list_format(prop)) {
+				case OBS_COMBO_FORMAT_INT:
+					if (obs_data_get_int(data, propName) != obs_data_get_autoselect_int(data, propName)) {
+						overridePreset = true;
+					}
+					break;
+				case OBS_COMBO_FORMAT_FLOAT:
+					if (obs_data_get_double(data, propName) != obs_data_get_autoselect_double(data, propName)) {
+						overridePreset = true;
+					}
+					break;
+			}
 			break;
 	}
 
 	if (overridePreset)
-		obs_data_set_int(settings, AMF_H264SIMPLE_PRESET, -1);
-	return ui_modified(properties, property, settings);
+		obs_data_set_int(data, AMF_H264SIMPLE_PRESET, -1);
+	return ui_modified(props, prop, data);
 }
 
 void* Plugin::Interface::H264SimpleInterface::create(obs_data_t* settings, obs_encoder_t* encoder) {
@@ -706,10 +762,7 @@ void Plugin::Interface::H264SimpleInterface::destroy(void* data) {
 		AMF_LOG_ERROR("Unable to destroy Encoder, see log for more information.");
 	}
 }
-#pragma warning( pop )
 
-#pragma warning( push )
-#pragma warning( disable: 4702 )
 bool Plugin::Interface::H264SimpleInterface::update(void *data, obs_data_t *settings) {
 	try {
 		return static_cast<Plugin::Interface::H264SimpleInterface*>(data)->update(settings);
