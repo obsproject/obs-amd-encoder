@@ -67,7 +67,6 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 	m_MemoryType = p_MemoryType;
 	m_ComputeType = p_ComputeType;
 	m_Flag_IsStarted = false;
-	m_Flag_EmergencyQuit = false;
 	m_Flag_Threading = true;
 	m_FrameSize.first = 64;	m_FrameSize.second = 64;
 	m_FrameRate.first = 30; m_FrameRate.second = 1;
@@ -75,7 +74,6 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)(m_FrameRateDivisor * 3);
 	m_TimerPeriod = 1;
-	m_DecodeTimestamp = 0;
 
 	// AMF
 	m_AMF = AMF::GetInstance();
@@ -276,6 +274,17 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 	if (frame != nullptr) {
 		amf::AMFSurfacePtr pAMFSurface = CreateSurfaceFromFrame(frame);
 		if (pAMFSurface) {
+			const int64_t oneSecondAsPTS = 10000000ll;// (((1 * 1000ll) * 1000ll) * 10ll;
+			
+			// Calculate Timestamps
+			int64_t pts_frm = (frame->pts / m_FrameRate.second) % m_FrameRate.first; // Frame inside a Second
+			int64_t pts_sec = (frame->pts / m_FrameRate.second) / m_FrameRate.first; // Full Seconds
+
+			amf_pts amfPts = (pts_sec * oneSecondAsPTS) + (int64_t)round(((double_t)pts_frm * m_FrameRateReverseDivisor) * 1e7);
+			pAMFSurface->SetPts(amfPts);
+			pAMFSurface->SetProperty(L"Frame", frame->pts);
+
+			// Add to Queue
 			std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
 			size_t uiQueueSize = m_Input.queue.size();
 
@@ -300,7 +309,6 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 			}
 		} else {
 			AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::SendInput> Critical error while trying to create a frame.");
-			m_Flag_EmergencyQuit = true;
 			return false;
 		}
 	}
@@ -381,11 +389,12 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 			std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
 			if (m_Output.queue.size() == 0)
 				return;
-
+			
 			pAMFData = m_Output.queue.front();
 			m_Output.queue.pop();
 		}
 
+		// We've got a DataPtr, let's use it.
 		amf::AMFBufferPtr pAMFBuffer = amf::AMFBufferPtr(pAMFData);
 
 		// Assemble Packet
@@ -426,15 +435,21 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 			}
 		}
 
-		{ // Timestamps
-			//uint32_t frameTimeStep = (int64_t)(m_FrameRateReverseDivisor * 1e7);
-			//int64_t dtsTimeOffset = frameTimeStep * 2;
-			//int64_t dts_usec = (pAMFData->GetPts() / 10);
-			//packet->dts_usec = (dts_usec - dtsTimthe eOffset);
-			
-			// Workaround to fix weird rounding error with large integers (rounds down instead of up).
-			packet->dts = m_DecodeTimestamp++ - 2;
+		{ // Calculate Timestamps
+			const int64_t oneSecondAsDTS = 10000000ll;
+
+			amf_pts dts = pAMFData->GetPts();
+			int64_t dts_sec = (dts / oneSecondAsDTS) * (m_FrameRate.first * m_FrameRate.second);
+			int64_t dts_frm = (int64_t)round((double_t)(dts % oneSecondAsDTS) / (m_FrameRateReverseDivisor * 1e7));
+			packet->dts = (dts_sec + dts_frm) - 2; // Offset by 2 to support B-Pictures
 			pAMFBuffer->GetProperty(L"Frame", &packet->pts);
+
+			if (m_debugdts == -1) {
+				m_debugdts = packet->dts;
+			} else if (m_debugdts != packet->dts) {
+				AMF_LOG_ERROR("WRONG DTS HERE, MASTER. %lld should be %lld", packet->dts, m_debugdts);
+			}
+			m_debugdts++;
 
 			// See: https://stackoverflow.com/questions/6044330/ffmpeg-c-what-are-pts-and-dts-what-does-this-code-block-do-in-ffmpeg-c
 			// PTS may not be needed: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/17
@@ -672,11 +687,6 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 		// Convert to AMF native type.
 		pSurface->Convert(memoryTypeToAMF[m_MemoryType]);
 	}
-
-	// Convert Frame Index to Nanoseconds.
-	amf_pts amfPts = (int64_t)(frame->pts * (m_FrameRateReverseDivisor * 1e7));
-	pSurface->SetPts(amfPts);
-	pSurface->SetProperty(L"Frame", frame->pts);
 
 	return pSurface;
 }
@@ -1174,7 +1184,6 @@ void Plugin::AMD::VCEEncoder::SetFrameRate(uint32_t num, uint32_t den) {
 	m_FrameRateDivisor = (double_t)m_FrameRate.first / (double_t)m_FrameRate.second;
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor * 3);
-	//AMF_LOG_DEBUG("%f div, %f revdiv", m_FrameRateDivisor, m_FrameRateReverseDivisor);
 
 	if (m_Flag_IsStarted) { // Change Timer precision if encoding.
 		if (m_TimerPeriod != 0) {

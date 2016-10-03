@@ -407,14 +407,14 @@ namespace Plugin {
 			VCEComputeType m_ComputeType;
 			VCESurfaceFormat m_SurfaceFormat;
 			bool m_Flag_IsStarted,
-				m_Flag_EmergencyQuit,
 				m_Flag_Threading;
 			std::pair<uint32_t, uint32_t> m_FrameSize, m_FrameRate;
 			double_t m_FrameRateDivisor, m_FrameRateReverseDivisor;
 			size_t m_InputQueueLimit,
 				m_InputQueueLastSize;
 			uint32_t m_TimerPeriod;
-			uint64_t m_DecodeTimestamp;
+
+			int64_t m_debugdts = -1;
 
 			#pragma endregion Members
 			//////////////////////////////////////////////////////////////////////////
