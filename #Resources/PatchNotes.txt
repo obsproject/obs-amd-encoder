@@ -8,12 +8,5 @@ Before installing this Version, please uninstall any previous versions. If you u
 
 ### Changelog
 
-* Changed: All Presets now default to use maximum available 'B-Picture Pattern' for higher quality at lower bitrates.
-* Changed: All Presets no longer override 'Frame Skipping', 'B-Picture Reference' and 'Custom Buffer'.
-* Changed: 'Twitch', 'YouTube' and 'Recording' Presets no longer override 'Target Bitrate' and 'Peak Bitrate'.
-* Changed: 'Twitch' and 'YouTube' Presets no longer override 'Minimum QP' and 'Maximum QP'. (Always forced to 0/51.)
-* Changed: 'Enforce HRD Compatibility' is now set to disabled for all Presets.
-* Changed: 'Debug Tracing' will now log additional information, it is recommended to disable this for non-test sessions.
-* Added: You can now override Preset parameters instead of having to manually deselect the Preset.
-* Fixed: Potential Crash when quitting OBS directly before the Encoder is completely initialized.
-* Fixed: Muxing issue after exactly 20:50 by using a simple but effective Workaround.
+* Fixed: Audio desynchronization and video corruption caused by timestamp drifting.
+* Fixed: Fields would be defocused when the plugin tried to deselect a preset.
