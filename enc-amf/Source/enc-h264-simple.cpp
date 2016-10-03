@@ -576,32 +576,6 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 		}
 	}
 
-	// Update temporary value storage. Slight hack to fix an oversight in the modified callback API.
-	obs_property_t* prop = obs_properties_first(props);
-	do {
-		const char* propName = obs_property_name(prop);
-		switch (obs_property_get_type(prop)) {
-			case OBS_PROPERTY_BOOL:
-				obs_data_set_autoselect_bool(data, propName, obs_data_get_bool(data, propName));
-				break;
-			case OBS_PROPERTY_INT:
-				obs_data_set_autoselect_int(data, propName, obs_data_get_int(data, propName));
-				break;
-			case OBS_PROPERTY_FLOAT:
-				obs_data_set_autoselect_double(data, propName, obs_data_get_double(data, propName));
-				break;
-			case OBS_PROPERTY_LIST:
-				switch (obs_property_list_format(prop)) {
-					case OBS_COMBO_FORMAT_INT:
-						obs_data_set_autoselect_int(data, propName, obs_data_get_int(data, propName));
-						break;
-					case OBS_COMBO_FORMAT_FLOAT:
-						obs_data_set_autoselect_double(data, propName, obs_data_get_double(data, propName));
-						break;
-				}
-				break;
-		}
-	} while (obs_property_next(&prop));
 	#pragma endregion Preset Code
 
 	#pragma region Rate Control Settings
@@ -701,45 +675,10 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 }
 
 bool Plugin::Interface::H264SimpleInterface::override_preset(obs_properties_t* props, obs_property_t* prop, obs_data_t *data) {
-	// There does not seem to be a way to access the old value. Oversight in the API?
-
-	bool overridePreset = false;
-
-	const char* propName = obs_property_name(prop);
-	switch (obs_property_get_type(prop)) {
-		case OBS_PROPERTY_BOOL:
-			if (obs_data_get_bool(data, propName) != obs_data_get_autoselect_bool(data, propName)) {
-				overridePreset = true;
-			}
-			break;
-		case OBS_PROPERTY_INT:
-			if (obs_data_get_int(data, propName) != obs_data_get_autoselect_int(data, propName)) {
-				overridePreset = true;
-			}
-			break;
-		case OBS_PROPERTY_FLOAT:
-			if (obs_data_get_double(data, propName) != obs_data_get_autoselect_double(data, propName)) {
-				overridePreset = true;
-			}
-			break;
-		case OBS_PROPERTY_LIST:
-			switch (obs_property_list_format(prop)) {
-				case OBS_COMBO_FORMAT_INT:
-					if (obs_data_get_int(data, propName) != obs_data_get_autoselect_int(data, propName)) {
-						overridePreset = true;
-					}
-					break;
-				case OBS_COMBO_FORMAT_FLOAT:
-					if (obs_data_get_double(data, propName) != obs_data_get_autoselect_double(data, propName)) {
-						overridePreset = true;
-					}
-					break;
-			}
-			break;
+	if (obs_data_get_int(data, AMF_H264SIMPLE_PRESET) != -1) {
+		obs_data_set_int(data, AMF_H264SIMPLE_PRESET, -1);
 	}
 
-	if (overridePreset)
-		obs_data_set_int(data, AMF_H264SIMPLE_PRESET, -1);
 	return ui_modified(props, prop, data);
 }
 
