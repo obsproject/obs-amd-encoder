@@ -462,7 +462,6 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 		std::vector<wchar_t> functionName(128);
 		mbstowcs(functionName.data(), __FUNCTION__, functionName.size());
 		m_AMF->GetTrace()->TraceW(fileName.data(), __LINE__, AMF_TRACE_TRACE, L"Plugin::GetOutput", 4, L"Packet: Type(%lld), PTS(%4lld), DTS(%4lld), Size(%8lld)", (int64_t)packet->priority, (int64_t)packet->pts, (int64_t)packet->dts, (int64_t)packet->size);
-		//AMF_LOG_INFO("Packet: Type(%lld), PTS(%4lld), DTS(%4lld), Size(%8lld)", packet->priority, packet->pts, packet->dts, packet->size);
 	}
 }
 
