@@ -28,8 +28,6 @@ SOFTWARE.
 #include "amd-amf-vce.h"
 #include "amd-amf-vce-capabilities.h"
 
-#include "OBS-Studio/libobs/util/util_uint128.h"
-
 #if (defined _WIN32) | (defined _WIN64)
 #include <windows.h>
 #include <VersionHelpers.h>
@@ -431,13 +429,11 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 		{ // Timestamps
 			//uint32_t frameTimeStep = (int64_t)(m_FrameRateReverseDivisor * 1e7);
 			//int64_t dtsTimeOffset = frameTimeStep * 2;
-			//
-			/// Retrieve Decode-Timestamp from AMF and convert it to micro-seconds.
 			//int64_t dts_usec = (pAMFData->GetPts() / 10);
-			/// Decode Timestamp
-			//packet->dts_usec = (dts_usec - dtsTimeOffset);
+			//packet->dts_usec = (dts_usec - dtsTimthe eOffset);
+			
+			// Workaround to fix weird rounding error with large integers (rounds down instead of up).
 			packet->dts = m_DecodeTimestamp++ - 2;
-			/// Presentation Timestamp
 			pAMFBuffer->GetProperty(L"Frame", &packet->pts);
 
 			// See: https://stackoverflow.com/questions/6044330/ffmpeg-c-what-are-pts-and-dts-what-does-this-code-block-do-in-ffmpeg-c
