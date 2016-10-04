@@ -57,8 +57,13 @@ Kini nga luna alang sa abang.
 John Difool der alte Sack
 [YouTube](https://www.youtube.com/channel/UC5FPsFLQh4ah0-vz-eoZlOA)
 
-### Nuco
+### Nucu
 Thanks AMD and Xaymar to make hardware encoding possible.
+
+### DaOrgest
+Currently studying computer and I do YouTube for a hobby
+
+[Website](http://daorgest.me), [YouTube](http://youtube.com/daorgest)
 
 ## August 2016
 ### Jeremy Nieth
