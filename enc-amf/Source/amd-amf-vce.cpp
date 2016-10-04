@@ -275,14 +275,8 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 	if (frame != nullptr) {
 		amf::AMFSurfacePtr pAMFSurface = CreateSurfaceFromFrame(frame);
 		if (pAMFSurface) {
-			const int64_t oneSecondAsPTS = 10000000ll;// (((1 * 1000ll) * 1000ll) * 10ll;
-			
-			// Calculate Timestamps
-			int64_t pts_frm = (frame->pts / m_FrameRate.second) % m_FrameRate.first; // Frame inside a Second
-			int64_t pts_sec = (frame->pts / m_FrameRate.second) / m_FrameRate.first; // Full Seconds
-
-			amf_pts amfPts = (pts_sec * oneSecondAsPTS) + (int64_t)round(((double_t)pts_frm * m_FrameRateReverseDivisor) * 1e7);
-			pAMFSurface->SetPts(amfPts);
+			// Set Surface Properties
+			pAMFSurface->SetPts(frame->pts); // VCE ignores time and only cares about latency.
 			pAMFSurface->SetProperty(L"Frame", frame->pts);
 
 			// Add to Queue
@@ -400,6 +394,7 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 
 		// Assemble Packet
 		packet->type = OBS_ENCODER_VIDEO;
+		/// Data
 		size_t uiBufferSize = pAMFBuffer->GetSize();
 		if (m_PacketDataBuffer.size() < uiBufferSize) {
 			size_t newSize = (size_t)exp2(ceil(log2(uiBufferSize)));
@@ -409,9 +404,10 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 		packet->data = m_PacketDataBuffer.data();
 		packet->size = uiBufferSize;
 		std::memcpy(packet->data, pAMFBuffer->GetNative(), packet->size);
-
-		{ // What Type of Frame is it?
-			// Read Packet Type
+		/// Timestamps
+		packet->dts = pAMFData->GetPts() - 2; // Offset by 2 to support B-Pictures
+		pAMFBuffer->GetProperty(L"Frame", &packet->pts);
+		{ /// Packet Priority & Keyframe
 			uint64_t pktType;
 			pAMFData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &pktType);
 
@@ -434,26 +430,6 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 					packet->drop_priority = 1;				// So require a P-Frame or better to continue streaming.
 					break;
 			}
-		}
-
-		{ // Calculate Timestamps
-			const int64_t oneSecondAsDTS = 10000000ll;
-
-			amf_pts dts = pAMFData->GetPts();
-			int64_t dts_sec = (dts / oneSecondAsDTS) * (m_FrameRate.first * m_FrameRate.second);
-			int64_t dts_frm = (int64_t)round((double_t)(dts % oneSecondAsDTS) / (m_FrameRateReverseDivisor * 1e7));
-			packet->dts = (dts_sec + dts_frm) - 2; // Offset by 2 to support B-Pictures
-			pAMFBuffer->GetProperty(L"Frame", &packet->pts);
-
-			if (m_debugdts == -1) {
-				m_debugdts = packet->dts;
-			} else if (m_debugdts != packet->dts) {
-				AMF_LOG_ERROR("WRONG DTS HERE, MASTER. %lld should be %lld", packet->dts, m_debugdts);
-			}
-			m_debugdts++;
-
-			// See: https://stackoverflow.com/questions/6044330/ffmpeg-c-what-are-pts-and-dts-what-does-this-code-block-do-in-ffmpeg-c
-			// PTS may not be needed: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/17
 		}
 		*received_packet = true;
 
