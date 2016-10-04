@@ -374,7 +374,7 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 			case Preset_Twitch: // Twitch
 				#pragma region Preset: Twitch
 				obs_data_set_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 2);
-				obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
+				//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
 				obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_Main);
 				obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_41);
 				obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantBitrate);
@@ -385,7 +385,7 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 				#pragma region Preset: YouTube
 				// Basic Properties
 				obs_data_set_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 2);
-				obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
+				//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
 				obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
 				obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_41);
 				obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantBitrate);
@@ -395,7 +395,7 @@ bool Plugin::Interface::H264SimpleInterface::ui_modified(obs_properties_t *props
 			case Preset_Recording: // Recording
 				#pragma region Preset: Recording
 				obs_data_set_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 1);
-				obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
+				//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
 				obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
 				obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxProfileLevel);
 				obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_VariableBitrate_LatencyConstrained);
