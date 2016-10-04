@@ -1,6 +1,21 @@
-So you want to get started with helping? Well then read this carefully.
+# Reporting Issues
 
-# Getting Started
+Before you report an issue, please read the [Troubleshooting Guide](https://github.com/Xaymar/OBS-AMD-Advanced-Media-Framework/wiki/Troubleshooting).
+It contains a step-by-step guide on how to solve your issue and even includes a FAQ for you to read through.
+
+# Git and the Project
+
+## Committing Changes
+
+Read [this wiki page for information](https://github.com/Xaymar/OBS-AMD-Advanced-Media-Framework/wiki/Contributing) and please follow it. Rebasing a bunch of pushed commits is terrible for anyone involved.
+
+## Pull Requests
+
+Pull Request titles should follow the guidelines for committing changes and also have a short description of what the change does.
+
+# Building
+
+## Getting Started
 This plugin is included in the Open Broadcaster Studio project itself.  
 This is only necessary if you wish to verify functionality with a standalone build.
 
@@ -39,10 +54,6 @@ If any errors during building or creating the archives and installer, start agai
 
 *[You can only do this with an AMD APU or GPU installed](https://github.com/Xaymar/OBS-AMD-Advanced-Media-Framework/wiki/Hardware,-GCN-and-VCE-Limits)*.  
 Install the plugin into your OBS Studio installation or test environment and select it in either Simple Output Mode or Advanced Output Mode. It should encode fine without crashing at any point.
-
-## Committing Changes
-
-Read [this wiki page for information](https://github.com/Xaymar/OBS-AMD-Advanced-Media-Framework/wiki/Contributing) and please follow it. Rebasing a bunch of pushed commits is terrible for anyone involved.
 
 # Coding Standard
 
