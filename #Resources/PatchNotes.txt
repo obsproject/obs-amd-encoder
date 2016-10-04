@@ -8,5 +8,5 @@ Before installing this Version, please uninstall any previous versions. If you u
 
 ### Changelog
 
-* Removed: Automatic override of Preset, caused more issues than features it added.
-* Fixed: The plugin would initially report an incorrect queue size delta.
+* Fixed: Latency Constrained Bitrate was incorrectly hiding Target Bitrate option.
+* Fixed: Timestamps now work for all framerate options.
