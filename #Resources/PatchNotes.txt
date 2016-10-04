@@ -1,4 +1,4 @@
-1.3.2.0 - Massive Preset Updates
+1.3.2.2 - Massive Preset Updates
 
 It has been a long time since we've seen a version without any attachments to the number, hasn't it? But now is finally the time! We've come a long way since 1.1.2, going through two rewrites, one to make it easier for me and one to update to a new SDK - and it was worth it. Now we have arrived at a plugin for OBS Studio that manages solid 4K at 60 fps while still being light on the CPU side.
 
@@ -8,5 +8,5 @@ Before installing this Version, please uninstall any previous versions. If you u
 
 ### Changelog
 
-* Fixed: Audio desynchronization and video corruption caused by timestamp drifting.
-* Fixed: Fields would be defocused when the plugin tried to deselect a preset.
+* Removed: Automatic override of Preset, caused more issues than features it added.
+* Fixed: The plugin would initially report an incorrect queue size delta.
