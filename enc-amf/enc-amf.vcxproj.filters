@@ -56,6 +56,9 @@
     <ClCompile Include="Source\amd-amf-vce.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\misc-util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\locale\en-US.ini">

@@ -182,6 +182,7 @@
     <ClCompile Include="Source\amd-amf-vce-capabilities.cpp" />
     <ClCompile Include="Source\enc-h264-simple.cpp" />
     <ClCompile Include="Source\enc-h264.cpp" />
+    <ClCompile Include="Source\misc-util.cpp" />
     <ClCompile Include="Source\plugin.cpp" />
   </ItemGroup>
   <ItemGroup>
