@@ -443,37 +443,20 @@ bool Plugin::Interface::H264SimpleInterface::modified_preset(obs_properties_t*, 
 
 bool Plugin::Interface::H264SimpleInterface::modified_rate_control(obs_properties_t *props, obs_property_t *, obs_data_t *data) {
 	{ // Rate Control Settings
-		obs_property_set_visible(obs_properties_get(props, AMF_H264_BITRATE_PEAK), false);
-		obs_property_set_visible(obs_properties_get(props, AMF_H264_BITRATE_TARGET), false);
-		obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_IFRAME), false);
-		obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_PFRAME), false);
-		obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_BFRAME), false);
-		obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_MINIMUM), false);
-		obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_MAXIMUM), false);
-		obs_property_set_visible(obs_properties_get(props, AMF_H264_FILLERDATA), false);
-
-		switch (obs_data_get_int(data, AMF_H264_RATECONTROLMETHOD)) {
-			case Plugin::AMD::VCERateControlMethod::VCERateControlMethod_ConstantQP:
-				obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_IFRAME), true);
-				obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_PFRAME), true);
-				if (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames) {
-					obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_BFRAME), true);
-				}
-				break;
-			case Plugin::AMD::VCERateControlMethod::VCERateControlMethod_VariableBitrate_LatencyConstrained:
-				obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_MINIMUM), true);
-				obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_MAXIMUM), true);
-				obs_property_set_visible(obs_properties_get(props, AMF_H264_BITRATE_TARGET), true);
-				break;
-			case Plugin::AMD::VCERateControlMethod::VCERateControlMethod_VariableBitrate_PeakConstrained:
-				obs_property_set_visible(obs_properties_get(props, AMF_H264_BITRATE_PEAK), true);
-				obs_property_set_visible(obs_properties_get(props, AMF_H264_BITRATE_TARGET), true);
-				break;
-			case Plugin::AMD::VCERateControlMethod::VCERateControlMethod_ConstantBitrate:
-				obs_property_set_visible(obs_properties_get(props, AMF_H264_BITRATE_TARGET), true);
-				obs_property_set_visible(obs_properties_get(props, AMF_H264_FILLERDATA), true);
-				break;
-		}
+		bool vis_bitrateTarget = false,
+			vis_bitratePeak = false,
+			vis_FrameQP = false,
+			vis_MinMaxQP = false,
+			vis_FillerData = false;
+		
+		obs_property_set_visible(obs_properties_get(props, AMF_H264_BITRATE_TARGET), vis_bitrateTarget);
+		obs_property_set_visible(obs_properties_get(props, AMF_H264_BITRATE_PEAK), vis_bitratePeak);
+		obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_IFRAME), vis_FrameQP);
+		obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_PFRAME), vis_FrameQP);
+		obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_BFRAME), vis_FrameQP && VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames);
+		obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_MINIMUM), vis_MinMaxQP);
+		obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_MAXIMUM), vis_MinMaxQP);
+		obs_property_set_visible(obs_properties_get(props, AMF_H264_FILLERDATA), vis_FillerData);
 	}
 
 	{ // Buffer Size
@@ -488,7 +471,7 @@ bool Plugin::Interface::H264SimpleInterface::modified_rate_control(obs_propertie
 bool Plugin::Interface::H264SimpleInterface::modified_show_advanced(obs_properties_t *props, obs_property_t*, obs_data_t *data) {
 	bool vis = obs_data_get_bool(data, AMF_H264SIMPLE_ADVANCED_SHOW_PARAMETERS);
 	bool vis2 = vis && VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames;
-	
+
 	// B-Pictures
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_BPICTURE_PATTERN), vis2);
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_BPICTURE_REFERENCE), vis2);
@@ -497,7 +480,7 @@ bool Plugin::Interface::H264SimpleInterface::modified_show_advanced(obs_properti
 	// Other
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_DEBLOCKINGFILTER), vis);
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_ENFORCEHRDCOMPATIBILITY), vis);
-	
+
 	return false;
 }
 
