@@ -377,63 +377,63 @@ bool Plugin::Interface::H264SimpleInterface::modified_preset(obs_properties_t*, 
 	switch (obs_data_get_int(data, AMF_H264SIMPLE_PRESET)) {
 		case Preset_Twitch: // Twitch
 			#pragma region Preset: Twitch
-			obs_data_set_autoselect_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 2);
-			obs_data_set_autoselect_int(data, AMF_H264_PROFILE, VCEProfile_Main);
-			obs_data_set_autoselect_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic); // Automatic
-			obs_data_set_autoselect_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantBitrate);
-			obs_data_set_autoselect_int(data, AMF_H264_FILLERDATA, 1);
+			obs_data_set_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 2);
+			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_Main);
+			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic); // Automatic
+			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantBitrate);
+			obs_data_set_int(data, AMF_H264_FILLERDATA, 1);
 			break;
 			#pragma endregion Preset: Twitch
 		case Preset_YouTube:
 			#pragma region Preset: YouTube
-			obs_data_set_autoselect_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 2);
-			obs_data_set_autoselect_int(data, AMF_H264_PROFILE, VCEProfile_High);
-			obs_data_set_autoselect_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic); // Automatic
-			obs_data_set_autoselect_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantBitrate);
-			obs_data_set_autoselect_int(data, AMF_H264_FILLERDATA, 1);
+			obs_data_set_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 2);
+			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
+			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic); // Automatic
+			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantBitrate);
+			obs_data_set_int(data, AMF_H264_FILLERDATA, 1);
 			break;
 			#pragma endregion Preset: YouTube
 		case Preset_Recording:
 			#pragma region Preset: Recording
-			obs_data_set_autoselect_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 1);
-			obs_data_set_autoselect_int(data, AMF_H264_PROFILE, VCEProfile_High);
-			obs_data_set_autoselect_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
-			obs_data_set_autoselect_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_VariableBitrate_LatencyConstrained);
-			obs_data_set_autoselect_int(data, AMF_H264_QP_MINIMUM, 0);
-			obs_data_set_autoselect_int(data, AMF_H264_QP_MAXIMUM, 51);
+			obs_data_set_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 1);
+			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
+			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
+			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_VariableBitrate_LatencyConstrained);
+			obs_data_set_int(data, AMF_H264_QP_MINIMUM, 0);
+			obs_data_set_int(data, AMF_H264_QP_MAXIMUM, 51);
 			break;
 			#pragma endregion Preset: Recording
 		case Preset_HighQuality:
 			#pragma region Preset: High Quality
-			obs_data_set_autoselect_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 1);
-			obs_data_set_autoselect_int(data, AMF_H264_PROFILE, VCEProfile_High);
-			obs_data_set_autoselect_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
-			obs_data_set_autoselect_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantQP);
-			obs_data_set_autoselect_int(data, AMF_H264_QP_IFRAME, 16);
-			obs_data_set_autoselect_int(data, AMF_H264_QP_PFRAME, 21);
-			obs_data_set_autoselect_int(data, AMF_H264_QP_BFRAME, 26);
+			obs_data_set_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 1);
+			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
+			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
+			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantQP);
+			obs_data_set_int(data, AMF_H264_QP_IFRAME, 16);
+			obs_data_set_int(data, AMF_H264_QP_PFRAME, 21);
+			obs_data_set_int(data, AMF_H264_QP_BFRAME, 26);
 			break;
 			#pragma endregion Preset: High Quality
 		case Preset_Indistinguishable:
 			#pragma region Preset: Indistinguishable
-			obs_data_set_autoselect_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 1);
-			obs_data_set_autoselect_int(data, AMF_H264_PROFILE, VCEProfile_High);
-			obs_data_set_autoselect_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
-			obs_data_set_autoselect_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantQP);
-			obs_data_set_autoselect_int(data, AMF_H264_QP_IFRAME, 11);
-			obs_data_set_autoselect_int(data, AMF_H264_QP_PFRAME, 16);
-			obs_data_set_autoselect_int(data, AMF_H264_QP_BFRAME, 21);
+			obs_data_set_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 1);
+			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
+			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
+			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantQP);
+			obs_data_set_int(data, AMF_H264_QP_IFRAME, 11);
+			obs_data_set_int(data, AMF_H264_QP_PFRAME, 16);
+			obs_data_set_int(data, AMF_H264_QP_BFRAME, 21);
 			break;
 			#pragma endregion Preset: Indistinguishable
 		case Preset_Lossless:
 			#pragma region Preset: Lossless
-			obs_data_set_autoselect_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 1);
-			obs_data_set_autoselect_int(data, AMF_H264_PROFILE, VCEProfile_High);
-			obs_data_set_autoselect_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
-			obs_data_set_autoselect_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantQP);
-			obs_data_set_autoselect_int(data, AMF_H264_QP_IFRAME, 0);
-			obs_data_set_autoselect_int(data, AMF_H264_QP_PFRAME, 0);
-			obs_data_set_autoselect_int(data, AMF_H264_QP_BFRAME, 0);
+			obs_data_set_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 1);
+			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
+			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
+			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantQP);
+			obs_data_set_int(data, AMF_H264_QP_IFRAME, 0);
+			obs_data_set_int(data, AMF_H264_QP_PFRAME, 0);
+			obs_data_set_int(data, AMF_H264_QP_BFRAME, 0);
 			break;
 			#pragma endregion Preset: Lossless
 	}
