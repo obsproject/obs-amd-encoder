@@ -83,7 +83,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 	/// AMF Context
 	res = m_AMFFactory->CreateContext(&m_AMFContext);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> Creating a context object failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> Creating a context object failed with error %ls (code %ld).", res);
 	}
 
 	// Initialize Memory
@@ -126,7 +126,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 			break;
 	}
 	if (res != AMF_OK)
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> Initializing 3D queue failed with error %ls (code %d)", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> Initializing 3D queue failed with error %ls (code %ld).", res);
 
 	switch (m_ComputeType) {
 		case VCEComputeType_None:
@@ -134,7 +134,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 		case VCEComputeType_OpenCL:
 			res = m_AMFContext->InitOpenCL(nullptr);
 			if (res != AMF_OK)
-				ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> InitOpenCL failed with error %ls (code %d)", res);
+				ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> InitOpenCL failed with error %ls (code %ld).", res);
 			m_AMFContext->GetCompute(amf::AMF_MEMORY_OPENCL, &m_AMFCompute);
 			break;
 	}
@@ -152,7 +152,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 			break;
 	}
 	if (res != AMF_OK)
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> Creating a component object failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> Creating a component object failed with error %ls (code %ld).", res);
 
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::VCEEncoder> Initialization complete!");
 }
@@ -196,7 +196,7 @@ void Plugin::AMD::VCEEncoder::Start() {
 	// Create Encoder
 	AMF_RESULT res = m_AMFEncoder->Init(surfaceFormatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second);
 	if (res != AMF_OK)
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::Start> Initialization failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::Start> Initialization failed with error %ls (code %ld).", res);
 
 	m_Flag_IsStarted = true;
 
@@ -229,19 +229,13 @@ void Plugin::AMD::VCEEncoder::Restart() {
 	// Create Encoder
 	AMF_RESULT res = m_AMFEncoder->ReInit(m_FrameSize.first, m_FrameSize.second);
 	if (res != AMF_OK)
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::Start> Initialization failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::Start> Initialization failed with error %ls (code %ld).", res);
 }
 
 void Plugin::AMD::VCEEncoder::Stop() {
 	// Restore Timer precision.
 	if (m_TimerPeriod != 0) {
 		timeEndPeriod(m_TimerPeriod);
-	}
-
-	// Stop AMF Encoder
-	if (m_AMFEncoder && m_Flag_IsStarted) {
-		m_AMFEncoder->Drain();
-		m_AMFEncoder->Flush();
 	}
 
 	m_Flag_IsStarted = false;
@@ -283,6 +277,12 @@ void Plugin::AMD::VCEEncoder::Stop() {
 		#endif
 	}
 
+	// Stop AMF Encoder
+	if (m_AMFEncoder) {
+		m_AMFEncoder->Drain();
+		m_AMFEncoder->Flush();
+	}
+
 	// Clear Queues, Data
 	std::queue<amf::AMFSurfacePtr>().swap(m_Input.queue);
 	std::queue<amf::AMFDataPtr>().swap(m_Output.queue);
@@ -303,7 +303,10 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 		amf::AMFSurfacePtr pAMFSurface = CreateSurfaceFromFrame(frame);
 		if (pAMFSurface) {
 			// Set Surface Properties
-			pAMFSurface->SetPts(frame->pts); // VCE ignores time and only cares about latency.
+			uint64_t pts_prec_max = m_FrameRate.first * m_FrameRate.second;
+			amf_pts pts_frame = (uint64_t)round(((frame->pts % pts_prec_max) / m_FrameRate.second) * m_FrameRateReverseDivisor * 1e7);
+			amf_pts pts_prec = (frame->pts / pts_prec_max) * (uint64_t)ceil(m_FrameRateReverseDivisor * 1e7 * pts_prec_max);
+			pAMFSurface->SetPts(pts_prec + pts_frame);
 			pAMFSurface->SetProperty(L"Frame", frame->pts);
 
 			// Add to Queue
@@ -356,7 +359,7 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 					if (frame != nullptr)
 						GetOutput(nullptr, nullptr);
 				} else {
-					AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::SendInput> SubmitInput returned error %ls (code %d).", m_AMF->GetTrace()->GetResultText(res), res);
+					AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::SendInput> SubmitInput returned error %ls (code %lld).", m_AMF->GetTrace()->GetResultText(res), res);
 				}
 			}
 		}
@@ -400,7 +403,7 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 					__amf_repeat_count = 0;
 				}
 			} else {
-				AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::GetOutput> QueryOutput returned error %ls (code %d).", m_AMF->GetTrace()->GetResultText(res), res);
+				AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::GetOutput> QueryOutput returned error %ls (code %lld).", m_AMF->GetTrace()->GetResultText(res), res);
 			}
 		}
 	}
@@ -432,7 +435,11 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 		packet->size = uiBufferSize;
 		std::memcpy(packet->data, pAMFBuffer->GetNative(), packet->size);
 		/// Timestamps
-		packet->dts = pAMFData->GetPts() - 2; // Offset by 2 to support B-Pictures
+		uint64_t pts_prec_div = (uint64_t)ceil(m_FrameRateReverseDivisor * 1e7 * (m_FrameRate.first * m_FrameRate.second));
+		amf_pts dts = pAMFData->GetPts();
+		uint64_t dts_prec = (dts / pts_prec_div) * (m_FrameRate.first * m_FrameRate.second);
+		uint64_t dts_frame = (uint64_t)round((double_t)(dts % pts_prec_div) / (m_FrameRateReverseDivisor * 1e7));
+		packet->dts = (dts_prec + dts_frame) - 2; // Offset by 2 to support B-Pictures
 		pAMFBuffer->GetProperty(L"Frame", &packet->pts);
 		{ /// Packet Priority & Keyframe
 			uint64_t pktType;
@@ -539,6 +546,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 
 	// Core Loop
 	std::unique_lock<std::mutex> lock(m_Input.mutex);
+	uint32_t repeatSurfaceSubmission = 0;
 	do {
 		m_Input.condvar.wait(lock);
 
@@ -546,44 +554,44 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 		if (!m_Flag_IsStarted)
 			continue;
 
-		// Skip to next wait if queue is empty.
-		AMF_RESULT res = AMF_OK;
-		int32_t __amf_input_full_repeat = 0;
-		while (res == AMF_OK) { // Repeat until impossible.
-			amf::AMFSurfacePtr surface;
+		// Dequeue Surface
+		amf::AMFSurfacePtr surface;
+		{ 
+			std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
+			if (m_Input.queue.size() == 0)
+				continue; // Queue is empty, 
+			surface = m_Input.queue.front();
+		}
 
-			{ // Dequeue Surface
+		/// Submit to AMF
+		AMF_RESULT res = m_AMFEncoder->SubmitInput(surface);
+		if (res == AMF_OK) {
+			{ // Remove Surface from Queue
 				std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
-				if (m_Input.queue.size() == 0)
-					break;
-				surface = m_Input.queue.front();
+				m_Input.queue.pop();
 			}
 
-			/// Submit to AMF
-			res = m_AMFEncoder->SubmitInput(surface);
-			if (res == AMF_OK) {
-				{ // Remove Surface from Queue
-					std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
-					m_Input.queue.pop();
-				}
+			// Reset AMF_INPUT_FULL retries.
+			repeatSurfaceSubmission = 0;
 
-				// Reset AMF_INPUT_FULL retries.
-				__amf_input_full_repeat = 0;
-			} else if (res == AMF_INPUT_FULL) { // Try submitting for 5 milliseconds
-				m_Output.condvar.notify_all(); // Signal Querying Thread
+			// Continue with next Surface.
+			m_Input.condvar.notify_all();
+		} else if (res == AMF_INPUT_FULL) {
+			m_Output.condvar.notify_all();
+			if (repeatSurfaceSubmission < 5) {
+				repeatSurfaceSubmission++;
 
 				std::this_thread::sleep_for(std::chrono::milliseconds(1));
-				if (__amf_input_full_repeat < 5) {
-					res = AMF_OK;
-					__amf_input_full_repeat++;
-					continue;
-				}
-			} else {
-				std::vector<char> msgBuf(128);
-				FormatTextWithAMFError(&msgBuf, "%ls (code %d)", Plugin::AMD::AMF::GetInstance()->GetTrace()->GetResultText(res), res);
-				AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::InputThreadLogic> SubmitInput failed with error %s.", msgBuf.data());
-				continue;
+				m_Input.condvar.notify_all();
 			}
+		} else if (res == AMF_EOF) {
+			// This should never happen, but on the off-chance that it does, just straight up leave the loop.
+			break;
+		} else {
+			// Unknown, unexpected return code.
+			std::vector<char> msgBuf(128);
+			FormatTextWithAMFError(&msgBuf, "%ls (code %d)", Plugin::AMD::AMF::GetInstance()->GetTrace()->GetResultText(res), res);
+			AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::InputThreadLogic> SubmitInput failed with error %s.", msgBuf.data());
 		}
 	} while (m_Flag_IsStarted);
 }
@@ -602,28 +610,26 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 		if (!m_Flag_IsStarted)
 			continue;
 
-		AMF_RESULT res = AMF_OK;
-		while (res == AMF_OK) { // Repeat until impossible.
-			amf::AMFDataPtr pData;
-
-			res = m_AMFEncoder->QueryOutput(&pData);
-			if (res == AMF_OK) {
-				/*if (pData->GetMemoryType() != amf::AMF_MEMORY_HOST) {
-					pData->Convert(amf::AMF_MEMORY_HOST);
-				}*/
-
-				// Queue
-				{
-					std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
-					m_Output.queue.push(pData);
-				}
-			} else if (res == AMF_REPEAT) {
-				m_Input.condvar.notify_all();
-			} else {
-				std::vector<char> msgBuf(128);
-				FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
-				AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::OutputThreadLogic> QueryOutput failed with error %s.", msgBuf.data());
+		amf::AMFDataPtr pData;
+		AMF_RESULT res = m_AMFEncoder->QueryOutput(&pData);
+		if (res == AMF_OK) {
+			{ // Queue
+				std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
+				m_Output.queue.push(pData);
 			}
+
+			// Continue querying until nothing is left.
+			m_Output.condvar.notify_all();
+		} else if (res == AMF_REPEAT) {
+			m_Input.condvar.notify_all();
+		} else if (res == AMF_EOF) {
+			// This should never happen, but on the off-chance that it does, just straight up leave the loop.
+			break;
+		} else {
+			// Unknown, unexpected return code.
+			std::vector<char> msgBuf(128);
+			FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
+			AMF_LOG_WARNING("<Plugin::AMD::VCEEncoder::OutputThreadLogic> QueryOutput failed with error %s.", msgBuf.data());
 		}
 	} while (m_Flag_IsStarted);
 }
