@@ -280,7 +280,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	/// h264 Profile Level
 	list = obs_properties_add_list(props, AMF_H264_PROFILELEVEL, obs_module_text(AMF_H264_PROFILELEVEL), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_DEFAULT), -1);
-	obs_property_list_add_int(p, AMF_UTIL_AUTOMATIC, 0);
+	obs_property_list_add_int(p, AMF_UTIL_AUTOMATIC, VCEProfileLevel_Automatic);
 	switch (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxProfileLevel) {
 		case 62:
 			obs_property_list_add_int(list, "6.2", VCEProfileLevel_62);
@@ -745,12 +745,14 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 	value = obs_data_get_int(settings, AMF_H264_PROFILELEVEL);
 	if (value != -1) {
 		VCEProfileLevel level = (VCEProfileLevel)value;
-		VCEProfileLevel minLevel = Plugin::Utility::GetMinimumProfileLevel(std::pair<uint32_t, uint32_t>(m_cfgWidth, m_cfgHeight), std::pair<uint32_t, uint32_t>(m_cfgFPSnum, m_cfgFPSden));
-		if (level < minLevel) {
-			AMF_LOG_WARNING("[WARNING] Profile Level %d.%d is too low for %dx%d at %d/%d fps, set to %d.%d.", ((int32_t)level) / 10, ((int32_t)level % 10), m_cfgWidth, m_cfgHeight, m_cfgFPSnum, m_cfgFPSden, ((int32_t)minLevel / 10), ((int32_t)minLevel % 10));
-			level = minLevel;
-			obs_data_set_int(settings, AMF_H264_PROFILELEVEL, level);
-		}
+		/*if (level != VCEProfileLevel_Automatic) {
+			VCEProfileLevel minLevel = Plugin::Utility::GetMinimumProfileLevel(std::pair<uint32_t, uint32_t>(m_cfgWidth, m_cfgHeight), std::pair<uint32_t, uint32_t>(m_cfgFPSnum, m_cfgFPSden));
+			if (level < minLevel) {
+				AMF_LOG_WARNING("[WARNING] Profile Level %d.%d is too low for %dx%d at %d/%d fps, set to %d.%d.", ((int32_t)level) / 10, ((int32_t)level % 10), m_cfgWidth, m_cfgHeight, m_cfgFPSnum, m_cfgFPSden, ((int32_t)minLevel / 10), ((int32_t)minLevel % 10));
+				level = minLevel;
+				obs_data_set_int(settings, AMF_H264_PROFILELEVEL, level);
+			}
+		}*/
 		m_VideoEncoder->SetProfileLevel(level);
 	}
 
