@@ -432,7 +432,6 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 		packet->size = uiBufferSize;
 		std::memcpy(packet->data, pAMFBuffer->GetNative(), packet->size);
 		/// Timestamps
-		amf_pts dts = pAMFData->GetPts();
 		packet->dts = (pAMFData->GetPts() - 2) * m_FrameRate.second; // Offset by 2 to support B-Pictures
 		pAMFBuffer->GetProperty(L"Frame", &packet->pts);
 		{ /// Packet Priority & Keyframe
