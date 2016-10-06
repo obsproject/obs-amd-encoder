@@ -773,11 +773,7 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 	//////////////////////////////////////////////////////////////////////////
 	// Dynamic Properties (Can be changed during Encoding)
 	//////////////////////////////////////////////////////////////////////////
-	update_properties(settings);
-
-	// Framesize & Framerate
-	m_VideoEncoder->SetFrameSize(m_cfgWidth, m_cfgHeight);
-	m_VideoEncoder->SetFrameRate(m_cfgFPSnum, m_cfgFPSden);
+	this->update(settings);
 
 	//////////////////////////////////////////////////////////////////////////
 	// OBS - Enforce Streaming Service Restrictions
@@ -882,30 +878,6 @@ Plugin::Interface::H264Interface::~H264Interface() {
 }
 
 bool Plugin::Interface::H264Interface::update(obs_data_t* settings) {
-	return update_properties(settings);
-}
-
-bool Plugin::Interface::H264Interface::encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
-	if (!frame || !packet || !received_packet)
-		return false;
-
-	bool retVal = true;
-
-	retVal = m_VideoEncoder->SendInput(frame);
-	m_VideoEncoder->GetOutput(packet, received_packet);
-
-	return retVal;
-}
-
-void Plugin::Interface::H264Interface::get_video_info(struct video_scale_info* info) {
-	m_VideoEncoder->GetVideoInfo(info);
-}
-
-bool Plugin::Interface::H264Interface::get_extra_data(uint8_t** extra_data, size_t* size) {
-	return m_VideoEncoder->GetExtraData(extra_data, size);
-}
-
-bool Plugin::Interface::H264Interface::update_properties(obs_data_t* settings) {
 	int64_t value; double_t valued;
 
 	/// Minimum & Maximum QP
@@ -1068,6 +1040,27 @@ bool Plugin::Interface::H264Interface::update_properties(obs_data_t* settings) {
 			m_VideoEncoder->SetSlicesPerFrame((uint32_t)value);
 	} catch (...) {}
 
+	try { m_VideoEncoder->Restart(); } catch (...) { return false; }
 
 	return true;
+}
+
+bool Plugin::Interface::H264Interface::encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
+	if (!frame || !packet || !received_packet)
+		return false;
+
+	bool retVal = true;
+
+	retVal = m_VideoEncoder->SendInput(frame);
+	m_VideoEncoder->GetOutput(packet, received_packet);
+
+	return retVal;
+}
+
+void Plugin::Interface::H264Interface::get_video_info(struct video_scale_info* info) {
+	m_VideoEncoder->GetVideoInfo(info);
+}
+
+bool Plugin::Interface::H264Interface::get_extra_data(uint8_t** extra_data, size_t* size) {
+	return m_VideoEncoder->GetExtraData(extra_data, size);
 }
