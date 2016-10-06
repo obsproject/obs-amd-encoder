@@ -1243,11 +1243,11 @@ void Plugin::AMD::VCEEncoder::SetVBVBufferSize(uint32_t size) {
 				uint8_t qp_i, qp_p, qp_b;
 				qp_i = this->GetIFrameQP();
 				qp_p = this->GetPFrameQP();
-				try { qp_b = this->GetBFrameQP(); } catch (...) {}
+				try { qp_b = this->GetBFrameQP(); } catch (...) { qp_b = 51; }
 				double_t qp = 1 - ((double_t)(min(min(qp_i, qp_p), qp_b)) / 51.0);
 				qp = max(qp * qp, 0.001); // Needs to be at least 0.001.
 
-				size = bitrate * qp;
+				size = (uint32_t)(bitrate * qp);
 				break;
 		}
 	} else {
