@@ -373,7 +373,7 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void*) 
 	return props;
 }
 
-bool Plugin::Interface::H264SimpleInterface::modified_preset(obs_properties_t*, obs_property_t*, obs_data_t *data) {
+bool Plugin::Interface::H264SimpleInterface::modified_preset(obs_properties_t *props, obs_property_t *prop, obs_data_t *data) {
 	switch (obs_data_get_int(data, AMF_H264SIMPLE_PRESET)) {
 		case Preset_Twitch: // Twitch
 			#pragma region Preset: Twitch
@@ -437,6 +437,9 @@ bool Plugin::Interface::H264SimpleInterface::modified_preset(obs_properties_t*, 
 			break;
 			#pragma endregion Preset: Lossless
 	}
+
+	// Update Rate Control too. Why that doesn't happen automatically in here, no fucking idea.
+	modified_rate_control(props, prop, data);
 
 	return true;
 }
