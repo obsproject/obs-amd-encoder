@@ -280,7 +280,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	/// h264 Profile Level
 	list = obs_properties_add_list(props, AMF_H264_PROFILELEVEL, obs_module_text(AMF_H264_PROFILELEVEL), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, obs_module_text(AMF_UTIL_DEFAULT), -1);
-	obs_property_list_add_int(p, AMF_UTIL_AUTOMATIC, VCEProfileLevel_Automatic);
+	obs_property_list_add_int(p, obs_module_text(AMF_UTIL_AUTOMATIC), VCEProfileLevel_Automatic);
 	switch (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxProfileLevel) {
 		case 62:
 			obs_property_list_add_int(list, "6.2", VCEProfileLevel_62);
