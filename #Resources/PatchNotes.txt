@@ -10,14 +10,7 @@ Before installing this Version, please uninstall any previous versions. If you u
 
 ### Changelog
 
-* Fixed: Reduced CPU and UI load when changing options.
-* Changed: Language Files have been updated from CrowdIn.
-* Changed: All Presets no longer override Advanced and Expert parameters and now use to 'Automatic' Profile Level'
-* Changed: 'Twitch', 'YouTube' and 'Recording' Preset no longer override the 'Quality Preset' parameter.
-* Changed: 'Twitch' Preset Profile is now Main again.
-* Changed: 'High Quality' Preset QP changed from 16/18/21 to 16/21/26.
-* Changed: 'Indistinguishable' Preset QP changed from 11/13/16 to 11/16/21.
-* Changed: VBR_LAT no longer hides Peak Bitrate option.
-* Added: 'Automatic' Profile Level which will pick the correct level depending on framesize and framerate.
-* Added: \[Advanced\] interface now supports automatic VBV Buffer Size (set to 0).
-* Added: Dynamic Reconfiguring, which allows settings to be changed and applied during streaming/recording.
+* Fixed: Buffer Size is now properly calculated again when not overriden.
+* Fixed: Presets are now applied properly again.
+* Changed: Threading Model has been redesigned to be much more efficient and crash proof.
+* Changed: OpenCL code has been slightly adjusted for a massive performance boost.
