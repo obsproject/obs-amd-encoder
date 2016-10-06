@@ -365,10 +365,10 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void*) 
 		obs_property_list_add_int(p, obs_module_text(AMF_UTIL_DEFAULT), -1);
 		obs_property_list_add_int(p, obs_module_text(AMF_UTIL_TOGGLE_DISABLED), 0);
 		obs_property_list_add_int(p, obs_module_text(AMF_UTIL_TOGGLE_ENABLED), 1);
-
-		// Debug Mode
-		obs_properties_add_bool(props, AMF_H264_DEBUGTRACING, obs_module_text(AMF_H264_DEBUGTRACING));
 	}
+
+	// Debug Mode
+	obs_properties_add_bool(props, AMF_H264_DEBUGTRACING, obs_module_text(AMF_H264_DEBUGTRACING));
 
 	return props;
 }
@@ -461,6 +461,7 @@ bool Plugin::Interface::H264SimpleInterface::modified_rate_control(obs_propertie
 
 	{ // Buffer Size
 		bool vis = obs_data_get_bool(data, AMF_H264SIMPLE_USE_CUSTOM_BUFFER_SIZE);
+
 		obs_property_set_visible(obs_properties_get(props, AMF_H264SIMPLE_CUSTOM_BUFFER_SIZE), vis);
 		obs_property_set_visible(obs_properties_get(props, AMF_H264SIMPLE_CUSTOM_BUFFER_FULLNESS), vis);
 	}
@@ -477,6 +478,7 @@ bool Plugin::Interface::H264SimpleInterface::modified_show_advanced(obs_properti
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_BPICTURE_REFERENCE), vis2);
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_BPICTURE_DELTA), vis2);
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA), vis2);
+
 	// Other
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_DEBLOCKINGFILTER), vis);
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_ENFORCEHRDCOMPATIBILITY), vis);
@@ -487,15 +489,16 @@ bool Plugin::Interface::H264SimpleInterface::modified_show_advanced(obs_properti
 bool Plugin::Interface::H264SimpleInterface::modified_show_expert(obs_properties_t *props, obs_property_t *, obs_data_t *data) {
 	bool vis = obs_data_get_bool(data, AMF_H264SIMPLE_EXPERT_SHOW_PARAMETERS);
 
+	// Memory, Compute And Surface Format
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_MEMORYTYPE), vis);
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_COMPUTETYPE), vis);
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_SURFACEFORMAT), vis);
 
-	/// GOP Size
+	// GOP Size
 	obs_property_set_visible(obs_properties_get(props, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE), vis);
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_GOP_SIZE), vis && obs_data_get_bool(data, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE));
 
-	/// CABAC
+	// CABAC
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_CABAC), vis);
 
 	return false;
