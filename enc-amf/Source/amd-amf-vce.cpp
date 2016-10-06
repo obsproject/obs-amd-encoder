@@ -303,10 +303,7 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 		amf::AMFSurfacePtr pAMFSurface = CreateSurfaceFromFrame(frame);
 		if (pAMFSurface) {
 			// Set Surface Properties
-			uint64_t pts_prec_max = m_FrameRate.first * m_FrameRate.second;
-			amf_pts pts_frame = (uint64_t)round(((frame->pts % pts_prec_max) / m_FrameRate.second) * m_FrameRateReverseDivisor * 1e7);
-			amf_pts pts_prec = (frame->pts / pts_prec_max) * (uint64_t)ceil(m_FrameRateReverseDivisor * 1e7 * pts_prec_max);
-			pAMFSurface->SetPts(pts_prec + pts_frame);
+			pAMFSurface->SetPts(frame->pts / m_FrameRate.second);
 			pAMFSurface->SetProperty(L"Frame", frame->pts);
 
 			// Add to Queue
@@ -435,11 +432,8 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 		packet->size = uiBufferSize;
 		std::memcpy(packet->data, pAMFBuffer->GetNative(), packet->size);
 		/// Timestamps
-		uint64_t pts_prec_div = (uint64_t)ceil(m_FrameRateReverseDivisor * 1e7 * (m_FrameRate.first * m_FrameRate.second));
 		amf_pts dts = pAMFData->GetPts();
-		uint64_t dts_prec = (dts / pts_prec_div) * (m_FrameRate.first * m_FrameRate.second);
-		uint64_t dts_frame = (uint64_t)round((double_t)(dts % pts_prec_div) / (m_FrameRateReverseDivisor * 1e7));
-		packet->dts = (dts_prec + dts_frame) - 2; // Offset by 2 to support B-Pictures
+		packet->dts = (pAMFData->GetPts() - 2) * m_FrameRate.second; // Offset by 2 to support B-Pictures
 		pAMFBuffer->GetProperty(L"Frame", &packet->pts);
 		{ /// Packet Priority & Keyframe
 			uint64_t pktType;
@@ -662,18 +656,16 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 		amf_size l_size1[] = { m_FrameSize.first >> 1, m_FrameSize.second >> 1, 1 };
 
 		amf::AMFComputeSyncPointPtr pSyncPoint;
+		m_AMFCompute->PutSyncPoint(&pSyncPoint);
 		res = m_AMFContext->AllocSurface(memoryTypeToAMF[m_MemoryType], surfaceFormatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second, &pSurface);
 		if (m_ComputeType == VCEComputeType_OpenCL) {
 			pSurface->Convert(amf::AMF_MEMORY_OPENCL);
 		}
-		m_AMFCompute->PutSyncPoint(&pSyncPoint);
 		m_AMFCompute->CopyPlaneFromHost(frame->data[0], l_origin, l_size0, frame->linesize[0], pSurface->GetPlaneAt(0), false);
 		m_AMFCompute->CopyPlaneFromHost(frame->data[1], l_origin, l_size1, frame->linesize[1], pSurface->GetPlaneAt(1), false);
 		m_AMFCompute->FinishQueue();
-		pSyncPoint->Wait();
-
-		// Convert to AMF native type.
 		pSurface->Convert(memoryTypeToAMF[m_MemoryType]);
+		pSyncPoint->Wait();
 	} else {
 		res = m_AMFContext->AllocSurface(amf::AMF_MEMORY_HOST, surfaceFormatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second, &pSurface);
 		if (res != AMF_OK) // Unable to create Surface
