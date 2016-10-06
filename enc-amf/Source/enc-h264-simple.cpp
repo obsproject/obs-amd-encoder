@@ -438,7 +438,7 @@ bool Plugin::Interface::H264SimpleInterface::modified_preset(obs_properties_t*, 
 			#pragma endregion Preset: Lossless
 	}
 
-	return false;
+	return true;
 }
 
 bool Plugin::Interface::H264SimpleInterface::modified_rate_control(obs_properties_t *props, obs_property_t *, obs_data_t *data) {
@@ -448,6 +448,25 @@ bool Plugin::Interface::H264SimpleInterface::modified_rate_control(obs_propertie
 			vis_FrameQP = false,
 			vis_MinMaxQP = false,
 			vis_FillerData = false;
+
+		switch ((VCERateControlMethod)obs_data_get_int(data, AMF_H264_RATECONTROLMETHOD)) {
+			case VCERateControlMethod_ConstantQP:
+				vis_FrameQP = true;
+				break;
+			case VCERateControlMethod_ConstantBitrate:
+				vis_bitrateTarget = true;
+				vis_FillerData = true;
+				break;
+			case VCERateControlMethod_VariableBitrate_PeakConstrained:
+				vis_bitrateTarget = true;
+				vis_bitratePeak = true;
+				break;
+			case VCERateControlMethod_VariableBitrate_LatencyConstrained:
+				vis_bitrateTarget = true;
+				vis_bitratePeak = true;
+				vis_MinMaxQP = true;
+				break;
+		}
 
 		obs_property_set_visible(obs_properties_get(props, AMF_H264_BITRATE_TARGET), vis_bitrateTarget);
 		obs_property_set_visible(obs_properties_get(props, AMF_H264_BITRATE_PEAK), vis_bitratePeak);
@@ -466,7 +485,7 @@ bool Plugin::Interface::H264SimpleInterface::modified_rate_control(obs_propertie
 		obs_property_set_visible(obs_properties_get(props, AMF_H264SIMPLE_CUSTOM_BUFFER_FULLNESS), vis);
 	}
 
-	return false;
+	return true;
 }
 
 bool Plugin::Interface::H264SimpleInterface::modified_show_advanced(obs_properties_t *props, obs_property_t*, obs_data_t *data) {
@@ -483,7 +502,7 @@ bool Plugin::Interface::H264SimpleInterface::modified_show_advanced(obs_properti
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_DEBLOCKINGFILTER), vis);
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_ENFORCEHRDCOMPATIBILITY), vis);
 
-	return false;
+	return true;
 }
 
 bool Plugin::Interface::H264SimpleInterface::modified_show_expert(obs_properties_t *props, obs_property_t *, obs_data_t *data) {
@@ -501,7 +520,7 @@ bool Plugin::Interface::H264SimpleInterface::modified_show_expert(obs_properties
 	// CABAC
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_CABAC), vis);
 
-	return false;
+	return true;
 }
 
 void* Plugin::Interface::H264SimpleInterface::create(obs_data_t* settings, obs_encoder_t* encoder) {
@@ -791,6 +810,9 @@ bool Plugin::Interface::H264SimpleInterface::update(obs_data_t* settings) {
 		m_VideoEncoder->SetGOPSize((uint32_t)obs_data_get_int(settings, AMF_H264_GOP_SIZE));
 	if (obs_data_get_int(settings, AMF_H264_CABAC) != -1)
 		m_VideoEncoder->SetCABACEnabled(!!obs_data_get_bool(settings, AMF_H264_CABAC));
+
+	// Reinit Encoder with new parameters
+	m_VideoEncoder->Restart();
 
 	return false;
 }
