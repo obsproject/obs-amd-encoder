@@ -198,7 +198,7 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void*) 
 		obs_property_list_add_int(p, "Baseline", Plugin::AMD::VCEProfile::VCEProfile_Baseline);
 		obs_property_list_add_int(p, "Main", Plugin::AMD::VCEProfile::VCEProfile_Main);
 		obs_property_list_add_int(p, "High", Plugin::AMD::VCEProfile::VCEProfile_High);
-		
+
 		/// Profile Level
 		p = obs_properties_add_list(props, AMF_H264_PROFILELEVEL, obs_module_text(AMF_H264_PROFILELEVEL), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 		obs_property_list_add_int(p, AMF_UTIL_AUTOMATIC, 0);
@@ -244,7 +244,7 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void*) 
 				obs_property_list_add_int(p, "1.0", VCEProfileLevel_10);
 		}
 	}
-	
+
 	{ // Rate Control Properties
 	  /// Rate Control
 		p = obs_properties_add_list(props, AMF_H264_RATECONTROLMETHOD, obs_module_text(AMF_H264_RATECONTROLMETHOD), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
@@ -281,7 +281,7 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void*) 
 		obs_property_list_add_int(p, obs_module_text(AMF_UTIL_TOGGLE_DISABLED), 0);
 		obs_property_list_add_int(p, obs_module_text(AMF_UTIL_TOGGLE_ENABLED), 1);
 	}
-	
+
 	{ // Advanced Properties
 		p = obs_properties_add_bool(props, AMF_H264SIMPLE_ADVANCED_SHOW_PARAMETERS, obs_module_text(AMF_H264SIMPLE_ADVANCED_SHOW_PARAMETERS));
 		obs_property_set_modified_callback(p, &modified_show_advanced);
@@ -299,7 +299,7 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void*) 
 		obs_property_list_add_int(p, obs_module_text(AMF_UTIL_DEFAULT), -1);
 		obs_property_list_add_int(p, obs_module_text(AMF_UTIL_TOGGLE_DISABLED), 0);
 		obs_property_list_add_int(p, obs_module_text(AMF_UTIL_TOGGLE_ENABLED), 1);
-		
+
 		/// HRD Restrictions
 		p = obs_properties_add_list(props, AMF_H264_ENFORCEHRDCOMPATIBILITY, obs_module_text(AMF_H264_ENFORCEHRDCOMPATIBILITY), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 		obs_property_list_add_int(p, obs_module_text(AMF_UTIL_DEFAULT), -1);
@@ -365,7 +365,7 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void*) 
 		obs_property_list_add_int(p, obs_module_text(AMF_UTIL_DEFAULT), -1);
 		obs_property_list_add_int(p, obs_module_text(AMF_UTIL_TOGGLE_DISABLED), 0);
 		obs_property_list_add_int(p, obs_module_text(AMF_UTIL_TOGGLE_ENABLED), 1);
-		
+
 		// Debug Mode
 		obs_properties_add_bool(props, AMF_H264_DEBUGTRACING, obs_module_text(AMF_H264_DEBUGTRACING));
 	}
@@ -373,7 +373,7 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void*) 
 	return props;
 }
 
-bool Plugin::Interface::H264SimpleInterface::modified_preset(obs_properties_t *props, obs_property_t *property, obs_data_t *data) {
+bool Plugin::Interface::H264SimpleInterface::modified_preset(obs_properties_t*, obs_property_t*, obs_data_t *data) {
 	switch (obs_data_get_int(data, AMF_H264SIMPLE_PRESET)) {
 		case Preset_Twitch: // Twitch
 			#pragma region Preset: Twitch
@@ -485,7 +485,7 @@ bool Plugin::Interface::H264SimpleInterface::modified_rate_control(obs_propertie
 	return false;
 }
 
-bool Plugin::Interface::H264SimpleInterface::modified_show_advanced(obs_properties_t *props, obs_property_t *property, obs_data_t *data) {
+bool Plugin::Interface::H264SimpleInterface::modified_show_advanced(obs_properties_t *props, obs_property_t*, obs_data_t *data) {
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_BPICTURE_PATTERN), false);
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_BPICTURE_REFERENCE), false);
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_BPICTURE_DELTA), false);
@@ -503,31 +503,23 @@ bool Plugin::Interface::H264SimpleInterface::modified_show_advanced(obs_properti
 		obs_property_set_visible(obs_properties_get(props, AMF_H264_DEBLOCKINGFILTER), true);
 		obs_property_set_visible(obs_properties_get(props, AMF_H264_ENFORCEHRDCOMPATIBILITY), true);
 	}
-	
+
 	return false;
 }
 
-bool Plugin::Interface::H264SimpleInterface::modified_show_expert(obs_properties_t *props, obs_property_t *property, obs_data_t *data) {
-	obs_property_set_visible(obs_properties_get(props, AMF_H264_MEMORYTYPE), false);
-	obs_property_set_visible(obs_properties_get(props, AMF_H264_COMPUTETYPE), false);
-	obs_property_set_visible(obs_properties_get(props, AMF_H264_SURFACEFORMAT), false);
-	obs_property_set_visible(obs_properties_get(props, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE), false);
-	obs_property_set_visible(obs_properties_get(props, AMF_H264_GOP_SIZE), false);
-	obs_property_set_visible(obs_properties_get(props, AMF_H264_CABAC), false);
+bool Plugin::Interface::H264SimpleInterface::modified_show_expert(obs_properties_t *props, obs_property_t *, obs_data_t *data) {
+	bool vis = obs_data_get_bool(data, AMF_H264SIMPLE_EXPERT_SHOW_PARAMETERS);
 
-	if (obs_data_get_bool(data, AMF_H264SIMPLE_EXPERT_SHOW_PARAMETERS)) {
-		obs_property_set_visible(obs_properties_get(props, AMF_H264_MEMORYTYPE), true);
-		obs_property_set_visible(obs_properties_get(props, AMF_H264_COMPUTETYPE), true);
-		obs_property_set_visible(obs_properties_get(props, AMF_H264_SURFACEFORMAT), true);
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_MEMORYTYPE), vis);
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_COMPUTETYPE), vis);
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_SURFACEFORMAT), vis);
 
-		/// GOP Size
-		obs_property_set_visible(obs_properties_get(props, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE), true);
-		if (obs_data_get_bool(data, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE))
-			obs_property_set_visible(obs_properties_get(props, AMF_H264_GOP_SIZE), true);
+	/// GOP Size
+	obs_property_set_visible(obs_properties_get(props, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE), vis);
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_GOP_SIZE), vis && obs_data_get_bool(data, AMF_H264SIMPLE_USE_CUSTOM_GOP_SIZE));
 
-		/// CABAC
-		obs_property_set_visible(obs_properties_get(props, AMF_H264_CABAC), true);
-	}
+	/// CABAC
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_CABAC), vis);
 
 	return false;
 }
