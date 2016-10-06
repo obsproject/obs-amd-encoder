@@ -201,7 +201,7 @@ obs_properties_t* Plugin::Interface::H264SimpleInterface::get_properties(void*) 
 
 		/// Profile Level
 		p = obs_properties_add_list(props, AMF_H264_PROFILELEVEL, obs_module_text(AMF_H264_PROFILELEVEL), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-		obs_property_list_add_int(p, AMF_UTIL_AUTOMATIC, 0);
+		obs_property_list_add_int(p, AMF_UTIL_AUTOMATIC, VCEProfileLevel_Automatic);
 		switch (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxProfileLevel) {
 			case 62:
 				obs_property_list_add_int(p, "6.2", VCEProfileLevel_62);
@@ -379,7 +379,7 @@ bool Plugin::Interface::H264SimpleInterface::modified_preset(obs_properties_t*, 
 			#pragma region Preset: Twitch
 			obs_data_set_autoselect_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 2);
 			obs_data_set_autoselect_int(data, AMF_H264_PROFILE, VCEProfile_Main);
-			obs_data_set_autoselect_int(data, AMF_H264_PROFILELEVEL, 0); // Automatic
+			obs_data_set_autoselect_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic); // Automatic
 			obs_data_set_autoselect_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantBitrate);
 			obs_data_set_autoselect_int(data, AMF_H264_FILLERDATA, 1);
 			break;
@@ -388,7 +388,7 @@ bool Plugin::Interface::H264SimpleInterface::modified_preset(obs_properties_t*, 
 			#pragma region Preset: YouTube
 			obs_data_set_autoselect_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 2);
 			obs_data_set_autoselect_int(data, AMF_H264_PROFILE, VCEProfile_High);
-			obs_data_set_autoselect_int(data, AMF_H264_PROFILELEVEL, 0); // Automatic
+			obs_data_set_autoselect_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic); // Automatic
 			obs_data_set_autoselect_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantBitrate);
 			obs_data_set_autoselect_int(data, AMF_H264_FILLERDATA, 1);
 			break;
@@ -397,7 +397,7 @@ bool Plugin::Interface::H264SimpleInterface::modified_preset(obs_properties_t*, 
 			#pragma region Preset: Recording
 			obs_data_set_autoselect_int(data, AMF_H264SIMPLE_KEYFRAME_INTERVAL, 1);
 			obs_data_set_autoselect_int(data, AMF_H264_PROFILE, VCEProfile_High);
-			obs_data_set_autoselect_int(data, AMF_H264_PROFILELEVEL, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxProfileLevel);
+			obs_data_set_autoselect_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
 			obs_data_set_autoselect_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_VariableBitrate_LatencyConstrained);
 			obs_data_set_autoselect_int(data, AMF_H264_QP_MINIMUM, 0);
 			obs_data_set_autoselect_int(data, AMF_H264_QP_MAXIMUM, 51);
@@ -619,16 +619,13 @@ Plugin::Interface::H264SimpleInterface::H264SimpleInterface(obs_data_t* settings
 	/// Profile, Profile Level - User Defined
 	m_VideoEncoder->SetProfile((VCEProfile)obs_data_get_int(settings, AMF_H264_PROFILE));
 	VCEProfileLevel level = (VCEProfileLevel)obs_data_get_int(settings, AMF_H264_PROFILELEVEL);
-	if (level != -1) {
+	if (level != VCEProfileLevel_Automatic) {
 		VCEProfileLevel minLevel = Plugin::Utility::GetMinimumProfileLevel(std::pair<uint32_t, uint32_t>(width, height), std::pair<uint32_t, uint32_t>(fpsNum, fpsDen));
 		if (level < minLevel) {
 			AMF_LOG_WARNING("[WARNING] Profile Level %d.%d is too low for %dx%d at %d/%d fps, set to %d.%d.", ((int32_t)level) / 10, ((int32_t)level % 10), width, height, fpsNum, fpsDen, ((int32_t)minLevel / 10), ((int32_t)minLevel % 10));
 			level = minLevel;
 			obs_data_set_int(settings, AMF_H264_PROFILELEVEL, level);
 		}
-	} else {
-		level = Plugin::Utility::GetMinimumProfileLevel(std::pair<uint32_t, uint32_t>(width, height), std::pair<uint32_t, uint32_t>(fpsNum, fpsDen));
-		AMF_LOG_INFO("Automatically detected Profile Level %d.%d based on resolution %dx%d at %d/%d fps.", ((int32_t)level) / 10, ((int32_t)level % 10), width, height, fpsNum, fpsDen);
 	}
 	m_VideoEncoder->SetProfileLevel(level);
 
