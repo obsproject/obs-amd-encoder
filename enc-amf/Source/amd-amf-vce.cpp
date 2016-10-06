@@ -206,6 +206,32 @@ void Plugin::AMD::VCEEncoder::Start() {
 	}
 }
 
+void Plugin::AMD::VCEEncoder::Restart() {
+	static amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
+		// 4:2:0 Formats
+		amf::AMF_SURFACE_NV12,
+		amf::AMF_SURFACE_YUV420P,
+		// 4:2:2 Formats
+		amf::AMF_SURFACE_YUY2,
+		// Uncompressed
+		amf::AMF_SURFACE_BGRA,
+		amf::AMF_SURFACE_RGBA,
+		// Other
+		amf::AMF_SURFACE_GRAY8,
+	};
+
+	if (!m_Flag_IsStarted)
+		return;
+
+	std::unique_lock<std::mutex> ilock(m_Input.mutex);
+	std::unique_lock<std::mutex> olock(m_Output.mutex);
+
+	// Create Encoder
+	AMF_RESULT res = m_AMFEncoder->ReInit(m_FrameSize.first, m_FrameSize.second);
+	if (res != AMF_OK)
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::Start> Initialization failed with error %ls (code %d).", res);
+}
+
 void Plugin::AMD::VCEEncoder::Stop() {
 	// Restore Timer precision.
 	if (m_TimerPeriod != 0) {
@@ -1222,20 +1248,18 @@ void Plugin::AMD::VCEEncoder::SetVBVBufferSize(uint32_t size) {
 				double_t bitrate = frameSize.first * frameSize.second;
 				switch (this->m_SurfaceFormat) {
 					case VCESurfaceFormat_NV12:
-						bitrate *= (8 + (8/2)); // 12
-						break;
 					case VCESurfaceFormat_I420:
-						bitrate *= (8 + (8/2/2) + (8/2/2)); // 12
+						bitrate *= 1.5;
 						break;
 					case VCESurfaceFormat_YUY2:
-						bitrate *= (8 + 8 + 8 + 8);
+						bitrate *= 4;
 						break;
 					case VCESurfaceFormat_BGRA:
 					case VCESurfaceFormat_RGBA:
-						bitrate *= (8 + 8 + 8);
+						bitrate *= 3;
 						break;
 					case VCESurfaceFormat_GRAY:
-						bitrate *= 8;
+						bitrate *= 1;
 						break;
 				}
 				bitrate *= frameRate.first / frameRate.second;
@@ -1250,10 +1274,9 @@ void Plugin::AMD::VCEEncoder::SetVBVBufferSize(uint32_t size) {
 				size = (uint32_t)(bitrate * qp);
 				break;
 		}
-	} else {
-		// Clamp Value
-		size = max(min(size, 100000000), 1000); // 1kbit to 100mbit.
 	}
+	// Clamp Value
+	size = max(min(size, 1000000000), 1000); // 1kbit to 100mbit.
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, (uint32_t)size);
 	if (res != AMF_OK) {

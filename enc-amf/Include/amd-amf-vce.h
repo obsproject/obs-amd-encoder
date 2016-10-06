@@ -159,6 +159,7 @@ namespace Plugin {
 			//////////////////////////////////////////////////////////////////////////
 			public:
 			void Start();
+			void Restart();
 			void Stop();
 			bool SendInput(struct encoder_frame* frame);
 			void GetOutput(struct encoder_packet* packet, bool* received_packet);
