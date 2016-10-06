@@ -1282,7 +1282,7 @@ void Plugin::AMD::VCEEncoder::SetVBVBufferSize(uint32_t size) {
 		}
 	}
 	// Clamp Value
-	size = max(min(size, 1000000000), 1000); // 1kbit to 100mbit.
+	size = max(min(size, 100000000), 1000); // 1kbit to 100mbit.
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, (uint32_t)size);
 	if (res != AMF_OK) {
