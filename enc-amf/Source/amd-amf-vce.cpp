@@ -27,6 +27,7 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 #include "amd-amf-vce.h"
 #include "amd-amf-vce-capabilities.h"
+#include "misc-util.cpp"
 
 #if (defined _WIN32) | (defined _WIN64)
 #include <windows.h>
@@ -878,6 +879,13 @@ Plugin::AMD::VCEProfile Plugin::AMD::VCEEncoder::GetProfile() {
 }
 
 void Plugin::AMD::VCEEncoder::SetProfileLevel(VCEProfileLevel level) {
+	// Automatic Detection
+	if (level == VCEProfileLevel_Automatic) {
+		auto frameSize = this->GetFrameSize();
+		auto frameRate = this->GetFrameRate();
+		level = Plugin::Utility::GetMinimumProfileLevel(frameSize, frameRate);
+	}
+	
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, (uint32_t)level);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetProfile> Setting to %d failed with error %ls (code %d).", res, level);

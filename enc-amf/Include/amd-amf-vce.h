@@ -90,6 +90,7 @@ namespace Plugin {
 			VCEProfile_Unknown = -1,
 		};
 		enum VCEProfileLevel {
+			VCEProfileLevel_Automatic = 0,
 			VCEProfileLevel_10 = 10,
 			VCEProfileLevel_11,
 			VCEProfileLevel_12,
