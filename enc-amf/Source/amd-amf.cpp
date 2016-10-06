@@ -63,7 +63,7 @@ std::shared_ptr<Plugin::AMD::AMF> Plugin::AMD::AMF::GetInstance() {
 Plugin::AMD::AMF::AMF() {
 	AMF_RESULT res = AMF_OK;
 
-	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Initializing...");
+	AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Initializing...");
 
 	// Null Values
 	m_TimerPeriod = 0;
@@ -81,11 +81,11 @@ Plugin::AMD::AMF::AMF() {
 	if (!m_AMFModule) {
 		DWORD error = GetLastError();
 		std::vector<char> buf(1024);
-		sprintf(buf.data(), "<Plugin::AMD::AMF::AMF> Loading of '%ls' failed with error code %d.", AMF_DLL_NAME, error);
+		sprintf(buf.data(), "Unable to load '%ls', error code %ld.", AMF_DLL_NAME, error);
 		AMF_LOG_ERROR("%s", buf.data());
 		throw std::exception(buf.data(), error);
 	} else {
-		AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Loaded '%ls'.", AMF_DLL_NAME);
+		AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Loaded '%ls'.", AMF_DLL_NAME);
 	}
 
 	// Find Function: Query Version
@@ -93,7 +93,7 @@ Plugin::AMD::AMF::AMF() {
 	if (!AMFQueryVersion) {
 		DWORD error = GetLastError();
 		std::vector<char> buf(1024);
-		sprintf(buf.data(), "<Plugin::AMD::AMF::AMF> Finding Address of Function '%s' failed with error code %d.", AMF_QUERY_VERSION_FUNCTION_NAME, error);
+		sprintf(buf.data(), "<Plugin::AMD::AMF::AMF> Finding Address of Function '%s' failed with error code %ld.", AMF_QUERY_VERSION_FUNCTION_NAME, error);
 		AMF_LOG_ERROR("%s", buf.data());
 		throw std::exception(buf.data(), error);
 	}
@@ -101,11 +101,9 @@ Plugin::AMD::AMF::AMF() {
 	// Query Runtime Version
 	m_AMFVersion_Compiler = AMF_FULL_VERSION;
 	res = AMFQueryVersion(&m_AMFVersion_Runtime);
-	if (res != AMF_OK) {
-		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Querying Version failed with error code %d.", res);
-		throw std::exception("<Plugin::AMD::AMF::AMF> Querying Version failed with error code ", res);
-	}
-	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Runtime is on Version %d.%d.%d.%d",
+	if (res != AMF_OK)
+		ThrowExceptionWithAMFError("<Plugin::AMD::AMF::AMF> Querying Version failed with error %ls (code %ld).", res);
+	AMF_LOG_INFO("Runtime is on Version %d.%d.%d.%d",
 		(uint16_t)((m_AMFVersion_Runtime >> 48ull) & 0xFFFF),
 		(uint16_t)((m_AMFVersion_Runtime >> 32ull) & 0xFFFF),
 		(uint16_t)((m_AMFVersion_Runtime >> 16ull) & 0xFFFF),
@@ -116,7 +114,7 @@ Plugin::AMD::AMF::AMF() {
 	if (!AMFInit) {
 		DWORD error = GetLastError();
 		std::vector<char> buf(1024);
-		sprintf(buf.data(), "<Plugin::AMD::AMF::AMF> Loading of '%ls' failed with error code %d.", AMF_DLL_NAME, error);
+		sprintf(buf.data(), "<Plugin::AMD::AMF::AMF> Finding Address of Function '%s' failed with error code %ld.", AMF_INIT_FUNCTION_NAME, error);
 		AMF_LOG_ERROR("%s", buf.data());
 		throw std::exception(buf.data(), error);
 	}
@@ -124,31 +122,31 @@ Plugin::AMD::AMF::AMF() {
 	// Initialize AMF Libraries
 	res = AMFInit(m_AMFVersion_Runtime, &m_AMFFactory);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::AMF::AMF> Initializing AMF Library failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::AMF::AMF> Initializing AMF Library failed with error %ls (code %ld).", res);
 	} else {
-		AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> AMF Library initialized.");
+		AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> AMF Library initialized.");
 	}
 
 	// Retrieve Trace Object
 	res = m_AMFFactory->GetTrace(&m_AMFTrace);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::AMF::AMF> Retrieving Trace object failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<Plugin::AMD::AMF::AMF> Retrieving Trace object failed with error %ls (code %ld).", res);
 	}
 
 	// Retrieve Debug Object
 	res = m_AMFFactory->GetDebug(&m_AMFDebug);
 	if (res != AMF_OK) {
-		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Retrieving Debug object failed with error code %ls (code %d).", res);
+		AMF_LOG_ERROR("<Plugin::AMD::AMF::AMF> Retrieving Debug object failed with error code %ls (code %ld).", res);
 		throw std::exception("", res);
 	}
 	m_AMFTrace->RegisterWriter(L"OBSWriter", new CustomWriter(), true);
 	this->EnableDebugTrace(false);
 
-	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Initialized.");
+	AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Initialized.");
 }
 
 Plugin::AMD::AMF::~AMF() {
-	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Finalizing.");
+	AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Finalizing.");
 
 	// Free Library again
 	if (m_AMFModule)
@@ -165,7 +163,7 @@ Plugin::AMD::AMF::~AMF() {
 	AMFQueryVersion = nullptr;
 	AMFInit = nullptr;
 
-	AMF_LOG_INFO("<Plugin::AMD::AMF::AMF> Finalized.");
+	AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Finalized.");
 }
 
 amf::AMFFactory* Plugin::AMD::AMF::GetFactory() {
