@@ -385,7 +385,7 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 			std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
 			if (m_Output.queue.size() == 0)
 				return;
-			
+
 			pAMFData = m_Output.queue.front();
 			m_Output.queue.pop();
 		}
@@ -728,7 +728,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("  Method: %s", rateControlMethodToString[this->GetRateControlMethod()]);
 	AMF_LOG_INFO("  Frame Skipping Enabled: %s", this->IsRateControlSkipFrameEnabled() ? "Yes" : "No");
 	AMF_LOG_INFO("  Filler Data Enabled: %s", this->IsFillerDataEnabled() ? "Yes" : "No");
-	AMF_LOG_INFO("  Enforcce HRD Restrictions: %s", this->IsEnforceHRDRestrictionsEnabled() ? "Yes" : "No");
+	AMF_LOG_INFO("  Enforce HRD Restrictions: %s", this->IsEnforceHRDRestrictionsEnabled() ? "Yes" : "No");
 	AMF_LOG_INFO("  Maximum Access Unit Size: %d bits", this->GetMaximumAccessUnitSize());
 	AMF_LOG_INFO("  Bitrate: ");
 	AMF_LOG_INFO("    Target: %d bits", this->GetTargetBitrate());
@@ -885,7 +885,7 @@ void Plugin::AMD::VCEEncoder::SetProfileLevel(VCEProfileLevel level) {
 		auto frameRate = this->GetFrameRate();
 		level = Plugin::Utility::GetMinimumProfileLevel(frameSize, frameRate);
 	}
-	
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, (uint32_t)level);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetProfile> Setting to %d failed with error %ls (code %d).", res, level);
@@ -1197,8 +1197,63 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameRate() {
 }
 
 void Plugin::AMD::VCEEncoder::SetVBVBufferSize(uint32_t size) {
-	// Clamp Value
-	size = max(min(size, 100000000), 1000); // 1kbit to 100mbit.
+	if (size == 0) { // 0 is Automatic.
+		switch (this->GetRateControlMethod()) {
+			case VCERateControlMethod_ConstantBitrate:
+				size = this->GetTargetBitrate();
+				break;
+			case VCERateControlMethod_VariableBitrate_PeakConstrained:
+				size = max(this->GetTargetBitrate(), this->GetPeakBitrate());
+				break;
+			case VCERateControlMethod_VariableBitrate_LatencyConstrained:
+				size = 100000000;
+				break;
+			case VCERateControlMethod_ConstantQP:
+				// When using Constant QP, one will have to pick a QP that is decent
+				//  in both quality and bitrate. We can easily calculate both the QP
+				//  required for an average bitrate and the average bitrate itself 
+				//  with these formulas:
+				// BITRATE = ((1 - (QP / 51)) ^ 2) * ((Width * Height) * 1.5 * (FPSNumerator / FPSDenumerator))
+				// QP = (1 - sqrt(BITRATE / ((Width * Height) * 1.5 * (FPSNumerator / FPSDenumerator)))) * 51
+
+				auto frameSize = this->GetFrameSize();
+				auto frameRate = this->GetFrameRate();
+
+				double_t bitrate = frameSize.first * frameSize.second;
+				switch (this->m_SurfaceFormat) {
+					case VCESurfaceFormat_NV12:
+						bitrate *= (8 + (8/2)); // 12
+						break;
+					case VCESurfaceFormat_I420:
+						bitrate *= (8 + (8/2/2) + (8/2/2)); // 12
+						break;
+					case VCESurfaceFormat_YUY2:
+						bitrate *= (8 + 8 + 8 + 8);
+						break;
+					case VCESurfaceFormat_BGRA:
+					case VCESurfaceFormat_RGBA:
+						bitrate *= (8 + 8 + 8);
+						break;
+					case VCESurfaceFormat_GRAY:
+						bitrate *= 8;
+						break;
+				}
+				bitrate *= frameRate.first / frameRate.second;
+
+				uint8_t qp_i, qp_p, qp_b;
+				qp_i = this->GetIFrameQP();
+				qp_p = this->GetPFrameQP();
+				try { qp_b = this->GetBFrameQP(); } catch (...) {}
+				double_t qp = 1 - ((double_t)(min(min(qp_i, qp_p), qp_b)) / 51.0);
+				qp = max(qp * qp, 0.001); // Needs to be at least 0.001.
+
+				size = bitrate * qp;
+				break;
+		}
+	} else {
+		// Clamp Value
+		size = max(min(size, 100000000), 1000); // 1kbit to 100mbit.
+	}
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, (uint32_t)size);
 	if (res != AMF_OK) {
