@@ -486,24 +486,18 @@ bool Plugin::Interface::H264SimpleInterface::modified_rate_control(obs_propertie
 }
 
 bool Plugin::Interface::H264SimpleInterface::modified_show_advanced(obs_properties_t *props, obs_property_t*, obs_data_t *data) {
-	obs_property_set_visible(obs_properties_get(props, AMF_H264_BPICTURE_PATTERN), false);
-	obs_property_set_visible(obs_properties_get(props, AMF_H264_BPICTURE_REFERENCE), false);
-	obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_BPICTURE_DELTA), false);
-	obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA), false);
-	obs_property_set_visible(obs_properties_get(props, AMF_H264_DEBLOCKINGFILTER), false);
-	obs_property_set_visible(obs_properties_get(props, AMF_H264_ENFORCEHRDCOMPATIBILITY), false);
-
-	if (obs_data_get_bool(data, AMF_H264SIMPLE_ADVANCED_SHOW_PARAMETERS)) {
-		if (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames) {
-			obs_property_set_visible(obs_properties_get(props, AMF_H264_BPICTURE_PATTERN), true);
-			obs_property_set_visible(obs_properties_get(props, AMF_H264_BPICTURE_REFERENCE), true);
-			obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_BPICTURE_DELTA), true);
-			obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA), true);
-		}
-		obs_property_set_visible(obs_properties_get(props, AMF_H264_DEBLOCKINGFILTER), true);
-		obs_property_set_visible(obs_properties_get(props, AMF_H264_ENFORCEHRDCOMPATIBILITY), true);
-	}
-
+	bool vis = obs_data_get_bool(data, AMF_H264SIMPLE_ADVANCED_SHOW_PARAMETERS);
+	bool vis2 = vis && VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames;
+	
+	// B-Pictures
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_BPICTURE_PATTERN), vis2);
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_BPICTURE_REFERENCE), vis2);
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_BPICTURE_DELTA), vis2);
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA), vis2);
+	// Other
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_DEBLOCKINGFILTER), vis);
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_ENFORCEHRDCOMPATIBILITY), vis);
+	
 	return false;
 }
 
