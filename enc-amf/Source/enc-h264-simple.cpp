@@ -766,16 +766,36 @@ Plugin::Interface::H264SimpleInterface::~H264SimpleInterface() {
 
 bool Plugin::Interface::H264SimpleInterface::update(obs_data_t* settings) {
 	// Rate Control Method
-	m_VideoEncoder->SetRateControlMethod((VCERateControlMethod)obs_data_get_int(settings, AMF_H264_RATECONTROLMETHOD));
+	VCERateControlMethod rcm = (VCERateControlMethod)obs_data_get_int(settings, AMF_H264_RATECONTROLMETHOD);
+	m_VideoEncoder->SetRateControlMethod(rcm);
 
 	/// Parameters
-	m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(settings, AMF_H264_BITRATE_TARGET) * 1000);
-	m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(settings, AMF_H264_BITRATE_PEAK) * 1000);
-	m_VideoEncoder->SetMinimumQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_MINIMUM));
-	m_VideoEncoder->SetMaximumQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_MAXIMUM));
-	m_VideoEncoder->SetIFrameQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_IFRAME));
-	m_VideoEncoder->SetPFrameQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_PFRAME));
-	try { m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_BFRAME)); } catch (...) {}
+	if (rcm != VCERateControlMethod_ConstantQP) {
+		m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(settings, AMF_H264_BITRATE_TARGET) * 1000);
+	} else {
+		m_VideoEncoder->SetTargetBitrate(0);
+	}		
+	if (rcm == VCERateControlMethod_VariableBitrate_PeakConstrained) {
+		m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(settings, AMF_H264_BITRATE_PEAK) * 1000);
+	} else {
+		m_VideoEncoder->SetPeakBitrate(m_VideoEncoder->GetTargetBitrate());
+	}
+	if (rcm == VCERateControlMethod_VariableBitrate_LatencyConstrained) {
+		m_VideoEncoder->SetMinimumQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_MINIMUM));
+		m_VideoEncoder->SetMaximumQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_MAXIMUM));
+	} else {
+		m_VideoEncoder->SetMinimumQP(1);
+		m_VideoEncoder->SetMaximumQP(51);
+	}
+	if (rcm == VCERateControlMethod_ConstantQP) {
+		m_VideoEncoder->SetIFrameQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_IFRAME));
+		m_VideoEncoder->SetPFrameQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_PFRAME));
+		try { m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_BFRAME)); } catch (...) {}
+	} else {
+		m_VideoEncoder->SetIFrameQP(11);
+		m_VideoEncoder->SetPFrameQP(16);
+		try { m_VideoEncoder->SetBFrameQP(21); } catch (...) {}
+	}
 	try { m_VideoEncoder->SetBPictureDeltaQP((int8_t)obs_data_get_int(settings, AMF_H264_QP_BPICTURE_DELTA)); } catch (...) {}
 	try { m_VideoEncoder->SetReferenceBPictureDeltaQP((int8_t)obs_data_get_int(settings, AMF_H264_QP_REFERENCE_BPICTURE_DELTA)); } catch (...) {}
 
