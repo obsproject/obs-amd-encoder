@@ -56,7 +56,7 @@ namespace Plugin {
 			VCEMemoryType_DirectX11,	// DirectX11
 			VCEMemoryType_OpenGL,		// OpenGL
 
-			VCEMemoryType_Auto = -1,	// Autodetect without OpenCL
+			VCEMemoryType_Auto = -1,	// Auto-Detect
 		};
 		enum VCEComputeType {
 			VCEComputeType_None, // Default

@@ -136,6 +136,10 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 			if (res != AMF_OK)
 				ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> InitOpenCL failed with error %ls (code %ld).", res);
 			m_AMFContext->GetCompute(amf::AMF_MEMORY_OPENCL, &m_AMFCompute);
+
+			if (m_MemoryType == VCEMemoryType_Host)
+				AMF_LOG_WARNING("[Warning] Using OpenCL without DirectX or OpenCL will severely degrade performance.");
+
 			break;
 	}
 
