@@ -533,6 +533,8 @@ bool Plugin::Interface::H264SimpleInterface::modified_bpictures(obs_properties_t
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_BPICTURE_REFERENCE), vis);
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_BPICTURE_DELTA), vis);
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA), vis);
+
+	return true;
 }
 
 void* Plugin::Interface::H264SimpleInterface::create(obs_data_t* settings, obs_encoder_t* encoder) {
