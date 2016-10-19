@@ -80,18 +80,21 @@ SOFTWARE.
 // Defines - Translation Strings
 //////////////////////////////////////////////////////////////////////////
 
-// Shared
+// Static Properties
 #define AMF_H264_USAGE							TEXT_AMF_H264("Usage")
+#define AMF_H264_USAGE_DESCRIPTION				TEXT_AMF_H264("Usage.Description")
 #define AMF_H264_USAGE_TRANSCODING				TEXT_AMF_H264("Usage.Transcoding")
 #define AMF_H264_USAGE_ULTRALOWLATENCY			TEXT_AMF_H264("Usage.UltraLowLatency")
 #define AMF_H264_USAGE_LOWLATENCY				TEXT_AMF_H264("Usage.LowLatency")
 #define AMF_H264_USAGE_WEBCAM					TEXT_AMF_H264("Usage.Webcam")
-#define AMF_H264_QUALITY_PRESET					TEXT_AMF_H264("QualityPreset")
-#define AMF_H264_QUALITY_PRESET_SPEED			TEXT_AMF_H264("QualityPreset.Speed")
-#define AMF_H264_QUALITY_PRESET_BALANCED		TEXT_AMF_H264("QualityPreset.Balanced")
-#define AMF_H264_QUALITY_PRESET_QUALITY			TEXT_AMF_H264("QualityPreset.Quality")
 #define AMF_H264_PROFILE						TEXT_AMF_H264("Profile")
+#define AMF_H264_PROFILE_DESCRIPTION			TEXT_AMF_H264("Profile.Description")
 #define AMF_H264_PROFILELEVEL					TEXT_AMF_H264("ProfileLevel")
+#define AMF_H264_PROFILELEVEL_DESCRIPTION		TEXT_AMF_H264("ProfileLevel.Description")
+#define AMF_H264_MAXIMUMLTRFRAMES				TEXT_AMF_H264("MaxLTRFrames")
+#define AMF_H264_MAXIMUMLTRFRAMES_DESCRIPTION	TEXT_AMF_H264("MaxLTRFrames.Description")
+
+// Rate Control Properties
 #define AMF_H264_RATECONTROLMETHOD				TEXT_AMF_H264("RateControlMethod")
 #define AMF_H264_RATECONTROLMETHOD_CQP			TEXT_AMF_H264("RateControlMethod.CQP")
 #define AMF_H264_RATECONTROLMETHOD_CBR			TEXT_AMF_H264("RateControlMethod.CBR")
@@ -106,25 +109,57 @@ SOFTWARE.
 #define AMF_H264_QP_BFRAME						TEXT_AMF_H264("QP.BFrame")
 #define AMF_H264_QP_BPICTURE_DELTA				TEXT_AMF_H264("QP.BPictureDelta")
 #define AMF_H264_QP_REFERENCE_BPICTURE_DELTA	TEXT_AMF_H264("QP.ReferenceBPictureDelta")
+#define AMF_H264_VBVBUFFER						TEXT_AMF_H264("VBVBuffer")
+#define AMF_H264_VBVBUFFER_SIZE					TEXT_AMF_H264("VBVBuffer.Size")
+#define AMF_H264_VBVBUFFER_FULLNESS				TEXT_AMF_H264("VBVBuffer.Fullness")
+#define AMF_H264_VBVBUFFER_STRICTNESS			TEXT_AMF_H264("VBVBuffer.Automatic")
 #define AMF_H264_FILLERDATA						TEXT_AMF_H264("FillerData")
 #define AMF_H264_FRAMESKIPPING					TEXT_AMF_H264("FrameSkipping")
 #define AMF_H264_ENFORCEHRDCOMPATIBILITY		TEXT_AMF_H264("EnforceHRDCompatibility")
+#define AMF_H264_MAXIMUMACCESSUNITSIZE			TEXT_AMF_H264("MaximumAccessUnitSize")
+
+// Picture Control Properties
+#define AMF_H264_KEYFRAME_INTERVAL				TEXT_AMF_H264("KeyframeInterval")
+#define AMF_H264_IDR_PERIOD						TEXT_AMF_H264("IDRPeriod")
+#define AMF_H264_HEADER_INSERTION_SPACING		TEXT_AMF_H264("HeaderInsertionSpacing")
+#define AMF_H264_BPICTURE_PATTERN				TEXT_AMF_H264("BPicture.Pattern")
+#define AMF_H264_BPICTURE_REFERENCE				TEXT_AMF_H264("BPicture.Reference")
 #define AMF_H264_DEBLOCKINGFILTER				TEXT_AMF_H264("DeblockingFilter")
+#define AMF_H264_SLICESPERFRAME					TEXT_AMF_H264("Slices Per Frame")
+#define AMF_H264_INTRAREFRESHNUMMBSPERSLOT		TEXT_AMF_H264("Intra-Refresh Number of Macro Blocks per Slot")
+
+// Miscellaneous Properties
+#define AMF_H264_QUALITY_PRESET					TEXT_AMF_H264("QualityPreset")
+#define AMF_H264_QUALITY_PRESET_SPEED			TEXT_AMF_H264("QualityPreset.Speed")
+#define AMF_H264_QUALITY_PRESET_BALANCED		TEXT_AMF_H264("QualityPreset.Balanced")
+#define AMF_H264_QUALITY_PRESET_QUALITY			TEXT_AMF_H264("QualityPreset.Quality")
 #define AMF_H264_SCANTYPE						TEXT_AMF_H264("ScanType")
 #define AMF_H264_SCANTYPE_PROGRESSIVE			TEXT_AMF_H264("ScanType.Progressive")
 #define AMF_H264_SCANTYPE_INTERLACED			TEXT_AMF_H264("ScanType.Interlaced")
-#define AMF_H264_BPICTURE_PATTERN				TEXT_AMF_H264("BPicture.Pattern")
-#define AMF_H264_BPICTURE_REFERENCE				TEXT_AMF_H264("BPicture.Reference")
+#define AMF_H264_MOTIONESTIMATION				TEXT_AMF_H264("MotionEstimation")
+#define AMF_H264_MOTIONESTIMATION_NONE			TEXT_AMF_H264("MotionEstimation.None")
+#define AMF_H264_MOTIONESTIMATION_HALF			TEXT_AMF_H264("MotionEstimation.HalfPixel")
+#define AMF_H264_MOTIONESTIMATION_QUARTER		TEXT_AMF_H264("MotionEstimation.QuarterPixel")
+#define AMF_H264_MOTIONESTIMATION_BOTH			TEXT_AMF_H264("MotionEstimation.Both")
 #define AMF_H264_GOP_SIZE						TEXT_AMF_H264("GOPSize")
 #define AMF_H264_CABAC							TEXT_AMF_H264("CABAC")
-#define AMF_H264_DEBUGTRACING					TEXT_AMF_H264("DebugTracing")
+
+// System Properties
+#define AMF_H264_DEBUG							TEXT_AMF_H264("Debug")
 #define AMF_H264_MEMORYTYPE						TEXT_AMF_H264("MemoryType")
 #define AMF_H264_COMPUTETYPE					TEXT_AMF_H264("ComputeType")
 #define AMF_H264_SURFACEFORMAT					TEXT_AMF_H264("SurfaceFormat")
+#define AMF_H264_VIEW							TEXT_AMF_H264("View")
+#define AMF_H264_VIEW_BASIC						TEXT_AMF_H264("View.Basic")
+#define AMF_H264_VIEW_ADVANCED					TEXT_AMF_H264("View.Advanced")
+#define AMF_H264_VIEW_EXPERT					TEXT_AMF_H264("View.Expert")
+#define AMF_H264_VIEW_MASTER					TEXT_AMF_H264("View.Master")
+#define AMF_H264_UNLOCK_PROPERTIES				TEXT_AMF_H264("UnlockProperties")
 
 // Utility
 #define AMF_UTIL_DEFAULT						TEXT_AMF_UTIL("Default")
 #define AMF_UTIL_AUTOMATIC						TEXT_AMF_UTIL("Automatic")
+#define AMF_UTIL_MANUAL							TEXT_AMF_UTIL("Manual")
 #define AMF_UTIL_TOGGLE_DISABLED				TEXT_AMF_UTIL("Toggle.Disabled")
 #define AMF_UTIL_TOGGLE_ENABLED					TEXT_AMF_UTIL("Toggle.Enabled")
 
