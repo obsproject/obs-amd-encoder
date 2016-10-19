@@ -44,7 +44,7 @@ namespace Plugin {
 			typedef std::pair<uint32_t, uint32_t> levelRestriction;
 			typedef std::pair<VCEProfileLevel, levelRestriction> level;
 
-			static const level profileLevelLimit[] = {
+			static const level profileLevelLimit[] = { // [Level, [Samples, Samples_Per_Sec]]
 				level(VCEProfileLevel_10, levelRestriction(25344, 380160)),
 				level(VCEProfileLevel_11, levelRestriction(101376, 768000)),
 				level(VCEProfileLevel_12, levelRestriction(101376, 1536000)),
