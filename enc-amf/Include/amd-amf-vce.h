@@ -265,6 +265,7 @@ namespace Plugin {
 			std::pair<uint32_t, uint32_t> GetFrameRate();
 			/*	Sets the VBV Buffer Size in bits */
 			void SetVBVBufferSize(uint32_t size);
+			void SetVBVBufferAutomatic(float_t strictness);
 			uint32_t GetVBVBufferSize();
 			/*	Sets the initial VBV Buffer Fullness */
 			void SetInitialVBVBufferFullness(double_t fullness);

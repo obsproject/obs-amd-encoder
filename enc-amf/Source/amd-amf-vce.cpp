@@ -553,7 +553,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 
 		// Dequeue Surface
 		amf::AMFSurfacePtr surface;
-		{ 
+		{
 			std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
 			if (m_Input.queue.size() == 0)
 				continue; // Queue is empty, 
@@ -1224,58 +1224,6 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameRate() {
 }
 
 void Plugin::AMD::VCEEncoder::SetVBVBufferSize(uint32_t size) {
-	if (size == 0) { // 0 is Automatic.
-		switch (this->GetRateControlMethod()) {
-			case VCERateControlMethod_ConstantBitrate:
-				size = this->GetTargetBitrate();
-				break;
-			case VCERateControlMethod_VariableBitrate_PeakConstrained:
-				size = max(this->GetTargetBitrate(), this->GetPeakBitrate());
-				break;
-			case VCERateControlMethod_VariableBitrate_LatencyConstrained:
-				size = 100000000;
-				break;
-			case VCERateControlMethod_ConstantQP:
-				// When using Constant QP, one will have to pick a QP that is decent
-				//  in both quality and bitrate. We can easily calculate both the QP
-				//  required for an average bitrate and the average bitrate itself 
-				//  with these formulas:
-				// BITRATE = ((1 - (QP / 51)) ^ 2) * ((Width * Height) * 1.5 * (FPSNumerator / FPSDenumerator))
-				// QP = (1 - sqrt(BITRATE / ((Width * Height) * 1.5 * (FPSNumerator / FPSDenumerator)))) * 51
-
-				auto frameSize = this->GetFrameSize();
-				auto frameRate = this->GetFrameRate();
-
-				double_t bitrate = frameSize.first * frameSize.second;
-				switch (this->m_SurfaceFormat) {
-					case VCESurfaceFormat_NV12:
-					case VCESurfaceFormat_I420:
-						bitrate *= 1.5;
-						break;
-					case VCESurfaceFormat_YUY2:
-						bitrate *= 4;
-						break;
-					case VCESurfaceFormat_BGRA:
-					case VCESurfaceFormat_RGBA:
-						bitrate *= 3;
-						break;
-					case VCESurfaceFormat_GRAY:
-						bitrate *= 1;
-						break;
-				}
-				bitrate *= frameRate.first / frameRate.second;
-
-				uint8_t qp_i, qp_p, qp_b;
-				qp_i = this->GetIFrameQP();
-				qp_p = this->GetPFrameQP();
-				try { qp_b = this->GetBFrameQP(); } catch (...) { qp_b = 51; }
-				double_t qp = 1 - ((double_t)(min(min(qp_i, qp_p), qp_b)) / 51.0);
-				qp = max(qp * qp, 0.001); // Needs to be at least 0.001.
-
-				size = (uint32_t)(bitrate * qp);
-				break;
-		}
-	}
 	// Clamp Value
 	size = max(min(size, 100000000), 1000); // 1kbit to 100mbit.
 
@@ -1284,6 +1232,68 @@ void Plugin::AMD::VCEEncoder::SetVBVBufferSize(uint32_t size) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetVBVBufferSize> Setting to %d bits failed with error %ls (code %d).", res, size);
 	}
 	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetVBVBufferSize> Set to %d bits.", size);
+}
+
+void Plugin::AMD::VCEEncoder::SetVBVBufferAutomatic(float_t strictness) {
+	uint32_t strictBitrate, looseBitrate;
+
+	// Strict VBV Buffer Size = Bitrate / FPS
+	// Loose VBV Buffer Size = Bitrate
+
+	switch (this->GetRateControlMethod()) {
+		case VCERateControlMethod_ConstantBitrate:
+		case VCERateControlMethod_VariableBitrate_LatencyConstrained:
+			looseBitrate = this->GetTargetBitrate();
+			break;
+		case VCERateControlMethod_VariableBitrate_PeakConstrained:
+			looseBitrate = max(this->GetTargetBitrate(), this->GetPeakBitrate());
+			break;
+		case VCERateControlMethod_ConstantQP:
+			// When using Constant QP, one will have to pick a QP that is decent
+			//  in both quality and bitrate. We can easily calculate both the QP
+			//  required for an average bitrate and the average bitrate itself 
+			//  with these formulas:
+			// BITRATE = ((1 - (QP / 51)) ^ 2) * ((Width * Height) * 1.5 * (FPSNumerator / FPSDenumerator))
+			// QP = (1 - sqrt(BITRATE / ((Width * Height) * 1.5 * (FPSNumerator / FPSDenumerator)))) * 51
+
+			auto frameSize = this->GetFrameSize();
+			auto frameRate = this->GetFrameRate();
+
+			double_t bitrate = frameSize.first * frameSize.second;
+			switch (this->m_SurfaceFormat) {
+				case VCESurfaceFormat_NV12:
+				case VCESurfaceFormat_I420:
+					bitrate *= 1.5;
+					break;
+				case VCESurfaceFormat_YUY2:
+					bitrate *= 4;
+					break;
+				case VCESurfaceFormat_BGRA:
+				case VCESurfaceFormat_RGBA:
+					bitrate *= 3;
+					break;
+				case VCESurfaceFormat_GRAY:
+					bitrate *= 1;
+					break;
+			}
+			bitrate *= frameRate.first / frameRate.second;
+
+			uint8_t qp_i, qp_p, qp_b;
+			qp_i = this->GetIFrameQP();
+			qp_p = this->GetPFrameQP();
+			try { qp_b = this->GetBFrameQP(); } catch (...) { qp_b = 51; }
+			double_t qp = 1 - ((double_t)(min(min(qp_i, qp_p), qp_b)) / 51.0);
+			qp = max(qp * qp, 0.001); // Needs to be at least 0.001.
+
+			looseBitrate = (uint32_t)(bitrate * qp);
+			break;
+	}
+	strictBitrate = static_cast<uint32_t>(looseBitrate * m_FrameRateReverseDivisor);
+
+	#define PI 3.14159265
+	float_t interpVal = sin(min(max(strictness, 1.0), 0.0) * 90 * (PI / 180)); // sin curve?
+	uint32_t realBitrate = (strictBitrate * interpVal) + (looseBitrate * (1.0 - interpVal));
+	this->SetVBVBufferSize(realBitrate);
 }
 
 uint32_t Plugin::AMD::VCEEncoder::GetVBVBufferSize() {
