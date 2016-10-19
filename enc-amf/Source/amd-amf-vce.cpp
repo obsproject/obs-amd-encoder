@@ -1235,7 +1235,7 @@ void Plugin::AMD::VCEEncoder::SetVBVBufferSize(uint32_t size) {
 }
 
 void Plugin::AMD::VCEEncoder::SetVBVBufferAutomatic(float_t strictness) {
-	uint32_t strictBitrate, looseBitrate;
+	uint32_t strictBitrate = 1000, looseBitrate = 100000000;
 
 	// Strict VBV Buffer Size = Bitrate / FPS
 	// Loose VBV Buffer Size = Bitrate
@@ -1285,14 +1285,14 @@ void Plugin::AMD::VCEEncoder::SetVBVBufferAutomatic(float_t strictness) {
 			double_t qp = 1 - ((double_t)(min(min(qp_i, qp_p), qp_b)) / 51.0);
 			qp = max(qp * qp, 0.001); // Needs to be at least 0.001.
 
-			looseBitrate = (uint32_t)(bitrate * qp);
+			looseBitrate = static_cast<uint32_t>(bitrate * qp);
 			break;
 	}
 	strictBitrate = static_cast<uint32_t>(looseBitrate * m_FrameRateReverseDivisor);
 
 	#define PI 3.14159265
-	float_t interpVal = sin(min(max(strictness, 1.0), 0.0) * 90 * (PI / 180)); // sin curve?
-	uint32_t realBitrate = (strictBitrate * interpVal) + (looseBitrate * (1.0 - interpVal));
+	float_t interpVal = static_cast<float_t>(sin(min(max(strictness, 1.0), 0.0) * 90 * (PI / 180))); // sin curve?
+	uint32_t realBitrate = static_cast<uint32_t>((strictBitrate * interpVal) + (looseBitrate * (1.0 - interpVal)));
 	this->SetVBVBufferSize(realBitrate);
 }
 

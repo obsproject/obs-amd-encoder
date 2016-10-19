@@ -1,8 +1,4 @@
-Ever wanted to change your settings mid-stream or mid-recording but had to previously stop the stream or recording for that? You no longer have to do this, as I have just added support for complete reconfiguration during encoding to the plugin - now you can adjust while testing.  
-
-There is also now a Profile Level called 'Automatic' which will use the best Profile Level for the given Frame Rate and Resolution - all presets will now use this instead. Many presets have been updated with better overall settings and will now perform better - and no presets will override Advanced or Expert settings anymore.
-
-I hope that you like using this encoder as much as I enjoy creating it. I have never worked this closely with AMD before and it is simply amazing how fast my bug reports have been fixed now. Let us hope that all of them can be fixed and then Two Pass and HEVC will make an appearance.
+A small hotfix that reverts an earlier change in preset code, fixes a buffer size bug, improves overall threading performance and finally makes OpenCL useful.
 
 ### Notes
 
@@ -10,7 +6,4 @@ Before installing this Version, please uninstall any previous versions. If you u
 
 ### Changelog
 
-* Fixed: Buffer Size is now properly calculated again when not overriden.
-* Fixed: Presets are now applied properly again.
-* Changed: Threading Model has been redesigned to be much more efficient and crash proof.
-* Changed: OpenCL code has been slightly adjusted for a massive performance boost.
+* Fixed: OpenCL with Host Memory Type will now no longer work and instead log an error.
