@@ -107,10 +107,6 @@ namespace Plugin {
 			VCEProfileLevel_50 = 50,
 			VCEProfileLevel_51,
 			VCEProfileLevel_52,
-			VCEProfileLevel_60 = 60,
-			VCEProfileLevel_61,
-			VCEProfileLevel_62,
-
 			VCEProfileLevel_Unknown = -1,
 		};
 		enum VCERateControlMethod {
