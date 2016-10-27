@@ -172,7 +172,6 @@
     <ClInclude Include="Include\amd-amf-vce.h" />
     <ClInclude Include="Include\amd-amf.h" />
     <ClInclude Include="Include\amd-amf-vce-capabilities.h" />
-    <ClInclude Include="Include\enc-h264-simple.h" />
     <ClInclude Include="Include\enc-h264.h" />
     <ClInclude Include="Include\plugin.h" />
   </ItemGroup>
@@ -180,7 +179,6 @@
     <ClCompile Include="Source\amd-amf-vce.cpp" />
     <ClCompile Include="Source\amd-amf.cpp" />
     <ClCompile Include="Source\amd-amf-vce-capabilities.cpp" />
-    <ClCompile Include="Source\enc-h264-simple.cpp" />
     <ClCompile Include="Source\enc-h264.cpp" />
     <ClCompile Include="Source\misc-util.cpp" />
     <ClCompile Include="Source\plugin.cpp" />

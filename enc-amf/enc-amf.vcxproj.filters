@@ -21,9 +21,6 @@
     <ClInclude Include="Include\enc-h264.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\enc-h264-simple.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Include\amd-amf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -39,9 +36,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\enc-h264.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\enc-h264-simple.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\amd-amf.cpp">
