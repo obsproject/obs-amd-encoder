@@ -753,7 +753,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("  Frame Rate: %d/%d", this->GetFrameRate().first, this->GetFrameRate().second);
 	AMF_LOG_INFO("Rate Control Parameters: ");
 	AMF_LOG_INFO("  Method: %s", rateControlMethodToString[this->GetRateControlMethod()]);
-	AMF_LOG_INFO("  Frame Skipping Enabled: %s", this->IsRateControlSkipFrameEnabled() ? "Yes" : "No");
+	AMF_LOG_INFO("  Frame Skipping Enabled: %s", this->IsFrameSkippingEnabled() ? "Yes" : "No");
 	AMF_LOG_INFO("  Filler Data Enabled: %s", this->IsFillerDataEnabled() ? "Yes" : "No");
 	AMF_LOG_INFO("  Enforce HRD Restrictions: %s", this->IsEnforceHRDRestrictionsEnabled() ? "Yes" : "No");
 	AMF_LOG_INFO("  Maximum Access Unit Size: %d bits", this->GetMaximumAccessUnitSize());
@@ -1066,7 +1066,7 @@ void Plugin::AMD::VCEEncoder::SetFrameSkippingEnabled(bool enabled) {
 	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetRateControlSkipFrameEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
-bool Plugin::AMD::VCEEncoder::IsRateControlSkipFrameEnabled() {
+bool Plugin::AMD::VCEEncoder::IsFrameSkippingEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, &enabled);
 	if (res != AMF_OK) {
