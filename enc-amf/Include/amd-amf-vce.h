@@ -221,8 +221,8 @@ namespace Plugin {
 			void SetRateControlMethod(VCERateControlMethod method);
 			VCERateControlMethod GetRateControlMethod();
 			/*	Enables skip frame for rate control */
-			void SetRateControlSkipFrameEnabled(bool enabled);
-			bool IsRateControlSkipFrameEnabled();
+			void SetFrameSkippingEnabled(bool enabled);
+			bool IsFrameSkippingEnabled();
 			/*	Sets the minimum QP */
 			void SetMinimumQP(uint8_t qp);
 			uint8_t GetMinimumQP();
@@ -261,7 +261,7 @@ namespace Plugin {
 			std::pair<uint32_t, uint32_t> GetFrameRate();
 			/*	Sets the VBV Buffer Size in bits */
 			void SetVBVBufferSize(uint32_t size);
-			void SetVBVBufferAutomatic(float_t strictness);
+			void SetVBVBufferAutomatic(double_t strictness);
 			uint32_t GetVBVBufferSize();
 			/*	Sets the initial VBV Buffer Fullness */
 			void SetInitialVBVBufferFullness(double_t fullness);
@@ -339,8 +339,6 @@ namespace Plugin {
 			bool GetNominalRange();
 			void SetWaitForTask(bool enabled);
 			bool GetWaitForTask();
-			void SetGOPSize(uint32_t size);
-			uint32_t GetGOPSize();
 			void SetAspectRatio(uint32_t x, uint32_t y);
 			std::pair<uint32_t, uint32_t> GetAspectRatio();
 			void SetCABACEnabled(bool enabled);

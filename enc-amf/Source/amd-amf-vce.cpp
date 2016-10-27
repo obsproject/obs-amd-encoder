@@ -794,7 +794,6 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("Experimental Parameters: ");
 	AMF_LOG_INFO("  Nominal Range: %s", this->GetNominalRange() ? "Enabled" : "Disabled");
 	AMF_LOG_INFO("  Wait For Task: %s", this->GetWaitForTask() ? "Enabled" : "Disabled");
-	AMF_LOG_INFO("  GOP Size: %d frames", this->GetGOPSize());
 	AMF_LOG_INFO("  Aspect Ratio: %d:%d", this->GetAspectRatio().first, this->GetAspectRatio().second);
 	AMF_LOG_INFO("  CABAC: %s", this->IsCABACEnabled() ? "Enabled" : "Disabled");
 }
@@ -1059,7 +1058,7 @@ Plugin::AMD::VCERateControlMethod Plugin::AMD::VCEEncoder::GetRateControlMethod(
 	return AMFToCustom[method];
 }
 
-void Plugin::AMD::VCEEncoder::SetRateControlSkipFrameEnabled(bool enabled) {
+void Plugin::AMD::VCEEncoder::SetFrameSkippingEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, enabled);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetRateControlSkipFrameEnabled> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
@@ -1234,7 +1233,7 @@ void Plugin::AMD::VCEEncoder::SetVBVBufferSize(uint32_t size) {
 	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetVBVBufferSize> Set to %d bits.", size);
 }
 
-void Plugin::AMD::VCEEncoder::SetVBVBufferAutomatic(float_t strictness) {
+void Plugin::AMD::VCEEncoder::SetVBVBufferAutomatic(double_t strictness) {
 	uint32_t strictBitrate = 1000, looseBitrate = 100000000;
 
 	// Strict VBV Buffer Size = Bitrate / FPS
@@ -1291,7 +1290,7 @@ void Plugin::AMD::VCEEncoder::SetVBVBufferAutomatic(float_t strictness) {
 	strictBitrate = static_cast<uint32_t>(looseBitrate * m_FrameRateReverseDivisor);
 
 	#define PI 3.14159265
-	float_t interpVal = static_cast<float_t>(sin(min(max(strictness, 1.0), 0.0) * 90 * (PI / 180))); // sin curve?
+	double_t interpVal = (sin(min(max(strictness, 1.0), 0.0) * 90 * (PI / 180))); // sin curve?
 	uint32_t realBitrate = static_cast<uint32_t>((strictBitrate * interpVal) + (looseBitrate * (1.0 - interpVal)));
 	this->SetVBVBufferSize(realBitrate);
 }
@@ -1682,24 +1681,6 @@ bool Plugin::AMD::VCEEncoder::GetWaitForTask() {
 	}
 	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetWaitForTask> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
-}
-
-void Plugin::AMD::VCEEncoder::SetGOPSize(uint32_t size) {
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"GOPSize", (uint32_t)size);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetGOPSize> Setting to %d failed with error %ls (code %d).", res, size);
-	}
-	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetGOPSize> Set to %d.", size);
-}
-
-uint32_t Plugin::AMD::VCEEncoder::GetGOPSize() {
-	uint32_t size;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"GOPSize", &size);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetGOPSize> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetGOPSize> Value is %d.", size);
-	return size;
 }
 
 void Plugin::AMD::VCEEncoder::SetAspectRatio(uint32_t num, uint32_t den) {
