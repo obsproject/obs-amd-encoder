@@ -33,7 +33,6 @@ SOFTWARE.
 #include "amd-amf.h"
 #include "amd-amf-vce.h"
 #include "amd-amf-vce-capabilities.h"
-#include "enc-h264-simple.h"
 #include "enc-h264.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -66,7 +65,6 @@ MODULE_EXPORT bool obs_module_load(void) {
 		Plugin::AMD::VCECapabilities::ReportCapabilities();
 
 		// Register Encoders
-		Plugin::Interface::H264SimpleInterface::encoder_register();
 		Plugin::Interface::H264Interface::encoder_register();
 		return true;
 	} catch(...) {
