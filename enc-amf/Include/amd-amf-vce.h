@@ -170,20 +170,19 @@ namespace Plugin {
 			// Utility
 			inline amf::AMFSurfacePtr CreateSurfaceFromFrame(struct encoder_frame*& frame);
 
-			#pragma region AMF Properties
 			public:
 			void LogProperties();
+			
+			/************************************************************************/
+			/* Static Properties                                                    */
+			/************************************************************************/
 
 			/*	Usage Type
-			 *	Sets up the entire encoder to a specific set of properties.
-			 *	Must be called first if you want to override properties. */
+			*	Sets up the entire encoder to a specific set of properties.
+			*	Must be called first if you want to override properties. */
 			void SetUsage(VCEUsage usage);
 			VCEUsage GetUsage();
-
-			/*	Quality Preset */
-			void SetQualityPreset(VCEQualityPreset preset);
-			VCEQualityPreset GetQualityPreset();
-
+			
 			/*	H.264 Profile */
 			void SetProfile(VCEProfile profile);
 			VCEProfile GetProfile();
@@ -203,45 +202,59 @@ namespace Plugin {
 			void SetMaximumLongTermReferenceFrames(uint32_t maximumLTRFrames);	// Long-Term Reference Frames. If 0, Encoder decides, if non-0 B-Pictures and Intra-Refresh are not supported.
 			uint32_t GetMaximumLongTermReferenceFrames();
 
+			/************************************************************************/
+			/* Resolution Properties                                                */
+			/************************************************************************/
+
 			/*	Output Resolution */
 			void SetFrameSize(uint32_t width, uint32_t height);
 			std::pair<uint32_t, uint32_t> GetFrameSize();
 
-			/// Encoder Rate Control
+			/*	Sets the Frame Rate numerator and denumerator */
+			void SetFrameRate(uint32_t num, uint32_t den);
+			std::pair<uint32_t, uint32_t> GetFrameRate();
+
+			/************************************************************************/
+			/* Rate Control Properties                                              */
+			/************************************************************************/
+			
 			/*	Selects the rate control method:
-			 *	- CQP - Constrained QP,
-			 *	- CBR - Constant Bitrate,
-			 *	- VBR - Peak Constrained VBR,
-			 *	- VBR_LAT - Latency Constrained VBR
-			 *
-			 *	Remarks:
-			 *	- When SVC encoding is enabled, all Rate-control parameters (with some restrictions) can be configured differently for a particular SVC-layer. An SVC-layer is denoted by an index pair [SVC-Temporal Layer index][SVC-Quality Layer index]. E.g. The bitrate may be configured differently for SVC-layers [0][0] and [1][0].
-			 *	- We restrict all SVC layers to have the same Rate Control method. Some RC parameters are not enabled with SVC encoding (e.g. all parameters related to B-pictures).
-			 **/
+			*	- CQP - Constrained QP,
+			*	- CBR - Constant Bitrate,
+			*	- VBR - Peak Constrained VBR,
+			*	- VBR_LAT - Latency Constrained VBR
+			*
+			*	Remarks:
+			*	- When SVC encoding is enabled, all Rate-control parameters (with some restrictions) can be configured differently for a particular SVC-layer. An SVC-layer is denoted by an index pair [SVC-Temporal Layer index][SVC-Quality Layer index]. E.g. The bitrate may be configured differently for SVC-layers [0][0] and [1][0].
+			*	- We restrict all SVC layers to have the same Rate Control method. Some RC parameters are not enabled with SVC encoding (e.g. all parameters related to B-pictures).
+			**/
 			void SetRateControlMethod(VCERateControlMethod method);
 			VCERateControlMethod GetRateControlMethod();
-			/*	Enables skip frame for rate control */
-			void SetFrameSkippingEnabled(bool enabled);
-			bool IsFrameSkippingEnabled();
-			/*	Sets the minimum QP */
-			void SetMinimumQP(uint8_t qp);
-			uint8_t GetMinimumQP();
-			/*	Sets the maximum QP */
-			void SetMaximumQP(uint8_t qp);
-			uint8_t GetMaximumQP();
+
 			/*	Sets the target bitrate */
 			void SetTargetBitrate(uint32_t bitrate);
 			uint32_t GetTargetBitrate();
+
 			/*	Sets the peak bitrate */
 			void SetPeakBitrate(uint32_t bitrate);
 			uint32_t GetPeakBitrate();
+
+			/*	Sets the minimum QP */
+			void SetMinimumQP(uint8_t qp);
+			uint8_t GetMinimumQP();
+
+			/*	Sets the maximum QP */
+			void SetMaximumQP(uint8_t qp);
+			uint8_t GetMaximumQP();
+
 			/*	Sets the Constant QP for I-Pictures.
-			 *
-			 *	Remarks:
-			 *	- Only available for CQP rate control method.
-			 **/
+			*
+			*	Remarks:
+			*	- Only available for CQP rate control method.
+			**/
 			void SetIFrameQP(uint8_t qp);
 			uint8_t GetIFrameQP();
+
 			/*	Sets the Constant QP for P-Pictures.
 			*
 			*	Remarks:
@@ -249,6 +262,7 @@ namespace Plugin {
 			**/
 			void SetPFrameQP(uint8_t qp);
 			uint8_t GetPFrameQP();
+
 			/*	Sets the Constant QP for B-Pictures.
 			*
 			*	Remarks:
@@ -256,95 +270,116 @@ namespace Plugin {
 			**/
 			void SetBFrameQP(uint8_t qp);
 			uint8_t GetBFrameQP();
-			/*	Sets the Frame Rate numerator and denumerator */
-			void SetFrameRate(uint32_t num, uint32_t den);
-			std::pair<uint32_t, uint32_t> GetFrameRate();
+
+			/* Selects the delta QP of non-reference B-Pictures with respect to I pictures */
+			void SetBPictureDeltaQP(int8_t qp);
+			int8_t GetBPictureDeltaQP();
+
+			/* Selects delta QP of reference B-Pictures with respect to I pictures */
+			void SetReferenceBPictureDeltaQP(int8_t qp);
+			int8_t GetReferenceBPictureDeltaQP();
+
 			/*	Sets the VBV Buffer Size in bits */
 			void SetVBVBufferSize(uint32_t size);
 			void SetVBVBufferAutomatic(double_t strictness);
 			uint32_t GetVBVBufferSize();
+
 			/*	Sets the initial VBV Buffer Fullness */
 			void SetInitialVBVBufferFullness(double_t fullness);
 			double_t GetInitialVBVBufferFullness();
-			/*	Enables/Disables constraints on QP variation within a picture to meet HRD requirement(s) */
-			void SetEnforceHRDRestrictionsEnabled(bool enforce);
-			bool IsEnforceHRDRestrictionsEnabled();
-			/*	Enables/Disables filler data */
-			void SetFillerDataEnabled(bool enabled);
-			bool IsFillerDataEnabled();
+
 			/*	Sets Maximum AU Size in bits */
 			void SetMaximumAccessUnitSize(uint32_t size);
 			uint32_t GetMaximumAccessUnitSize();
-			/*	Selects the delta QP of non-reference B pictures with respect to I pictures */
-			void SetBPictureDeltaQP(int8_t qp);
-			int8_t GetBPictureDeltaQP();
-			/*	Selects delta QP of reference B pictures with respect to I pictures */
-			void SetReferenceBPictureDeltaQP(int8_t qp);
-			int8_t GetReferenceBPictureDeltaQP();
-			/// Encoder Picture Control Parameters
-			/*	Sets the headers insertion spacing */
-			void SetHeaderInsertionSpacing(uint32_t spacing); // Similar to IDR Period, spacing (in frames) between headers.
-			uint32_t GetHeaderInsertionSpacing();
+
+			/*	Enables/Disables filler data */
+			void SetFillerDataEnabled(bool enabled);
+			bool IsFillerDataEnabled();
+
+			/*	Enables skip frame for rate control */
+			void SetFrameSkippingEnabled(bool enabled);
+			bool IsFrameSkippingEnabled();
+
+			/*	Enables/Disables constraints on QP variation within a picture to meet HRD requirement(s) */
+			void SetEnforceHRDRestrictionsEnabled(bool enforce);
+			bool IsEnforceHRDRestrictionsEnabled();
+
+			/************************************************************************/
+			/* Picture Control Properties                                           */
+			/************************************************************************/
+
 			/*	Sets IDR period. IDRPeriod= 0 turns IDR off */
 			void SetIDRPeriod(uint32_t period);
 			uint32_t GetIDRPeriod();
-			/*	Turns on/off the de-blocking filter */
-			void SetDeBlockingFilterEnabled(bool enabled);
-			bool IsDeBlockingFilterEnabled();
-			/*	Sets the number of intra-refresh macro-blocks per slot */
-			void SetIntraRefreshMBsNumberPerSlot(uint32_t mbs);
-			uint32_t GetIntraRefreshMBsNumberPerSlot();
-			/*	Sets the number of slices per frame */
-			void SetSlicesPerFrame(uint32_t slices);
-			uint32_t GetSlicesPerFrame();
+
+			/*	Sets the headers insertion spacing */
+			void SetHeaderInsertionSpacing(uint32_t spacing); // Similar to IDR Period, spacing (in frames) between headers.
+			uint32_t GetHeaderInsertionSpacing();
+
 			/*	Sets the number of consecutive B-pictures in a GOP. BPicturesPattern = 0 indicates that B-pictures are not used */
 			void SetBPicturePattern(VCEBPicturePattern pattern);
 			VCEBPicturePattern GetBPicturePattern();
+
 			/*	Enables or disables using B-pictures as references */
 			void SetBPictureReferenceEnabled(bool enabled);
 			bool IsBPictureReferenceEnabled();
-			/// Encoder Miscellaneous Parameters
-			/*	Selects progressive or interlaced scan */
+
+			/*	Turns on/off the Deblocking Filter */
+			void SetDeblockingFilterEnabled(bool enabled);
+			bool IsDeblockingFilterEnabled();
+
+			/*	Sets the number of slices per frame */
+			void SetSlicesPerFrame(uint32_t slices);
+			uint32_t GetSlicesPerFrame();
+
+			/*	Sets the number of intra-refresh macro-blocks per slot */
+			void SetIntraRefreshMBsNumberPerSlot(uint32_t mbs);
+			uint32_t GetIntraRefreshMBsNumberPerSlot();
+
+			/************************************************************************/
+			/* Miscellaneous Control Properties                                     */
+			/************************************************************************/
+
+			/** Quality Preset */
+			void SetQualityPreset(VCEQualityPreset preset);
+			VCEQualityPreset GetQualityPreset();
+
+			/* Selects progressive or interlaced scan */
 			void SetScanType(VCEScanType scanType);
 			VCEScanType GetScanType();
-			/// Encoder Motion Estimation Parameters
-			/*	Turns on/off half-pixel motion estimation */
+
+			/* Turns on/off half-pixel motion estimation */
 			void SetHalfPixelMotionEstimationEnabled(bool enabled);
 			bool IsHalfPixelMotionEstimationEnabled();
-			/*	Turns on/off quarter-pixel motion estimation */
+
+			/* Turns on/off quarter-pixel motion estimation */
 			void SetQuarterPixelMotionEstimationEnabled(bool enabled);
 			bool IsQuarterPixelMotionEstimationEnabled();
-			/// Encoder SVC Parameters (Only Webcam Usage)
-			/*	Change the number of temporal enhancement layers. The maximum number allowed is set by the corresponding create parameter.
-			 *
-			 *	Remarks:
-			 *	- Actual modification of the number of temporal enhancement layers will be delayed until the start of the next temporal GOP.
-			 *	- B-pictures and Intra-refresh features are not supported with SVC.
-			 **/
-			void SetNumberOfTemporalEnhancementLayers(uint32_t layers);
-			uint32_t GetNumberOfTemporalEnhancementLayers();
-			/*	Set the currently modified SVC Temporal Layer */
-			void SetCurrentTemporalLayer(uint32_t layer);
-			uint32_t GetCurrentTemporalLayer();
-			/*	Set the currently modified SVC Temporal Quality Layer
-			 *
-			 *	Remarks:
-			 *	- Quality layers are not supported on VCE 1.0. “QL0” must be used for quality layers.
-			 **/
-			void SetCurrentTemporalQualityLayer(uint32_t layer);
-			uint32_t GetCurrentTemporalQualityLayer();
 
-			/// Hidden Parameters
-			void SetNominalRange(bool enabled);
-			bool GetNominalRange();
-			void SetWaitForTask(bool enabled);
-			bool GetWaitForTask();
-			void SetAspectRatio(uint32_t x, uint32_t y);
-			std::pair<uint32_t, uint32_t> GetAspectRatio();
+			/** Enable CABAC entropy coding instead of CALV.
+			* CABAC is a more efficient way of compressing data and on
+			*  average 5% extra data to be stored in the same bitrate.
+			**/
 			void SetCABACEnabled(bool enabled);
 			bool IsCABACEnabled();
-			//void SetQualityEnhancementMode(uint32_t qualityEnhancementMode);
-			//uint32_t GetQualityEnhancementMode();
+
+			/************************************************************************/
+			/* Hidden Properties                                                    */
+			/************************************************************************/
+			void SetGOPSize(uint32_t gopSize);
+			uint32_t GetGOPSize();
+			
+			void SetNominalRange(bool enabled);
+			bool GetNominalRange();
+
+			void SetWaitForTask(bool enabled);
+			bool GetWaitForTask();
+
+			void SetAspectRatio(uint32_t x, uint32_t y);
+			std::pair<uint32_t, uint32_t> GetAspectRatio();
+
+			void SetQualityEnhancementMode(uint32_t qualityEnhancementMode);
+			uint32_t GetQualityEnhancementMode();
 
 			// VCE Parameters
 			// - SliceControlMode: AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB_ROW, AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB
@@ -356,8 +391,6 @@ namespace Plugin {
 			// - GOPPerIDR
 			// - GOPSizeMin, GOPSizeMax
 			// - EnableGOPAlignment
-
-			#pragma endregion AMF Properties
 
 			#pragma endregion Methods
 			//////////////////////////////////////////////////////////////////////////
