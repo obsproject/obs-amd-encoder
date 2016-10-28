@@ -50,6 +50,8 @@ add_library(enc-amf MODULE
 target_link_libraries(enc-amf
 	libobs
 	winmm
+	mincore
+	version
 )
 
 install_obs_plugin_with_data(enc-amf enc-amf/Resources)
