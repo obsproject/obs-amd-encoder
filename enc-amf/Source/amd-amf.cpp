@@ -29,6 +29,7 @@ SOFTWARE.
 #include <mutex>
 
 #include "amd-amf.h"
+#include "windows.h"
 
 // AMD AMF SDK
 #include "components\Component.h"
@@ -85,6 +86,40 @@ Plugin::AMD::AMF::AMF() {
 		AMF_LOG_ERROR("%s", buf.data());
 		throw std::exception(buf.data(), error);
 	} else {
+		std::vector<char> verbuf(GetFileVersionInfoSizeW(AMF_DLL_NAME, nullptr));
+		GetFileVersionInfoW(AMF_DLL_NAME, 0, (DWORD)verbuf.size(), verbuf.data());
+
+		void* pBlock = verbuf.data();
+
+		// Read the list of languages and code pages.
+		struct LANGANDCODEPAGE {
+			WORD wLanguage;
+			WORD wCodePage;
+		} *lpTranslate;
+		UINT cbTranslate = 1024;
+
+		VerQueryValue(pBlock,
+			TEXT("\\VarFileInfo\\Translation"),
+			(LPVOID*)&lpTranslate,
+			&cbTranslate);
+
+		std::vector<char> buf(1024);
+		sprintf(buf.data(), "%s%04x%04x%s",
+			TEXT("\\StringFileInfo\\"),
+			lpTranslate[0].wLanguage,
+			lpTranslate[0].wCodePage,
+			TEXT("\\ProductVersion"));
+
+		// Retrieve file description for language and code page "i". 
+		void* lpBuffer;
+		uint32_t dwBytes;
+		VerQueryValue(pBlock,
+			buf.data(),
+			&lpBuffer,
+			&dwBytes);
+
+		AMF_LOG_INFO("Runtime Library is on Version %.*s.", dwBytes, lpBuffer);
+		
 		AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Loaded '%ls'.", AMF_DLL_NAME);
 	}
 
@@ -103,7 +138,7 @@ Plugin::AMD::AMF::AMF() {
 	res = AMFQueryVersion(&m_AMFVersion_Runtime);
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<Plugin::AMD::AMF::AMF> Querying Version failed with error %ls (code %ld).", res);
-	AMF_LOG_INFO("Runtime is on Version %d.%d.%d.%d",
+	AMF_LOG_DEBUG("Runtime reports back Version %d.%d.%d.%d",
 		(uint16_t)((m_AMFVersion_Runtime >> 48ull) & 0xFFFF),
 		(uint16_t)((m_AMFVersion_Runtime >> 32ull) & 0xFFFF),
 		(uint16_t)((m_AMFVersion_Runtime >> 16ull) & 0xFFFF),
@@ -141,6 +176,27 @@ Plugin::AMD::AMF::AMF() {
 	}
 	m_AMFTrace->RegisterWriter(L"OBSWriter", new CustomWriter(), true);
 	this->EnableDebugTrace(false);
+
+	//// Temp
+	//amf::AMFContextPtr tContext;
+	//if (m_AMFFactory->CreateContext(&tContext) == AMF_OK) {
+	//	amf::AMFComputeFactoryPtr tComputeFactory;
+	//	tContext->GetOpenCLComputeFactory(&tComputeFactory);
+
+	//	uint32_t count = tComputeFactory->GetDeviceCount();
+	//	for (uint32_t n = 0; n < count; n++) {
+	//		amf::AMFComputeDevicePtr tComputeDevice;
+	//		tComputeFactory->GetDeviceAt(n, &tComputeDevice);
+	//		void* nativePlatform = tComputeDevice->GetNativePlatform();
+	//		void* nativeDeviceID = tComputeDevice->GetNativeDeviceID();
+	//		void* nativeContext = tComputeDevice->GetNativeContext();
+	//		
+	//		char* nativePlatform1 = (char*)nativePlatform;
+	//		char* nativeDeviceID1 = (char*)nativeDeviceID;
+
+	//		AMF_LOG_ERROR("%d: %s, %s", n, nativePlatform1, nativeDeviceID1);
+	//	}
+	//}
 
 	AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Initialized.");
 }
