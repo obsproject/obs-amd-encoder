@@ -848,7 +848,7 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			break;
 			#pragma endregion YouTube
 	}
-	return true;
+	return view_modified(props, nullptr, data);
 }
 
 bool Plugin::Interface::H264Interface::maximum_ltr_frames_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data) {
