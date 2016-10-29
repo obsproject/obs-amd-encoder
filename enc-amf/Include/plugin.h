@@ -80,7 +80,15 @@ SOFTWARE.
 // Defines - Translation Strings
 //////////////////////////////////////////////////////////////////////////
 
-#define DESCRIPTION(x)							(#x ".Description")
+// Presets
+#define AMF_H264_PRESET							TEXT_AMF_H264("Preset")
+#define AMF_H264_PRESET_RECORDING				TEXT_AMF_H264("Preset.Recording")
+#define AMF_H264_PRESET_HIGHQUALITY				TEXT_AMF_H264("Preset.HighQuality")
+#define AMF_H264_PRESET_INDISTINGUISHABLE		TEXT_AMF_H264("Preset.Indistinguishable")
+#define AMF_H264_PRESET_LOSSLESS				TEXT_AMF_H264("Preset.Lossless")
+#define AMF_H264_PRESET_TWITCH					TEXT_AMF_H264("Preset.Twitch")
+#define AMF_H264_PRESET_YOUTUBE					TEXT_AMF_H264("Preset.YouTube")
+
 // Static Properties
 #define AMF_H264_USAGE							TEXT_AMF_H264("Usage")
 #define AMF_H264_USAGE_DESCRIPTION				TEXT_AMF_H264("Usage.Description")
