@@ -860,7 +860,8 @@ bool Plugin::Interface::H264Interface::rate_control_method_modified(obs_properti
 }
 
 bool Plugin::Interface::H264Interface::bpictures_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data) {
-	return view_modified(props, nullptr, data);
+	view_modified(props, nullptr, data);
+	return false;
 }
 
 bool Plugin::Interface::H264Interface::view_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data) {
