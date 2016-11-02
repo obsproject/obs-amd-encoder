@@ -33,6 +33,15 @@
     <ClInclude Include="Include\amd-amf-vce-capabilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Include\api-d3d11.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\api-base.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\api-d3d9.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\enc-h264.cpp">
@@ -51,6 +60,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\misc-util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\api-d3d11.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\api-base.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\api-d3d9.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -84,14 +84,14 @@
     <LibraryPath>$(SolutionDir)#ThirdParty\OBS-Studio\build$(PlatformArchitecture)\libobs\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(SolutionDir)#ThirdParty\AMD-AMF-SDK\include;$(SolutionDir)#ThirdParty\OBS-Studio;$(SolutionDir)#ThirdParty;$(ProjectDir)Include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)#ThirdParty\AMD-AMF-SDK\amf\public\include;$(SolutionDir)#ThirdParty\OBS-Studio;$(SolutionDir)#ThirdParty;$(ProjectDir)Include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <SourcePath>$(ProjectDir)Source;$(VC_SourcePath)</SourcePath>
     <OutDir>$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\</OutDir>
     <IntDir>$(ProjectDir)#Intermediate\$(Configuration)\$(PlatformArchitecture)\</IntDir>
     <LibraryPath>$(SolutionDir)#ThirdParty\OBS-Studio\build$(PlatformArchitecture)\libobs\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(SolutionDir)#ThirdParty\AMD-AMF-SDK\include;$(SolutionDir)#ThirdParty\OBS-Studio;$(SolutionDir)#ThirdParty;$(ProjectDir)Include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)#ThirdParty\AMD-AMF-SDK\amf\public\include;$(SolutionDir)#ThirdParty\OBS-Studio;$(SolutionDir)#ThirdParty;$(ProjectDir)Include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <SourcePath>$(ProjectDir)Source;$(VC_SourcePath)</SourcePath>
     <OutDir>$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\</OutDir>
     <IntDir>$(ProjectDir)#Intermediate\$(Configuration)\$(PlatformArchitecture)\</IntDir>
@@ -106,7 +106,7 @@
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
-      <AdditionalDependencies>obs.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;mincore.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>obs.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;mincore.lib;version.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -137,10 +137,11 @@
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <OmitFramePointers>false</OmitFramePointers>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalDependencies>obs.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;mincore.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>obs.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;mincore.lib;version.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ProfileGuidedDatabase>$(IntDir)$(TargetName).pgd</ProfileGuidedDatabase>
       <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
@@ -172,6 +173,9 @@
     <ClInclude Include="Include\amd-amf-vce.h" />
     <ClInclude Include="Include\amd-amf.h" />
     <ClInclude Include="Include\amd-amf-vce-capabilities.h" />
+    <ClInclude Include="Include\api-base.h" />
+    <ClInclude Include="Include\api-d3d11.h" />
+    <ClInclude Include="Include\api-d3d9.h" />
     <ClInclude Include="Include\enc-h264.h" />
     <ClInclude Include="Include\plugin.h" />
   </ItemGroup>
@@ -179,6 +183,9 @@
     <ClCompile Include="Source\amd-amf-vce.cpp" />
     <ClCompile Include="Source\amd-amf.cpp" />
     <ClCompile Include="Source\amd-amf-vce-capabilities.cpp" />
+    <ClCompile Include="Source\api-base.cpp" />
+    <ClCompile Include="Source\api-d3d11.cpp" />
+    <ClCompile Include="Source\api-d3d9.cpp" />
     <ClCompile Include="Source\enc-h264.cpp" />
     <ClCompile Include="Source\misc-util.cpp" />
     <ClCompile Include="Source\plugin.cpp" />
