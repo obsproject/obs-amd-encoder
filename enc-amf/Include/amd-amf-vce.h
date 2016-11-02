@@ -37,6 +37,7 @@ SOFTWARE.
 // Plugin
 #include "plugin.h"
 #include "amd-amf.h"
+#include "api-base.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -146,7 +147,7 @@ namespace Plugin {
 			#pragma region Initializer & Finalizer
 			//////////////////////////////////////////////////////////////////////////
 			public:
-			VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat = VCESurfaceFormat_NV12, VCEMemoryType p_MemoryType = VCEMemoryType_Auto, VCEComputeType p_ComputeType = VCEComputeType_None);
+			VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat = VCESurfaceFormat_NV12, VCEMemoryType p_MemoryType = VCEMemoryType_Auto, VCEComputeType p_ComputeType = VCEComputeType_None, Plugin::API::Device p_Device = Plugin::API::Device("", ""));
 			~VCEEncoder();
 			#pragma endregion Initializer & Finalizer
 
@@ -406,6 +407,9 @@ namespace Plugin {
 			amf::AMFContextPtr m_AMFContext;
 			amf::AMFComponentPtr m_AMFEncoder;
 			amf::AMFComputePtr m_AMFCompute;
+
+			// API References
+			Plugin::API::BaseAPI m_APIDevice;
 
 			// Static Buffers
 			std::vector<uint8_t> m_PacketDataBuffer;

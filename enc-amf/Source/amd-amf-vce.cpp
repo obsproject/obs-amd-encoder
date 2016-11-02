@@ -29,9 +29,12 @@ SOFTWARE.
 #include "amd-amf-vce-capabilities.h"
 #include "misc-util.cpp"
 
-#if (defined _WIN32) | (defined _WIN64)
+#ifdef _WIN32
 #include <windows.h>
 #include <VersionHelpers.h>
+
+#include "api-d3d9.h"
+#include "api-d3d11.h"
 #endif
 
 //////////////////////////////////////////////////////////////////////////
@@ -57,7 +60,9 @@ void Plugin::AMD::VCEEncoder::OutputThreadMain(Plugin::AMD::VCEEncoder* p_this) 
 	p_this->OutputThreadLogic();
 }
 
-Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat /*= VCESurfaceFormat_NV12*/, VCEMemoryType p_MemoryType /*= VCEMemoryType_Auto*/, VCEComputeType p_ComputeType /*= VCEComputeType_None*/) {
+Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat /*= VCESurfaceFormat_NV12*/,
+	VCEMemoryType p_MemoryType /*= VCEMemoryType_Auto*/, VCEComputeType p_ComputeType /*= VCEComputeType_None*/,
+	Plugin::API::Device p_Device /*= Plugin::API::Device("", "")*/) {
 	AMF_RESULT res;
 
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::VCEEncoder> Initializing...");
@@ -107,7 +112,9 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 			break;
 		case VCEMemoryType_DirectX11:
 			if (IsWindows8OrGreater()) {
-				res = m_AMFContext->InitDX11(nullptr);
+				m_APIDevice = Plugin::API::Direct3D11(p_Device);
+
+				res = m_AMFContext->InitDX11(m_APIDevice.GetContext());
 			} else {
 				AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::VCEEncoder> DirectX 11 is only supported on Windows 8 or newer, using Host Memory Type instead.");
 				m_MemoryType = VCEMemoryType_Host;
@@ -115,14 +122,14 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 			break;
 		case VCEMemoryType_DirectX9:
 			if (IsWindowsXPOrGreater()) {
-				res = m_AMFContext->InitDX9(nullptr);
+				res = m_AMFContext->InitDX9(m_APIDevice.GetContext());
 			} else {
 				AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::VCEEncoder> DirectX 11 is only supported on Windows 8 or newer, using Host Memory Type instead.");
 				m_MemoryType = VCEMemoryType_Host;
 			}
 			break;
 		case VCEMemoryType_OpenGL:
-			res = m_AMFContext->InitOpenGL(nullptr, nullptr, nullptr);
+			res = m_AMFContext->InitOpenGL(m_APIDevice.GetContext(), nullptr, nullptr);
 			break;
 	}
 	if (res != AMF_OK)
