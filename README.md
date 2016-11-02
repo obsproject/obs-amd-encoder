@@ -1,10 +1,10 @@
 This is a plugin for OBS Studio that enables almost fully native hardware encoding instead of passing things off to Media Foundation Transform which is known to have issues with some certain settings. The plugin is based on the new AMF SDK and thus will work with any future driver releases.
 
-[Read More on the Wiki](https://github.com/Xaymar/OBS-AMD-Advanced-Media-Framework/wiki)
+[Read More on the Wiki](https://github.com/Xaymar/obs-studio_amf-encoder-plugin/wiki)
 
 ## Contributing
 
-Read [CONTRIBUTING.md](https://github.com/Xaymar/OBS-AMD-Advanced-Media-Framework/blob/master/CONTRIBUTING.md) for a guide on how to start.
+Read [CONTRIBUTING.md](https://github.com/Xaymar/obs-studio_amf-encoder-plugin/blob/master/CONTRIBUTING.md) for a guide on how to start.
 
 ## MIT License
 

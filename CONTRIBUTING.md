@@ -1,13 +1,13 @@
 # Reporting Issues
 
-Before you report an issue, please read the [Troubleshooting Guide](https://github.com/Xaymar/OBS-AMD-Advanced-Media-Framework/wiki/Troubleshooting).
+Before you report an issue, please read the [Troubleshooting Guide](https://github.com/Xaymar/obs-studio_amf-encoder-plugin/wiki/Troubleshooting-Guide).
 It contains a step-by-step guide on how to solve your issue and even includes a FAQ for you to read through.
 
 # Git and the Project
 
 ## Committing Changes
 
-Read [this wiki page for information](https://github.com/Xaymar/OBS-AMD-Advanced-Media-Framework/wiki/Contributing) and please follow it. Rebasing a bunch of pushed commits is terrible for anyone involved.
+Read [this wiki page for information](https://github.com/Xaymar/obs-studio_amf-encoder-plugin/wiki/Contributing) and please follow it. Rebasing a bunch of pushed commits is terrible for anyone involved.
 
 ## Pull Requests
 
@@ -52,7 +52,7 @@ If any errors during building or creating the archives and installer, start agai
 
 ### Step 3: Verify Functionality
 
-*[You can only do this with an AMD APU or GPU installed](https://github.com/Xaymar/OBS-AMD-Advanced-Media-Framework/wiki/Hardware,-GCN-and-VCE-Limits)*.  
+*[You can only do this with an AMD APU or GPU installed](https://github.com/Xaymar/obs-studio_amf-encoder-plugin/wiki/Hardware,-GCN-and-VCE-Limits)*.  
 Install the plugin into your OBS Studio installation or test environment and select it in either Simple Output Mode or Advanced Output Mode. It should encode fine without crashing at any point.
 
 # Coding Standard
