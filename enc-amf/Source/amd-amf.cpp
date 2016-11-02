@@ -176,28 +176,7 @@ Plugin::AMD::AMF::AMF() {
 	}
 	m_AMFTrace->RegisterWriter(L"OBSWriter", new CustomWriter(), true);
 	this->EnableDebugTrace(false);
-
-	//// Temp
-	//amf::AMFContextPtr tContext;
-	//if (m_AMFFactory->CreateContext(&tContext) == AMF_OK) {
-	//	amf::AMFComputeFactoryPtr tComputeFactory;
-	//	tContext->GetOpenCLComputeFactory(&tComputeFactory);
-
-	//	uint32_t count = tComputeFactory->GetDeviceCount();
-	//	for (uint32_t n = 0; n < count; n++) {
-	//		amf::AMFComputeDevicePtr tComputeDevice;
-	//		tComputeFactory->GetDeviceAt(n, &tComputeDevice);
-	//		void* nativePlatform = tComputeDevice->GetNativePlatform();
-	//		void* nativeDeviceID = tComputeDevice->GetNativeDeviceID();
-	//		void* nativeContext = tComputeDevice->GetNativeContext();
-	//		
-	//		char* nativePlatform1 = (char*)nativePlatform;
-	//		char* nativeDeviceID1 = (char*)nativeDeviceID;
-
-	//		AMF_LOG_ERROR("%d: %s, %s", n, nativePlatform1, nativeDeviceID1);
-	//	}
-	//}
-
+	
 	AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Initialized.");
 }
 
