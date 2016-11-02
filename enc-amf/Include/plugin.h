@@ -185,6 +185,8 @@ SOFTWARE.
 // System Properties
 #define AMF_H264_MEMORYTYPE						TEXT_AMF_H264("MemoryType")
 #define AMF_H264_MEMORYTYPE_DESCRIPTION			TEXT_AMF_H264("MemoryType.Description")
+#define AMF_H264_DEVICE							TEXT_AMF_H264("Device")
+#define AMF_H264_DEVICE_DESCRIPTION				TEXT_AMF_H264("Device.Description")
 #define AMF_H264_COMPUTETYPE					TEXT_AMF_H264("ComputeType")
 #define AMF_H264_COMPUTETYPE_DESCRIPTION		TEXT_AMF_H264("ComputeType.Description")
 #define AMF_H264_SURFACEFORMAT					TEXT_AMF_H264("SurfaceFormat")
