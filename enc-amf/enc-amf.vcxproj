@@ -70,14 +70,14 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(SolutionDir)#ThirdParty\AMD-AMF-SDK\include;$(SolutionDir)#ThirdParty\OBS-Studio;$(SolutionDir)#ThirdParty;$(ProjectDir)Include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)#ThirdParty\AMD-AMF-SDK\amf\public\include;$(SolutionDir)#ThirdParty\OBS-Studio;$(SolutionDir)#ThirdParty;$(ProjectDir)Include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <SourcePath>$(ProjectDir)Source;$(VC_SourcePath)</SourcePath>
     <OutDir>$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\</OutDir>
     <IntDir>$(ProjectDir)#Intermediate\$(Configuration)\$(PlatformArchitecture)\</IntDir>
     <LibraryPath>$(SolutionDir)#ThirdParty\OBS-Studio\build$(PlatformArchitecture)\libobs\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(SolutionDir)#ThirdParty\AMD-AMF-SDK\include;$(SolutionDir)#ThirdParty\OBS-Studio;$(SolutionDir)#ThirdParty;$(ProjectDir)Include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)#ThirdParty\AMD-AMF-SDK\amf\public\include;$(SolutionDir)#ThirdParty\OBS-Studio;$(SolutionDir)#ThirdParty;$(ProjectDir)Include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <SourcePath>$(ProjectDir)Source;$(VC_SourcePath)</SourcePath>
     <OutDir>$(ProjectDir)#Build\$(Configuration)\obs-plugins\$(PlatformArchitecture)bit\</OutDir>
     <IntDir>$(ProjectDir)#Intermediate\$(Configuration)\$(PlatformArchitecture)\</IntDir>
