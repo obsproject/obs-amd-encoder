@@ -40,6 +40,7 @@ namespace Plugin {
 			public:
 			static void encoder_register();
 			static const char* get_name(void* type_data);
+			static const char* get_name_simple(void* type_data);
 			static void get_defaults(obs_data_t *settings);
 			static obs_properties_t* get_properties(void* data);
 			
