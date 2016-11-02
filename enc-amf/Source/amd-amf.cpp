@@ -113,7 +113,7 @@ Plugin::AMD::AMF::AMF() {
 		// Retrieve file description for language and code page "i". 
 		void* lpBuffer;
 		uint32_t dwBytes;
-		VerQueryValue(pBlock,
+		VerQueryValueA(pBlock,
 			buf.data(),
 			&lpBuffer,
 			&dwBytes);
