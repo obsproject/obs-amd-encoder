@@ -31,14 +31,13 @@ SOFTWARE.
 // Plugin
 #include "plugin.h"
 #include "amd-amf.h"
-#include "amd-amf-vce.h"
 #include "amd-amf-vce-capabilities.h"
 #include "enc-h264.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
-BOOL WINAPI DllMain(HINSTANCE , DWORD , LPVOID ) {
+BOOL WINAPI DllMain(HINSTANCE, DWORD, LPVOID) {
 	return TRUE;
 }
 
@@ -58,18 +57,18 @@ MODULE_EXPORT bool obs_module_load(void) {
 	try {
 		AMF_LOG_INFO("Version " PLUGIN_VERSION_TEXT);
 
-		// Attempt to load libraries
+		// Load AMF Runtime
 		auto instance = Plugin::AMD::AMF::GetInstance();
 
-		// Report Capabilities
+		// Report AMF Capabilities
 		Plugin::AMD::VCECapabilities::ReportCapabilities();
 
 		// Register Encoders
 		Plugin::Interface::H264Interface::encoder_register();
+	} catch (...) {
 		return true;
-	} catch(...) {
 	}
-	return true;
+
 }
 
 /** Optional: Called when the module is unloaded.  */
