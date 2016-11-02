@@ -66,9 +66,8 @@ MODULE_EXPORT bool obs_module_load(void) {
 		// Register Encoders
 		Plugin::Interface::H264Interface::encoder_register();
 	} catch (...) {
-		return true;
 	}
-
+	return true;
 }
 
 /** Optional: Called when the module is unloaded.  */
