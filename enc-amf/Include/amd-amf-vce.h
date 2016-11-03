@@ -409,7 +409,7 @@ namespace Plugin {
 			amf::AMFComputePtr m_AMFCompute;
 
 			// API References
-			Plugin::API::BaseAPI m_APIDevice;
+			Plugin::API::BaseAPI m_APIDevice = Plugin::API::BaseAPI(Plugin::API::Device());
 
 			// Static Buffers
 			std::vector<uint8_t> m_PacketDataBuffer;

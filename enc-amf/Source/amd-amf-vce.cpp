@@ -725,10 +725,6 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 		"DirectX11",
 		"OpenGL",
 	};
-	static const char* computeTypeToString[] = {
-		"None",
-		"OpenCL",
-	};
 	static const char* surfaceFormatToString[] = {
 		"NV12",
 		"I420",
@@ -760,8 +756,9 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("-- AMD Advanced Media Framework VCE Encoder --");
 	AMF_LOG_INFO("Initialization Parameters: ");
 	AMF_LOG_INFO("  Memory Type: %s", memoryTypeToString[m_MemoryType]);
-	AMF_LOG_INFO("  Compute Type: %s", computeTypeToString[m_UseOpenCL]);
-	AMF_LOG_INFO("  Surface Format: %s", surfaceFormatToString[m_SurfaceFormat]);
+	AMF_LOG_INFO("  Device: %s", m_APIDevice.GetDevice().Name);
+	AMF_LOG_INFO("  OpenCL: %s", m_UseOpenCL ? "Disabled" : "Enabled");
+	AMF_LOG_INFO("  Surface Format: %s", surfaceFormatToString[max(m_SurfaceFormat,0)]);
 	AMF_LOG_INFO("Static Parameters: ");
 	AMF_LOG_INFO("  Usage: %s", usageToString[this->GetUsage()]);
 	AMF_LOG_INFO("  Quality Preset: %s", qualityPresetToString[this->GetQualityPreset()]);
