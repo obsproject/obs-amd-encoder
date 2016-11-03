@@ -55,7 +55,7 @@ namespace Plugin {
 				level(VCEProfileLevel_30, levelRestriction(414720, 10368000)),
 				level(VCEProfileLevel_31, levelRestriction(921600, 27648000)),
 				level(VCEProfileLevel_32, levelRestriction(1310720, 55296000)),
-				level(VCEProfileLevel_40, levelRestriction(2097152, 62914560)), // Technically identical to 4.1, but backwards compatible.
+				//level(VCEProfileLevel_40, levelRestriction(2097152, 62914560)), // Technically identical to 4.1, but backwards compatible.
 				level(VCEProfileLevel_41, levelRestriction(2097152, 62914560)),
 				level(VCEProfileLevel_42, levelRestriction(2228224, 133693440)),
 				level(VCEProfileLevel_50, levelRestriction(5652480, 150994944)),
