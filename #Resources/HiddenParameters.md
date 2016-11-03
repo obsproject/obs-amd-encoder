@@ -1,109 +1,67 @@
-AMD hides certain parameters from us, but i think some of them should be accessible. Might need some in depth IDA work first.
+For an unknown reason, there are hidden parameters in the Runtime that can be set.
 
-# Sorted Discoveries
-
-## Encoder Types
-* AMFVideoEncoderVCE_AVC
-* AMFVideoEncoderVCE_SVC
-* AMFVideoEncoderHW_AVC
-* AMFVideoEncoderHW_HEVC (AMFEncoderHEVC Component)
-
-## Parameters
-
-### Capabilities
-* MaxNumRefFrames
-* EncoderMaxInstances
-* MaxNumOfTemporalLayers
-
-### Encoder
-* Tier
-* ProfileLevel
+## AVC Properties
+### Static
+* FrameSize
+* FrameRate
+* ExtraData (Read-Only)
+* Usage
+* Profile<br/>Two new profiles are in the runtime, Constrained Base and Constrained High.
+* Profile Level
 * MaxOfLTRFrames
+* ScanType
+* QualityPreset
+
+### Dynamic
+* RateControlMethod
 * TargetBitrate
 * PeakBitrate
-* RateControlMethod
-* QP_I
-* QP_P
+* RateControlSkipFrameEnable
+* MinQP
+* MaxQP
+* QPI
+* QPP
+* QPB
 * VBVBufferSize
-* InitialVBVBufferFullness
+* VBVBufferFullness
+* EnforceHRD
 * MaxAUSize
+* FillerDataEnable
+* BPicturesDeltaQP
+* ReferenceBPicturesDeltaQP
 * HeaderInsertionSpacing
 * IDRPeriod
 * DeBlockingFilter
+* IntraRefreshMBsNumberPerSlot
 * SlicesPerFrame
 * BPicturesPattern
 * BReferenceEnable
-* ScanType
 * HalfPixel
 * QuarterPixel
-* NumOfTemporalLayers
-* **MinQP_I**
-* **MaxQP_I**
-* **MinQP_P**
-* **MaxQP_P**
-* **QPCBOFFSET**
-* **QPCROFFSET**
-* **GOPType**
-* **GOPPerIDR**
-* **GOPSize**
-* **GOPSizeMin**
-* **GOPSizeMax**
+
+### Unknown / New
+
+* **QualityEnhancementMode**<br/>So far always 0.
+* **MaxNumRefFrames**<br/>Shouldn't this be a Capability instead? Could perhaps be used to control B-Pictures more.
+* **MaxMBPerSec**<br/>Unknown value.
+* **InstanceID**
+* **EnableVBAQ**<br/>Unknown meaning.
+* **RateControlPreanalysisEnable**<br/>Is this Two-Pass encoding?
+* **GOPSize**<br/>Technically ignored, but still there in code.
 * **AspectRatio**
 * **NominalRange**
-* **IntraRefreshMode**
+* **IntraRefreshNumOfStripes**<br/>New, was not here before.
+* **SliceMode**<br/>New, was not here before.
+* **MaxSliceSize**<br/>New, was not here before.
 * **LowLatencyInternal**
 * **CommonLowLatencyInternal**
-* **EnableGOPAlignment**
 * **SliceControlMode**
 * **SliceControlSize**
-* **CABACEnable**
+* **CABACEnable**<br/>Not yet publicly available, but 16.10.3 always uses it anyway.
 * **UniqueInstance**
+* **EncoderMaxInstances**
 * **MultiInstanceMode**
 * **MultiInstanceCurrentQueue**
+* **WaitForTask**
 
-### Per Submission
-* EndOfSequence = AMF_VIDEO_ENCODER_END_OF_SEQUENCE
-* EndOfStream = AMF_VIDEO_ENCODER_END_OF_STREAM
-* ForcePictureType = AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE
-* InsertAUD = AMF_VIDEO_ENCODER_INSERT_AUD
-* InsertSPS = AMF_VIDEO_ENCODER_INSERT_SPS
-* InsertPPS = AMF_VIDEO_ENCODER_INSERT_PPS
-* MarkCurrentWithLTRIndex = AMF_VIDEO_ENCODER_MARK_CURRENT_WITH_LTR_INDEX
-* ForceLTRReferenceBitfield = AMF_VIDEO_ENCODER_FORCE_LTR_REFERENCE_BITFIELD
-* **IntraRefreshFrameNum**
-* **TemporalLayerSelect** (Per Frame?)
 
-### Per Output
-
-### Unknown
-
-## Values
-
-### Constants found
-* AHEVC_PARAMETER_NAME__TEMPORAL_LAYER_SELECT
-* AHEVC_PARAMETER_NAME__NUM_TEMPORAL_LAYERS
-* AHEVC_PARAMETER_NAME__MAX_NUM_TEMPORAL_LAYE
-* AHEVC_PARAMETER_NAME__TIER
-* and some more.
-
-### Other Strings in the same list:
-* GOP_ALIGNED
-* IDR_ALIGNED
-* Cabac
-* Calv
-* Undefined
-* XVBA
-* AHEVCEncode
-* AHEHVCApplySpeedQualityPreset is bypassed, because it is not implemented
-
-### Profile Levels
-Libraries support as high as 6.2, which is most likely for HEVC. Full List:  
-1.0 2.0 2.1 3.0 3.1 4.0 4.1 5.0 5.1 5.2 6.0 6.1 6.2
-
-# Other Discoveries
-
-## SubmitInput, QueryOutput
-There are references to deque, which is something in std::queue. Or BufferQueue.
-
-## Typos
-* CheckRes**oul**tion
