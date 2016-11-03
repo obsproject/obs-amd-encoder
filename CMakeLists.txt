@@ -29,6 +29,9 @@ SET(enc-amf_HEADERS
 	"enc-amf/Include/amd-amf.h"
 	"enc-amf/Include/amd-amf-vce.h"
 	"enc-amf/Include/amd-amf-vce-capabilities.h"
+	"enc-amf/Include/api-base.h"
+	"enc-amf/Include/api-d3d9.h"
+	"enc-amf/Include/api-d3d11.h"
 	"enc-amf/Include/enc-h264.h"
 	"enc-amf/Include/plugin.h"
 )
@@ -37,6 +40,9 @@ SET(enc-amf_SOURCES
 	"enc-amf/Source/amd-amf.cpp"
 	"enc-amf/Source/amd-amf-vce.cpp"
 	"enc-amf/Source/amd-amf-vce-capabilities.cpp"
+	"enc-amf/Source/api-base.cpp"
+	"enc-amf/Source/api-d3d9.cpp"
+	"enc-amf/Source/api-d3d11.cpp"
 	"enc-amf/Source/enc-h264.cpp"
 	"enc-amf/Source/plugin.cpp"
 )
