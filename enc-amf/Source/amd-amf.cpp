@@ -105,10 +105,10 @@ Plugin::AMD::AMF::AMF() {
 
 		std::vector<char> buf(1024);
 		sprintf(buf.data(), "%s%04x%04x%s",
-			TEXT("\\StringFileInfo\\"),
+			"\\StringFileInfo\\",
 			lpTranslate[0].wLanguage,
 			lpTranslate[0].wCodePage,
-			TEXT("\\ProductVersion"));
+			"\\ProductVersion");
 
 		// Retrieve file description for language and code page "i". 
 		void* lpBuffer;
