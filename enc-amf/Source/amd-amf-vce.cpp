@@ -138,8 +138,8 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
 				if (p_DeviceUniqueId.empty()) {
 					res = m_AMFContext->InitDX9(nullptr);
 				} else {
-					/*m_APIDevice = Plugin::API::Direct3D9(Plugin::API::Direct3D9::GetDeviceForUniqueId(p_DeviceUniqueId));
-					res = m_AMFContext->InitDX9(m_APIDevice.GetContext());*/
+					m_APIDevice = Plugin::API::Direct3D9(Plugin::API::Direct3D9::GetDeviceForUniqueId(p_DeviceUniqueId));
+					res = m_AMFContext->InitDX9(m_APIDevice.GetContext());
 				}
 			} else {
 				AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::VCEEncoder> DirectX 11 is only supported on Windows 8 or newer, using Host Memory Type instead.");
