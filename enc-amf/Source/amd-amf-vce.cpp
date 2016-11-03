@@ -1306,7 +1306,7 @@ void Plugin::AMD::VCEEncoder::SetVBVBufferAutomatic(double_t strictness) {
 	strictBitrate = static_cast<uint32_t>(looseBitrate * m_FrameRateReverseDivisor);
 
 	#define PI 3.14159265
-	double_t interpVal = (sin(min(max(strictness, 1.0), 0.0) * 90 * (PI / 180))); // sin curve?
+	double_t interpVal = (sin(max(min(strictness, 1.0), 0.0) * 90 * (PI / 180))); // sin curve?
 	uint32_t realBitrate = static_cast<uint32_t>((strictBitrate * interpVal) + (looseBitrate * (1.0 - interpVal)));
 	this->SetVBVBufferSize(realBitrate);
 }
