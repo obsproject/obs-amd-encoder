@@ -39,6 +39,7 @@ namespace Plugin {
 		class Direct3D9 : public Plugin::API::BaseAPI {
 			public:
 			static std::vector<Plugin::API::Device> EnumerateDevices();
+			static Plugin::API::Device GetDeviceForUniqueId(std::string uniqueId);
 
 			Direct3D9(Device device);
 			~Direct3D9();

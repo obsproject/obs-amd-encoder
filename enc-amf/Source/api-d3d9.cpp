@@ -28,16 +28,90 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 #include "api-d3d9.h"
 
+#include "d3d9.h"
+
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
 using namespace Plugin::API;
 
+Plugin::API::Device BuildDeviceFromAdapter(D3DADAPTER_IDENTIFIER9* pAdapter) {
+	if (pAdapter == nullptr)
+		return Device("INVALID DEVICE", "");
+
+	std::vector<char> uidBuf(1024);
+	sprintf(uidBuf.data(), "%ld:%ld:%ld:%ld",
+		pAdapter->VendorId,
+		pAdapter->DeviceId,
+		pAdapter->SubSysId,
+		pAdapter->Revision);
+
+	std::vector<char> nameBuf(1024);
+	sprintf(nameBuf.data(), "%s (%s)",
+		pAdapter->DeviceName,
+		pAdapter->Description);
+
+	return Device(std::string(nameBuf.data()), std::string(uidBuf.data()));
+}
+
+
 std::vector<Plugin::API::Device> Plugin::API::Direct3D9::EnumerateDevices() {
 	std::vector<Plugin::API::Device> devices = std::vector<Plugin::API::Device>();
 
-	// ToDo: Direct3D 9 enumeration code
+	IDirect3D9* pDirect3D = Direct3DCreate9(D3D_SDK_VERSION);
+
+	uint32_t adapterCount = pDirect3D->GetAdapterCount();
+	for (uint32_t adapterIndex = 0; adapterIndex < adapterCount; adapterIndex++) {
+		D3DADAPTER_IDENTIFIER9 adapterDesc = D3DADAPTER_IDENTIFIER9();
+		pDirect3D->GetAdapterIdentifier(adapterIndex, 0, &adapterDesc);
+
+		if (adapterDesc.VendorId != 0x1002)
+			continue;
+
+		Device device = BuildDeviceFromAdapter(&adapterDesc);
+		devices.push_back(device);
+	}
+
+	pDirect3D->Release();
 
 	return devices;
 }
+
+Plugin::API::Device Plugin::API::Direct3D9::GetDeviceForUniqueId(std::string uniqueId) {
+	Plugin::API::Device device = Device("", "");
+
+	IDirect3D9* pDirect3D = Direct3DCreate9(D3D_SDK_VERSION);
+
+	uint32_t adapterCount = pDirect3D->GetAdapterCount();
+	for (uint32_t adapterIndex = 0; adapterIndex <= adapterCount; adapterIndex++) {
+		D3DADAPTER_IDENTIFIER9 adapterDesc = D3DADAPTER_IDENTIFIER9();
+		pDirect3D->GetAdapterIdentifier(adapterIndex, 0, &adapterDesc);
+
+		if (adapterDesc.VendorId != 0x1002)
+			continue;
+
+		Device device2 = BuildDeviceFromAdapter(&adapterDesc);
+		
+		if (device2.UniqueId == uniqueId)
+			device = device2;
+	}
+
+	pDirect3D->Release();
+
+	return device;
+}
+
+Plugin::API::Direct3D9::Direct3D9(Device device) {
+
+}
+
+Plugin::API::Direct3D9::~Direct3D9() {
+
+}
+
+void* Plugin::API::Direct3D9::GetContext() {
+
+}
+
+
 #endif
