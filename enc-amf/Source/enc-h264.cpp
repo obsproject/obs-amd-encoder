@@ -220,7 +220,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 
 	// System Properties
 	obs_data_set_default_int(data, AMF_H264_MEMORYTYPE, VCEMemoryType_Host);
-	obs_data_set_default_int(data, AMF_H264_COMPUTETYPE, VCEComputeType_None);
+	obs_data_set_default_int(data, AMF_H264_USE_OPENCL, 0);
 	obs_data_set_default_int(data, AMF_H264_SURFACEFORMAT, -1);
 	obs_data_set_default_int(data, AMF_H264_VIEW, ViewMode::Basic);
 	obs_data_set_default_int(data, AMF_H264_UNLOCK_PROPERTIES, 0);
@@ -510,10 +510,10 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	/// Device
 	p = obs_properties_add_list(props, AMF_H264_DEVICE, obs_module_text(AMF_H264_DEVICE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	/// Compute Type
-	p = obs_properties_add_list(props, AMF_H264_COMPUTETYPE, obs_module_text(AMF_H264_COMPUTETYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_set_long_description(p, obs_module_text(AMF_H264_COMPUTETYPE_DESCRIPTION));
-	obs_property_list_add_int(p, obs_module_text(AMF_UTIL_TOGGLE_DISABLED), VCEComputeType_None);
-	obs_property_list_add_int(p, "OpenCL", VCEComputeType_OpenCL);
+	p = obs_properties_add_list(props, AMF_H264_USE_OPENCL, obs_module_text(AMF_H264_USE_OPENCL), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_set_long_description(p, obs_module_text(AMF_H264_USE_OPENCL_DESCRIPTION));
+	obs_property_list_add_int(p, obs_module_text(AMF_UTIL_TOGGLE_DISABLED), 0);
+	obs_property_list_add_int(p, obs_module_text(AMF_UTIL_TOGGLE_ENABLED), 1);
 	/// Surface Format
 	p = obs_properties_add_list(props, AMF_H264_SURFACEFORMAT, obs_module_text(AMF_H264_SURFACEFORMAT), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, obs_module_text(AMF_H264_SURFACEFORMAT_DESCRIPTION));
@@ -1138,9 +1138,9 @@ bool Plugin::Interface::H264Interface::view_modified(obs_properties_t *props, ob
 		obs_data_set_string(data, AMF_H264_DEVICE, "");
 	}
 
-	obs_property_set_visible(obs_properties_get(props, AMF_H264_COMPUTETYPE), vis_expert);
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_USE_OPENCL), vis_expert);
 	if (!vis_expert)
-		obs_data_set_int(data, AMF_H264_COMPUTETYPE, obs_data_get_default_int(data, AMF_H264_COMPUTETYPE));
+		obs_data_set_int(data, AMF_H264_USE_OPENCL, obs_data_get_default_int(data, AMF_H264_USE_OPENCL));
 
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_SURFACEFORMAT), vis_master);
 	if (!vis_master)
@@ -1262,7 +1262,7 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 	}
 	m_VideoEncoder = new VCEEncoder(VCEEncoderType_AVC, surfFormat,
 		(VCEMemoryType)obs_data_get_int(data, AMF_H264_MEMORYTYPE),
-		(VCEComputeType)obs_data_get_int(data, AMF_H264_COMPUTETYPE),
+		!!obs_data_get_int(data, AMF_H264_USE_OPENCL),
 		std::string(obs_data_get_string(data, AMF_H264_DEVICE)));
 
 	/// Static Properties
