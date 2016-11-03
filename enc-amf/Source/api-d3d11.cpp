@@ -40,35 +40,21 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 using namespace Plugin::API;
 
-Plugin::API::Device BuildDeviceFromAdapter(IDXGIAdapter1* pAdapter) {
+Plugin::API::Device BuildDeviceFromAdapter(DXGI_ADAPTER_DESC1* pAdapter) {
 	if (pAdapter == nullptr)
 		return Device("INVALID DEVICE", "");
 
-	DXGI_ADAPTER_DESC1 adapterDesc = DXGI_ADAPTER_DESC1();
-	std::memset(&adapterDesc, 0, sizeof(DXGI_ADAPTER_DESC1));
+	std::vector<char> uidBuf(1024);
+	sprintf(uidBuf.data(), "%ld:%ld:%ld:%ld",
+		pAdapter->VendorId,
+		pAdapter->DeviceId,
+		pAdapter->SubSysId,
+		pAdapter->Revision);
 
-	if (pAdapter->GetDesc1(&adapterDesc) == S_OK) {
-		std::string name, uniqueId;
+	std::vector<char> nameBuf(1024);
+	wcstombs(nameBuf.data(), pAdapter->Description, 1024);
 
-		// Unique Id
-		std::vector<char> uidBuf(1024);
-		sprintf(uidBuf.data(), "%ld:%ld:%ld:%ld:%ld:%ld",
-			adapterDesc.VendorId,
-			adapterDesc.DeviceId,
-			adapterDesc.SubSysId,
-			adapterDesc.Revision,
-			adapterDesc.AdapterLuid.LowPart,
-			adapterDesc.AdapterLuid.HighPart);
-		uniqueId = uidBuf.data();
-
-		// Name
-		std::vector<char> nameBuf(1024);
-		wcstombs(nameBuf.data(), adapterDesc.Description, 1024);
-		name = nameBuf.data();
-
-		return Device(name, uniqueId);
-	}
-	return Device("INVALID DEVICE", "");
+	return Device(std::string(nameBuf.data()), std::string(uidBuf.data()));
 }
 
 std::vector<Plugin::API::Device> Plugin::API::Direct3D11::EnumerateDevices() {
@@ -90,7 +76,7 @@ std::vector<Plugin::API::Device> Plugin::API::Direct3D11::EnumerateDevices() {
 			if (adapterDesc.VendorId != 0x1002)
 				continue;
 
-			devices.push_back(BuildDeviceFromAdapter(pAdapter));
+			devices.push_back(BuildDeviceFromAdapter(&adapterDesc));
 		}
 	}
 
@@ -118,7 +104,7 @@ Plugin::API::Device Plugin::API::Direct3D11::GetDeviceForUniqueId(std::string un
 			if (adapterDesc.VendorId != 0x1002)
 				continue;
 
-			Plugin::API::Device device2 = BuildDeviceFromAdapter(pAdapter);
+			Plugin::API::Device device2 = BuildDeviceFromAdapter(&adapterDesc);
 
 			if (uniqueId == device2.UniqueId) {
 				device = device2;
@@ -130,7 +116,6 @@ Plugin::API::Device Plugin::API::Direct3D11::GetDeviceForUniqueId(std::string un
 	pFactory->Release();
 	return device;
 }
-
 
 Plugin::API::Direct3D11::Direct3D11(Device device) {
 	IDXGIFactory1 *pFactory;
@@ -150,7 +135,7 @@ Plugin::API::Direct3D11::Direct3D11(Device device) {
 				if (adapterDesc.VendorId != 0x1002)
 					continue;
 
-				Plugin::API::Device device2 = BuildDeviceFromAdapter(pAdapter2);
+				Plugin::API::Device device2 = BuildDeviceFromAdapter(&adapterDesc);
 
 				if (device.UniqueId == device2.UniqueId) {
 					pAdapter = pAdapter2;
@@ -173,8 +158,9 @@ Plugin::API::Direct3D11::Direct3D11(Device device) {
 				flags, featureLevels, 2, D3D11_SDK_VERSION,
 				&pDevice, NULL, &pDeviceContext);
 
-			if (hr != S_OK)
+			if (FAILED(hr)) {
 				throw new std::exception("Unable to create D3D11.1 device.");
+			}
 		} catch (...) {
 			if (pAdapter)
 				pAdapter->Release();
