@@ -241,7 +241,7 @@ void fill_device_list(obs_property_t* p, obs_data_t* data) {
 				devices = Plugin::API::Direct3D11::EnumerateDevices();
 			} else if (IsWindowsXPOrGreater()) {
 				// DirectX 9
-				devices = Plugin::API::Direct3D9::EnumerateDevices();
+				//devices = Plugin::API::Direct3D9::EnumerateDevices();
 			} else
 				#endif
 			{
@@ -252,7 +252,7 @@ void fill_device_list(obs_property_t* p, obs_data_t* data) {
 			#ifdef _WIN32
 		case VCEMemoryType_DirectX9:
 			if (IsWindowsXPOrGreater()) // DirectX 9
-				devices = Plugin::API::Direct3D9::EnumerateDevices();
+				//devices = Plugin::API::Direct3D9::EnumerateDevices();
 			break;
 		case VCEMemoryType_DirectX11:
 			if (IsWindows8OrGreater()) // DirectX 11
