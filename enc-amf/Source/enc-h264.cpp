@@ -129,7 +129,8 @@ void* Plugin::Interface::H264Interface::create(obs_data_t* settings, obs_encoder
 	try {
 		Plugin::Interface::H264Interface* enc = new Plugin::Interface::H264Interface(settings, encoder);
 		return enc;
-	} catch (...) {
+	} catch (std::exception e) {
+		AMF_LOG_ERROR("Exception: %s", e.what());
 		AMF_LOG_ERROR("Unable to create Encoder, see log for more information.");
 		return NULL;
 	}
@@ -142,7 +143,8 @@ void Plugin::Interface::H264Interface::destroy(void* data) {
 		Plugin::Interface::H264Interface* enc = static_cast<Plugin::Interface::H264Interface*>(data);
 		delete enc;
 		data = nullptr;
-	} catch (...) {
+	} catch (std::exception e) {
+		AMF_LOG_ERROR("Exception: %s", e.what());
 		AMF_LOG_ERROR("Unable to destroy Encoder, see log for more information.");
 	}
 }
@@ -151,7 +153,8 @@ void Plugin::Interface::H264Interface::destroy(void* data) {
 bool Plugin::Interface::H264Interface::encode(void *data, struct encoder_frame *frame, struct encoder_packet *packet, bool *received_packet) {
 	try {
 		return static_cast<Plugin::Interface::H264Interface*>(data)->encode(frame, packet, received_packet);
-	} catch (...) {
+	} catch (std::exception e) {
+		AMF_LOG_ERROR("Exception: %s", e.what());
 		AMF_LOG_ERROR("Unable to encode, see log for more information.");
 		return false;
 	}
@@ -1257,7 +1260,10 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 				break;
 		}
 	}
-	m_VideoEncoder = new VCEEncoder(VCEEncoderType_AVC, surfFormat, (VCEMemoryType)obs_data_get_int(data, AMF_H264_MEMORYTYPE), (VCEComputeType)obs_data_get_int(data, AMF_H264_COMPUTETYPE));
+	m_VideoEncoder = new VCEEncoder(VCEEncoderType_AVC, surfFormat,
+		(VCEMemoryType)obs_data_get_int(data, AMF_H264_MEMORYTYPE),
+		(VCEComputeType)obs_data_get_int(data, AMF_H264_COMPUTETYPE),
+		std::string(obs_data_get_string(data, AMF_H264_DEVICE)));
 
 	/// Static Properties
 	m_VideoEncoder->SetUsage((VCEUsage)obs_data_get_int(data, AMF_H264_USAGE));
@@ -1358,7 +1364,7 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 			m_VideoEncoder->SetIDRPeriod((uint32_t)(obs_data_get_int(data, "keyint_sec") * ((double_t)fpsNum / (double_t)fpsDen)));
 
 			obs_data_set_double(data, AMF_H264_KEYFRAME_INTERVAL, (double_t)obs_data_get_int(data, "keyint_sec"));
-			obs_data_set_int(data, AMF_H264_IDR_PERIOD, obs_data_get_int(data, "keyint_sec") * ((double_t)fpsNum / (double_t)fpsDen));
+			obs_data_set_int(data, AMF_H264_IDR_PERIOD, (uint32_t)(obs_data_get_int(data, "keyint_sec") * ((double_t)fpsNum / (double_t)fpsDen)));
 		} else {
 			obs_data_set_int(data, "keyint_sec", (uint64_t)(m_VideoEncoder->GetIDRPeriod() / ((double_t)fpsNum / (double_t)fpsDen)));
 		}
@@ -1387,7 +1393,6 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 					break;
 			}
 		}
-
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -1395,7 +1400,7 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 	//////////////////////////////////////////////////////////////////////////
 	m_VideoEncoder->LogProperties();
 	if (obs_data_get_int(data, AMF_H264_VIEW) >= ViewMode::Master)
-		AMF_LOG_ERROR("User is actively using unsupported options, avoid supporting. You will not be happy with the solution or find a decent one before your sanity slowly degrades into madness.");
+		AMF_LOG_ERROR("View Mode 'Master' is active, avoid giving anything but basic support. Error is most likely caused by user settings themselves.");
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize (locks static properties)
