@@ -28,7 +28,6 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 #include "api-d3d9.h"
 
-#include "d3d9.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -91,7 +90,6 @@ Plugin::API::Device Plugin::API::Direct3D9::GetDeviceForUniqueId(std::string uni
 			continue;
 
 		Device device2 = BuildDeviceFromAdapter(&adapterDesc);
-		
 		if (device2.UniqueId == uniqueId)
 			device = device2;
 	}
@@ -101,17 +99,100 @@ Plugin::API::Device Plugin::API::Direct3D9::GetDeviceForUniqueId(std::string uni
 	return device;
 }
 
-Plugin::API::Direct3D9::Direct3D9(Device device) {
+struct EnumWindowsData {
+	DWORD processId;
+	HWND bestWindowId;
+};
 
+BOOL CALLBACK EnumWindowsCallback(HWND handle, LPARAM lParam) {
+	EnumWindowsData* data = (EnumWindowsData*)lParam;
+
+	DWORD processId;
+	GetWindowThreadProcessId(handle, &processId);
+	if ((processId == data->processId)
+		&& (GetWindow(handle, GW_OWNER) == (HWND)0)
+		&& (IsWindowVisible(handle))) {
+		return TRUE;
+	}
+	data->bestWindowId = handle;
+	return FALSE;
+}
+
+Plugin::API::Direct3D9::Direct3D9(Device device) {
+	pDirect3D = Direct3DCreate9(D3D_SDK_VERSION);
+	if (!pDirect3D)
+		throw std::exception("Unable to create D3D9 driver.");
+
+	// Find Adapter Index
+	uint32_t usedAdapter = 0;
+	uint32_t adapterCount = pDirect3D->GetAdapterCount();
+	for (uint32_t adapterIndex = 0; adapterIndex <= adapterCount; adapterIndex++) {
+		D3DADAPTER_IDENTIFIER9 adapterDesc = D3DADAPTER_IDENTIFIER9();
+		pDirect3D->GetAdapterIdentifier(adapterIndex, 0, &adapterDesc);
+
+		if (adapterDesc.VendorId != 0x1002)
+			continue;
+
+		Device device2 = BuildDeviceFromAdapter(&adapterDesc);
+		if (device2.UniqueId == device.UniqueId) {
+			usedAdapter = adapterIndex++;
+			break;
+		}
+	}
+
+	EnumWindowsData data = EnumWindowsData();
+	data.processId = GetCurrentProcessId();
+	EnumWindows(EnumWindowsCallback, (LPARAM)&data);
+
+	D3DPRESENT_PARAMETERS pPresentParameter = D3DPRESENT_PARAMETERS();
+	pPresentParameter.BackBufferWidth = 1280;
+	pPresentParameter.BackBufferHeight = 720;
+	pPresentParameter.BackBufferFormat = D3DFORMAT::D3DFMT_R8G8B8;
+	pPresentParameter.BackBufferCount = 2;
+	pPresentParameter.MultiSampleType = D3DMULTISAMPLE_TYPE::D3DMULTISAMPLE_NONE;
+	pPresentParameter.MultiSampleQuality = 0;
+	pPresentParameter.SwapEffect = D3DSWAPEFFECT::D3DSWAPEFFECT_DISCARD;
+	pPresentParameter.hDeviceWindow = data.bestWindowId;
+	pPresentParameter.Windowed = TRUE;
+	pPresentParameter.EnableAutoDepthStencil = FALSE;
+	pPresentParameter.AutoDepthStencilFormat = D3DFORMAT::D3DFMT_A1;
+	pPresentParameter.Flags = D3DPRESENTFLAG_VIDEO;
+	pPresentParameter.FullScreen_RefreshRateInHz = 0;
+	pPresentParameter.PresentationInterval = 1;
+		
+	HRESULT hr = pDirect3D->CreateDevice(usedAdapter,
+		D3DDEVTYPE_HAL,
+		data.bestWindowId,
+		D3DCREATE_DISABLE_DRIVER_MANAGEMENT_EX | D3DCREATE_MULTITHREADED | D3DCREATE_PUREDEVICE | D3DCREATE_MIXED_VERTEXPROCESSING | D3DCREATE_NOWINDOWCHANGES,
+		&pPresentParameter,
+		&pDirect3DDevice);
+	switch (hr) {
+		case D3DERR_DEVICELOST:
+			throw std::exception("D3DERR_DEVICELOST");
+			break;
+		case D3DERR_INVALIDCALL:
+			throw std::exception("D3DERR_INVALIDCALL");
+			break;
+		case D3DERR_NOTAVAILABLE:
+			throw std::exception("D3DERR_NOTAVAILABLE");
+			break;
+		case D3DERR_OUTOFVIDEOMEMORY:
+			throw std::exception("D3DERR_OUTOFVIDEOMEMORY");
+			break;
+	}
+	if (FAILED(hr))
+		throw std::exception("Unable to create D3D9 device.");
 }
 
 Plugin::API::Direct3D9::~Direct3D9() {
+	if (pDirect3DDevice)
+		pDirect3DDevice->Release();
 
+	if (pDirect3D)
+		pDirect3D->Release();
 }
 
 void* Plugin::API::Direct3D9::GetContext() {
-
+	return pDirect3DDevice;
 }
-
-
 #endif

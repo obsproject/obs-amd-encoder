@@ -29,6 +29,7 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 #include "api-base.h"
 
+#include <d3d9.h>
 #pragma comment(lib, "d3d9.lib")
 
 //////////////////////////////////////////////////////////////////////////
@@ -45,6 +46,10 @@ namespace Plugin {
 			~Direct3D9();
 
 			void* GetContext();
+
+			private:
+			IDirect3D9* pDirect3D;
+			IDirect3DDevice9* pDirect3DDevice;
 		};
 	}
 }
