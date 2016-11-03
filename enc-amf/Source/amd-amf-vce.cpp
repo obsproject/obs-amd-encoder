@@ -60,9 +60,10 @@ void Plugin::AMD::VCEEncoder::OutputThreadMain(Plugin::AMD::VCEEncoder* p_this) 
 	p_this->OutputThreadLogic();
 }
 
-Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat /*= VCESurfaceFormat_NV12*/,
-	VCEMemoryType p_MemoryType /*= VCEMemoryType_Auto*/, VCEComputeType p_ComputeType /*= VCEComputeType_None*/,
-	std::string p_DeviceUniqueId /*= ""*/) {
+Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
+	VCESurfaceFormat p_SurfaceFormat /*= VCESurfaceFormat_NV12*/,
+	VCEMemoryType p_MemoryType /*= VCEMemoryType_Auto*/,
+	bool p_UseOpenCL /*= false*/, std::string p_DeviceUniqueId /*= ""*/) {
 	AMF_RESULT res;
 
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::VCEEncoder> Initializing...");
@@ -71,7 +72,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 	m_EncoderType = p_Type;
 	m_SurfaceFormat = p_SurfaceFormat;
 	m_MemoryType = p_MemoryType;
-	m_ComputeType = p_ComputeType;
+	m_UseOpenCL = p_UseOpenCL;
 	m_Flag_IsStarted = false;
 	m_Flag_Threading = true;
 	m_FrameSize.first = 64;	m_FrameSize.second = 64;
@@ -150,19 +151,14 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> Initializing 3D queue failed with error %ls (code %ld).", res);
 
-	switch (m_ComputeType) {
-		case VCEComputeType_None:
-			break;
-		case VCEComputeType_OpenCL:
-			if (m_MemoryType == VCEMemoryType_Host)
-				ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> Use of OpenCL without DirectX or OpenGL is not supported, error %ls (code %d).", AMF_NOT_SUPPORTED);
+	if (m_UseOpenCL) {
+		if (m_MemoryType == VCEMemoryType_Host)
+			ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> Use of OpenCL without DirectX or OpenGL is not supported, error %ls (code %d).", AMF_NOT_SUPPORTED);
 
-			res = m_AMFContext->InitOpenCL(nullptr);
-			if (res != AMF_OK)
-				ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> InitOpenCL failed with error %ls (code %ld).", res);
-			m_AMFContext->GetCompute(amf::AMF_MEMORY_OPENCL, &m_AMFCompute);
-
-			break;
+		res = m_AMFContext->InitOpenCL(nullptr);
+		if (res != AMF_OK)
+			ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> InitOpenCL failed with error %ls (code %ld).", res);
+		m_AMFContext->GetCompute(amf::AMF_MEMORY_OPENCL, &m_AMFCompute);
 	}
 
 	/// AMF Component (Encoder)
@@ -675,17 +671,18 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFSurfacePtr pSurface = nullptr;
-	if (m_ComputeType != VCEComputeType_None) {
+	if (m_UseOpenCL) {
 		amf_size l_origin[] = { 0, 0, 0 };
 		amf_size l_size0[] = { m_FrameSize.first, m_FrameSize.second, 1 };
 		amf_size l_size1[] = { m_FrameSize.first >> 1, m_FrameSize.second >> 1, 1 };
 
+		res = m_AMFContext->AllocSurface(memoryTypeToAMF[m_MemoryType], surfaceFormatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second, &pSurface);
+		if (res != AMF_OK) // Unable to create Surface
+			ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame> Unable to create AMFSurface, error %ls (code %d).", res);
+
 		amf::AMFComputeSyncPointPtr pSyncPoint;
 		m_AMFCompute->PutSyncPoint(&pSyncPoint);
-		res = m_AMFContext->AllocSurface(memoryTypeToAMF[m_MemoryType], surfaceFormatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second, &pSurface);
-		if (m_ComputeType == VCEComputeType_OpenCL) {
-			pSurface->Convert(amf::AMF_MEMORY_OPENCL);
-		}
+		pSurface->Convert(amf::AMF_MEMORY_OPENCL);
 		m_AMFCompute->CopyPlaneFromHost(frame->data[0], l_origin, l_size0, frame->linesize[0], pSurface->GetPlaneAt(0), false);
 		m_AMFCompute->CopyPlaneFromHost(frame->data[1], l_origin, l_size1, frame->linesize[1], pSurface->GetPlaneAt(1), false);
 		m_AMFCompute->FinishQueue();
@@ -763,7 +760,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("-- AMD Advanced Media Framework VCE Encoder --");
 	AMF_LOG_INFO("Initialization Parameters: ");
 	AMF_LOG_INFO("  Memory Type: %s", memoryTypeToString[m_MemoryType]);
-	AMF_LOG_INFO("  Compute Type: %s", computeTypeToString[m_ComputeType]);
+	AMF_LOG_INFO("  Compute Type: %s", computeTypeToString[m_UseOpenCL]);
 	AMF_LOG_INFO("  Surface Format: %s", surfaceFormatToString[m_SurfaceFormat]);
 	AMF_LOG_INFO("Static Parameters: ");
 	AMF_LOG_INFO("  Usage: %s", usageToString[this->GetUsage()]);

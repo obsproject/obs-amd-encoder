@@ -59,10 +59,6 @@ namespace Plugin {
 
 			VCEMemoryType_Auto = -1,	// Auto-Detect
 		};
-		enum VCEComputeType {
-			VCEComputeType_None, // Default
-			VCEComputeType_OpenCL, // OpenCL
-		};
 		enum VCESurfaceFormat {
 			// 4:2:0 Formats
 			VCESurfaceFormat_NV12,	// NV12
@@ -147,8 +143,10 @@ namespace Plugin {
 			#pragma region Initializer & Finalizer
 			//////////////////////////////////////////////////////////////////////////
 			public:
-			VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat = VCESurfaceFormat_NV12,
-				VCEMemoryType p_MemoryType = VCEMemoryType_Auto, VCEComputeType p_ComputeType = VCEComputeType_None,
+			VCEEncoder(VCEEncoderType p_Type,
+				VCESurfaceFormat p_SurfaceFormat = VCESurfaceFormat_NV12,
+				VCEMemoryType p_MemoryType = VCEMemoryType_Auto,
+				bool p_UseOpenCL = false,
 				std::string p_DeviceUniqueId = "");
 			~VCEEncoder();
 			#pragma endregion Initializer & Finalizer
@@ -440,7 +438,7 @@ namespace Plugin {
 			// Internal Properties
 			VCEEncoderType m_EncoderType;
 			VCEMemoryType m_MemoryType;
-			VCEComputeType m_ComputeType;
+			bool m_UseOpenCL;
 			VCESurfaceFormat m_SurfaceFormat;
 			bool m_Flag_IsStarted,
 				m_Flag_Threading;
