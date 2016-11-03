@@ -117,7 +117,7 @@ BOOL CALLBACK EnumWindowsCallback(HWND handle, LPARAM lParam) {
 	return FALSE;
 }
 
-Plugin::API::Direct3D9::Direct3D9(Device device) {
+Plugin::API::Direct3D9::Direct3D9(Device device) : BaseAPI(device) {
 	pDirect3D = Direct3DCreate9(D3D_SDK_VERSION);
 	if (!pDirect3D)
 		throw std::exception("Unable to create D3D9 driver.");
