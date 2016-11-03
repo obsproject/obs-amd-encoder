@@ -62,7 +62,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadMain(Plugin::AMD::VCEEncoder* p_this) 
 
 Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat /*= VCESurfaceFormat_NV12*/,
 	VCEMemoryType p_MemoryType /*= VCEMemoryType_Auto*/, VCEComputeType p_ComputeType /*= VCEComputeType_None*/,
-	Plugin::API::Device p_Device /*= Plugin::API::Device("", "")*/) {
+	std::string p_DeviceUniqueId /*= ""*/) {
 	AMF_RESULT res;
 
 	AMF_LOG_INFO("<Plugin::AMD::VCEEncoder::VCEEncoder> Initializing...");
@@ -110,11 +110,23 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 		case VCEMemoryType_Host:
 			res = AMF_OK;
 			break;
+			#ifdef _WIN32
+		case VCEMemoryType_OpenGL:
+			if (p_DeviceUniqueId.empty()) {
+				res = m_AMFContext->InitOpenGL(nullptr, nullptr, nullptr);
+			} else {
+				/*m_APIDevice = Plugin::API::OpenGL(Plugin::API::OpenGL::GetDeviceForUniqueId(p_DeviceUniqueId));
+				res = m_AMFContext->InitOpenGL(m_APIDevice.GetContext(), nullptr, nullptr);*/
+			}
+			break;
 		case VCEMemoryType_DirectX11:
 			if (IsWindows8OrGreater()) {
-				m_APIDevice = Plugin::API::Direct3D11(p_Device);
-
-				res = m_AMFContext->InitDX11(m_APIDevice.GetContext());
+				if (p_DeviceUniqueId.empty()) {
+					res = m_AMFContext->InitDX11(nullptr);
+				} else {
+					m_APIDevice = Plugin::API::Direct3D11(Plugin::API::Direct3D11::GetDeviceForUniqueId(p_DeviceUniqueId));
+					res = m_AMFContext->InitDX11(m_APIDevice.GetContext());
+				}
 			} else {
 				AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::VCEEncoder> DirectX 11 is only supported on Windows 8 or newer, using Host Memory Type instead.");
 				m_MemoryType = VCEMemoryType_Host;
@@ -122,15 +134,18 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_Su
 			break;
 		case VCEMemoryType_DirectX9:
 			if (IsWindowsXPOrGreater()) {
-				res = m_AMFContext->InitDX9(m_APIDevice.GetContext());
+				if (p_DeviceUniqueId.empty()) {
+					res = m_AMFContext->InitDX9(nullptr);
+				} else {
+					/*m_APIDevice = Plugin::API::Direct3D9(Plugin::API::Direct3D9::GetDeviceForUniqueId(p_DeviceUniqueId));
+					res = m_AMFContext->InitDX9(m_APIDevice.GetContext());*/
+				}
 			} else {
 				AMF_LOG_ERROR("<Plugin::AMD::VCEEncoder::VCEEncoder> DirectX 11 is only supported on Windows 8 or newer, using Host Memory Type instead.");
 				m_MemoryType = VCEMemoryType_Host;
 			}
 			break;
-		case VCEMemoryType_OpenGL:
-			res = m_AMFContext->InitOpenGL(m_APIDevice.GetContext(), nullptr, nullptr);
-			break;
+			#endif
 	}
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::VCEEncoder> Initializing 3D queue failed with error %ls (code %ld).", res);

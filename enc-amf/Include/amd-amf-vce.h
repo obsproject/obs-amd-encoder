@@ -147,7 +147,9 @@ namespace Plugin {
 			#pragma region Initializer & Finalizer
 			//////////////////////////////////////////////////////////////////////////
 			public:
-			VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat = VCESurfaceFormat_NV12, VCEMemoryType p_MemoryType = VCEMemoryType_Auto, VCEComputeType p_ComputeType = VCEComputeType_None, Plugin::API::Device p_Device = Plugin::API::Device("", ""));
+			VCEEncoder(VCEEncoderType p_Type, VCESurfaceFormat p_SurfaceFormat = VCESurfaceFormat_NV12,
+				VCEMemoryType p_MemoryType = VCEMemoryType_Auto, VCEComputeType p_ComputeType = VCEComputeType_None,
+				std::string p_DeviceUniqueId = "");
 			~VCEEncoder();
 			#pragma endregion Initializer & Finalizer
 
