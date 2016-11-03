@@ -29,6 +29,7 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 #include "api-base.h"
 
+#define D3D_DEBUG_INFO
 #include <d3d9.h>
 #pragma comment(lib, "d3d9.lib")
 

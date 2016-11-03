@@ -19,6 +19,7 @@ Due to the nature of changes in this update, your previous settings may end up l
 * Added: All properties now have a hover-over tooltip explaining their purpose and what they do.
 * Added: Automatic VBV Buffer calculation using a strictness constraint with 100% is as strict as possible and 0% as loose as possible.
 * Added: Plugin will now print the actual runtime version to the log files.
+* Added: Ability to specify which DirectX 11 device to use.
 * Changed: CABAC is no longer experimental, however there are some Driver issues with it right now.
 * Changed: On Cards with no B-Picture support it will use LTR Frames instead.
 * Changed: B-Picture properties will be correctly hidden and set when LTR Frames are in use.
