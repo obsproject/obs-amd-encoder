@@ -242,8 +242,8 @@ void fill_device_list(obs_property_t* p, obs_data_t* data) {
 			} else if (IsWindowsXPOrGreater()) {
 				// DirectX 9
 				devices = Plugin::API::Direct3D9::EnumerateDevices();
-			} else 
-			#endif
+			} else
+				#endif
 			{
 				// OpenGL
 			}
@@ -1179,13 +1179,13 @@ bool Plugin::Interface::H264Interface::unlock_properties_modified(obs_properties
 		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_TARGET), 1000, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate, 1);
 		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_PEAK), 1000, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate, 1);
 		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_VBVBUFFER_SIZE), 1000, 100000000, 1);
-		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_KEYFRAME_INTERVAL), 0, 100, 1);
+		obs_property_float_set_limits(obs_properties_get(props, AMF_H264_KEYFRAME_INTERVAL), 0, 100, 1);
 		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_IDR_PERIOD), 0, 1000, 1);
 	} else {
 		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_TARGET), 1, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / 1000, 1);
 		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_PEAK), 1, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / 1000, 1);
 		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_VBVBUFFER_SIZE), 1, 100000, 1);
-		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_KEYFRAME_INTERVAL), 1, 100, 1);
+		obs_property_float_set_limits(obs_properties_get(props, AMF_H264_KEYFRAME_INTERVAL), 1, 100, 1);
 		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_IDR_PERIOD), 1, 1000, 1);
 	}
 
@@ -1264,6 +1264,10 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 		!!obs_data_get_int(data, AMF_H264_USE_OPENCL),
 		std::string(obs_data_get_string(data, AMF_H264_DEVICE)));
 
+	/// Framesize & Framerate
+	m_VideoEncoder->SetFrameSize(m_cfgWidth, m_cfgHeight);
+	m_VideoEncoder->SetFrameRate(m_cfgFPSnum, m_cfgFPSden);
+
 	/// Static Properties
 	m_VideoEncoder->SetUsage((VCEUsage)obs_data_get_int(data, AMF_H264_USAGE));
 	m_VideoEncoder->SetProfile((VCEProfile)obs_data_get_int(data, AMF_H264_PROFILE));
@@ -1271,24 +1275,13 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 	if (obs_data_get_int(data, AMF_H264_MAXIMUMLTRFRAMES) != 0)
 		m_VideoEncoder->SetMaximumLongTermReferenceFrames((uint32_t)obs_data_get_int(data, AMF_H264_MAXIMUMLTRFRAMES));
 
-	/// Framesize & Framerate
-	m_VideoEncoder->SetFrameSize(m_cfgWidth, m_cfgHeight);
-	m_VideoEncoder->SetFrameRate(m_cfgFPSnum, m_cfgFPSden);
+	/// Miscellaneous Properties
+	m_VideoEncoder->SetScanType((VCEScanType)obs_data_get_int(data, AMF_H264_SCANTYPE));
+	m_VideoEncoder->SetQualityPreset((VCEQualityPreset)obs_data_get_int(data, AMF_H264_QUALITY_PRESET));
+	m_VideoEncoder->SetCABACEnabled(!!obs_data_get_int(data, AMF_H264_CABAC));
 
-	try {
-		m_VideoEncoder->SetBPictureDeltaQP((int8_t)obs_data_get_int(data, AMF_H264_QP_BPICTURE_DELTA));
-		m_VideoEncoder->SetReferenceBPictureDeltaQP((int8_t)obs_data_get_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA));
-	} catch (...) {}
-
-	// Initialize (locks static properties)
-	m_VideoEncoder->Start();
-
-	// Dynamic Properties (Can be changed during Encoding)
-	this->update(data);
-
-	//////////////////////////////////////////////////////////////////////////
 	// OBS - Enforce Streaming Service Restrictions
-	//////////////////////////////////////////////////////////////////////////
+	#pragma region OBS - Enforce Streaming Service Restrictions
 	{
 		// Profile
 		const char* p_str = obs_data_get_string(data, "profile");
@@ -1314,6 +1307,123 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 			}
 		}
 
+		// Preset
+		const char* preset = obs_data_get_string(data, "preset");
+		if (strcmp(preset, "") != 0) {
+			if (strcmp(preset, "speed") == 0) {
+				m_VideoEncoder->SetQualityPreset(VCEQualityPreset_Speed);
+			} else if (strcmp(preset, "balanced") == 0) {
+				m_VideoEncoder->SetQualityPreset(VCEQualityPreset_Balanced);
+			} else if (strcmp(preset, "quality") == 0) {
+				m_VideoEncoder->SetQualityPreset(VCEQualityPreset_Quality);
+			}
+			obs_data_set_int(data, AMF_H264_QUALITY_PRESET, m_VideoEncoder->GetQualityPreset());
+		} else {
+			switch (m_VideoEncoder->GetQualityPreset()) {
+				case VCEQualityPreset_Speed:
+					obs_data_set_string(data, "preset", "speed");
+					break;
+				case VCEQualityPreset_Balanced:
+					obs_data_set_string(data, "preset", "balanced");
+					break;
+				case VCEQualityPreset_Quality:
+					obs_data_set_string(data, "preset", "quality");
+					break;
+			}
+		}
+	}
+	#pragma endregion OBS - Enforce Streaming Service Restrictions
+
+	// Initialize (locks static properties)
+	m_VideoEncoder->Start();
+
+	// Dynamic Properties (Can be changed during Encoding)
+	this->update(data);
+
+	// Verify
+	m_VideoEncoder->LogProperties();
+	if (obs_data_get_int(data, AMF_H264_VIEW) >= ViewMode::Master)
+		AMF_LOG_ERROR("View Mode 'Master' is active, avoid giving anything but basic support. Error is most likely caused by user settings themselves.");
+
+	AMF_LOG_DEBUG("<AMFEncoder::H264Interface::H264Interface> Complete.");
+}
+
+Plugin::Interface::H264Interface::~H264Interface() {
+	AMF_LOG_DEBUG("<AMFEncoder::H264Interface::~H264Interface> Finalizing...");
+	m_VideoEncoder->Stop();
+	delete m_VideoEncoder;
+	AMF_LOG_DEBUG("<AMFEncoder::H264Interface::~H264Interface> Complete.");
+}
+
+bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
+	double_t framerate = (double_t)m_VideoEncoder->GetFrameRate().first / (double_t)m_VideoEncoder->GetFrameRate().second;
+	int32_t bitrateMultiplier = obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000;
+
+	// Rate Control Properties
+	m_VideoEncoder->SetRateControlMethod((VCERateControlMethod)obs_data_get_int(data, AMF_H264_RATECONTROLMETHOD));
+	m_VideoEncoder->SetMinimumQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_MINIMUM));
+	m_VideoEncoder->SetMaximumQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_MAXIMUM));
+	switch ((VCERateControlMethod)obs_data_get_int(data, AMF_H264_RATECONTROLMETHOD)) {
+		case VCERateControlMethod_ConstantBitrate:
+			m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_TARGET) * bitrateMultiplier);
+			m_VideoEncoder->SetPeakBitrate(m_VideoEncoder->GetTargetBitrate());
+			m_VideoEncoder->SetFillerDataEnabled(obs_data_get_int(data, AMF_H264_FILLERDATA) == 1);
+			break;
+		case VCERateControlMethod_VariableBitrate_PeakConstrained:
+			m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_TARGET) * bitrateMultiplier);
+			m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_PEAK) * bitrateMultiplier);
+			m_VideoEncoder->SetFillerDataEnabled(false);
+			break;
+		case VCERateControlMethod_VariableBitrate_LatencyConstrained:
+			m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_TARGET) * bitrateMultiplier);
+			m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_PEAK) * bitrateMultiplier);
+			m_VideoEncoder->SetFillerDataEnabled(false);
+			break;
+		case VCERateControlMethod_ConstantQP:
+			m_VideoEncoder->SetIFrameQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_IFRAME));
+			m_VideoEncoder->SetPFrameQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_PFRAME));
+			try {
+				m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_BFRAME));
+			} catch (...) {}
+			m_VideoEncoder->SetFillerDataEnabled(false);
+			break;
+	}
+	if (obs_data_get_int(data, AMF_H264_VBVBUFFER) == 0) {
+		m_VideoEncoder->SetVBVBufferAutomatic(obs_data_get_double(data, AMF_H264_VBVBUFFER_STRICTNESS) / 100.0);
+	} else {
+		m_VideoEncoder->SetVBVBufferSize((uint32_t)obs_data_get_int(data, AMF_H264_VBVBUFFER_SIZE) * bitrateMultiplier);
+	}
+	m_VideoEncoder->SetInitialVBVBufferFullness(obs_data_get_double(data, AMF_H264_VBVBUFFER_FULLNESS) / 100.0);
+	m_VideoEncoder->SetFrameSkippingEnabled(obs_data_get_int(data, AMF_H264_FRAMESKIPPING) == 1);
+	m_VideoEncoder->SetEnforceHRDRestrictionsEnabled(obs_data_get_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY) == 1);
+	if (obs_data_get_int(data, AMF_H264_MAXIMUMACCESSUNITSIZE) != 0)
+		m_VideoEncoder->SetMaximumAccessUnitSize((uint32_t)obs_data_get_int(data, AMF_H264_MAXIMUMACCESSUNITSIZE));
+
+	// Picture Control Properties
+	if (obs_data_get_int(data, AMF_H264_VIEW) == ViewMode::Master)
+		m_VideoEncoder->SetIDRPeriod((uint32_t)obs_data_get_int(data, AMF_H264_IDR_PERIOD));
+	else
+		m_VideoEncoder->SetIDRPeriod(max((uint32_t)(obs_data_get_double(data, AMF_H264_KEYFRAME_INTERVAL) * framerate), 1));
+	m_VideoEncoder->SetDeblockingFilterEnabled(!!obs_data_get_int(data, AMF_H264_DEBLOCKINGFILTER));
+	if (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames) {
+		try {
+			m_VideoEncoder->SetBPicturePattern((VCEBPicturePattern)obs_data_get_int(data, AMF_H264_BPICTURE_PATTERN));
+			m_VideoEncoder->SetBPictureReferenceEnabled(!!obs_data_get_int(data, AMF_H264_BPICTURE_REFERENCE));
+		} catch (...) {}
+		try {
+			if (m_VideoEncoder->GetBPicturePattern() != VCEBPicturePattern_None) {
+				m_VideoEncoder->SetBPictureDeltaQP((int8_t)obs_data_get_int(data, AMF_H264_QP_BPICTURE_DELTA));
+				m_VideoEncoder->SetReferenceBPictureDeltaQP((int8_t)obs_data_get_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA));
+			}
+		} catch (...) {}
+	}
+
+	// Miscellaneous Properties
+	m_VideoEncoder->SetHalfPixelMotionEstimationEnabled(!!(obs_data_get_int(data, AMF_H264_MOTIONESTIMATION) & 1));
+	m_VideoEncoder->SetQuarterPixelMotionEstimationEnabled(!!(obs_data_get_int(data, AMF_H264_MOTIONESTIMATION) & 2));
+
+	// OBS - Enforce Streaming Service Stuff
+	{
 		// Rate Control Method
 		const char* t_str = obs_data_get_string(data, "rate_control");
 		if (strcmp(t_str, "") != 0) {
@@ -1347,7 +1457,6 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 		}
 
 		// Bitrate
-		int32_t bitrateMultiplier = obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000;
 		uint64_t bitrateOvr = obs_data_get_int(data, "bitrate") * 1000;
 		if (bitrateOvr != -1) {
 			if (m_VideoEncoder->GetTargetBitrate() > bitrateOvr)
@@ -1375,111 +1484,12 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 		} else {
 			obs_data_set_int(data, "keyint_sec", (uint64_t)(m_VideoEncoder->GetIDRPeriod() / ((double_t)fpsNum / (double_t)fpsDen)));
 		}
-
-		// Preset
-		const char* preset = obs_data_get_string(data, "preset");
-		if (strcmp(preset, "") != 0) {
-			if (strcmp(preset, "speed") == 0) {
-				m_VideoEncoder->SetQualityPreset(VCEQualityPreset_Speed);
-			} else if (strcmp(preset, "balanced") == 0) {
-				m_VideoEncoder->SetQualityPreset(VCEQualityPreset_Balanced);
-			} else if (strcmp(preset, "quality") == 0) {
-				m_VideoEncoder->SetQualityPreset(VCEQualityPreset_Quality);
-			}
-			obs_data_set_int(data, AMF_H264_QUALITY_PRESET, m_VideoEncoder->GetQualityPreset());
-		} else {
-			switch (m_VideoEncoder->GetQualityPreset()) {
-				case VCEQualityPreset_Speed:
-					obs_data_set_string(data, "preset", "speed");
-					break;
-				case VCEQualityPreset_Balanced:
-					obs_data_set_string(data, "preset", "balanced");
-					break;
-				case VCEQualityPreset_Quality:
-					obs_data_set_string(data, "preset", "quality");
-					break;
-			}
-		}
 	}
 
-	//////////////////////////////////////////////////////////////////////////
 	// Verify
-	//////////////////////////////////////////////////////////////////////////
 	m_VideoEncoder->LogProperties();
 	if (obs_data_get_int(data, AMF_H264_VIEW) >= ViewMode::Master)
 		AMF_LOG_ERROR("View Mode 'Master' is active, avoid giving anything but basic support. Error is most likely caused by user settings themselves.");
-	
-	AMF_LOG_DEBUG("<AMFEncoder::H264Interface::H264Interface> Complete.");
-}
-
-Plugin::Interface::H264Interface::~H264Interface() {
-	AMF_LOG_DEBUG("<AMFEncoder::H264Interface::~H264Interface> Finalizing...");
-	m_VideoEncoder->Stop();
-	delete m_VideoEncoder;
-	AMF_LOG_DEBUG("<AMFEncoder::H264Interface::~H264Interface> Complete.");
-}
-
-bool Plugin::Interface::H264Interface::update(obs_data_t* settings) {
-	double_t framerate = (double_t)m_VideoEncoder->GetFrameRate().first / (double_t)m_VideoEncoder->GetFrameRate().second;
-	int32_t bitrateMultiplier = obs_data_get_bool(settings, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000;
-
-	// Rate Control Properties
-	m_VideoEncoder->SetRateControlMethod((VCERateControlMethod)obs_data_get_int(settings, AMF_H264_RATECONTROLMETHOD));
-	m_VideoEncoder->SetMinimumQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_MINIMUM));
-	m_VideoEncoder->SetMaximumQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_MAXIMUM));
-	switch ((VCERateControlMethod)obs_data_get_int(settings, AMF_H264_RATECONTROLMETHOD)) {
-		case VCERateControlMethod_ConstantBitrate:
-			m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(settings, AMF_H264_BITRATE_TARGET) * bitrateMultiplier);
-			m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(settings, AMF_H264_BITRATE_TARGET) * bitrateMultiplier);
-			break;
-		case VCERateControlMethod_VariableBitrate_PeakConstrained:
-			m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(settings, AMF_H264_BITRATE_TARGET) * bitrateMultiplier);
-			m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(settings, AMF_H264_BITRATE_PEAK) * bitrateMultiplier);
-			break;
-		case VCERateControlMethod_VariableBitrate_LatencyConstrained:
-			m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(settings, AMF_H264_BITRATE_TARGET) * bitrateMultiplier);
-			m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(settings, AMF_H264_BITRATE_PEAK) * bitrateMultiplier);
-			break;
-		case VCERateControlMethod_ConstantQP:
-			m_VideoEncoder->SetIFrameQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_IFRAME));
-			m_VideoEncoder->SetPFrameQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_PFRAME));
-			try {
-				m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(settings, AMF_H264_QP_BFRAME));
-			} catch (...) {}
-			break;
-	}
-	m_VideoEncoder->SetRateControlMethod((VCERateControlMethod)obs_data_get_int(settings, AMF_H264_RATECONTROLMETHOD));
-	if (obs_data_get_int(settings, AMF_H264_VBVBUFFER) == 0) {
-		m_VideoEncoder->SetVBVBufferAutomatic(obs_data_get_double(settings, AMF_H264_VBVBUFFER_STRICTNESS) / 100.0);
-	} else {
-		m_VideoEncoder->SetVBVBufferSize((uint32_t)obs_data_get_int(settings, AMF_H264_VBVBUFFER_SIZE) * bitrateMultiplier);
-	}
-	m_VideoEncoder->SetInitialVBVBufferFullness(obs_data_get_double(settings, AMF_H264_VBVBUFFER_FULLNESS) / 100.0);
-	m_VideoEncoder->SetFillerDataEnabled(obs_data_get_int(settings, AMF_H264_FILLERDATA) == 1);
-	m_VideoEncoder->SetFrameSkippingEnabled(obs_data_get_int(settings, AMF_H264_FRAMESKIPPING) == 1);
-	m_VideoEncoder->SetEnforceHRDRestrictionsEnabled(obs_data_get_int(settings, AMF_H264_ENFORCEHRDCOMPATIBILITY) == 1);
-	if (obs_data_get_int(settings, AMF_H264_MAXIMUMACCESSUNITSIZE) != 0)
-		m_VideoEncoder->SetMaximumAccessUnitSize((uint32_t)obs_data_get_int(settings, AMF_H264_MAXIMUMACCESSUNITSIZE));
-
-	// Picture Control Properties
-	if (obs_data_get_int(settings, AMF_H264_VIEW) == ViewMode::Master)
-		m_VideoEncoder->SetIDRPeriod((uint32_t)obs_data_get_int(settings, AMF_H264_IDR_PERIOD));
-	else
-		m_VideoEncoder->SetIDRPeriod(max((uint32_t)(obs_data_get_double(settings, AMF_H264_KEYFRAME_INTERVAL) * framerate), 1));
-	m_VideoEncoder->SetDeblockingFilterEnabled(!!obs_data_get_int(settings, AMF_H264_DEBLOCKINGFILTER));
-	try {
-		m_VideoEncoder->SetBPicturePattern((VCEBPicturePattern)obs_data_get_int(settings, AMF_H264_BPICTURE_PATTERN));
-		m_VideoEncoder->SetBPictureReferenceEnabled(!!obs_data_get_int(settings, AMF_H264_BPICTURE_REFERENCE));
-	} catch (...) {}
-
-	// Miscellaneous Properties
-	m_VideoEncoder->SetScanType((VCEScanType)obs_data_get_int(settings, AMF_H264_SCANTYPE));
-	m_VideoEncoder->SetQualityPreset((VCEQualityPreset)obs_data_get_int(settings, AMF_H264_QUALITY_PRESET));
-	m_VideoEncoder->SetHalfPixelMotionEstimationEnabled(!!(obs_data_get_int(settings, AMF_H264_MOTIONESTIMATION) & 1));
-	m_VideoEncoder->SetQuarterPixelMotionEstimationEnabled(!!(obs_data_get_int(settings, AMF_H264_MOTIONESTIMATION) & 2));
-	m_VideoEncoder->SetCABACEnabled(!!obs_data_get_int(settings, AMF_H264_CABAC));
-
-	//try { m_VideoEncoder->Restart(); } catch (...) { return false; }
 
 	return true;
 }
