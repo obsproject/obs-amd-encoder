@@ -121,7 +121,7 @@ Plugin::API::Direct3D11::Direct3D11(Device device) {
 	IDXGIFactory1 *pFactory;
 
 	if (FAILED(CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&pFactory))))
-		throw new std::exception("Unable to create DXGIFactory1");
+		throw new std::exception("Unable to create D3D11 driver.");
 
 	try {
 		IDXGIAdapter1 *pAdapter = NULL,
@@ -159,7 +159,7 @@ Plugin::API::Direct3D11::Direct3D11(Device device) {
 				&pDevice, NULL, &pDeviceContext);
 
 			if (FAILED(hr)) {
-				throw new std::exception("Unable to create D3D11.1 device.");
+				throw new std::exception("Unable to create D3D11 device.");
 			}
 		} catch (...) {
 			if (pAdapter)
