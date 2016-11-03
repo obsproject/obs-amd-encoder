@@ -1275,6 +1275,11 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 	m_VideoEncoder->SetFrameSize(m_cfgWidth, m_cfgHeight);
 	m_VideoEncoder->SetFrameRate(m_cfgFPSnum, m_cfgFPSden);
 
+	try {
+		m_VideoEncoder->SetBPictureDeltaQP((int8_t)obs_data_get_int(data, AMF_H264_QP_BPICTURE_DELTA));
+		m_VideoEncoder->SetReferenceBPictureDeltaQP((int8_t)obs_data_get_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA));
+	} catch (...) {}
+
 	// Initialize (locks static properties)
 	m_VideoEncoder->Start();
 
@@ -1403,7 +1408,6 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 	m_VideoEncoder->LogProperties();
 	if (obs_data_get_int(data, AMF_H264_VIEW) >= ViewMode::Master)
 		AMF_LOG_ERROR("View Mode 'Master' is active, avoid giving anything but basic support. Error is most likely caused by user settings themselves.");
-
 	
 	AMF_LOG_DEBUG("<AMFEncoder::H264Interface::H264Interface> Complete.");
 }
@@ -1444,10 +1448,6 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* settings) {
 			} catch (...) {}
 			break;
 	}
-	try {
-		m_VideoEncoder->SetBPictureDeltaQP((int8_t)obs_data_get_int(settings, AMF_H264_QP_BPICTURE_DELTA));
-		m_VideoEncoder->SetReferenceBPictureDeltaQP((int8_t)obs_data_get_int(settings, AMF_H264_QP_REFERENCE_BPICTURE_DELTA));
-	} catch (...) {}
 	m_VideoEncoder->SetRateControlMethod((VCERateControlMethod)obs_data_get_int(settings, AMF_H264_RATECONTROLMETHOD));
 	if (obs_data_get_int(settings, AMF_H264_VBVBUFFER) == 0) {
 		m_VideoEncoder->SetVBVBufferAutomatic(obs_data_get_double(settings, AMF_H264_VBVBUFFER_STRICTNESS) / 100.0);
@@ -1479,7 +1479,7 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* settings) {
 	m_VideoEncoder->SetQuarterPixelMotionEstimationEnabled(!!(obs_data_get_int(settings, AMF_H264_MOTIONESTIMATION) & 2));
 	m_VideoEncoder->SetCABACEnabled(!!obs_data_get_int(settings, AMF_H264_CABAC));
 
-	try { m_VideoEncoder->Restart(); } catch (...) { return false; }
+	//try { m_VideoEncoder->Restart(); } catch (...) { return false; }
 
 	return true;
 }
