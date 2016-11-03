@@ -37,6 +37,7 @@ namespace Plugin {
 			std::string Name;
 			std::string UniqueId;
 
+			Device();
 			Device(std::string Name, std::string UniqueId);
 			~Device();
 		};
@@ -45,11 +46,14 @@ namespace Plugin {
 			public:
 			static std::vector<Plugin::API::Device> EnumerateDevices();
 
-			BaseAPI();
 			BaseAPI(Device device);
 			virtual ~BaseAPI();
 
-			void* GetContext();
+			virtual void* GetContext();
+			Plugin::API::Device GetDevice();
+			
+			private:
+			Plugin::API::Device myDevice;
 		};
 	}
 }

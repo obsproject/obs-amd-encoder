@@ -32,6 +32,11 @@ SOFTWARE.
 // Code
 //////////////////////////////////////////////////////////////////////////
 
+Plugin::API::Device::Device() {
+	this->Name = "";
+	this->UniqueId = "";
+}
+
 Plugin::API::Device::Device(std::string Name, std::string UniqueId) {
 	this->Name = Name;
 	this->UniqueId = UniqueId;
@@ -44,12 +49,8 @@ std::vector<Plugin::API::Device> Plugin::API::BaseAPI::EnumerateDevices() {
 	return std::vector<Plugin::API::Device>();
 }
 
-Plugin::API::BaseAPI::BaseAPI() {
-
-}
-
 Plugin::API::BaseAPI::BaseAPI(Device device) {
-
+	myDevice = device;
 }
 
 Plugin::API::BaseAPI::~BaseAPI() {
@@ -58,4 +59,8 @@ Plugin::API::BaseAPI::~BaseAPI() {
 
 void* Plugin::API::BaseAPI::GetContext() {
 	return nullptr;
+}
+
+Plugin::API::Device Plugin::API::BaseAPI::GetDevice() {
+	return myDevice;
 }
