@@ -249,7 +249,8 @@ void Plugin::AMD::VCEEncoder::Restart() {
 	std::unique_lock<std::mutex> olock(m_Output.mutex);
 
 	// Create Encoder
-	AMF_RESULT res = m_AMFEncoder->ReInit(m_FrameSize.first, m_FrameSize.second);
+	AMF_RESULT res = AMF_ALREADY_INITIALIZED;
+	//AMF_RESULT res = m_AMFEncoder->ReInit(m_FrameSize.first, m_FrameSize.second);
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::Start> Initialization failed with error %ls (code %ld).", res);
 }
