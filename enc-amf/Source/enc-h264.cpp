@@ -164,10 +164,12 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, "keyint_sec", -1);
 	obs_data_set_default_string(data, "rate_control", "");
 	obs_data_set_default_string(data, "profile", "");
+	obs_data_set_default_string(data, "preset", "");
 	obs_data_set_int(data, "bitrate", -1);
 	obs_data_set_int(data, "keyint_sec", -1);
 	obs_data_set_string(data, "rate_control", "");
 	obs_data_set_string(data, "profile", "");
+	obs_data_set_string(data, "preset", "");
 	#pragma endregion OBS - Enforce Streaming Service Restrictions
 
 	obs_data_set_default_int(data, AMF_H264_PRESET, -1);
@@ -1217,7 +1219,7 @@ bool Plugin::Interface::H264Interface::get_extra_data(void *data, uint8_t** extr
 //////////////////////////////////////////////////////////////////////////
 // Module Code
 //////////////////////////////////////////////////////////////////////////
-Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encoder_t* encoder) {
+Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t* encoder) {
 	AMF_LOG_INFO("<AMFEncoder::H264Interface::H264Interface> Initializing...");
 
 	// OBS Settings
@@ -1230,9 +1232,9 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 
 	//////////////////////////////////////////////////////////////////////////
 	/// Initialize Encoder
-	bool debug = obs_data_get_bool(settings, AMF_H264_DEBUG);
+	bool debug = obs_data_get_bool(data, AMF_H264_DEBUG);
 	Plugin::AMD::AMF::GetInstance()->EnableDebugTrace(debug);
-	VCESurfaceFormat surfFormat = (VCESurfaceFormat)obs_data_get_int(settings, AMF_H264_SURFACEFORMAT);
+	VCESurfaceFormat surfFormat = (VCESurfaceFormat)obs_data_get_int(data, AMF_H264_SURFACEFORMAT);
 	if (surfFormat == -1) {
 		switch (voi->format) {
 			case VIDEO_FORMAT_NV12:
@@ -1255,28 +1257,28 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 				break;
 		}
 	}
-	m_VideoEncoder = new VCEEncoder(VCEEncoderType_AVC, surfFormat, (VCEMemoryType)obs_data_get_int(settings, AMF_H264_MEMORYTYPE), (VCEComputeType)obs_data_get_int(settings, AMF_H264_COMPUTETYPE));
+	m_VideoEncoder = new VCEEncoder(VCEEncoderType_AVC, surfFormat, (VCEMemoryType)obs_data_get_int(data, AMF_H264_MEMORYTYPE), (VCEComputeType)obs_data_get_int(data, AMF_H264_COMPUTETYPE));
 
 	/// Static Properties
-	m_VideoEncoder->SetUsage((VCEUsage)obs_data_get_int(settings, AMF_H264_USAGE));
-	m_VideoEncoder->SetProfile((VCEProfile)obs_data_get_int(settings, AMF_H264_PROFILE));
-	m_VideoEncoder->SetProfileLevel((VCEProfileLevel)obs_data_get_int(settings, AMF_H264_PROFILELEVEL));
-	if (obs_data_get_int(settings, AMF_H264_MAXIMUMLTRFRAMES) != 0)
-		m_VideoEncoder->SetMaximumLongTermReferenceFrames((uint32_t)obs_data_get_int(settings, AMF_H264_MAXIMUMLTRFRAMES));
+	m_VideoEncoder->SetUsage((VCEUsage)obs_data_get_int(data, AMF_H264_USAGE));
+	m_VideoEncoder->SetProfile((VCEProfile)obs_data_get_int(data, AMF_H264_PROFILE));
+	m_VideoEncoder->SetProfileLevel((VCEProfileLevel)obs_data_get_int(data, AMF_H264_PROFILELEVEL));
+	if (obs_data_get_int(data, AMF_H264_MAXIMUMLTRFRAMES) != 0)
+		m_VideoEncoder->SetMaximumLongTermReferenceFrames((uint32_t)obs_data_get_int(data, AMF_H264_MAXIMUMLTRFRAMES));
 
 	/// Framesize & Framerate
 	m_VideoEncoder->SetFrameSize(m_cfgWidth, m_cfgHeight);
 	m_VideoEncoder->SetFrameRate(m_cfgFPSnum, m_cfgFPSden);
 
 	// Dynamic Properties (Can be changed during Encoding)
-	this->update(settings);
+	this->update(data);
 
 	//////////////////////////////////////////////////////////////////////////
 	// OBS - Enforce Streaming Service Restrictions
 	//////////////////////////////////////////////////////////////////////////
 	{
 		// Profile
-		const char* p_str = obs_data_get_string(settings, "profile");
+		const char* p_str = obs_data_get_string(data, "profile");
 		if (strcmp(p_str, "") != 0) {
 			if (strcmp(p_str, "baseline")) {
 				m_VideoEncoder->SetProfile(VCEProfile_Baseline);
@@ -1288,19 +1290,19 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 		} else {
 			switch (m_VideoEncoder->GetProfile()) {
 				case VCEProfile_Baseline:
-					obs_data_set_string(settings, "profile", "baseline");
+					obs_data_set_string(data, "profile", "baseline");
 					break;
 				case VCEProfile_Main:
-					obs_data_set_string(settings, "profile", "main");
+					obs_data_set_string(data, "profile", "main");
 					break;
 				case VCEProfile_High:
-					obs_data_set_string(settings, "profile", "high");
+					obs_data_set_string(data, "profile", "high");
 					break;
 			}
 		}
 
 		// Rate Control Method
-		const char* t_str = obs_data_get_string(settings, "rate_control");
+		const char* t_str = obs_data_get_string(data, "rate_control");
 		if (strcmp(t_str, "") != 0) {
 			if (strcmp(t_str, "CBR") == 0) {
 				m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_ConstantBitrate);
@@ -1312,25 +1314,28 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 			} else if (strcmp(t_str, "CQP") == 0) {
 				m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_ConstantQP);
 			}
+
+			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, m_VideoEncoder->GetRateControlMethod());
 		} else {
 			switch (m_VideoEncoder->GetRateControlMethod()) {
 				case VCERateControlMethod_ConstantBitrate:
-					obs_data_set_string(settings, "rate_control", "CBR");
+					obs_data_set_string(data, "rate_control", "CBR");
 					break;
 				case VCERateControlMethod_VariableBitrate_PeakConstrained:
-					obs_data_set_string(settings, "rate_control", "VBR");
+					obs_data_set_string(data, "rate_control", "VBR");
 					break;
 				case VCERateControlMethod_VariableBitrate_LatencyConstrained:
-					obs_data_set_string(settings, "rate_control", "VBR_LAT");
+					obs_data_set_string(data, "rate_control", "VBR_LAT");
 					break;
 				case VCERateControlMethod_ConstantQP:
-					obs_data_set_string(settings, "rate_control", "CQP");
+					obs_data_set_string(data, "rate_control", "CQP");
 					break;
 			}
 		}
 
 		// Bitrate
-		uint64_t bitrateOvr = obs_data_get_int(settings, "bitrate") * 1000;
+		int32_t bitrateMultiplier = obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000;
+		uint64_t bitrateOvr = obs_data_get_int(data, "bitrate") * 1000;
 		if (bitrateOvr != -1) {
 			if (m_VideoEncoder->GetTargetBitrate() > bitrateOvr)
 				m_VideoEncoder->SetTargetBitrate((uint32_t)bitrateOvr);
@@ -1338,31 +1343,59 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 			if (m_VideoEncoder->GetPeakBitrate() > bitrateOvr)
 				m_VideoEncoder->SetPeakBitrate((uint32_t)bitrateOvr);
 
-			obs_data_set_int(settings, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
+			obs_data_set_int(data, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
+
+			obs_data_set_int(data, AMF_H264_BITRATE_TARGET, m_VideoEncoder->GetTargetBitrate() / bitrateMultiplier);
+			obs_data_set_int(data, AMF_H264_BITRATE_PEAK, m_VideoEncoder->GetPeakBitrate() / bitrateMultiplier);
 		} else {
-			obs_data_set_int(settings, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
+			obs_data_set_int(data, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
 		}
 
 		// IDR-Period (Keyframes)
 		uint32_t fpsNum = m_VideoEncoder->GetFrameRate().first;
 		uint32_t fpsDen = m_VideoEncoder->GetFrameRate().second;
-		if (obs_data_get_int(settings, "keyint_sec") != -1) {
-			m_VideoEncoder->SetIDRPeriod((uint32_t)(obs_data_get_int(settings, "keyint_sec") * ((double_t)fpsNum / (double_t)fpsDen)));
+		if (obs_data_get_int(data, "keyint_sec") != -1) {
+			m_VideoEncoder->SetIDRPeriod((uint32_t)(obs_data_get_int(data, "keyint_sec") * ((double_t)fpsNum / (double_t)fpsDen)));
+
+			obs_data_set_double(data, AMF_H264_KEYFRAME_INTERVAL, (double_t)obs_data_get_int(data, "keyint_sec"));
+			obs_data_set_int(data, AMF_H264_IDR_PERIOD, obs_data_get_int(data, "keyint_sec") * ((double_t)fpsNum / (double_t)fpsDen));
 		} else {
-			obs_data_set_int(settings, "keyint_sec", (uint64_t)(m_VideoEncoder->GetIDRPeriod() / ((double_t)fpsNum / (double_t)fpsDen)));
+			obs_data_set_int(data, "keyint_sec", (uint64_t)(m_VideoEncoder->GetIDRPeriod() / ((double_t)fpsNum / (double_t)fpsDen)));
 		}
+
+		// Preset
+		const char* preset = obs_data_get_string(data, "preset");
+		if (strcmp(preset, "") != 0) {
+			if (strcmp(preset, "speed") == 0) {
+				m_VideoEncoder->SetQualityPreset(VCEQualityPreset_Speed);
+			} else if (strcmp(preset, "balanced") == 0) {
+				m_VideoEncoder->SetQualityPreset(VCEQualityPreset_Balanced);
+			} else if (strcmp(preset, "quality") == 0) {
+				m_VideoEncoder->SetQualityPreset(VCEQualityPreset_Quality);
+			}
+			obs_data_set_int(data, AMF_H264_QUALITY_PRESET, m_VideoEncoder->GetQualityPreset());
+		} else {
+			switch (m_VideoEncoder->GetQualityPreset()) {
+				case VCEQualityPreset_Speed:
+					obs_data_set_string(data, "preset", "speed");
+					break;
+				case VCEQualityPreset_Balanced:
+					obs_data_set_string(data, "preset", "balanced");
+					break;
+				case VCEQualityPreset_Quality:
+					obs_data_set_string(data, "preset", "quality");
+					break;
+			}
+		}
+
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Verify
 	//////////////////////////////////////////////////////////////////////////
-	if (obs_data_get_int(settings, AMF_H264_VIEW) >= 2) {
-		AMF_LOG_ERROR("View Mode is set to Expert or Master, no support will be given.");
-	}
 	m_VideoEncoder->LogProperties();
-	if (obs_data_get_int(settings, AMF_H264_VIEW) >= 2) {
-		AMF_LOG_ERROR("View Mode is set to Expert or Master, no support will be given.");
-	}
+	if (obs_data_get_int(data, AMF_H264_VIEW) >= ViewMode::Master)
+		AMF_LOG_ERROR("User is actively using unsupported options, avoid supporting. You will not be happy with the solution or find a decent one before your sanity slowly degrades into madness.");
 
 	//////////////////////////////////////////////////////////////////////////
 	// Initialize (locks static properties)
@@ -1370,10 +1403,6 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* settings, obs_encode
 	m_VideoEncoder->Start();
 
 	AMF_LOG_INFO("<AMFEncoder::H264Interface::H264Interface> Complete.");
-
-	if (obs_data_get_int(settings, AMF_H264_VIEW) >= 2) {
-		AMF_LOG_ERROR("Expert/Master View Mode being used. Don't bother supporting.");
-	}
 }
 
 Plugin::Interface::H264Interface::~H264Interface() {
