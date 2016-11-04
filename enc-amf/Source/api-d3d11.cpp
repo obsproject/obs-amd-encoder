@@ -71,7 +71,7 @@ class SingletonDXGI {
 			return S_FALSE;
 		
 		typedef HRESULT(__stdcall *t_CreateDXGIFactory1)(REFIID, void**);
-		t_CreateDXGIFactory1 pCreateDXGIFactory1 = (t_CreateDXGIFactory1)GetProcAddress(hModule, TEXT("CreateDXGIFactory1"));
+		t_CreateDXGIFactory1 pCreateDXGIFactory1 = (t_CreateDXGIFactory1)GetProcAddress(hModule, "CreateDXGIFactory1");
 
 		if (pCreateDXGIFactory1) {
 			return pCreateDXGIFactory1(riid, ppFactory);
@@ -124,7 +124,7 @@ class SingletonD3D11 {
 		typedef HRESULT(__stdcall *t_D3D11CreateDevice)(_In_opt_ IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT,
 			CONST D3D_FEATURE_LEVEL*, UINT, UINT, _Out_opt_ ID3D11Device**,
 			_Out_opt_ D3D_FEATURE_LEVEL*, _Out_opt_ ID3D11DeviceContext**);
-		t_D3D11CreateDevice pD3D11CreateDevice = (t_D3D11CreateDevice)GetProcAddress(hModule, TEXT("D3D11CreateDevice"));
+		t_D3D11CreateDevice pD3D11CreateDevice = (t_D3D11CreateDevice)GetProcAddress(hModule, "D3D11CreateDevice");
 
 		if (pD3D11CreateDevice) {
 			return pD3D11CreateDevice(pAdapter, DriverType, Software, Flags, pFeatureLevels, FeatureLevels, 
