@@ -81,5 +81,97 @@ namespace Plugin {
 			}
 			return VCEProfileLevel_52;
 		}
+
+		inline const char* MemoryTypeAsString(VCEMemoryType memoryType) {
+			static const char* memoryTypeToString[] = {
+				"Host",
+				"DirectX9",
+				"DirectX11",
+				"OpenGL"
+			};
+			if (memoryType != VCEMemoryType_Auto)
+				return memoryTypeToString[memoryType];
+			else
+				return "Automatic";
+		}
+
+		inline const char* SurfaceFormatAsString(VCESurfaceFormat surfaceFormat) {
+			static const char* surfaceFormatToString[] = {
+				"NV12",
+				"I420",
+				"YUY2",
+				"BGRA",
+				"RGBA",
+				"GRAY",
+			};
+			return surfaceFormatToString[surfaceFormat];
+		}
+
+		inline const char* UsageAsString(VCEUsage usage) {
+			static const char* usageToString[] = {
+				"Transcoding",
+				"Ultra Low Latency",
+				"Low Latency",
+				"Webcam"
+			};
+			return usageToString[usage];
+		}
+		inline AMF_VIDEO_ENCODER_USAGE_ENUM UsageAsAMF(VCEUsage usage) {
+			static AMF_VIDEO_ENCODER_USAGE_ENUM usageToAMF[] = {
+				AMF_VIDEO_ENCODER_USAGE_TRANSCONDING,
+				AMF_VIDEO_ENCODER_USAGE_ULTRA_LOW_LATENCY,
+				AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY,
+				AMF_VIDEO_ENCODER_USAGE_WEBCAM,
+			};
+			return usageToAMF[usage];
+		}
+		inline VCEUsage UsageFromAMF(uint32_t usage) {
+			static VCEUsage usageFromAMF[] = {
+				VCEUsage_Transcoding,
+				VCEUsage_UltraLowLatency,
+				VCEUsage_LowLatency,
+				VCEUsage_Webcam,
+			};
+			return usageFromAMF[usage];
+		}
+
+		inline const char* ProfileAsString(VCEProfile profile) {
+			static const char* profileToString[] = {
+				"Baseline",
+				"Main",
+				"High"
+			};
+			switch (profile) {
+				case VCEProfile_Baseline:
+					return "Baseline";
+				case VCEProfile_Main:
+					return "Main";
+				case VCEProfile_High:
+					return "High";
+				case VCEProfile_Unknown:
+					return "Unknown";
+			}
+
+			return "Invalid";
+		}
+
+		inline const char* QualityPresetAsString(VCEQualityPreset preset) {
+			static const char* qualityPresetToString[] = {
+				"Speed",
+				"Balanced",
+				"Quality"
+			};
+			return qualityPresetToString[preset];
+		}
+
+		inline const char* RateControlMethodAsString(VCERateControlMethod method) {
+			static const char* rateControlMethodToString[] = {
+				"Constant Quantization Parameter (CQP)",
+				"Constant Bitrate (CBR)",
+				"Peak Constrained Variable Bitrate (VBR)",
+				"Latency Constrained Variable Bitrate (VBR_LAT)"
+			};
+			return rateControlMethodToString[method];
+		}
 	}
 }
