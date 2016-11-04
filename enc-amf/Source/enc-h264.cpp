@@ -134,6 +134,9 @@ void* Plugin::Interface::H264Interface::create(obs_data_t* settings, obs_encoder
 		AMF_LOG_ERROR("Exception: %s", e.what());
 		AMF_LOG_ERROR("Unable to create Encoder, see log for more information.");
 		return NULL;
+	} catch (...) {
+		AMF_LOG_ERROR("Unhandled Exception during start up.");
+		return NULL;
 	}
 }
 
@@ -148,6 +151,8 @@ void Plugin::Interface::H264Interface::destroy(void* data) {
 	} catch (std::exception e) {
 		AMF_LOG_ERROR("Exception: %s", e.what());
 		AMF_LOG_ERROR("Unable to destroy Encoder, see log for more information.");
+	} catch (...) {
+		AMF_LOG_ERROR("Unhandled Exception during shut down.");
 	}
 }
 #pragma warning( pop )
@@ -159,6 +164,8 @@ bool Plugin::Interface::H264Interface::encode(void *data, struct encoder_frame *
 		AMF_LOG_ERROR("Exception: %s", e.what());
 		AMF_LOG_ERROR("Unable to encode, see log for more information.");
 		return false;
+	} catch (...) {
+		throw;
 	}
 }
 
@@ -183,7 +190,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
 	obs_data_set_default_int(data, AMF_H264_PROFILE, VCEProfile_Main);
 	obs_data_set_default_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
-	obs_data_set_default_int(data, AMF_H264_MAXIMUMLTRFRAMES, (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames ? 0 : 2));
+	obs_data_set_default_int(data, AMF_H264_MAXIMUMLTRFRAMES, 0);
 
 	// Rate Control Properties
 	obs_data_set_default_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantBitrate);
@@ -253,7 +260,7 @@ void fill_device_list(obs_property_t* p, obs_data_t* data) {
 		case VCEMemoryType_DirectX9:
 			if (IsWindowsXPOrGreater()) // DirectX 9
 				//devices = Plugin::API::Direct3D9::EnumerateDevices();
-			break;
+				break;
 		case VCEMemoryType_DirectX11:
 			if (IsWindows8OrGreater()) // DirectX 11
 				devices = Plugin::API::Direct3D11::EnumerateDevices();
@@ -1264,16 +1271,16 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 		!!obs_data_get_int(data, AMF_H264_USE_OPENCL),
 		std::string(obs_data_get_string(data, AMF_H264_DEVICE)));
 
-	/// Framesize & Framerate
-	m_VideoEncoder->SetFrameSize(m_cfgWidth, m_cfgHeight);
-	m_VideoEncoder->SetFrameRate(m_cfgFPSnum, m_cfgFPSden);
-
 	/// Static Properties
 	m_VideoEncoder->SetUsage((VCEUsage)obs_data_get_int(data, AMF_H264_USAGE));
 	m_VideoEncoder->SetProfile((VCEProfile)obs_data_get_int(data, AMF_H264_PROFILE));
 	m_VideoEncoder->SetProfileLevel((VCEProfileLevel)obs_data_get_int(data, AMF_H264_PROFILELEVEL));
 	if (obs_data_get_int(data, AMF_H264_MAXIMUMLTRFRAMES) != 0)
 		m_VideoEncoder->SetMaximumLongTermReferenceFrames((uint32_t)obs_data_get_int(data, AMF_H264_MAXIMUMLTRFRAMES));
+
+	/// Framesize & Framerate
+	m_VideoEncoder->SetFrameSize(m_cfgWidth, m_cfgHeight);
+	m_VideoEncoder->SetFrameRate(m_cfgFPSnum, m_cfgFPSden);
 
 	/// Miscellaneous Properties
 	m_VideoEncoder->SetScanType((VCEScanType)obs_data_get_int(data, AMF_H264_SCANTYPE));
@@ -1335,7 +1342,11 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 	#pragma endregion OBS - Enforce Streaming Service Restrictions
 
 	// Initialize (locks static properties)
-	m_VideoEncoder->Start();
+	try {
+		m_VideoEncoder->Start();
+	} catch (...) {
+		throw;
+	}
 
 	// Dynamic Properties (Can be changed during Encoding)
 	this->update(data);
