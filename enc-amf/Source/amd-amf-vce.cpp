@@ -631,25 +631,6 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 }
 
 amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encoder_frame*& frame) {
-	static amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
-		// 4:2:0 Formats
-		amf::AMF_SURFACE_NV12,
-		amf::AMF_SURFACE_YUV420P,
-		// 4:2:2 Formats
-		amf::AMF_SURFACE_YUY2,
-		// Uncompressed
-		amf::AMF_SURFACE_BGRA,
-		amf::AMF_SURFACE_RGBA,
-		// Other
-		amf::AMF_SURFACE_GRAY8,
-	};
-	amf::AMF_MEMORY_TYPE memoryTypeToAMF[] = {
-		amf::AMF_MEMORY_HOST,
-		amf::AMF_MEMORY_DX9,
-		amf::AMF_MEMORY_DX11,
-		amf::AMF_MEMORY_OPENGL,
-	};
-
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFSurfacePtr pSurface = nullptr;
 	if (m_UseOpenCL) {
@@ -657,7 +638,9 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 		amf_size l_size0[] = { m_FrameSize.first, m_FrameSize.second, 1 };
 		amf_size l_size1[] = { m_FrameSize.first >> 1, m_FrameSize.second >> 1, 1 };
 
-		res = m_AMFContext->AllocSurface(memoryTypeToAMF[m_MemoryType], surfaceFormatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second, &pSurface);
+		res = m_AMFContext->AllocSurface(Utility::MemoryTypeAsAMF(m_MemoryType),
+			Utility::SurfaceFormatAsAMF(m_SurfaceFormat), 
+			m_FrameSize.first, m_FrameSize.second, &pSurface);
 		if (res != AMF_OK) // Unable to create Surface
 			ThrowExceptionWithAMFError("<VCEEncoder::CreateSurfaceFromFrame> Unable to create AMFSurface, error %ls (code %d).", res);
 
@@ -667,10 +650,11 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 		m_AMFCompute->CopyPlaneFromHost(frame->data[0], l_origin, l_size0, frame->linesize[0], pSurface->GetPlaneAt(0), false);
 		m_AMFCompute->CopyPlaneFromHost(frame->data[1], l_origin, l_size1, frame->linesize[1], pSurface->GetPlaneAt(1), false);
 		m_AMFCompute->FinishQueue();
-		pSurface->Convert(memoryTypeToAMF[m_MemoryType]);
+		pSurface->Convert(Utility::MemoryTypeAsAMF(m_MemoryType));
 		pSyncPoint->Wait();
 	} else {
-		res = m_AMFContext->AllocSurface(amf::AMF_MEMORY_HOST, surfaceFormatToAMF[m_SurfaceFormat], m_FrameSize.first, m_FrameSize.second, &pSurface);
+		res = m_AMFContext->AllocSurface(amf::AMF_MEMORY_HOST, Utility::SurfaceFormatAsAMF(m_SurfaceFormat),
+			m_FrameSize.first, m_FrameSize.second, &pSurface);
 		if (res != AMF_OK) // Unable to create Surface
 			ThrowExceptionWithAMFError("<VCEEncoder::CreateSurfaceFromFrame> Unable to create AMFSurface, error %ls (code %d).", res);
 
@@ -689,7 +673,7 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 		}
 
 		// Convert to AMF native type.
-		pSurface->Convert(memoryTypeToAMF[m_MemoryType]);
+		pSurface->Convert(Utility::MemoryTypeAsAMF(m_MemoryType));
 	}
 
 	return pSurface;
@@ -766,6 +750,27 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("  MaxNumRefFrames: %d", this->GetMaximumNumberOfReferenceFrames());
 	AMF_LOG_INFO("  MaxMBPerSec: %d", this->GetMaxMBPerSec());
 	AMF_LOG_INFO("  Pre-Analysis Pass: %s", this->IsRateControlPreanalysisEnabled() ? "Enabled" : "Disabled");
+
+	/*amf::AMFPropertyInfo* pInfo = new amf::AMFPropertyInfo();
+	AMF_RESULT pires = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, (const amf::AMFPropertyInfo**) &pInfo);
+	if (pires == AMF_OK) {
+		AMF_LOG_INFO("Name: %ls", pInfo->name);
+		AMF_LOG_INFO("Desc: %ls", pInfo->desc);
+		AMF_LOG_INFO("Type: %d", pInfo->type);
+		AMF_LOG_INFO("Content Type: %d", pInfo->contentType);
+		AMF_LOG_INFO("Min Value Type: %d", pInfo->minValue.type);
+		AMF_LOG_INFO("Min Value Int64: %lld", pInfo->minValue.int64Value);
+		AMF_LOG_INFO("Max Value Type: %d", pInfo->maxValue.type);
+		AMF_LOG_INFO("Max Value Int64: %lld", pInfo->maxValue.int64Value);
+		AMF_LOG_INFO("Default Value Type: %d", pInfo->defaultValue.type);
+		AMF_LOG_INFO("Default Value Int64: %d", pInfo->defaultValue.int64Value);
+
+		const amf::AMFEnumDescriptionEntry* pEntry = pInfo->pEnumDescription;
+		while (pEntry->name != nullptr) {
+			AMF_LOG_INFO("Enum Entry: %ls %d", pEntry->name, pEntry->value);
+			pEntry++;
+		}
+	}*/
 }
 
 /************************************************************************/
