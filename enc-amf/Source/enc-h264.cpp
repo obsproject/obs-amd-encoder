@@ -473,25 +473,25 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	//p = obs_properties_add_bool(props, "msc_delimiter", "------ Miscellaneous Properties ------");
 	/// Quality Preset
 	p = obs_properties_add_list(props, AMF_H264_QUALITY_PRESET, obs_module_text(AMF_H264_QUALITY_PRESET), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_set_long_description(p, obs_module_text(AMF_H264_SLICESPERFRAME_DESCRIPTION));
+	obs_property_set_long_description(p, obs_module_text(AMF_H264_QUALITY_PRESET_DESCRIPTION));
 	obs_property_list_add_int(p, obs_module_text(AMF_H264_QUALITY_PRESET_SPEED), VCEQualityPreset_Speed);
 	obs_property_list_add_int(p, obs_module_text(AMF_H264_QUALITY_PRESET_BALANCED), VCEQualityPreset_Balanced);
 	obs_property_list_add_int(p, obs_module_text(AMF_H264_QUALITY_PRESET_QUALITY), VCEQualityPreset_Quality);
 	/// Scan Type
 	p = obs_properties_add_list(props, AMF_H264_SCANTYPE, obs_module_text(AMF_H264_SCANTYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_set_long_description(p, obs_module_text(AMF_H264_SLICESPERFRAME_DESCRIPTION));
+	obs_property_set_long_description(p, obs_module_text(AMF_H264_SCANTYPE_DESCRIPTION));
 	obs_property_list_add_int(p, obs_module_text(AMF_H264_SCANTYPE_PROGRESSIVE), VCEScanType_Progressive);
 	obs_property_list_add_int(p, obs_module_text(AMF_H264_SCANTYPE_INTERLACED), VCEScanType_Interlaced);
 	/// Motion Estimation
 	p = obs_properties_add_list(props, AMF_H264_MOTIONESTIMATION, obs_module_text(AMF_H264_MOTIONESTIMATION), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_set_long_description(p, obs_module_text(AMF_H264_SLICESPERFRAME_DESCRIPTION));
+	obs_property_set_long_description(p, obs_module_text(AMF_H264_MOTIONESTIMATION_DESCRIPTION));
 	obs_property_list_add_int(p, obs_module_text(AMF_H264_MOTIONESTIMATION_NONE), 0);
 	obs_property_list_add_int(p, obs_module_text(AMF_H264_MOTIONESTIMATION_HALF), 1);
 	obs_property_list_add_int(p, obs_module_text(AMF_H264_MOTIONESTIMATION_QUARTER), 2);
 	obs_property_list_add_int(p, obs_module_text(AMF_H264_MOTIONESTIMATION_BOTH), 3);
 	/// CABAC
 	p = obs_properties_add_list(props, AMF_H264_CABAC, obs_module_text(AMF_H264_CABAC), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_set_long_description(p, obs_module_text(AMF_H264_SLICESPERFRAME_DESCRIPTION));
+	obs_property_set_long_description(p, obs_module_text(AMF_H264_CABAC_DESCRIPTION));
 	obs_property_list_add_int(p, obs_module_text(AMF_UTIL_TOGGLE_DISABLED), 0);
 	obs_property_list_add_int(p, obs_module_text(AMF_UTIL_TOGGLE_ENABLED), 1);
 	#pragma endregion Miscellaneous Control Properties
@@ -515,6 +515,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	obs_property_set_modified_callback(p, view_modified);
 	/// Device
 	p = obs_properties_add_list(props, AMF_H264_DEVICE, obs_module_text(AMF_H264_DEVICE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_set_long_description(p, obs_module_text(AMF_H264_DEVICE_DESCRIPTION));
 	/// Compute Type
 	p = obs_properties_add_list(props, AMF_H264_USE_OPENCL, obs_module_text(AMF_H264_USE_OPENCL), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, obs_module_text(AMF_H264_USE_OPENCL_DESCRIPTION));
