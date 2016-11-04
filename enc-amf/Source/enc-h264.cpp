@@ -1341,6 +1341,11 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 	}
 	#pragma endregion OBS - Enforce Streaming Service Restrictions
 	
+	/*m_VideoEncoder->SetRateControlPreanalysisEnabled(true);
+	m_VideoEncoder->SetNominalRange(true);
+	m_VideoEncoder->SetWaitForTask(true);
+	m_VideoEncoder->SetMaximumNumberOfReferenceFrames(VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxReferenceFrames);*/
+	
 	// Initialize (locks static properties)
 	try {
 		m_VideoEncoder->Start();
@@ -1366,6 +1371,7 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	int32_t bitrateMultiplier = obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000;
 
 	// Rate Control Properties
+	m_VideoEncoder->SetRateControlMethod((VCERateControlMethod)obs_data_get_int(data, AMF_H264_RATECONTROLMETHOD));
 	switch ((VCERateControlMethod)obs_data_get_int(data, AMF_H264_RATECONTROLMETHOD)) {
 		case VCERateControlMethod_ConstantBitrate:
 			m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_TARGET) * bitrateMultiplier);
@@ -1388,12 +1394,9 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 			try {
 				m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_BFRAME));
 			} catch (...) {}
-			m_VideoEncoder->SetTargetBitrate(0);
-			m_VideoEncoder->SetPeakBitrate(0);
 			m_VideoEncoder->SetFillerDataEnabled(false);
 			break;
 	}
-	m_VideoEncoder->SetRateControlMethod((VCERateControlMethod)obs_data_get_int(data, AMF_H264_RATECONTROLMETHOD));
 	m_VideoEncoder->SetMinimumQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_MINIMUM));
 	m_VideoEncoder->SetMaximumQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_MAXIMUM));
 	if (obs_data_get_int(data, AMF_H264_VBVBUFFER) == 0) {
@@ -1495,6 +1498,8 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 			obs_data_set_int(data, "keyint_sec", (uint64_t)(m_VideoEncoder->GetIDRPeriod() / ((double_t)fpsNum / (double_t)fpsDen)));
 		}
 	}
+
+	//m_VideoEncoder->Restart();
 
 	// Verify
 	m_VideoEncoder->LogProperties();
