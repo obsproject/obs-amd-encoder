@@ -31,6 +31,7 @@ SOFTWARE.
 #include <exception>
 #include <stdexcept>
 #include <thread>
+#include <memory>
 
 // Open Broadcaster Software
 #pragma warning( disable: 4201 )
