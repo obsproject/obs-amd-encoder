@@ -341,11 +341,13 @@ namespace Plugin {
 			/* Miscellaneous Control Properties                                     */
 			/************************************************************************/
 
-			/** Quality Preset */
+			/** Quality Preset
+			 * Static Property, changes cause a restart. */
 			void SetQualityPreset(VCEQualityPreset preset);
 			VCEQualityPreset GetQualityPreset();
 
-			/* Selects progressive or interlaced scan */
+			/* Selects progressive or interlaced scan
+			 * Static Property, changes cause a restart. */
 			void SetScanType(VCEScanType scanType);
 			VCEScanType GetScanType();
 
@@ -358,9 +360,9 @@ namespace Plugin {
 			bool IsQuarterPixelMotionEstimationEnabled();
 
 			/** Enable CABAC entropy coding instead of CALV.
-			* CABAC is a more efficient way of compressing data and on
-			*  average 5% extra data to be stored in the same bitrate.
-			**/
+			 * CABAC is a more efficient way of compressing data and on
+			 *  average 5% extra data to be stored in the same bitrate.
+			 * Static Property, changes cause a restart. */
 			void SetCABACEnabled(bool enabled);
 			bool IsCABACEnabled();
 
@@ -382,8 +384,36 @@ namespace Plugin {
 			void SetQualityEnhancementMode(uint32_t qualityEnhancementMode);
 			uint32_t GetQualityEnhancementMode();
 
-			// VCE Parameters
+			void SetMaximumNumberOfReferenceFrames(uint32_t frameCount);
+			uint32_t GetMaximumNumberOfReferenceFrames();
+
+			void SetMaxMBPerSec(uint32_t maxMBPerSec);
+			uint32_t GetMaxMBPerSec();
+
+			void SetInstanceID(uint32_t instanceId);
+			uint32_t GetInstanceID();
+
+			void SetVBAQEnabled(bool enabled);
+			bool IsVBAQEnabled();
+
+			void SetRateControlPreanalysisEnabled(bool enabled);
+			bool IsRateControlPreanalysisEnabled();
+
+			void SetIntraRefreshNumberOfStripes(uint32_t stripes);
+			uint32_t GetIntraRefreshNumberOfStripes();
+
+			void SetSliceMode(uint32_t mode);
+			uint32_t GetSliceMode();
+
+			void SetMaximumSliceSize(uint32_t size);
+			uint32_t GetMaximumSliceSize();
+
 			// - SliceControlMode: AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB_ROW, AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB
+			void SetSliceControlMode(uint32_t mode);
+			uint32_t GetSliceControlMode();
+
+			void SetSliceControlSize(uint32_t size);
+			uint32_t GetSliceControlSize();
 
 			// HEVC Parameters
 			// - MinQP_I, MaxQP_I

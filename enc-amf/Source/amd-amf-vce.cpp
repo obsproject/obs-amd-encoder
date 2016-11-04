@@ -558,7 +558,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 	// Assign Thread Name
 	static const char* __threadName = "enc-amf Input Thread";
 	SetThreadName(__threadName);
-
+	
 	// Core Loop
 	std::unique_lock<std::mutex> lock(m_Input.mutex);
 	uint32_t repeatSurfaceSubmission = 0;
@@ -1050,7 +1050,8 @@ Plugin::AMD::VCERateControlMethod Plugin::AMD::VCEEncoder::GetRateControlMethod(
 
 void Plugin::AMD::VCEEncoder::SetTargetBitrate(uint32_t bitrate) {
 	// Clamp Value
-	bitrate = min(max(bitrate, 10000), Plugin::AMD::VCECapabilities::GetInstance()->GetEncoderCaps(m_EncoderType)->maxBitrate);
+	if (bitrate != 0)
+		bitrate = min(max(bitrate, 10000), Plugin::AMD::VCECapabilities::GetInstance()->GetEncoderCaps(m_EncoderType)->maxBitrate);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, bitrate);
 	if (res != AMF_OK) {
@@ -1071,7 +1072,8 @@ uint32_t Plugin::AMD::VCEEncoder::GetTargetBitrate() {
 
 void Plugin::AMD::VCEEncoder::SetPeakBitrate(uint32_t bitrate) {
 	// Clamp Value
-	bitrate = min(max(bitrate, 10000), Plugin::AMD::VCECapabilities::GetInstance()->GetEncoderCaps(m_EncoderType)->maxBitrate);
+	if (bitrate != 0)
+		bitrate = min(max(bitrate, 10000), Plugin::AMD::VCECapabilities::GetInstance()->GetEncoderCaps(m_EncoderType)->maxBitrate);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, (uint32_t)bitrate);
 	if (res != AMF_OK) {
@@ -1767,4 +1769,57 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetAspectRatio() {
 	return std::pair<uint32_t, uint32_t>(aspectRatio.num, aspectRatio.den);
 }
 
+void Plugin::AMD::VCEEncoder::SetMaximumNumberOfReferenceFrames(uint32_t numFrames) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"MaxNumRefFrames", (uint32_t)numFrames);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetMaximumNumberOfReferenceFrames> Setting to %d failed with error %ls (code %d).", res, numFrames);
+	}
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetMaximumNumberOfReferenceFrames> Set to %d.", numFrames);
+}
+
+uint32_t Plugin::AMD::VCEEncoder::GetMaximumNumberOfReferenceFrames() {
+	uint32_t numFrames;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"MaxNumRefFrames", &numFrames);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetMaximumNumberOfReferenceFrames> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetMaximumNumberOfReferenceFrames> Value is %d.", numFrames);
+	return numFrames;
+}
+
+void Plugin::AMD::VCEEncoder::SetMaxMBPerSec(uint32_t maxMBPerSec) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"MaxMBPerSec", (uint32_t)maxMBPerSec);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetMaxMBPerSec> Setting to %d failed with error %ls (code %d).", res, maxMBPerSec);
+	}
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetMaxMBPerSec> Set to %d.", maxMBPerSec);
+}
+
+uint32_t Plugin::AMD::VCEEncoder::GetMaxMBPerSec() {
+	uint32_t maxMBPerSec;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"MaxMBPerSec", &maxMBPerSec);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetMaxMBPerSec> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetMaxMBPerSec> Value is %d.", maxMBPerSec);
+	return maxMBPerSec;
+}
+
+void Plugin::AMD::VCEEncoder::SetRateControlPreanalysisEnabled(bool enabled) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"RateControlPreanalysisEnable", enabled);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetRateControlPreanalysisEnabled> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
+	}
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetRateControlPreanalysisEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
+}
+
+bool Plugin::AMD::VCEEncoder::IsRateControlPreanalysisEnabled() {
+	bool enabled;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"RateControlPreanalysisEnable", &enabled);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::IsRateControlPreanalysisEnabled> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::IsRateControlPreanalysisEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
+	return enabled;
+}
 
