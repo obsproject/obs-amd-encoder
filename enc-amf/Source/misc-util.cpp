@@ -106,6 +106,21 @@ namespace Plugin {
 			};
 			return surfaceFormatToString[surfaceFormat];
 		}
+		inline amf::AMF_SURFACE_FORMAT SurfaceFormatAsAMF(VCESurfaceFormat surfaceFormat) {
+			static amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
+				// 4:2:0 Formats
+				amf::AMF_SURFACE_NV12,
+				amf::AMF_SURFACE_YUV420P,
+				// 4:2:2 Formats
+				amf::AMF_SURFACE_YUY2,
+				// Uncompressed
+				amf::AMF_SURFACE_BGRA,
+				amf::AMF_SURFACE_RGBA,
+				// Other
+				amf::AMF_SURFACE_GRAY8,
+			};
+			return surfaceFormatToAMF[surfaceFormat];
+		}
 
 		inline const char* UsageAsString(VCEUsage usage) {
 			static const char* usageToString[] = {
@@ -172,6 +187,24 @@ namespace Plugin {
 				"Latency Constrained Variable Bitrate (VBR_LAT)"
 			};
 			return rateControlMethodToString[method];
+		}
+		inline AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM RateControlMethodAsAMF(VCERateControlMethod method) {
+			static AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM CustomToAMF[] = {
+				AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP,
+				AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR,
+				AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR,
+				AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR,
+			};
+			return CustomToAMF[method];
+		}
+		inline VCERateControlMethod RateControlMethodFromAMF(uint32_t method) {
+			static VCERateControlMethod AMFToCustom[] = {
+				VCERateControlMethod_ConstantQP,
+				VCERateControlMethod_ConstantBitrate,
+				VCERateControlMethod_VariableBitrate_PeakConstrained,
+				VCERateControlMethod_VariableBitrate_LatencyConstrained,
+			};
+			return AMFToCustom[method];
 		}
 	}
 }
