@@ -35,10 +35,107 @@ SOFTWARE.
 #include <dxgi.h>
 #include <d3d11.h>
 
+#include <mutex>
+
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
 using namespace Plugin::API;
+
+class SingletonDXGI {
+	public:
+
+	#pragma region Singleton
+	static std::shared_ptr<SingletonDXGI> GetInstance() {
+		static std::shared_ptr<SingletonDXGI> __instance = std::make_shared<SingletonDXGI>();
+		static std::mutex __mutex;
+
+		const std::lock_guard<std::mutex> lock(__mutex);
+		return __instance;
+	}
+	#pragma endregion Singleton
+
+	SingletonDXGI() {
+		hModule = LoadLibrary(TEXT("dxgi.dll"));
+		if (hModule == 0)
+			throw std::exception("Unable to load 'dxgi.dll'.");
+
+	}
+	~SingletonDXGI() {
+		if (hModule)
+			FreeLibrary(hModule);
+	}
+
+	HRESULT CreateDXGIFactory1(REFIID riid, _Out_ void **ppFactory) {
+		if (hModule == 0)
+			return S_FALSE;
+		
+		typedef HRESULT(__stdcall *t_CreateDXGIFactory1)(REFIID, void**);
+		t_CreateDXGIFactory1 pCreateDXGIFactory1 = (t_CreateDXGIFactory1)GetProcAddress(hModule, TEXT("CreateDXGIFactory1"));
+
+		if (pCreateDXGIFactory1) {
+			return pCreateDXGIFactory1(riid, ppFactory);
+		}
+		return S_FALSE;
+	}
+
+	private:
+	HMODULE hModule;
+};
+class SingletonD3D11 {
+	public:
+
+	#pragma region Singleton
+	static std::shared_ptr<SingletonD3D11> GetInstance() {
+		static std::shared_ptr<SingletonD3D11> __instance = std::make_shared<SingletonD3D11>();
+		static std::mutex __mutex;
+
+		const std::lock_guard<std::mutex> lock(__mutex);
+		return __instance;
+	}
+	#pragma endregion Singleton
+
+	SingletonD3D11() {
+		hModule = LoadLibrary(TEXT("d3d11.dll"));
+		if (hModule == 0)
+			throw std::exception("Unable to load 'd3d11.dll'.");
+
+	}
+	~SingletonD3D11() {
+		if (hModule)
+			FreeLibrary(hModule);
+	}
+
+	HRESULT WINAPI D3D11CreateDevice(
+		_In_opt_ IDXGIAdapter* pAdapter,
+		D3D_DRIVER_TYPE DriverType,
+		HMODULE Software,
+		UINT Flags,
+		_In_reads_opt_(FeatureLevels) CONST D3D_FEATURE_LEVEL* pFeatureLevels,
+		UINT FeatureLevels,
+		UINT SDKVersion,
+		_Out_opt_ ID3D11Device** ppDevice,
+		_Out_opt_ D3D_FEATURE_LEVEL* pFeatureLevel,
+		_Out_opt_ ID3D11DeviceContext** ppImmediateContext) {
+
+		if (hModule == 0)
+			return S_FALSE;
+
+		typedef HRESULT(__stdcall *t_D3D11CreateDevice)(_In_opt_ IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT,
+			CONST D3D_FEATURE_LEVEL*, UINT, UINT, _Out_opt_ ID3D11Device**,
+			_Out_opt_ D3D_FEATURE_LEVEL*, _Out_opt_ ID3D11DeviceContext**);
+		t_D3D11CreateDevice pD3D11CreateDevice = (t_D3D11CreateDevice)GetProcAddress(hModule, TEXT("D3D11CreateDevice"));
+
+		if (pD3D11CreateDevice) {
+			return pD3D11CreateDevice(pAdapter, DriverType, Software, Flags, pFeatureLevels, FeatureLevels, 
+				SDKVersion, ppDevice, pFeatureLevel, ppImmediateContext);
+		}
+		return S_FALSE;
+	}
+
+	private:
+	HMODULE hModule;
+};
 
 Plugin::API::Device BuildDeviceFromAdapter(DXGI_ADAPTER_DESC1* pAdapter) {
 	if (pAdapter == nullptr)
@@ -61,7 +158,8 @@ std::vector<Plugin::API::Device> Plugin::API::Direct3D11::EnumerateDevices() {
 	std::vector<Plugin::API::Device> devices = std::vector<Plugin::API::Device>();
 
 	IDXGIFactory1* pFactory = NULL;
-	HRESULT hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&pFactory));
+	auto singletonDXGI = SingletonDXGI::GetInstance();
+	HRESULT hr = singletonDXGI->CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&pFactory));
 	if (FAILED(hr)) {
 		return devices;
 	}
@@ -89,7 +187,8 @@ Plugin::API::Device Plugin::API::Direct3D11::GetDeviceForUniqueId(std::string un
 	Plugin::API::Device device = Device("", "");
 
 	IDXGIFactory1* pFactory = NULL;
-	HRESULT hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&pFactory));
+	auto singletonDXGI = SingletonDXGI::GetInstance();
+	HRESULT hr = singletonDXGI->CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&pFactory));
 	if (FAILED(hr)) {
 		return device;
 	}
@@ -120,7 +219,8 @@ Plugin::API::Device Plugin::API::Direct3D11::GetDeviceForUniqueId(std::string un
 Plugin::API::Direct3D11::Direct3D11(Device device) : BaseAPI(device) {
 	IDXGIFactory1 *pFactory;
 
-	if (FAILED(CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&pFactory))))
+	auto singletonDXGI = SingletonDXGI::GetInstance();
+	if (FAILED(singletonDXGI->CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&pFactory))))
 		throw new std::exception("Unable to create D3D11 driver.");
 
 	try {
@@ -154,7 +254,8 @@ Plugin::API::Direct3D11::Direct3D11(Device device) : BaseAPI(device) {
 				D3D11_CREATE_DEVICE_DISABLE_GPU_TIMEOUT |
 				D3D11_CREATE_DEVICE_VIDEO_SUPPORT;
 
-			HRESULT hr = D3D11CreateDevice(pAdapter, D3D_DRIVER_TYPE_UNKNOWN, NULL,
+			auto singletonD3D11 = SingletonD3D11::GetInstance();
+			HRESULT hr = singletonD3D11->D3D11CreateDevice(pAdapter, D3D_DRIVER_TYPE_UNKNOWN, NULL,
 				flags, featureLevels, 2, D3D11_SDK_VERSION,
 				&pDevice, NULL, &pDeviceContext);
 
