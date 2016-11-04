@@ -94,6 +94,18 @@ namespace Plugin {
 			else
 				return "Automatic";
 		}
+		inline amf::AMF_MEMORY_TYPE MemoryTypeAsAMF(VCEMemoryType memoryType) {
+			static amf::AMF_MEMORY_TYPE memoryTypeToAMF[] = {
+				amf::AMF_MEMORY_HOST,
+				amf::AMF_MEMORY_DX9,
+				amf::AMF_MEMORY_DX11,
+				amf::AMF_MEMORY_OPENGL,
+			};
+			if (memoryType != VCEMemoryType_Auto)
+				return memoryTypeToAMF[memoryType];
+			else
+				return amf::AMF_MEMORY_HOST;
+		}
 
 		inline const char* SurfaceFormatAsString(VCESurfaceFormat surfaceFormat) {
 			static const char* surfaceFormatToString[] = {
