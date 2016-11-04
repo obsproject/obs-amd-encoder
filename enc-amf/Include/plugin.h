@@ -73,7 +73,7 @@ SOFTWARE.
 	std::vector<char> _throwexceptionwithamferror_buf(8192);\
 	sprintf_s(_throwexceptionwithamferror_buf.data(), _throwexceptionwithamferror_buf.size(), format, ##__VA_ARGS__, Plugin::AMD::AMF::GetInstance()->GetTrace()->GetResultText(res), res);\
 	AMF_LOG_ERROR("%s", _throwexceptionwithamferror_buf.data()); \
-	throw new std::exception(_throwexceptionwithamferror_buf.data(), res); \
+	throw std::exception(_throwexceptionwithamferror_buf.data()); \
 }
 
 //////////////////////////////////////////////////////////////////////////
