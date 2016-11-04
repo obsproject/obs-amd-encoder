@@ -116,6 +116,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
 			if (p_DeviceUniqueId.empty()) {
 				res = m_AMFContext->InitOpenGL(nullptr, nullptr, nullptr);
 			} else {
+				res = m_AMFContext->InitOpenGL(nullptr, nullptr, nullptr);
 				/*m_APIDevice = Plugin::API::OpenGL(Plugin::API::OpenGL::GetDeviceForUniqueId(p_DeviceUniqueId));
 				res = m_AMFContext->InitOpenGL(m_APIDevice.GetContext(), nullptr, nullptr);*/
 			}
@@ -254,6 +255,8 @@ void Plugin::AMD::VCEEncoder::Stop() {
 					break;
 			}
 		}
+		#else
+		m_Output.thread.join();
 		#endif
 
 		m_Input.condvar.notify_all();
@@ -272,6 +275,8 @@ void Plugin::AMD::VCEEncoder::Stop() {
 					break;
 			}
 		}
+		#else
+		m_Input.thread.join();
 		#endif
 	}
 
