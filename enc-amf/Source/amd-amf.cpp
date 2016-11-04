@@ -98,10 +98,7 @@ Plugin::AMD::AMF::AMF() {
 		} *lpTranslate;
 		UINT cbTranslate = 1024;
 
-		VerQueryValue(pBlock,
-			TEXT("\\VarFileInfo\\Translation"),
-			(LPVOID*)&lpTranslate,
-			&cbTranslate);
+		VerQueryValueA(pBlock, "\\VarFileInfo\\Translation", (LPVOID*)&lpTranslate, &cbTranslate);
 
 		std::vector<char> buf(1024);
 		sprintf(buf.data(), "%s%04x%04x%s",
@@ -113,13 +110,9 @@ Plugin::AMD::AMF::AMF() {
 		// Retrieve file description for language and code page "i". 
 		void* lpBuffer;
 		uint32_t dwBytes;
-		VerQueryValueA(pBlock,
-			buf.data(),
-			&lpBuffer,
-			&dwBytes);
+		VerQueryValueA(pBlock, buf.data(), &lpBuffer, &dwBytes);
 
 		AMF_LOG_INFO("Runtime Library is on Version %.*s.", dwBytes, lpBuffer);
-		
 		AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Loaded '%ls'.", AMF_DLL_NAME);
 	}
 
