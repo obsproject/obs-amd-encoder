@@ -1,13 +1,8 @@
-# Modern User Interface Update
+# The Oversight Fix
 
-The days of spending a lot of time setting up the encoder are gone, here are the days of simplicity! With this update both advanced interface are now one allowing for faster setup, easier control and better overall support. Some of the properties have also been simplified to be less overwhelming. The best of it all? You don't lose any control over any feature, you can still use all of them if you need to.
+Sometimes your changes seem fine and then users happen. Have you ever had users happen? They break things in ways that you didn't think was possible before! It's insane!
 
-There are also a few property changes that come with this update:
-You can now control how strict the VBV Buffer is when automatically calculated, Keyframe Interval supports sub-second precision now, CABAC is no longer considered experimental and GOP Size was removed (controlled by Keyframe Interval). Most of the properties also now have a tooltip that directly explains what it does, with certain ones even including recommended settings and supported values.
-
-The internal encoder part has also been updated for better hardware support, better crash resistance, runtime version tracking and is now also following proper AMF code guidelines as requested by MikhailAMD. Logging has also been changed severely for the better and should allow for massively easier supporting down the line.
-
-And with all that said, here is 1.4.0.0 in all it's new shiny glory. 
+This update aims to fix some of the reported issues in addition to making the user interface even simpler to use.
 
 ## Notes
 
@@ -15,15 +10,11 @@ Due to the nature of changes in this update, your previous settings may end up l
 
 ## Changelog
 
-* Changed: Unified both advanced interfaces into a single easy to use one without removing any features from it.
-* Changed: The simple advanced interface has been marked [DEPRECATED], it will be removed in a future version.
-* Changed: CABAC is no longer experimental, however there are some Driver issues with it right now.
-* Changed: Cards without B-Picture support default to using LTR Frames instead.
-* Changed: B-Picture properties are only shown to Cards supporting this feature.
-* Changed: B-Picture properties will be correctly hidden and set when LTR Frames are in use.
-* Added: All properties now have a hover-tooltip explaining their purpose and effect.
-* Added: Automatic VBV Buffer calculation using a strictness constraint with 100% is as strict as possible and 0% as loose as possible.
-* Added: Plugin will now print the actual runtime version to the log files.
-* Added: Ability to specify which DirectX 11 device to use.
-* Removed: GOP Size is no longer supported as Driver Version 16.10.1 and up ignore it completely.
-* Fixed: Crash with OpenCL when Device is no longer available.
+* Fixed: Crash with default settings being used.
+* Fixed: Properties should now show the correct tooltip when hovered over.
+* Fixed: Frame Rate should now be applied properly again.
+* Fixed: Compatibility issues with Windows 7 and older.
+* Changed: Default value for LTR Frames is now 0 for better compatibility.
+* Changed: Profile is now a Basic property.
+* Changed: Profile Level is now an Expert property to avoid user errors.
+* Changed: Min/Max QP is now considered an Advanced property to avoid user errors.
