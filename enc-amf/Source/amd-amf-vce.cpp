@@ -558,7 +558,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 	// Assign Thread Name
 	static const char* __threadName = "enc-amf Input Thread";
 	SetThreadName(__threadName);
-	
+
 	// Core Loop
 	std::unique_lock<std::mutex> lock(m_Input.mutex);
 	uint32_t repeatSurfaceSubmission = 0;
@@ -719,60 +719,23 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 //////////////////////////////////////////////////////////////////////////
 
 void Plugin::AMD::VCEEncoder::LogProperties() {
-	static const char* memoryTypeToString[] = {
-		"Host",
-		"DirectX9",
-		"DirectX11",
-		"OpenGL",
-	};
-	static const char* surfaceFormatToString[] = {
-		"NV12",
-		"I420",
-		"RGBA",
-	};
-	static const char* usageToString[] = {
-		"Transcoding",
-		"Ultra Low Latency",
-		"Low Latency",
-		"Webcam"
-	};
-	static const char* qualityPresetToString[] = {
-		"Speed",
-		"Balanced",
-		"Quality"
-	};
-	static const char* profileToString[] = {
-		"Baseline",
-		"Main",
-		"High"
-	};
-	static const char* rateControlMethodToString[] = {
-		"Constant Quantization Parameter (CQP)",
-		"Constant Bitrate (CBR)",
-		"Peak Constrained Variable Bitrate (VBR)",
-		"Latency Constrained Variable Bitrate (VBR_LAT)"
-	};
-
 	AMF_LOG_INFO("-- AMD Advanced Media Framework VCE Encoder --");
 	AMF_LOG_INFO("Initialization Parameters: ");
-	AMF_LOG_INFO("  Memory Type: %s", memoryTypeToString[m_MemoryType]);
+	AMF_LOG_INFO("  Memory Type: %s", Utility::MemoryTypeAsString(m_MemoryType));
+	AMF_LOG_INFO("  Surface Format: %s", Utility::SurfaceFormatAsString(m_SurfaceFormat));
 	AMF_LOG_INFO("  Device: %s", m_APIDevice.GetDevice().Name);
-	AMF_LOG_INFO("  OpenCL: %s", m_UseOpenCL ? "Disabled" : "Enabled");
-	AMF_LOG_INFO("  Surface Format: %s", surfaceFormatToString[max(m_SurfaceFormat,0)]);
+	AMF_LOG_INFO("  OpenCL: %s", m_UseOpenCL ? "Enabled" : "Disabled");
 	AMF_LOG_INFO("Static Parameters: ");
-	AMF_LOG_INFO("  Usage: %s", usageToString[this->GetUsage()]);
-	AMF_LOG_INFO("  Quality Preset: %s", qualityPresetToString[this->GetQualityPreset()]);
-	AMF_LOG_INFO("  Profile: %s %d.%d", this->GetProfile() == 66 ? "Baseline" : (this->GetProfile() == 77 ? "Main" : "High"), this->GetProfileLevel() / 10, this->GetProfileLevel() % 10);
+	AMF_LOG_INFO("  Usage: %s", Utility::UsageAsString(this->GetUsage()));
+	AMF_LOG_INFO("  Profile: %s %d.%d", Utility::ProfileAsString(this->GetProfile()), this->GetProfileLevel() / 10, this->GetProfileLevel() % 10);
 	AMF_LOG_INFO("  Maximum Long-Term Reference Frames: %d", this->GetMaximumLongTermReferenceFrames());
-	AMF_LOG_INFO("Frame Parameters: ");
 	AMF_LOG_INFO("  Frame Size: %dx%d", this->GetFrameSize().first, this->GetFrameSize().second);
 	AMF_LOG_INFO("  Frame Rate: %d/%d", this->GetFrameRate().first, this->GetFrameRate().second);
+	AMF_LOG_INFO("  Quality Preset: %s", Utility::QualityPresetAsString(this->GetQualityPreset()));
+	AMF_LOG_INFO("  Scan Type: %s", this->GetScanType() == VCEScanType_Progressive ? "Progressive" : "Interlaced");
+	AMF_LOG_INFO("  CABAC: %s", this->IsCABACEnabled() ? "Enabled" : "Disabled");
 	AMF_LOG_INFO("Rate Control Parameters: ");
-	AMF_LOG_INFO("  Method: %s", rateControlMethodToString[this->GetRateControlMethod()]);
-	AMF_LOG_INFO("  Frame Skipping Enabled: %s", this->IsFrameSkippingEnabled() ? "Yes" : "No");
-	AMF_LOG_INFO("  Filler Data Enabled: %s", this->IsFillerDataEnabled() ? "Yes" : "No");
-	AMF_LOG_INFO("  Enforce HRD Restrictions: %s", this->IsEnforceHRDRestrictionsEnabled() ? "Yes" : "No");
-	AMF_LOG_INFO("  Maximum Access Unit Size: %d bits", this->GetMaximumAccessUnitSize());
+	AMF_LOG_INFO("  Method: %s", Utility::RateControlMethodAsString(this->GetRateControlMethod()));
 	AMF_LOG_INFO("  Bitrate: ");
 	AMF_LOG_INFO("    Target: %d bits", this->GetTargetBitrate());
 	AMF_LOG_INFO("    Peak: %d bits", this->GetPeakBitrate());
@@ -781,37 +744,47 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("    Maximum: %d", this->GetMaximumQP());
 	AMF_LOG_INFO("    I-Frame: %d", this->GetIFrameQP());
 	AMF_LOG_INFO("    P-Frame: %d", this->GetPFrameQP());
-	AMF_LOG_INFO("    B-Frame: %d", this->GetBFrameQP());
-	try {
-		AMF_LOG_INFO("    B-Picture Delta QP: %d", this->GetBPictureDeltaQP());
-	} catch (...) {
+	if (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames) {
+		try { AMF_LOG_INFO("    B-Frame: %d", this->GetBFrameQP()); } catch (...) {}
+		try { AMF_LOG_INFO("    B-Picture Delta QP: %d", this->GetBPictureDeltaQP()); } catch (...) {}
+		try { AMF_LOG_INFO("    Reference B-Picture Delta QP: %d", this->GetReferenceBPictureDeltaQP()); } catch (...) {}
+	} else {
+		AMF_LOG_INFO("    B-Frame: N/A");
 		AMF_LOG_INFO("    B-Picture Delta QP: N/A");
-	}
-	try {
-		AMF_LOG_INFO("    Reference B-Picture Delta QP: %d", this->GetReferenceBPictureDeltaQP());
-	} catch (...) {
 		AMF_LOG_INFO("    Reference B-Picture Delta QP: N/A");
 	}
 	AMF_LOG_INFO("  VBV Buffer: ");
 	AMF_LOG_INFO("    Size: %d bits", this->GetVBVBufferSize());
 	AMF_LOG_INFO("    Initial Fullness: %f%%", this->GetInitialVBVBufferFullness() * 100.0);
+	AMF_LOG_INFO("  Flags: ");
+	AMF_LOG_INFO("    Filler Data: %s", this->IsFillerDataEnabled() ? "Enabled" : "Disabled");
+	AMF_LOG_INFO("    Frame Skipping: %s", this->IsFrameSkippingEnabled() ? "Enabled" : "Disabled");
+	AMF_LOG_INFO("    Enforce HRD Restrictions: %s", this->IsEnforceHRDRestrictionsEnabled() ? "Enabled" : "Disabled");
+	AMF_LOG_INFO("  Maximum Access Unit Size: %d bits", this->GetMaximumAccessUnitSize());
 	AMF_LOG_INFO("Picture Control Parameters: ");
 	AMF_LOG_INFO("  IDR Period: %d frames", this->GetIDRPeriod());
 	AMF_LOG_INFO("  Header Insertion Spacing: %d frames", this->GetHeaderInsertionSpacing());
-	AMF_LOG_INFO("  Deblocking Filter Enabled: %s", this->IsDeblockingFilterEnabled() ? "Yes" : "No");
-	AMF_LOG_INFO("  B-Picture Pattern: %d", this->GetBPicturePattern());
-	AMF_LOG_INFO("  B-Picture Reference Enabled: %s", this->IsBPictureReferenceEnabled() ? "Yes" : "No");
+	AMF_LOG_INFO("  Deblocking Filter: %s", this->IsDeblockingFilterEnabled() ? "Enabled" : "Disabled");
+	if (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames) {
+		AMF_LOG_INFO("  B-Picture Pattern: %d", this->GetBPicturePattern());
+		AMF_LOG_INFO("  B-Picture Reference: %s", this->IsBPictureReferenceEnabled() ? "Enabled" : "Disabled");
+	} else {
+		AMF_LOG_INFO("  B-Picture Pattern: N/A");
+		AMF_LOG_INFO("  B-Picture Reference: N/A");
+	}
 	AMF_LOG_INFO("  Intra-Refresh MBs Number per Slot: %d", this->GetIntraRefreshMBsNumberPerSlot());
 	AMF_LOG_INFO("  Slices Per Frame: %d", this->GetSlicesPerFrame());
-	AMF_LOG_INFO("  Scan Type: %s", this->GetScanType() == VCEScanType_Progressive ? "Progressive" : "Interlaced");
 	AMF_LOG_INFO("Motion Estimation Parameters: ");
 	AMF_LOG_INFO("  Half Pixel: %s", this->IsHalfPixelMotionEstimationEnabled() ? "Enabled" : "Disabled");
 	AMF_LOG_INFO("  Quarter Pixel: %s", this->IsQuarterPixelMotionEstimationEnabled() ? "Enabled" : "Disabled");
 	AMF_LOG_INFO("Experimental Parameters: ");
+	//AMF_LOG_INFO("  GOP Size: %d", this->GetGOPSize());
 	AMF_LOG_INFO("  Nominal Range: %s", this->GetNominalRange() ? "Enabled" : "Disabled");
 	AMF_LOG_INFO("  Wait For Task: %s", this->GetWaitForTask() ? "Enabled" : "Disabled");
 	AMF_LOG_INFO("  Aspect Ratio: %d:%d", this->GetAspectRatio().first, this->GetAspectRatio().second);
-	AMF_LOG_INFO("  CABAC: %s", this->IsCABACEnabled() ? "Enabled" : "Disabled");
+	AMF_LOG_INFO("  MaxNumRefFrames: %d", this->GetMaximumNumberOfReferenceFrames());
+	AMF_LOG_INFO("  MaxMBPerSec: %d", this->GetMaxMBPerSec());
+	AMF_LOG_INFO("  Pre-Analysis Pass: %s", this->IsRateControlPreanalysisEnabled() ? "Enabled" : "Disabled");
 }
 
 /************************************************************************/
@@ -819,47 +792,24 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 /************************************************************************/
 
 void Plugin::AMD::VCEEncoder::SetUsage(VCEUsage usage) {
-	static AMF_VIDEO_ENCODER_USAGE_ENUM customToAMF[] = {
-		AMF_VIDEO_ENCODER_USAGE_TRANSCONDING,
-		AMF_VIDEO_ENCODER_USAGE_ULTRA_LOW_LATENCY,
-		AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY,
-		AMF_VIDEO_ENCODER_USAGE_WEBCAM,
-	};
-	static char* customToName[] = {
-		"Transcoding",
-		"Ultra Low Latency",
-		"Low Latency",
-		"WebCam"
-	};
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, (uint32_t)customToAMF[usage]);
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE,
+		(uint32_t)Utility::UsageAsAMF(usage));
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetUsage> Setting to %s failed with error %ls (code %d).", res, customToName[usage]);
+		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::SetUsage> Setting to %s failed with error %ls (code %d).", 
+			res, Utility::UsageAsString(usage));
 	}
-	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetUsage> Set to %s.", customToName[usage]);
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::SetUsage> Set to %s.", Utility::UsageAsString(usage));
 }
 
 Plugin::AMD::VCEUsage Plugin::AMD::VCEEncoder::GetUsage() {
-	static VCEUsage AMFToCustom[] = {
-		VCEUsage_Transcoding,
-		VCEUsage_UltraLowLatency,
-		VCEUsage_LowLatency,
-		VCEUsage_Webcam
-	};
-	static char* customToName[] = {
-		"Transcoding",
-		"Ultra Low Latency",
-		"Low Latency",
-		"WebCam"
-	};
-
 	uint32_t usage;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_USAGE, &usage);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<Plugin::AMD::VCEEncoder::GetUsage> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetUsage> Value is %s.", customToName[AMFToCustom[usage]]);
-	return AMFToCustom[usage];
+	AMF_LOG_DEBUG("<Plugin::AMD::VCEEncoder::GetUsage> Value is %s.",
+		Utility::UsageAsString(Utility::UsageFromAMF(usage)));
+	return Utility::UsageFromAMF(usage);
 }
 
 void Plugin::AMD::VCEEncoder::SetProfile(VCEProfile profile) {
@@ -1050,8 +1000,7 @@ Plugin::AMD::VCERateControlMethod Plugin::AMD::VCEEncoder::GetRateControlMethod(
 
 void Plugin::AMD::VCEEncoder::SetTargetBitrate(uint32_t bitrate) {
 	// Clamp Value
-	if (bitrate != 0)
-		bitrate = min(max(bitrate, 10000), Plugin::AMD::VCECapabilities::GetInstance()->GetEncoderCaps(m_EncoderType)->maxBitrate);
+	bitrate = min(max(bitrate, 10000), Plugin::AMD::VCECapabilities::GetInstance()->GetEncoderCaps(m_EncoderType)->maxBitrate);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, bitrate);
 	if (res != AMF_OK) {
@@ -1072,8 +1021,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetTargetBitrate() {
 
 void Plugin::AMD::VCEEncoder::SetPeakBitrate(uint32_t bitrate) {
 	// Clamp Value
-	if (bitrate != 0)
-		bitrate = min(max(bitrate, 10000), Plugin::AMD::VCECapabilities::GetInstance()->GetEncoderCaps(m_EncoderType)->maxBitrate);
+	bitrate = min(max(bitrate, 10000), Plugin::AMD::VCECapabilities::GetInstance()->GetEncoderCaps(m_EncoderType)->maxBitrate);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, (uint32_t)bitrate);
 	if (res != AMF_OK) {
