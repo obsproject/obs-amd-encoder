@@ -978,6 +978,9 @@ void Plugin::AMD::VCEEncoder::SetFrameSize(uint32_t width, uint32_t height) {
 	m_FrameSize.first = width;
 	m_FrameSize.second = height;
 	AMF_LOG_DEBUG("<VCEEncoder::SetFrameSize> Set to %dx%d.", width, height);
+
+	if (this->GetProfileLevel() == VCEProfileLevel_Automatic)
+		this->SetProfileLevel(VCEProfileLevel_Automatic)
 }
 
 std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameSize() {
@@ -1006,17 +1009,8 @@ void Plugin::AMD::VCEEncoder::SetFrameRate(uint32_t num, uint32_t den) {
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor * 3);
 
-	if (m_Flag_IsStarted) { // Change Timer precision if encoding.
-		if (m_TimerPeriod != 0) {
-			// Restore Timer precision.
-			timeEndPeriod(m_TimerPeriod);
-		}
-
-		m_TimerPeriod = 1;
-		while (timeBeginPeriod(m_TimerPeriod) == TIMERR_NOCANDO) {
-			++m_TimerPeriod;
-		}
-	}
+	if (this->GetProfileLevel() == VCEProfileLevel_Automatic)
+		this->SetProfileLevel(VCEProfileLevel_Automatic)
 }
 
 std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameRate() {
