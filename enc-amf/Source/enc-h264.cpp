@@ -708,11 +708,11 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			//obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000));
 			/*obs_data_set_int(data, AMF_H264_QP_MINIMUM, 0);
 			obs_data_set_int(data, AMF_H264_QP_MAXIMUM, 51);*/
-			obs_data_set_int(data, AMF_H264_QP_IFRAME, 21);
-			obs_data_set_int(data, AMF_H264_QP_PFRAME, 18);
-			obs_data_set_int(data, AMF_H264_QP_BFRAME, 16);
-			obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, 0);
-			obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, 0);
+			obs_data_set_int(data, AMF_H264_QP_IFRAME, 26);
+			obs_data_set_int(data, AMF_H264_QP_PFRAME, 24);
+			obs_data_set_int(data, AMF_H264_QP_BFRAME, 22);
+			obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, -2);
+			obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, -2);
 			obs_data_set_int(data, AMF_H264_VBVBUFFER, 0);
 			obs_data_set_double(data, AMF_H264_VBVBUFFER_STRICTNESS, 0);
 			obs_data_set_double(data, AMF_H264_VBVBUFFER_FULLNESS, 0);
@@ -768,10 +768,10 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			//obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000));
 			/*obs_data_set_int(data, AMF_H264_QP_MINIMUM, 0);
 			obs_data_set_int(data, AMF_H264_QP_MAXIMUM, 51);*/
-			obs_data_set_int(data, AMF_H264_QP_IFRAME, 16);
-			obs_data_set_int(data, AMF_H264_QP_PFRAME, 13);
-			obs_data_set_int(data, AMF_H264_QP_BFRAME, 11);
-			obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, -4);
+			obs_data_set_int(data, AMF_H264_QP_IFRAME, 21);
+			obs_data_set_int(data, AMF_H264_QP_PFRAME, 19);
+			obs_data_set_int(data, AMF_H264_QP_BFRAME, 17);
+			obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, -2);
 			obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, -2);
 			obs_data_set_int(data, AMF_H264_VBVBUFFER, 0);
 			obs_data_set_double(data, AMF_H264_VBVBUFFER_STRICTNESS, 0);
@@ -842,8 +842,8 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			//obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 
 			// Picture Control Properties
-			obs_data_set_double(data, AMF_H264_KEYFRAME_INTERVAL, 0);
-			obs_data_set_int(data, AMF_H264_IDR_PERIOD, 1);
+			obs_data_set_double(data, AMF_H264_KEYFRAME_INTERVAL, 1);
+			obs_data_set_int(data, AMF_H264_IDR_PERIOD, 30);
 			//obs_data_set_int(data, AMF_H264_HEADER_INSERTION_SPACING, 0);
 			obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, 0);
 			obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
