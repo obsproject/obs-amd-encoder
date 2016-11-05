@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "AMD AMF Plugin for OBS Studio"
-#define MyAppVersion "1.4.1.0"
+#define MyAppVersion "1.4.1.1"
 #define MyAppPublisher "Xaymars Technology Workshop"
 #define MyAppURL "http://www.xaymar.com/portfolio/plugin-amd-vce-plugin-for-obs-studio/"
 
