@@ -163,11 +163,6 @@ namespace Plugin {
 		}
 
 		inline const char* ProfileAsString(VCEProfile profile) {
-			static const char* profileToString[] = {
-				"Baseline",
-				"Main",
-				"High"
-			};
 			switch (profile) {
 				case VCEProfile_Baseline:
 					return "Baseline";
@@ -175,8 +170,10 @@ namespace Plugin {
 					return "Main";
 				case VCEProfile_High:
 					return "High";
-				case VCEProfile_Unknown:
-					return "Unknown";
+				case VCEProfile_ConstrainedBaseline:
+					return "Constrained Baseline";
+				case VCEProfile_ConstrainedHigh:
+					return "Constrained High";
 			}
 
 			return "Invalid";
@@ -217,6 +214,16 @@ namespace Plugin {
 				VCERateControlMethod_VariableBitrate_LatencyConstrained,
 			};
 			return AMFToCustom[method];
+		}
+
+		inline const char* QualityEnhancementModeAsString(VCEQualityEnhancementMode mode) {
+			static const char* strings[] = {
+				"Disabled",
+				"CGS",
+				"CGS Rewrite",
+				"MGS"
+			};
+			return strings[mode];
 		}
 	}
 }
