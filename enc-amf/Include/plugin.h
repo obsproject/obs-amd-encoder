@@ -77,12 +77,21 @@ SOFTWARE.
 	throw std::exception(_throwexceptionwithamferror_buf.data()); \
 }
 
+#ifndef __FUNCTION_NAME__
+	#if defined(_WIN32) || defined(_WIN64)   //WINDOWS
+		#define __FUNCTION_NAME__   __FUNCTION__  
+	#else          //*NIX
+		#define __FUNCTION_NAME__   __func__ 
+	#endif
+#endif
+
 //////////////////////////////////////////////////////////////////////////
 // Defines - Translation Strings
 //////////////////////////////////////////////////////////////////////////
 
 // Presets
 #define AMF_H264_PRESET							TEXT_AMF_H264("Preset")
+#define AMF_H264_PRESET_RESETTODEFAULTS			TEXT_AMF_H264("Preset.ResetToDefaults")
 #define AMF_H264_PRESET_RECORDING				TEXT_AMF_H264("Preset.Recording")
 #define AMF_H264_PRESET_HIGHQUALITY				TEXT_AMF_H264("Preset.HighQuality")
 #define AMF_H264_PRESET_INDISTINGUISHABLE		TEXT_AMF_H264("Preset.Indistinguishable")
