@@ -980,7 +980,7 @@ void Plugin::AMD::VCEEncoder::SetFrameSize(uint32_t width, uint32_t height) {
 	AMF_LOG_DEBUG("<VCEEncoder::SetFrameSize> Set to %dx%d.", width, height);
 
 	if (this->GetProfileLevel() == VCEProfileLevel_Automatic)
-		this->SetProfileLevel(VCEProfileLevel_Automatic)
+		this->SetProfileLevel(VCEProfileLevel_Automatic);
 }
 
 std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameSize() {
@@ -1010,7 +1010,7 @@ void Plugin::AMD::VCEEncoder::SetFrameRate(uint32_t num, uint32_t den) {
 	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor * 3);
 
 	if (this->GetProfileLevel() == VCEProfileLevel_Automatic)
-		this->SetProfileLevel(VCEProfileLevel_Automatic)
+		this->SetProfileLevel(VCEProfileLevel_Automatic);
 }
 
 std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameRate() {
