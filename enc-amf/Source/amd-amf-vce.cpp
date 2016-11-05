@@ -641,7 +641,7 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 		amf_size l_origin[] = { 0, 0, 0 };
 		amf_size l_size0[] = { m_FrameSize.first, m_FrameSize.second, 1 };
 		amf_size l_size1[] = { m_FrameSize.first >> 1, m_FrameSize.second >> 1, 1 };
-
+		
 		res = m_AMFContext->AllocSurface(Utility::MemoryTypeAsAMF(m_MemoryType),
 			Utility::SurfaceFormatAsAMF(m_SurfaceFormat),
 			m_FrameSize.first, m_FrameSize.second, &pSurface);
@@ -679,7 +679,7 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 		// Convert to AMF native type.
 		pSurface->Convert(Utility::MemoryTypeAsAMF(m_MemoryType));
 	}
-
+	
 	return pSurface;
 }
 
@@ -816,7 +816,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	}
 	AMF_LOG_INFO("  VBAQ: %s", this->IsVBAQEnabled() ? "Enabled" : "Disabled");
 
-	//#ifdef DEBUG
+	#ifdef DEBUG
 	amf::AMFPropertyInfo* pInfo;
 	size_t propCount = m_AMFEncoder->GetPropertyCount();
 	AMF_LOG_INFO("-- Internal AMF Encoder Properties --");
@@ -867,7 +867,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 			}
 		}
 	}
-	//#endif
+	#endif
 }
 
 /************************************************************************/
