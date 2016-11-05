@@ -293,6 +293,10 @@ void Plugin::AMD::VCEEncoder::Stop() {
 	m_ExtraDataBuffer.clear();
 }
 
+bool Plugin::AMD::VCEEncoder::IsStarted() {
+	return m_Flag_IsStarted;
+}
+
 bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 	// Early-Exception if not encoding.
 	if (!m_Flag_IsStarted) {
@@ -639,7 +643,7 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 		amf_size l_size1[] = { m_FrameSize.first >> 1, m_FrameSize.second >> 1, 1 };
 
 		res = m_AMFContext->AllocSurface(Utility::MemoryTypeAsAMF(m_MemoryType),
-			Utility::SurfaceFormatAsAMF(m_SurfaceFormat), 
+			Utility::SurfaceFormatAsAMF(m_SurfaceFormat),
 			m_FrameSize.first, m_FrameSize.second, &pSurface);
 		if (res != AMF_OK) // Unable to create Surface
 			ThrowExceptionWithAMFError("<VCEEncoder::CreateSurfaceFromFrame> Unable to create AMFSurface, error %ls (code %d).", res);
@@ -682,6 +686,61 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 //////////////////////////////////////////////////////////////////////////
 // AMF Properties
 //////////////////////////////////////////////////////////////////////////
+
+static void fastPrintVariant(const char* text, amf::AMFVariantStruct variant) {
+	std::vector<char> buf(1024);
+	switch (variant.type) {
+		case amf::AMF_VARIANT_EMPTY:
+			sprintf(buf.data(), "%s%s", text, "Empty");
+			break;
+		case amf::AMF_VARIANT_BOOL:
+			sprintf(buf.data(), "%s%s", text, variant.boolValue ? "true" : "false");
+			break;
+		case amf::AMF_VARIANT_INT64:
+			sprintf(buf.data(), "%s%lld", text, variant.int64Value);
+			break;
+		case amf::AMF_VARIANT_DOUBLE:
+			sprintf(buf.data(), "%s%f", text, variant.doubleValue);
+			break;
+		case amf::AMF_VARIANT_RECT:
+			sprintf(buf.data(), "%s[%ld,%ld,%ld,%ld]", text,
+				variant.rectValue.top, variant.rectValue.left,
+				variant.rectValue.bottom, variant.rectValue.right);
+			break;
+		case amf::AMF_VARIANT_SIZE:
+			sprintf(buf.data(), "%s%ldx%ld", text,
+				variant.sizeValue.width, variant.sizeValue.height);
+			break;
+		case amf::AMF_VARIANT_POINT:
+			sprintf(buf.data(), "%s[%ld,%ld]", text,
+				variant.pointValue.x, variant.pointValue.y);
+			break;
+		case amf::AMF_VARIANT_RATE:
+			sprintf(buf.data(), "%s%ld/%ld", text,
+				variant.rateValue.num, variant.rateValue.den);
+			break;
+		case amf::AMF_VARIANT_RATIO:
+			sprintf(buf.data(), "%s%ld:%ld", text,
+				variant.ratioValue.num, variant.ratioValue.den);
+			break;
+		case amf::AMF_VARIANT_COLOR:
+			sprintf(buf.data(), "%s(%d,%d,%d,%d)", text,
+				variant.colorValue.r,
+				variant.colorValue.g,
+				variant.colorValue.b,
+				variant.colorValue.a);
+			break;
+		case amf::AMF_VARIANT_STRING:
+			sprintf(buf.data(), "%s'%s'", text,
+				variant.stringValue);
+			break;
+		case amf::AMF_VARIANT_WSTRING:
+			sprintf(buf.data(), "%s'%ls'", text,
+				variant.wstringValue);
+			break;
+	}
+	AMF_LOG_INFO("%s", buf.data());
+};
 
 void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("-- AMD Advanced Media Framework VCE Encoder --");
@@ -744,33 +803,71 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("  Quarter Pixel: %s", this->IsQuarterPixelMotionEstimationEnabled() ? "Enabled" : "Disabled");
 	AMF_LOG_INFO("Experimental Parameters: ");
 	//AMF_LOG_INFO("  GOP Size: %d", this->GetGOPSize());
-	AMF_LOG_INFO("  Nominal Range: %s", this->GetNominalRange() ? "Enabled" : "Disabled");
-	AMF_LOG_INFO("  Wait For Task: %s", this->GetWaitForTask() ? "Enabled" : "Disabled");
+	AMF_LOG_INFO("  Nominal Range: %s", this->IsNominalRangeEnabled() ? "Enabled" : "Disabled");
+	AMF_LOG_INFO("  Wait For Task: %s", this->IsWaitForTaskEnabled() ? "Enabled" : "Disabled");
 	AMF_LOG_INFO("  Aspect Ratio: %d:%d", this->GetAspectRatio().first, this->GetAspectRatio().second);
 	AMF_LOG_INFO("  MaxNumRefFrames: %d", this->GetMaximumNumberOfReferenceFrames());
 	AMF_LOG_INFO("  MaxMBPerSec: %d", this->GetMaxMBPerSec());
 	AMF_LOG_INFO("  Pre-Analysis Pass: %s", this->IsRateControlPreanalysisEnabled() ? "Enabled" : "Disabled");
+	try {
+		AMF_LOG_INFO("  Quality Enhancement Mode: %s", Utility::QualityEnhancementModeAsString(this->GetQualityEnhancementMode()));
+	} catch (...) {
+		AMF_LOG_INFO("  Quality Enhancement Mode: N/A");
+	}
+	AMF_LOG_INFO("  VBAQ: %s", this->IsVBAQEnabled() ? "Enabled" : "Disabled");
 
-	/*amf::AMFPropertyInfo* pInfo = new amf::AMFPropertyInfo();
-	AMF_RESULT pires = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, (const amf::AMFPropertyInfo**) &pInfo);
-	if (pires == AMF_OK) {
-		AMF_LOG_INFO("Name: %ls", pInfo->name);
-		AMF_LOG_INFO("Desc: %ls", pInfo->desc);
-		AMF_LOG_INFO("Type: %d", pInfo->type);
-		AMF_LOG_INFO("Content Type: %d", pInfo->contentType);
-		AMF_LOG_INFO("Min Value Type: %d", pInfo->minValue.type);
-		AMF_LOG_INFO("Min Value Int64: %lld", pInfo->minValue.int64Value);
-		AMF_LOG_INFO("Max Value Type: %d", pInfo->maxValue.type);
-		AMF_LOG_INFO("Max Value Int64: %lld", pInfo->maxValue.int64Value);
-		AMF_LOG_INFO("Default Value Type: %d", pInfo->defaultValue.type);
-		AMF_LOG_INFO("Default Value Int64: %d", pInfo->defaultValue.int64Value);
+	//#ifdef DEBUG
+	amf::AMFPropertyInfo* pInfo;
+	size_t propCount = m_AMFEncoder->GetPropertyCount();
+	AMF_LOG_INFO("-- Internal AMF Encoder Properties --");
+	for (size_t propIndex = 0; propIndex < propCount; propIndex++) {
+		static const char* typeToString[] = {
+			"Empty",
+			"Boolean",
+			"Int64",
+			"Double",
+			"Rect",
+			"Size",
+			"Point",
+			"Rate",
+			"Ratio",
+			"Color",
+			"String",
+			"WString",
+			"Interface"
+		};
 
-		const amf::AMFEnumDescriptionEntry* pEntry = pInfo->pEnumDescription;
-		while (pEntry->name != nullptr) {
-			AMF_LOG_INFO("Enum Entry: %ls %d", pEntry->name, pEntry->value);
-			pEntry++;
+		AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(propIndex, (const amf::AMFPropertyInfo**) &pInfo);
+		if (res != AMF_OK)
+			continue;
+		AMF_LOG_INFO(" [%ls] %ls (Type: %s, Index %d)",
+			pInfo->name, pInfo->desc, typeToString[pInfo->type], propIndex);
+		AMF_LOG_INFO("  Content Type: %d",
+			pInfo->contentType);
+		AMF_LOG_INFO("  Access: %s%s%s",
+			(pInfo->accessType & amf::AMF_PROPERTY_ACCESS_READ) ? "R" : "",
+			(pInfo->accessType & amf::AMF_PROPERTY_ACCESS_WRITE) ? "W" : "",
+			(pInfo->accessType & amf::AMF_PROPERTY_ACCESS_WRITE_RUNTIME) ? "X" : "");
+
+		AMF_LOG_INFO("  Values:");
+		amf::AMFVariantStruct curStruct = amf::AMFVariantStruct();
+		m_AMFEncoder->GetProperty(pInfo->name, &curStruct);
+		fastPrintVariant("    Current: ", curStruct);
+		fastPrintVariant("    Default: ", pInfo->defaultValue);
+		fastPrintVariant("    Minimum: ", pInfo->minValue);
+		fastPrintVariant("    Maximum: ", pInfo->maxValue);
+		if (pInfo->pEnumDescription) {
+			AMF_LOG_INFO("  Enumeration: ");
+			const amf::AMFEnumDescriptionEntry* pEnumEntry = pInfo->pEnumDescription;
+			while (pEnumEntry->name != nullptr) {
+				AMF_LOG_INFO("    %ls (%ld)",
+					pEnumEntry->name,
+					pEnumEntry->value);
+				pEnumEntry++;
+			}
 		}
-	}*/
+	}
+	//#endif
 }
 
 /************************************************************************/
@@ -1220,7 +1317,7 @@ void Plugin::AMD::VCEEncoder::SetVBVBufferAutomatic(double_t strictness) {
 
 	#define PI 3.14159265
 	double_t interpVal = (sin(max(min(strictness, 1.0), 0.0) * 90 * (PI / 180))); // sin curve?
-	uint32_t realBitrate = static_cast<uint32_t>((strictBitrate * interpVal) + (looseBitrate * (1.0 - interpVal)));
+	uint32_t realBitrate = static_cast<uint32_t>(ceil((strictBitrate * interpVal) + (looseBitrate * (1.0 - interpVal))));
 	this->SetVBVBufferSize(realBitrate);
 }
 
@@ -1607,7 +1704,7 @@ void Plugin::AMD::VCEEncoder::SetGOPSize(uint32_t size) {
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"GOPSize", (uint32_t)size);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<VCEEncoder::SetGOPSize> Setting to %d failed with error %ls (code %d).", res, size);
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, size);
 	}
 	AMF_LOG_DEBUG("<VCEEncoder::SetGOPSize> Set to %d.", size);
 }
@@ -1618,46 +1715,46 @@ uint32_t Plugin::AMD::VCEEncoder::GetGOPSize() {
 	uint32_t size;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"GOPSize", &size);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<VCEEncoder::GetGOPSize> Failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_DEBUG("<VCEEncoder::GetGOPSize> Value is %d.", size);
 	return size;
 }
 
 
-void Plugin::AMD::VCEEncoder::SetNominalRange(bool enabled) {
+void Plugin::AMD::VCEEncoder::SetNominalRangeEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"NominalRange", enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<VCEEncoder::SetNominalRange> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
-	AMF_LOG_DEBUG("<VCEEncoder::SetNominalRange> Set to %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
-bool Plugin::AMD::VCEEncoder::GetNominalRange() {
+bool Plugin::AMD::VCEEncoder::IsNominalRangeEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"NominalRange", &enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<VCEEncoder::GetNominalRange> Failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_DEBUG("<VCEEncoder::GetNominalRange> Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 
-void Plugin::AMD::VCEEncoder::SetWaitForTask(bool enabled) {
+void Plugin::AMD::VCEEncoder::SetWaitForTaskEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"WaitForTask", enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<VCEEncoder::SetWaitForTask> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
-	AMF_LOG_DEBUG("<VCEEncoder::SetWaitForTask> Set to %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
-bool Plugin::AMD::VCEEncoder::GetWaitForTask() {
+bool Plugin::AMD::VCEEncoder::IsWaitForTaskEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"WaitForTask", &enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<VCEEncoder::GetWaitForTask> Failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_DEBUG("<VCEEncoder::GetWaitForTask> Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 
@@ -1666,36 +1763,54 @@ void Plugin::AMD::VCEEncoder::SetAspectRatio(uint32_t num, uint32_t den) {
 	if (res != AMF_OK) {
 		std::vector<char> msgBuf;
 		sprintf(msgBuf.data(), "%d:%d", num, den);
-		ThrowExceptionWithAMFError("<VCEEncoder::SetAspectRatio> Setting to %s failed with error %ls (code %d).", res, msgBuf.data());
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, msgBuf.data());
 	}
-	AMF_LOG_DEBUG("<VCEEncoder::SetAspectRatio> Set to %d:%d.", num, den);
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d:%d.", num, den);
 }
 
 std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetAspectRatio() {
 	AMFRate aspectRatio;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"AspectRatio", &aspectRatio);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<VCEEncoder::GetAspectRatio> Failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_DEBUG("<VCEEncoder::GetAspectRatio> Value is %d:%d.", aspectRatio.num, aspectRatio.den);
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d:%d.", aspectRatio.num, aspectRatio.den);
 	return std::pair<uint32_t, uint32_t>(aspectRatio.num, aspectRatio.den);
+}
+
+void Plugin::AMD::VCEEncoder::SetQualityEnhancementMode(VCEQualityEnhancementMode mode) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"QualityEnhancementMode", (uint32_t)mode);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, Utility::QualityEnhancementModeAsString(mode));
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", Utility::QualityEnhancementModeAsString(mode));
+}
+
+Plugin::AMD::VCEQualityEnhancementMode Plugin::AMD::VCEEncoder::GetQualityEnhancementMode() {
+	uint32_t mode;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"QualityEnhancementMode", &mode);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", Utility::QualityEnhancementModeAsString((VCEQualityEnhancementMode)mode));
+	return (VCEQualityEnhancementMode)mode;
 }
 
 void Plugin::AMD::VCEEncoder::SetMaximumNumberOfReferenceFrames(uint32_t numFrames) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"MaxNumRefFrames", (uint32_t)numFrames);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<VCEEncoder::SetMaximumNumberOfReferenceFrames> Setting to %d failed with error %ls (code %d).", res, numFrames);
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, numFrames);
 	}
-	AMF_LOG_DEBUG("<VCEEncoder::SetMaximumNumberOfReferenceFrames> Set to %d.", numFrames);
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", numFrames);
 }
 
 uint32_t Plugin::AMD::VCEEncoder::GetMaximumNumberOfReferenceFrames() {
 	uint32_t numFrames;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"MaxNumRefFrames", &numFrames);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<VCEEncoder::GetMaximumNumberOfReferenceFrames> Failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_DEBUG("<VCEEncoder::GetMaximumNumberOfReferenceFrames> Value is %d.", numFrames);
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", numFrames);
 	return numFrames;
 }
 
@@ -1717,21 +1832,29 @@ uint32_t Plugin::AMD::VCEEncoder::GetMaxMBPerSec() {
 	return maxMBPerSec;
 }
 
+void Plugin::AMD::VCEEncoder::SetVBAQEnabled(bool enabled) {
+
+}
+
+bool Plugin::AMD::VCEEncoder::IsVBAQEnabled() {
+	return false;
+}
+
 void Plugin::AMD::VCEEncoder::SetRateControlPreanalysisEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"RateControlPreanalysisEnable", enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<VCEEncoder::SetRateControlPreanalysisEnabled> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
-	AMF_LOG_DEBUG("<VCEEncoder::SetRateControlPreanalysisEnabled> Set to %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
 bool Plugin::AMD::VCEEncoder::IsRateControlPreanalysisEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"RateControlPreanalysisEnable", &enabled);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<VCEEncoder::IsRateControlPreanalysisEnabled> Failed with error %ls (code %d).", res);
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_DEBUG("<VCEEncoder::IsRateControlPreanalysisEnabled> Value is %s.", enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
 

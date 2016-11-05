@@ -83,8 +83,8 @@ namespace Plugin {
 			VCEProfile_Baseline = 66,
 			VCEProfile_Main = 77,
 			VCEProfile_High = 100,
-
-			VCEProfile_Unknown = -1,
+			VCEProfile_ConstrainedBaseline = 256,
+			VCEProfile_ConstrainedHigh = 257
 		};
 		enum VCEProfileLevel {
 			VCEProfileLevel_Automatic = 0,
@@ -103,8 +103,7 @@ namespace Plugin {
 			VCEProfileLevel_42,
 			VCEProfileLevel_50 = 50,
 			VCEProfileLevel_51,
-			VCEProfileLevel_52,
-			VCEProfileLevel_Unknown = -1,
+			VCEProfileLevel_52
 		};
 		enum VCERateControlMethod {
 			VCERateControlMethod_ConstantQP,
@@ -126,6 +125,12 @@ namespace Plugin {
 			VCEQualityPreset_Speed,
 			VCEQualityPreset_Balanced,
 			VCEQualityPreset_Quality,
+		};
+		enum VCEQualityEnhancementMode {
+			VCEQualityEnhancementMode_Disabled,
+			VCEQualityEnhancementMode_CGS,
+			VCEQualityEnhancementMode_CGSRewrite,
+			VCEQualityEnhancementMode_MGS
 		};
 
 		class VCEEncoder {
@@ -158,6 +163,7 @@ namespace Plugin {
 			void Start();
 			void Restart();
 			void Stop();
+			bool IsStarted();
 			bool SendInput(struct encoder_frame* frame);
 			void GetOutput(struct encoder_packet* packet, bool* received_packet);
 			bool GetExtraData(uint8_t**& data, size_t*& size);
@@ -372,17 +378,17 @@ namespace Plugin {
 			void SetGOPSize(uint32_t gopSize);
 			uint32_t GetGOPSize();
 			
-			void SetNominalRange(bool enabled);
-			bool GetNominalRange();
+			void SetNominalRangeEnabled(bool enabled);
+			bool IsNominalRangeEnabled();
 
-			void SetWaitForTask(bool enabled);
-			bool GetWaitForTask();
+			void SetWaitForTaskEnabled(bool enabled);
+			bool IsWaitForTaskEnabled();
 
 			void SetAspectRatio(uint32_t x, uint32_t y);
 			std::pair<uint32_t, uint32_t> GetAspectRatio();
 
-			void SetQualityEnhancementMode(uint32_t qualityEnhancementMode);
-			uint32_t GetQualityEnhancementMode();
+			void SetQualityEnhancementMode(VCEQualityEnhancementMode mode);
+			VCEQualityEnhancementMode GetQualityEnhancementMode();
 
 			void SetMaximumNumberOfReferenceFrames(uint32_t frameCount);
 			uint32_t GetMaximumNumberOfReferenceFrames();
