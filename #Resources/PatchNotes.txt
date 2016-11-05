@@ -1,8 +1,5 @@
-# The Oversight Fix
-
-Sometimes your changes seem fine and then users happen. Have you ever had users happen? They break things in ways that you didn't think was possible before! It's insane!
-
-This update aims to fix some of the reported issues in addition to making the user interface even simpler to use.
+# The Oversight Fix (Part 2)
+Another update but this time it's much smaller, it fixes the problem with Constant QP and Automatic Profile Level.
 
 ## Notes
 
@@ -10,11 +7,12 @@ Due to the nature of changes in this update, your previous settings may end up l
 
 ## Changelog
 
-* Fixed: Crash with default settings being used.
-* Fixed: Properties should now show the correct tooltip when hovered over.
-* Fixed: Frame Rate should now be applied properly again.
-* Fixed: Compatibility issues with Windows 7 and older.
-* Changed: Default value for LTR Frames is now 0 for better compatibility.
-* Changed: Profile is now a Basic property.
-* Changed: Profile Level is now an Expert property to avoid user errors.
-* Changed: Min/Max QP is now considered an Advanced property to avoid user errors.
+* Fixed: Automatic Profile Level will no longer always pick '4.1'.
+* Fixed: Constant QP should now work properly again.
+* Fixed: Plugin should no longer leak memory when initialization fails.
+* Fixed: Intra-Refresh options should now actually work properly.
+* Changed: Tooltips are now slightly more accurate for Intra-Refresh encoding.
+* Changed: Adjusted the behaviour of some presets.<br/>'Enforce HRD Compatibility', 'CABAC' and 'Quality Preset' are no longer overridden by Presets. 'Target Bitrate' and 'Peak Bitrate' are now allowed within a certain range in 'Twitch', 'YouTube' and 'Recording' Presets. Twitch limits between 1.0 and 4.0 mbit/s, YouTube between 1.0 and 25.0 mbit/s, Recording accepts anything larger than 10.0 mbit/s.
+* Changed: OpenCL will be automatically disabled if not supported by the Memory Type.
+* Changed: Log output should now be less ambiguous.
+* Changed: Quality Preset option was moved further up in the UI.
