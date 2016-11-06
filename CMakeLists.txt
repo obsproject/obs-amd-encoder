@@ -1,60 +1,130 @@
-OPTION(AMDAMF_Disable "Disable AMD Advanced Media Framework support" OFF)
-SET(AMDAMF_SDKDir "" CACHE PATH "AMD Advanced Media Framework SDK Directory")
+cmake_minimum_required(VERSION 2.8.12)
 
-if(AMDAMF_Disable)
-	message(STATUS "AMD AMF support disabled")
-	return()
-endif()
-
-if(AMDAMF_SDKDir STREQUAL "")
-	message(STATUS "AMDAMF_SDKDir not set!  enc-amf plugin disabled.")
-	return()
-endif()
-
-if(NOT EXISTS "${AMDAMF_SDKDir}/amf/public/include/components/VideoEncoderVCE.h")
-	message(STATUS "AMDAMF_SDKDir invalid!  enc-amf plugin disabled.")
-	return()
-endif()
-
+# Shared (OBS Studio & Standalone)
 PROJECT(enc-amf)
-
-INCLUDE_DIRECTORIES(
-	SYSTEM "${CMAKE_SOURCE_DIR}"
-	SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/enc-amf/Include"
-	SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/enc-amf/Source"
-	SYSTEM "${AMDAMF_SDKDir}/amf/public/include"
-)
-
 SET(enc-amf_HEADERS
-	"enc-amf/Include/amd-amf.h"
-	"enc-amf/Include/amd-amf-vce.h"
-	"enc-amf/Include/amd-amf-vce-capabilities.h"
-	"enc-amf/Include/api-base.h"
-	"enc-amf/Include/api-d3d9.h"
-	"enc-amf/Include/api-d3d11.h"
-	"enc-amf/Include/enc-h264.h"
-	"enc-amf/Include/plugin.h"
+	"Include/amd-amf.h"
+	"Include/amd-amf-vce.h"
+	"Include/amd-amf-vce-capabilities.h"
+	"Include/api-base.h"
+	"Include/api-d3d9.h"
+	"Include/api-d3d11.h"
+	"Include/enc-h264.h"
+	"Include/plugin.h"
+	"${PROJECT_BINARY_DIR}/Include/Version.h"
 )
-
 SET(enc-amf_SOURCES
-	"enc-amf/Source/amd-amf.cpp"
-	"enc-amf/Source/amd-amf-vce.cpp"
-	"enc-amf/Source/amd-amf-vce-capabilities.cpp"
-	"enc-amf/Source/api-base.cpp"
-	"enc-amf/Source/api-d3d9.cpp"
-	"enc-amf/Source/api-d3d11.cpp"
-	"enc-amf/Source/enc-h264.cpp"
-	"enc-amf/Source/plugin.cpp"
+	"Source/amd-amf.cpp"
+	"Source/amd-amf-vce.cpp"
+	"Source/amd-amf-vce-capabilities.cpp"
+	"Source/api-base.cpp"
+	"Source/api-d3d9.cpp"
+	"Source/api-d3d11.cpp"
+	"Source/enc-h264.cpp"
+	"Source/plugin.cpp"
 )
 
-add_library(enc-amf MODULE
+# Version
+SET(enc-amf_VERSION_MAJOR 1)
+SET(enc-amf_VERSION_MINOR 4)
+SET(enc-amf_VERSION_PATCH 1)
+SET(enc-amf_VERSION_BUILD 2)
+configure_file(
+	"${PROJECT_SOURCE_DIR}/Include/Version.h.in"
+	"${PROJECT_BINARY_DIR}/Include/Version.h"
+)
+
+# OBS Studio Specific
+if(BUILD_AMF_ENCODER)
+	OPTION(AMDAMF_Disable "Disable AMD Advanced Media Framework support" OFF)
+	SET(AMDAMF_SDKDir "" CACHE PATH "AMD Advanced Media Framework SDK Directory")
+
+	if(AMDAMF_Disable)
+		message(STATUS "AMD AMF support disabled")
+		return()
+	endif()
+
+	if(AMDAMF_SDKDir STREQUAL "")
+		message(STATUS "AMDAMF_SDKDir not set!  enc-amf plugin disabled.")
+		return()
+	endif()
+
+	if(NOT EXISTS "${AMDAMF_SDKDir}/amf/public/include/components/VideoEncoderVCE.h")
+		message(STATUS "AMDAMF_SDKDir invalid!  enc-amf plugin disabled.")
+		return()
+	endif()
+	
+	INCLUDE_DIRECTORIES(
+		"${CMAKE_SOURCE_DIR"
+		"${PROJECT_BINARY_DIR}"
+		"${PROJECT_BINARY_DIR}/Include"
+		"${PROJECT_BINARY_DIR}/Source"
+		"${PROJECT_SOURCE_DIR}"
+		"${PROJECT_SOURCE_DIR}/Include"
+		"${PROJECT_SOURCE_DIR}/Source"
+		"${AMDAMF_SDKDir}/amf/public/include"
+	)
+else()
+# Standlone Specific
+
+	# Variables
+	SET(PATH_AMDAMFSDK "" CACHE PATH "AMD Advanced Media Framework SDK Directory")
+	SET(PATH_OBSStudio "" CACHE PATH "OBS Studio Source Code Directory")
+	#SET(PATH_libobs "" CACHE PATH "Path to obs.lib from OBS Studio")
+	
+	if(PATH_AMDAMFSDK STREQUAL "")
+		message(STATUS "PATH_AMDAMFSDK not set!")
+		return()
+	endif()
+
+	if(NOT EXISTS "${PATH_AMDAMFSDK}/amf/public/include/components/VideoEncoderVCE.h")
+		message(STATUS "PATH_AMDAMFSDK invalid!")
+		return()
+	endif()
+	
+	if(PATH_OBSStudio STREQUAL "")
+		message(STATUS "PATH_OBSStudio not set!")
+		return()
+	endif()
+
+	if(NOT EXISTS "${PATH_OBSStudio}/libobs/obs-module.h")
+		message(STATUS "PATH_OBSStudio invalid!")
+		return()
+	endif()
+	
+	# Stuff
+	SET(obsPath "${PATH_OBSStudio}")
+	INCLUDE("cmake/Findlibobs.cmake")
+	
+	# Compiling
+	INCLUDE_DIRECTORIES(
+		"${PROJECT_BINARY_DIR}"
+		"${PROJECT_BINARY_DIR}/Include"
+		"${PROJECT_BINARY_DIR}/Source"
+		"${PROJECT_SOURCE_DIR}"
+		"${PROJECT_SOURCE_DIR}/Include"
+		"${PROJECT_SOURCE_DIR}/Source"
+		"${PATH_AMDAMFSDK}/amf/public/include"
+		"${PATH_OBSStudio}/"
+	)
+endif()
+
+ADD_LIBRARY(enc-amf MODULE
 	${enc-amf_HEADERS}
 	${enc-amf_SOURCES}
 )
-target_link_libraries(enc-amf
-	libobs
+TARGET_LINK_LIBRARIES(enc-amf
+	${LIBOBS_LIBRARIES}
 	version
 	winmm
 )
 
-install_obs_plugin_with_data(enc-amf enc-amf/Resources)
+if(BUILD_AMF_ENCODER)
+	install_obs_plugin_with_data(enc-amf enc-amf/Resources)
+else()
+#	add_custom_command(TARGET enc-amf POST_BUILD
+#		COMMAND ${CMAKE_COMMAND} -E copy
+#		"${PROJECT_SOURCE_DIR}/Resources/<$TARGET_FILE_NAME:mylibrary>"
+#		"${RUNTIME_OUTPUT_DIRECTORY}/obs-plugins/enc-amf/<$TARGET_FILE_NAME:mylibrary>"
+#	)
+endif()
