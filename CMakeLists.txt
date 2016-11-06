@@ -94,7 +94,7 @@ else()
 	
 	# Stuff
 	SET(obsPath "${PATH_OBSStudio}")
-	INCLUDE("cmake/Findlibobs.cmake")
+	INCLUDE("${PATH_OBSStudio}/cmake/external/Findlibobs.cmake")
 	
 	# Compiling
 	INCLUDE_DIRECTORIES(
@@ -122,9 +122,20 @@ TARGET_LINK_LIBRARIES(enc-amf
 if(BUILD_AMF_ENCODER)
 	install_obs_plugin_with_data(enc-amf enc-amf/Resources)
 else()
-#	add_custom_command(TARGET enc-amf POST_BUILD
-#		COMMAND ${CMAKE_COMMAND} -E copy
-#		"${PROJECT_SOURCE_DIR}/Resources/<$TARGET_FILE_NAME:mylibrary>"
-#		"${RUNTIME_OUTPUT_DIRECTORY}/obs-plugins/enc-amf/<$TARGET_FILE_NAME:mylibrary>"
-#	)
+	math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
+	add_custom_command(TARGET enc-amf POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${PROJECT_SOURCE_DIR}/Resources/locale"
+		"${PROJECT_SOURCE_DIR}/#Build/data/obs-plugins/enc-amf/locale"
+	)	
+	add_custom_command(TARGET enc-amf POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy
+		"$<TARGET_FILE:enc-amf>"
+		"${PROJECT_SOURCE_DIR}/#Build/obs-plugins/${BITS}bit/$<TARGET_FILE_NAME:enc-amf>"
+	)	
+	add_custom_command(TARGET enc-amf POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy
+		"$<TARGET_FILE_DIR:enc-amf>/enc-amf.pdb"
+		"${PROJECT_SOURCE_DIR}/#Build/obs-plugins/${BITS}bit/enc-amf.pdb"
+	)
 endif()
