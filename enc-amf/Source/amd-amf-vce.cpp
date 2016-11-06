@@ -641,7 +641,7 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 		amf_size l_origin[] = { 0, 0, 0 };
 		amf_size l_size0[] = { m_FrameSize.first, m_FrameSize.second, 1 };
 		amf_size l_size1[] = { m_FrameSize.first >> 1, m_FrameSize.second >> 1, 1 };
-		
+
 		res = m_AMFContext->AllocSurface(Utility::MemoryTypeAsAMF(m_MemoryType),
 			Utility::SurfaceFormatAsAMF(m_SurfaceFormat),
 			m_FrameSize.first, m_FrameSize.second, &pSurface);
@@ -679,7 +679,7 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 		// Convert to AMF native type.
 		pSurface->Convert(Utility::MemoryTypeAsAMF(m_MemoryType));
 	}
-	
+
 	return pSurface;
 }
 
@@ -802,19 +802,14 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("  Half Pixel: %s", this->IsHalfPixelMotionEstimationEnabled() ? "Enabled" : "Disabled");
 	AMF_LOG_INFO("  Quarter Pixel: %s", this->IsQuarterPixelMotionEstimationEnabled() ? "Enabled" : "Disabled");
 	AMF_LOG_INFO("Experimental Parameters: ");
-	//AMF_LOG_INFO("  GOP Size: %d", this->GetGOPSize());
-	AMF_LOG_INFO("  Nominal Range: %s", this->IsNominalRangeEnabled() ? "Enabled" : "Disabled");
-	AMF_LOG_INFO("  Wait For Task: %s", this->IsWaitForTaskEnabled() ? "Enabled" : "Disabled");
-	AMF_LOG_INFO("  Aspect Ratio: %d:%d", this->GetAspectRatio().first, this->GetAspectRatio().second);
-	AMF_LOG_INFO("  MaxNumRefFrames: %d", this->GetMaximumNumberOfReferenceFrames());
-	AMF_LOG_INFO("  MaxMBPerSec: %d", this->GetMaxMBPerSec());
-	AMF_LOG_INFO("  Pre-Analysis Pass: %s", this->IsRateControlPreanalysisEnabled() ? "Enabled" : "Disabled");
-	try {
-		AMF_LOG_INFO("  Quality Enhancement Mode: %s", Utility::QualityEnhancementModeAsString(this->GetQualityEnhancementMode()));
-	} catch (...) {
-		AMF_LOG_INFO("  Quality Enhancement Mode: N/A");
-	}
-	AMF_LOG_INFO("  VBAQ: %s", this->IsVBAQEnabled() ? "Enabled" : "Disabled");
+	try { AMF_LOG_INFO("  Nominal Range: %s", this->IsNominalRangeEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
+	try { AMF_LOG_INFO("  Wait For Task: %s", this->IsWaitForTaskEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
+	try { AMF_LOG_INFO("  Aspect Ratio: %d:%d", this->GetAspectRatio().first, this->GetAspectRatio().second); } catch (...) {}
+	try { AMF_LOG_INFO("  MaxNumRefFrames: %d", this->GetMaximumNumberOfReferenceFrames()); } catch (...) {}
+	try { AMF_LOG_INFO("  MaxMBPerSec: %d", this->GetMaxMBPerSec()); } catch (...) {}
+	try { AMF_LOG_INFO("  Pre-Analysis Pass: %s", this->IsRateControlPreanalysisEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
+	try { AMF_LOG_INFO("  Quality Enhancement Mode: %s", Utility::QualityEnhancementModeAsString(this->GetQualityEnhancementMode())); } catch (...) {}
+	try { AMF_LOG_INFO("  VBAQ: %s", this->IsVBAQEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
 
 	#ifdef DEBUG
 	amf::AMFPropertyInfo* pInfo;
