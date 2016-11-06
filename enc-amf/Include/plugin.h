@@ -63,17 +63,13 @@ SOFTWARE.
 #define TEXT_AMF_T(x)					obs_module_text(TEXT_AMF(x))
 #define TEXT_AMF_H264(x)				(TEXT_AMF("H264." ## x))
 #define TEXT_AMF_H264_T(x)				obs_module_text(TEXT_AMF_H264(x))
-#define TEXT_AMF_H264ADVANCED(x)		(TEXT_AMF("H264Advanced." ## x))
-#define TEXT_AMF_H264ADVANCED_T(x)		obs_module_text(TEXT_AMF_H264ADVANCED(x))
-#define TEXT_AMF_H264SIMPLE(x)			(TEXT_AMF("H264Simple." ## x))
-#define TEXT_AMF_H264SIMPLE_T(x)		obs_module_text(TEXT_AMF_H264SIMPLE(x))
 #define TEXT_AMF_UTIL(x)				(TEXT_AMF("Util." ## x))
 #define TEXT_AMF_UTIL_T(x)				obs_module_text(TEXT_AMF_UTIL(x))
 
 #define ThrowExceptionWithAMFError(format, res, ...) {\
 	std::vector<char> _throwexceptionwithamferror_buf(8192);\
 	sprintf_s(_throwexceptionwithamferror_buf.data(), _throwexceptionwithamferror_buf.size(), format, ##__VA_ARGS__, Plugin::AMD::AMF::GetInstance()->GetTrace()->GetResultText(res), res);\
-	AMF_LOG_ERROR("%s", _throwexceptionwithamferror_buf.data()); \
+	AMF_LOG_WARNING("%s", _throwexceptionwithamferror_buf.data()); \
 	throw std::exception(_throwexceptionwithamferror_buf.data()); \
 }
 
