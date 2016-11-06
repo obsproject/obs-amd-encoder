@@ -23,6 +23,10 @@ SET(enc-amf_SOURCES
 	"Source/enc-h264.cpp"
 	"Source/plugin.cpp"
 )
+SET(enc-amf_LIBRARIES
+	version
+	winmm
+)
 
 # Version
 SET(enc-amf_VERSION_MAJOR 1)
@@ -64,6 +68,7 @@ if(BUILD_AMF_ENCODER)
 		"${PROJECT_SOURCE_DIR}/Source"
 		"${AMDAMF_SDKDir}/amf/public/include"
 	)
+	SET(LIBOBS_LIBRARIES libobs)
 else()
 # Standlone Specific
 
@@ -115,8 +120,7 @@ ADD_LIBRARY(enc-amf MODULE
 )
 TARGET_LINK_LIBRARIES(enc-amf
 	${LIBOBS_LIBRARIES}
-	version
-	winmm
+	${enc-amf_LIBRARIES}
 )
 
 if(BUILD_AMF_ENCODER)
