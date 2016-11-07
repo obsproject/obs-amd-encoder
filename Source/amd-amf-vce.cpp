@@ -28,6 +28,7 @@ SOFTWARE.
 #include "amd-amf-vce.h"
 #include "amd-amf-vce-capabilities.h"
 #include "misc-util.cpp"
+#include <chrono>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -60,6 +61,116 @@ void Plugin::AMD::VCEEncoder::OutputThreadMain(Plugin::AMD::VCEEncoder* p_this) 
 	p_this->OutputThreadLogic();
 }
 
+static void fastPrintVariant(const char* text, amf::AMFVariantStruct variant) {
+	std::vector<char> buf(1024);
+	switch (variant.type) {
+		case amf::AMF_VARIANT_EMPTY:
+			sprintf(buf.data(), "%s%s", text, "Empty");
+			break;
+		case amf::AMF_VARIANT_BOOL:
+			sprintf(buf.data(), "%s%s", text, variant.boolValue ? "true" : "false");
+			break;
+		case amf::AMF_VARIANT_INT64:
+			sprintf(buf.data(), "%s%lld", text, variant.int64Value);
+			break;
+		case amf::AMF_VARIANT_DOUBLE:
+			sprintf(buf.data(), "%s%f", text, variant.doubleValue);
+			break;
+		case amf::AMF_VARIANT_RECT:
+			sprintf(buf.data(), "%s[%ld,%ld,%ld,%ld]", text,
+				variant.rectValue.top, variant.rectValue.left,
+				variant.rectValue.bottom, variant.rectValue.right);
+			break;
+		case amf::AMF_VARIANT_SIZE:
+			sprintf(buf.data(), "%s%ldx%ld", text,
+				variant.sizeValue.width, variant.sizeValue.height);
+			break;
+		case amf::AMF_VARIANT_POINT:
+			sprintf(buf.data(), "%s[%ld,%ld]", text,
+				variant.pointValue.x, variant.pointValue.y);
+			break;
+		case amf::AMF_VARIANT_RATE:
+			sprintf(buf.data(), "%s%ld/%ld", text,
+				variant.rateValue.num, variant.rateValue.den);
+			break;
+		case amf::AMF_VARIANT_RATIO:
+			sprintf(buf.data(), "%s%ld:%ld", text,
+				variant.ratioValue.num, variant.ratioValue.den);
+			break;
+		case amf::AMF_VARIANT_COLOR:
+			sprintf(buf.data(), "%s(%d,%d,%d,%d)", text,
+				variant.colorValue.r,
+				variant.colorValue.g,
+				variant.colorValue.b,
+				variant.colorValue.a);
+			break;
+		case amf::AMF_VARIANT_STRING:
+			sprintf(buf.data(), "%s'%s'", text,
+				variant.stringValue);
+			break;
+		case amf::AMF_VARIANT_WSTRING:
+			sprintf(buf.data(), "%s'%ls'", text,
+				variant.wstringValue);
+			break;
+	}
+	AMF_LOG_INFO("%s", buf.data());
+};
+
+static void printDebugInfo(amf::AMFComponentPtr m_AMFEncoder) {
+	#ifdef _DEBUG
+	amf::AMFPropertyInfo* pInfo;
+	size_t propCount = m_AMFEncoder->GetPropertyCount();
+	AMF_LOG_INFO("-- Internal AMF Encoder Properties --");
+	for (size_t propIndex = 0; propIndex < propCount; propIndex++) {
+		static const char* typeToString[] = {
+			"Empty",
+			"Boolean",
+			"Int64",
+			"Double",
+			"Rect",
+			"Size",
+			"Point",
+			"Rate",
+			"Ratio",
+			"Color",
+			"String",
+			"WString",
+			"Interface"
+		};
+
+		AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(propIndex, (const amf::AMFPropertyInfo**) &pInfo);
+		if (res != AMF_OK)
+			continue;
+		AMF_LOG_INFO(" [%ls] %ls (Type: %s, Index %d)",
+			pInfo->name, pInfo->desc, typeToString[pInfo->type], propIndex);
+		AMF_LOG_INFO("  Content Type: %d",
+			pInfo->contentType);
+		AMF_LOG_INFO("  Access: %s%s%s",
+			(pInfo->accessType & amf::AMF_PROPERTY_ACCESS_READ) ? "R" : "",
+			(pInfo->accessType & amf::AMF_PROPERTY_ACCESS_WRITE) ? "W" : "",
+			(pInfo->accessType & amf::AMF_PROPERTY_ACCESS_WRITE_RUNTIME) ? "X" : "");
+
+		AMF_LOG_INFO("  Values:");
+		amf::AMFVariantStruct curStruct = amf::AMFVariantStruct();
+		m_AMFEncoder->GetProperty(pInfo->name, &curStruct);
+		fastPrintVariant("    Current: ", curStruct);
+		fastPrintVariant("    Default: ", pInfo->defaultValue);
+		fastPrintVariant("    Minimum: ", pInfo->minValue);
+		fastPrintVariant("    Maximum: ", pInfo->maxValue);
+		if (pInfo->pEnumDescription) {
+			AMF_LOG_INFO("  Enumeration: ");
+			const amf::AMFEnumDescriptionEntry* pEnumEntry = pInfo->pEnumDescription;
+			while (pEnumEntry->name != nullptr) {
+				AMF_LOG_INFO("    %ls (%ld)",
+					pEnumEntry->name,
+					pEnumEntry->value);
+				pEnumEntry++;
+			}
+		}
+	}
+	#endif
+}
+
 Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
 	VCESurfaceFormat p_SurfaceFormat /*= VCESurfaceFormat_NV12*/,
 	VCEMemoryType p_MemoryType /*= VCEMemoryType_Auto*/,
@@ -75,6 +186,8 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
 	m_UseOpenCL = p_UseOpenCL;
 	m_Flag_IsStarted = false;
 	m_Flag_Threading = true;
+	m_Flag_FirstFrameReceived = false;
+	m_Flag_FirstFrameSubmitted = false;
 	m_FrameSize.first = 64;	m_FrameSize.second = 64;
 	m_FrameRate.first = 30; m_FrameRate.second = 1;
 	m_FrameRateDivisor = ((double_t)m_FrameRate.first / (double_t)m_FrameRate.second);
@@ -178,6 +291,8 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
 	}
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Creating a component object failed with error %ls (code %ld).", res);
+
+	printDebugInfo(m_AMFEncoder);
 
 	AMF_LOG_DEBUG("Initialization complete!");
 }
@@ -345,6 +460,20 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 	if (m_Flag_Threading) { // Threading
 		/// Signal Thread Wakeup
 		m_Input.condvar.notify_all();
+
+		// WORKAROUND: Block for at most 5 seconds until the first frame has been submitted.
+		if (!m_Flag_FirstFrameSubmitted) {
+			auto startsubmit = std::chrono::high_resolution_clock::now();
+			auto diff = std::chrono::high_resolution_clock::now() - startsubmit;
+			do {
+				diff = std::chrono::high_resolution_clock::now() - startsubmit;
+				std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
+			} while ((diff <= std::chrono::seconds(5)) && !m_Flag_FirstFrameSubmitted);
+			if (!m_Flag_FirstFrameSubmitted)
+				throw std::exception("Unable to submit first frame, terminating...");
+			else
+				AMF_LOG_INFO("First submission took %d nanoseconds.", diff.count());
+		}
 	} else { // No Threading
 		AMF_RESULT res = AMF_OK;
 		while (res == AMF_OK) {
@@ -570,6 +699,8 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 		/// Submit to AMF
 		AMF_RESULT res = m_AMFEncoder->SubmitInput(surface);
 		if (res == AMF_OK) {
+			m_Flag_FirstFrameSubmitted = true;
+
 			{ // Remove Surface from Queue
 				std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
 				m_Input.queue.pop();
@@ -621,6 +752,8 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 		amf::AMFDataPtr pData;
 		AMF_RESULT res = m_AMFEncoder->QueryOutput(&pData);
 		if (res == AMF_OK) {
+			m_Flag_FirstFrameReceived = true;
+
 			{ // Queue
 				std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
 				m_Output.queue.push(pData);
@@ -695,60 +828,6 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 // AMF Properties
 //////////////////////////////////////////////////////////////////////////
 
-static void fastPrintVariant(const char* text, amf::AMFVariantStruct variant) {
-	std::vector<char> buf(1024);
-	switch (variant.type) {
-		case amf::AMF_VARIANT_EMPTY:
-			sprintf(buf.data(), "%s%s", text, "Empty");
-			break;
-		case amf::AMF_VARIANT_BOOL:
-			sprintf(buf.data(), "%s%s", text, variant.boolValue ? "true" : "false");
-			break;
-		case amf::AMF_VARIANT_INT64:
-			sprintf(buf.data(), "%s%lld", text, variant.int64Value);
-			break;
-		case amf::AMF_VARIANT_DOUBLE:
-			sprintf(buf.data(), "%s%f", text, variant.doubleValue);
-			break;
-		case amf::AMF_VARIANT_RECT:
-			sprintf(buf.data(), "%s[%ld,%ld,%ld,%ld]", text,
-				variant.rectValue.top, variant.rectValue.left,
-				variant.rectValue.bottom, variant.rectValue.right);
-			break;
-		case amf::AMF_VARIANT_SIZE:
-			sprintf(buf.data(), "%s%ldx%ld", text,
-				variant.sizeValue.width, variant.sizeValue.height);
-			break;
-		case amf::AMF_VARIANT_POINT:
-			sprintf(buf.data(), "%s[%ld,%ld]", text,
-				variant.pointValue.x, variant.pointValue.y);
-			break;
-		case amf::AMF_VARIANT_RATE:
-			sprintf(buf.data(), "%s%ld/%ld", text,
-				variant.rateValue.num, variant.rateValue.den);
-			break;
-		case amf::AMF_VARIANT_RATIO:
-			sprintf(buf.data(), "%s%ld:%ld", text,
-				variant.ratioValue.num, variant.ratioValue.den);
-			break;
-		case amf::AMF_VARIANT_COLOR:
-			sprintf(buf.data(), "%s(%d,%d,%d,%d)", text,
-				variant.colorValue.r,
-				variant.colorValue.g,
-				variant.colorValue.b,
-				variant.colorValue.a);
-			break;
-		case amf::AMF_VARIANT_STRING:
-			sprintf(buf.data(), "%s'%s'", text,
-				variant.stringValue);
-			break;
-		case amf::AMF_VARIANT_WSTRING:
-			sprintf(buf.data(), "%s'%ls'", text,
-				variant.wstringValue);
-			break;
-	}
-	AMF_LOG_INFO("%s", buf.data());
-};
 
 void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("-- AMD Advanced Media Framework VCE Encoder --");
@@ -819,58 +898,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	try { AMF_LOG_INFO("  Quality Enhancement Mode: %s", Utility::QualityEnhancementModeAsString(this->GetQualityEnhancementMode())); } catch (...) {}
 	try { AMF_LOG_INFO("  VBAQ: %s", this->IsVBAQEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
 
-	#ifdef DEBUG
-	amf::AMFPropertyInfo* pInfo;
-	size_t propCount = m_AMFEncoder->GetPropertyCount();
-	AMF_LOG_INFO("-- Internal AMF Encoder Properties --");
-	for (size_t propIndex = 0; propIndex < propCount; propIndex++) {
-		static const char* typeToString[] = {
-			"Empty",
-			"Boolean",
-			"Int64",
-			"Double",
-			"Rect",
-			"Size",
-			"Point",
-			"Rate",
-			"Ratio",
-			"Color",
-			"String",
-			"WString",
-			"Interface"
-		};
-
-		AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(propIndex, (const amf::AMFPropertyInfo**) &pInfo);
-		if (res != AMF_OK)
-			continue;
-		AMF_LOG_INFO(" [%ls] %ls (Type: %s, Index %d)",
-			pInfo->name, pInfo->desc, typeToString[pInfo->type], propIndex);
-		AMF_LOG_INFO("  Content Type: %d",
-			pInfo->contentType);
-		AMF_LOG_INFO("  Access: %s%s%s",
-			(pInfo->accessType & amf::AMF_PROPERTY_ACCESS_READ) ? "R" : "",
-			(pInfo->accessType & amf::AMF_PROPERTY_ACCESS_WRITE) ? "W" : "",
-			(pInfo->accessType & amf::AMF_PROPERTY_ACCESS_WRITE_RUNTIME) ? "X" : "");
-
-		AMF_LOG_INFO("  Values:");
-		amf::AMFVariantStruct curStruct = amf::AMFVariantStruct();
-		m_AMFEncoder->GetProperty(pInfo->name, &curStruct);
-		fastPrintVariant("    Current: ", curStruct);
-		fastPrintVariant("    Default: ", pInfo->defaultValue);
-		fastPrintVariant("    Minimum: ", pInfo->minValue);
-		fastPrintVariant("    Maximum: ", pInfo->maxValue);
-		if (pInfo->pEnumDescription) {
-			AMF_LOG_INFO("  Enumeration: ");
-			const amf::AMFEnumDescriptionEntry* pEnumEntry = pInfo->pEnumDescription;
-			while (pEnumEntry->name != nullptr) {
-				AMF_LOG_INFO("    %ls (%ld)",
-					pEnumEntry->name,
-					pEnumEntry->value);
-				pEnumEntry++;
-}
-		}
-	}
-	#endif
+	printDebugInfo(m_AMFEncoder);
 }
 
 /************************************************************************/
