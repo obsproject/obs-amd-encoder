@@ -34,6 +34,14 @@ SET(enc-amf_VERSION_MINOR 4)
 SET(enc-amf_VERSION_PATCH 1)
 SET(enc-amf_VERSION_BUILD 2)
 configure_file(
+	"${PROJECT_SOURCE_DIR}/#Resources/package.in.bat"
+	"${PROJECT_SOURCE_DIR}/#Resources/package.bat"
+)
+configure_file(
+	"${PROJECT_SOURCE_DIR}/#Resources/Installer.in.iss"
+	"${PROJECT_SOURCE_DIR}/#Resources/Installer.iss"
+)
+configure_file(
 	"${PROJECT_SOURCE_DIR}/Include/Version.h.in"
 	"${PROJECT_BINARY_DIR}/Include/Version.h"
 )
