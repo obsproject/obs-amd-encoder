@@ -580,6 +580,15 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 
 bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data) {
 	auto caps = VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC);
+
+	// Reset Enabled state
+	{
+		obs_property_t* pn = obs_properties_first(props);
+		do {
+			obs_property_set_enabled(pn, true);
+		} while (obs_property_next(&pn));
+	}
+
 	Presets preset = (Presets)obs_data_get_int(data, AMF_H264_PRESET);
 	switch (preset) {
 		case ResetToDefaults:
@@ -625,6 +634,7 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			// Static Properties
 			//obs_data_set_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
 			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILE), false);
 			switch (caps->maxProfileLevel) {
 				case 52:
 					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_52);
@@ -639,30 +649,41 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
 					break;
 			}
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILELEVEL), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMLTRFRAMES, obs_data_get_default_int(data, AMF_H264_MAXIMUMLTRFRAMES));
 
 			// Rate Control Properties
 			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_VariableBitrate_LatencyConstrained);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_RATECONTROLMETHOD), false);
 			if (obs_data_get_int(data, AMF_H264_BITRATE_TARGET) < 10000 * (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1000 : 1))
 				obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 10000 * (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1000 : 1));
 			//obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000));
 			obs_data_set_int(data, AMF_H264_QP_MINIMUM, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_MINIMUM), false);
 			obs_data_set_int(data, AMF_H264_QP_MAXIMUM, 51);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_MAXIMUM), false);
 			/*obs_data_set_int(data, AMF_H264_QP_IFRAME, 0);
 			obs_data_set_int(data, AMF_H264_QP_PFRAME, 0);
 			obs_data_set_int(data, AMF_H264_QP_BFRAME, 0);*/
 			obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_BPICTURE_DELTA), false);
 			obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA), false);
 			obs_data_set_int(data, AMF_H264_VBVBUFFER, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER), false);
 			obs_data_set_double(data, AMF_H264_VBVBUFFER_STRICTNESS, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER_STRICTNESS), false);
 			obs_data_set_double(data, AMF_H264_VBVBUFFER_FULLNESS, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER_FULLNESS), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMACCESSUNITSIZE, 0);
 			obs_data_set_int(data, AMF_H264_FILLERDATA, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_FILLERDATA), false);
 			//obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 0);
 			//obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 
 			// Picture Control Properties
 			obs_data_set_double(data, AMF_H264_KEYFRAME_INTERVAL, 1);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_KEYFRAME_INTERVAL), false);
 			//obs_data_set_int(data, AMF_H264_IDR_PERIOD, 60);
 			//obs_data_set_int(data, AMF_H264_HEADER_INSERTION_SPACING, 0);
 			//obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, obs_data_get_default_int(data, AMF_H264_BPICTURE_PATTERN));
@@ -673,11 +694,14 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			// Miscellaneous Properties
 			//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
 			obs_data_set_int(data, AMF_H264_SCANTYPE, VCEScanType_Progressive);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_SCANTYPE), false);
 			obs_data_set_int(data, AMF_H264_MOTIONESTIMATION, 3);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_MOTIONESTIMATION), false);
 			//obs_data_set_int(data, AMF_H264_CABAC, 0);
 
 			// System Properties
 			obs_data_set_int(data, AMF_H264_UNLOCK_PROPERTIES, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_UNLOCK_PROPERTIES), false);
 
 			break;
 			#pragma endregion Recording
@@ -686,6 +710,7 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			// Static Properties
 			//obs_data_set_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
 			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILE), false);
 			switch (caps->maxProfileLevel) {
 				case 52:
 					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_52);
@@ -700,22 +725,32 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
 					break;
 			}
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILELEVEL), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMLTRFRAMES, obs_data_get_default_int(data, AMF_H264_MAXIMUMLTRFRAMES));
 
 			// Rate Control Properties
 			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantQP);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_RATECONTROLMETHOD), false);
 			//obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 35000 * (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1000 : 1));
 			//obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000));
 			/*obs_data_set_int(data, AMF_H264_QP_MINIMUM, 0);
 			obs_data_set_int(data, AMF_H264_QP_MAXIMUM, 51);*/
 			obs_data_set_int(data, AMF_H264_QP_IFRAME, 26);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_IFRAME), false);
 			obs_data_set_int(data, AMF_H264_QP_PFRAME, 24);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_PFRAME), false);
 			obs_data_set_int(data, AMF_H264_QP_BFRAME, 22);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_BFRAME), false);
 			obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, -2);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_BPICTURE_DELTA), false);
 			obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, -2);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA), false);
 			obs_data_set_int(data, AMF_H264_VBVBUFFER, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER), false);
 			obs_data_set_double(data, AMF_H264_VBVBUFFER_STRICTNESS, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER_STRICTNESS), false);
 			obs_data_set_double(data, AMF_H264_VBVBUFFER_FULLNESS, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER_FULLNESS), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMACCESSUNITSIZE, 0);
 			//obs_data_set_int(data, AMF_H264_FILLERDATA, 0);
 			//obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 0);
@@ -723,6 +758,7 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 
 			// Picture Control Properties
 			obs_data_set_double(data, AMF_H264_KEYFRAME_INTERVAL, 1);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_KEYFRAME_INTERVAL), false);
 			//obs_data_set_int(data, AMF_H264_IDR_PERIOD, 60);
 			//obs_data_set_int(data, AMF_H264_HEADER_INSERTION_SPACING, 0);
 			//obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, obs_data_get_default_int(data, AMF_H264_BPICTURE_PATTERN));
@@ -733,11 +769,14 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			// Miscellaneous Properties
 			//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
 			obs_data_set_int(data, AMF_H264_SCANTYPE, VCEScanType_Progressive);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_SCANTYPE), false);
 			obs_data_set_int(data, AMF_H264_MOTIONESTIMATION, 3);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_MOTIONESTIMATION), false);
 			//obs_data_set_int(data, AMF_H264_CABAC, 0);
 
 			// System Properties
 			obs_data_set_int(data, AMF_H264_UNLOCK_PROPERTIES, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_UNLOCK_PROPERTIES), false);
 
 			break;
 			#pragma endregion High Quality
@@ -746,6 +785,7 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			// Static Properties
 			//obs_data_set_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
 			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILE), false);
 			switch (caps->maxProfileLevel) {
 				case 52:
 					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_52);
@@ -760,22 +800,32 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
 					break;
 			}
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILELEVEL), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMLTRFRAMES, obs_data_get_default_int(data, AMF_H264_MAXIMUMLTRFRAMES));
 
 			// Rate Control Properties
 			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantQP);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_RATECONTROLMETHOD), false);
 			//obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 35000 * (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1000 : 1));
 			//obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000));
 			/*obs_data_set_int(data, AMF_H264_QP_MINIMUM, 0);
 			obs_data_set_int(data, AMF_H264_QP_MAXIMUM, 51);*/
 			obs_data_set_int(data, AMF_H264_QP_IFRAME, 21);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_IFRAME), false);
 			obs_data_set_int(data, AMF_H264_QP_PFRAME, 19);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_PFRAME), false);
 			obs_data_set_int(data, AMF_H264_QP_BFRAME, 17);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_BFRAME), false);
 			obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, -2);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_BPICTURE_DELTA), false);
 			obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, -2);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA), false);
 			obs_data_set_int(data, AMF_H264_VBVBUFFER, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER), false);
 			obs_data_set_double(data, AMF_H264_VBVBUFFER_STRICTNESS, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER_STRICTNESS), false);
 			obs_data_set_double(data, AMF_H264_VBVBUFFER_FULLNESS, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER_FULLNESS), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMACCESSUNITSIZE, 0);
 			//obs_data_set_int(data, AMF_H264_FILLERDATA, 0);
 			//obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 0);
@@ -783,6 +833,7 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 
 			// Picture Control Properties
 			obs_data_set_double(data, AMF_H264_KEYFRAME_INTERVAL, 1);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_KEYFRAME_INTERVAL), false);
 			//obs_data_set_int(data, AMF_H264_IDR_PERIOD, 60);
 			//obs_data_set_int(data, AMF_H264_HEADER_INSERTION_SPACING, 0);
 			//obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, obs_data_get_default_int(data, AMF_H264_BPICTURE_PATTERN));
@@ -793,11 +844,14 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			// Miscellaneous Properties
 			//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
 			obs_data_set_int(data, AMF_H264_SCANTYPE, VCEScanType_Progressive);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_SCANTYPE), false);
 			obs_data_set_int(data, AMF_H264_MOTIONESTIMATION, 3);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_MOTIONESTIMATION), false);
 			//obs_data_set_int(data, AMF_H264_CABAC, 0);
 
 			// System Properties
 			obs_data_set_int(data, AMF_H264_UNLOCK_PROPERTIES, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_UNLOCK_PROPERTIES), false);
 
 			break;
 			#pragma endregion Indistinguishable
@@ -806,6 +860,7 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			// Static Properties
 			//obs_data_set_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
 			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILE), false);
 			switch (caps->maxProfileLevel) {
 				case 52:
 					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_52);
@@ -820,22 +875,32 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
 					break;
 			}
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILELEVEL), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMLTRFRAMES, 0);
 
 			// Rate Control Properties
 			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantQP);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_RATECONTROLMETHOD), false);
 			//obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 35000 * (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1000 : 1));
 			//obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000));
 			/*obs_data_set_int(data, AMF_H264_QP_MINIMUM, 0);
 			obs_data_set_int(data, AMF_H264_QP_MAXIMUM, 51);*/
 			obs_data_set_int(data, AMF_H264_QP_IFRAME, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_IFRAME), false);
 			obs_data_set_int(data, AMF_H264_QP_PFRAME, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_PFRAME), false);
 			obs_data_set_int(data, AMF_H264_QP_BFRAME, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_BFRAME), false);
 			obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_BPICTURE_DELTA), false);
 			obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA), false);
 			obs_data_set_int(data, AMF_H264_VBVBUFFER, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER), false);
 			obs_data_set_double(data, AMF_H264_VBVBUFFER_STRICTNESS, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER_STRICTNESS), false);
 			obs_data_set_double(data, AMF_H264_VBVBUFFER_FULLNESS, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER_FULLNESS), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMACCESSUNITSIZE, 0);
 			//obs_data_set_int(data, AMF_H264_FILLERDATA, 0);
 			//obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 0);
@@ -843,21 +908,28 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 
 			// Picture Control Properties
 			obs_data_set_double(data, AMF_H264_KEYFRAME_INTERVAL, 1);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_KEYFRAME_INTERVAL), false);
 			obs_data_set_int(data, AMF_H264_IDR_PERIOD, 30);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_IDR_PERIOD), false);
 			//obs_data_set_int(data, AMF_H264_HEADER_INSERTION_SPACING, 0);
 			obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_BPICTURE_PATTERN), false);
 			obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_BPICTURE_REFERENCE), false);
 			//obs_data_set_int(data, AMF_H264_SLICESPERFRAME, 0);
 			//obs_data_set_int(data, AMF_H264_INTRAREFRESHNUMMBSPERSLOT, 0);
 
 			// Miscellaneous Properties
 			//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
 			obs_data_set_int(data, AMF_H264_SCANTYPE, VCEScanType_Progressive);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_SCANTYPE), false);
 			obs_data_set_int(data, AMF_H264_MOTIONESTIMATION, 3);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_MOTIONESTIMATION), false);
 			//obs_data_set_int(data, AMF_H264_CABAC, 0);
 
 			// System Properties
 			obs_data_set_int(data, AMF_H264_UNLOCK_PROPERTIES, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_UNLOCK_PROPERTIES), false);
 
 			break;
 			#pragma endregion Lossless
@@ -865,34 +937,47 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			#pragma region Twitch
 			// Static Properties
 			obs_data_set_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_USAGE), false);
 			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_Main);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILE), false);
 			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILELEVEL), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMLTRFRAMES, obs_data_get);
 
 			// Rate Control Properties
 			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantBitrate);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_RATECONTROLMETHOD), false);
 			if (obs_data_get_int(data, AMF_H264_BITRATE_TARGET) < 1000 * (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1000 : 1))
 				obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 1000 * (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1000 : 1));
 			if (obs_data_get_int(data, AMF_H264_BITRATE_TARGET) > 4000 * (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1000 : 1))
 				obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 4000 * (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1000 : 1));
 			//obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000));
 			obs_data_set_int(data, AMF_H264_QP_MINIMUM, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_MINIMUM), false);
 			obs_data_set_int(data, AMF_H264_QP_MAXIMUM, 51);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_MAXIMUM), false);
 			/*obs_data_set_int(data, AMF_H264_QP_IFRAME, 0);
 			obs_data_set_int(data, AMF_H264_QP_PFRAME, 0);
 			obs_data_set_int(data, AMF_H264_QP_BFRAME, 0);*/
 			obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_BPICTURE_DELTA), false);
 			obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA), false);
 			obs_data_set_int(data, AMF_H264_VBVBUFFER, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER), false);
 			obs_data_set_double(data, AMF_H264_VBVBUFFER_STRICTNESS, 90);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER_STRICTNESS), false);
 			obs_data_set_double(data, AMF_H264_VBVBUFFER_FULLNESS, 100);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER_FULLNESS), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMACCESSUNITSIZE, 0);
 			obs_data_set_int(data, AMF_H264_FILLERDATA, 1);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_FILLERDATA), false);
 			//obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 0);
 			//obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 
 			// Picture Control Properties
 			obs_data_set_double(data, AMF_H264_KEYFRAME_INTERVAL, 2);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_KEYFRAME_INTERVAL), false);
 			//obs_data_set_int(data, AMF_H264_IDR_PERIOD, 120);
 			//obs_data_set_int(data, AMF_H264_HEADER_INSERTION_SPACING, 0);
 			//obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, 0);
@@ -903,11 +988,14 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			// Miscellaneous Properties
 			//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
 			obs_data_set_int(data, AMF_H264_SCANTYPE, VCEScanType_Progressive);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_SCANTYPE), false);
 			obs_data_set_int(data, AMF_H264_MOTIONESTIMATION, 3);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_MOTIONESTIMATION), false);
 			//obs_data_set_int(data, AMF_H264_CABAC, 0);
 
 			// System Properties
 			obs_data_set_int(data, AMF_H264_UNLOCK_PROPERTIES, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_UNLOCK_PROPERTIES), false);
 
 			break;
 			#pragma endregion Twitch
@@ -915,35 +1003,48 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			#pragma region YouTube
 			// Static Properties
 			obs_data_set_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_USAGE), false);
 			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_Main);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILE), false);
 			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILELEVEL), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMLTRFRAMES, obs_data_get);
 
 			// Rate Control Properties
 			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantBitrate);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_RATECONTROLMETHOD), false);
 			if (obs_data_get_int(data, AMF_H264_BITRATE_TARGET) < 1000 * (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1000 : 1))
 				obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 1000 * (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1000 : 1));
 			if (obs_data_get_int(data, AMF_H264_BITRATE_PEAK) > 25000 * (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1000 : 1))
 				obs_data_set_int(data, AMF_H264_BITRATE_PEAK, 25000 * (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1000 : 1));
 			obs_data_set_int(data, AMF_H264_QP_MINIMUM, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_MINIMUM), false);
 			obs_data_set_int(data, AMF_H264_QP_MAXIMUM, 51);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_MAXIMUM), false);
 			/*obs_data_set_int(data, AMF_H264_QP_IFRAME, 0);
 			obs_data_set_int(data, AMF_H264_QP_PFRAME, 0);
 			obs_data_set_int(data, AMF_H264_QP_BFRAME, 0);*/
 			obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_BPICTURE_DELTA), false);
 			obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA), false);
 			obs_data_set_int(data, AMF_H264_VBVBUFFER, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER), false);
 			obs_data_set_double(data, AMF_H264_VBVBUFFER_STRICTNESS, 75);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER_STRICTNESS), false);
 			obs_data_set_double(data, AMF_H264_VBVBUFFER_FULLNESS, 100);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER_FULLNESS), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMACCESSUNITSIZE, 0);
 			obs_data_set_int(data, AMF_H264_FILLERDATA, 1);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_FILLERDATA), false);
 			//obs_data_set_int(data, AMF_H264_FRAMESKIPPING, 0);
 			//obs_data_set_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 0);
 
 			// Picture Control Properties
 			obs_data_set_double(data, AMF_H264_KEYFRAME_INTERVAL, 2);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_KEYFRAME_INTERVAL), false);
 			//obs_data_set_int(data, AMF_H264_IDR_PERIOD, 120);
-			obs_data_set_int(data, AMF_H264_HEADER_INSERTION_SPACING, 0);
+			//obs_data_set_int(data, AMF_H264_HEADER_INSERTION_SPACING, 0);
 			//obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, 0);
 			//obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
 			//obs_data_set_int(data, AMF_H264_SLICESPERFRAME, 0);
@@ -952,11 +1053,14 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			// Miscellaneous Properties
 			//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
 			obs_data_set_int(data, AMF_H264_SCANTYPE, VCEScanType_Progressive);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_SCANTYPE), false);
 			obs_data_set_int(data, AMF_H264_MOTIONESTIMATION, 3);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_MOTIONESTIMATION), false);
 			//obs_data_set_int(data, AMF_H264_CABAC, 0);
 
 			// System Properties
 			obs_data_set_int(data, AMF_H264_UNLOCK_PROPERTIES, 0);
+			obs_property_set_enabled(obs_properties_get(props, AMF_H264_UNLOCK_PROPERTIES), false);
 
 			break;
 			#pragma endregion YouTube
