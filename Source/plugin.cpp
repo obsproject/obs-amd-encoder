@@ -27,6 +27,8 @@ SOFTWARE.
 // Includes
 //////////////////////////////////////////////////////////////////////////
 #include <windows.h>
+#include <sstream>
+#include <map>
 
 // Plugin
 #include "plugin.h"
@@ -81,6 +83,56 @@ MODULE_EXPORT const char* obs_module_name() {
 /** Optional: Returns a description of the module */
 MODULE_EXPORT const char* obs_module_description() {
 	return "AMD Media Framework Plugin";
+}
+
+// Allow translation strings to reference other translation strings up to a certain depth.
+static std::map<std::string, std::string> translatedMap;
+const char *obs_module_text_multi(const char *key, uint8_t depth) {
+	// Check if it already was translated.
+	if (!translatedMap.count(std::string(key))) { // If not, translate it now.
+		const char* out = obs_module_text(key);
+
+		// Allow for nested translations using \@...\@ sequences.
+		if (depth > 0) {
+			// I'm pretty sure this can be optimized a ton if necessary.
+
+			size_t seqStart = 0,
+				seqEnd = 0;
+			bool haveSequence = false;
+
+			std::stringstream fout;
+
+			// Walk the given string.
+			std::string walkable = std::string(out);
+
+			for (size_t pos = 0; pos <= walkable.length(); pos++) {
+				std::string walked = walkable.substr(pos, 2);
+
+				if (walked == "\\@") { // Sequence Start/End
+					if (haveSequence) {
+						seqEnd = pos;
+
+						std::string sequence = walkable.substr(seqStart, seqEnd - seqStart);
+						fout << obs_module_text_multi(sequence.c_str(), depth--);
+					} else {
+						seqStart = pos + 2;
+					}
+					haveSequence = !haveSequence;
+					pos = pos + 2;
+				} else if (!haveSequence) {
+					fout << walked.substr(0, 1); // Append the left character.
+				}
+			}
+
+			std::pair<std::string, std::string> kv = std::pair<std::string, std::string>(std::string(key), fout.str());
+			translatedMap.insert(kv);
+		} else {
+			return out;
+		}
+	}
+
+	auto value = translatedMap.find(std::string(key));
+	return value->second.c_str();
 }
 
 //////////////////////////////////////////////////////////////////////////

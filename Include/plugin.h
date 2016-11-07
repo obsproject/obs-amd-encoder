@@ -38,6 +38,8 @@ SOFTWARE.
 #include "libobs/obs-module.h"
 #include "libobs/obs-encoder.h"
 
+MODULE_EXTERN const char *obs_module_text_multi(const char *val, uint8_t depth = (uint8_t)1);
+
 //////////////////////////////////////////////////////////////////////////
 // Defines
 //////////////////////////////////////////////////////////////////////////
@@ -56,12 +58,10 @@ SOFTWARE.
 #define AMF_LOG_CONFIG(format, ...)		AMF_LOG(350,         format, ##__VA_ARGS__)
 #define AMF_LOG_DEBUG(format, ...)		AMF_LOG(LOG_DEBUG,   format, ##__VA_ARGS__)
 
+#define TEXT_T(x)						obs_module_text_multi(x)
 #define TEXT_AMF(x)						("AMF." ## x)
-#define TEXT_AMF_T(x)					obs_module_text(TEXT_AMF(x))
 #define TEXT_AMF_H264(x)				(TEXT_AMF("H264." ## x))
-#define TEXT_AMF_H264_T(x)				obs_module_text(TEXT_AMF_H264(x))
 #define TEXT_AMF_UTIL(x)				(TEXT_AMF("Util." ## x))
-#define TEXT_AMF_UTIL_T(x)				obs_module_text(TEXT_AMF_UTIL(x))
 
 #define ThrowExceptionWithAMFError(format, res, ...) {\
 	std::vector<char> _throwexceptionwithamferror_buf(8192);\
