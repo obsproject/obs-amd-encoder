@@ -646,20 +646,7 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			//obs_data_set_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
 			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILE), false);
-			switch (caps->maxProfileLevel) {
-				case 52:
-					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_52);
-					break;
-				case 51:
-					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_51);
-					break;
-				case 50:
-					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_50);
-					break;
-				default:
-					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
-					break;
-			}
+			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILELEVEL), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMLTRFRAMES, obs_data_get_default_int(data, AMF_H264_MAXIMUMLTRFRAMES));
 
@@ -718,20 +705,7 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			//obs_data_set_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
 			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILE), false);
-			switch (caps->maxProfileLevel) {
-				case 52:
-					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_52);
-					break;
-				case 51:
-					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_51);
-					break;
-				case 50:
-					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_50);
-					break;
-				default:
-					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
-					break;
-			}
+			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILELEVEL), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMLTRFRAMES, obs_data_get_default_int(data, AMF_H264_MAXIMUMLTRFRAMES));
 
@@ -788,20 +762,7 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			//obs_data_set_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
 			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILE), false);
-			switch (caps->maxProfileLevel) {
-				case 52:
-					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_52);
-					break;
-				case 51:
-					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_51);
-					break;
-				case 50:
-					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_50);
-					break;
-				default:
-					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
-					break;
-			}
+			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILELEVEL), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMLTRFRAMES, obs_data_get_default_int(data, AMF_H264_MAXIMUMLTRFRAMES));
 
@@ -858,20 +819,7 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			//obs_data_set_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
 			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILE), false);
-			switch (caps->maxProfileLevel) {
-				case 52:
-					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_52);
-					break;
-				case 51:
-					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_51);
-					break;
-				case 50:
-					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_50);
-					break;
-				default:
-					obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
-					break;
-			}
+			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILELEVEL), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMLTRFRAMES, 0);
 
@@ -1387,19 +1335,28 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 
 	/// Static Properties
 	m_VideoEncoder->SetUsage((VCEUsage)obs_data_get_int(data, AMF_H264_USAGE));
+	m_VideoEncoder->SetQualityPreset((VCEQualityPreset)obs_data_get_int(data, AMF_H264_QUALITY_PRESET));
+
 	/// Framesize & Framerate
 	m_VideoEncoder->SetFrameSize(m_cfgWidth, m_cfgHeight);
 	m_VideoEncoder->SetFrameRate(m_cfgFPSnum, m_cfgFPSden);
-	/// 
+
+	/// Profile & Level
 	m_VideoEncoder->SetProfile((VCEProfile)obs_data_get_int(data, AMF_H264_PROFILE));
 	m_VideoEncoder->SetProfileLevel((VCEProfileLevel)obs_data_get_int(data, AMF_H264_PROFILELEVEL));
+
+	/// LTR Stuff
 	if ((uint32_t)obs_data_get_int(data, AMF_H264_MAXIMUMLTRFRAMES) > 0)
 		m_VideoEncoder->SetBPicturePattern(VCEBPicturePattern_None);
 	m_VideoEncoder->SetMaximumLongTermReferenceFrames((uint32_t)obs_data_get_int(data, AMF_H264_MAXIMUMLTRFRAMES));
+
 	/// Miscellaneous Properties
 	m_VideoEncoder->SetScanType((VCEScanType)obs_data_get_int(data, AMF_H264_SCANTYPE));
-	m_VideoEncoder->SetQualityPreset((VCEQualityPreset)obs_data_get_int(data, AMF_H264_QUALITY_PRESET));
 	m_VideoEncoder->SetCABACEnabled(!!obs_data_get_int(data, AMF_H264_CABAC));
+	//m_VideoEncoder->SetRateControlPreanalysisEnabled(true);
+	//m_VideoEncoder->SetNominalRangeEnabled(true);
+	//m_VideoEncoder->SetWaitForTaskEnabled(true);
+	//m_VideoEncoder->SetMaximumNumberOfReferenceFrames(VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxReferenceFrames);
 
 	// OBS - Enforce Streaming Service Restrictions
 	#pragma region OBS - Enforce Streaming Service Restrictions
@@ -1454,11 +1411,6 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 		}
 	}
 	#pragma endregion OBS - Enforce Streaming Service Restrictions
-
-	/*m_VideoEncoder->SetRateControlPreanalysisEnabled(true);
-	m_VideoEncoder->SetNominalRange(true);
-	m_VideoEncoder->SetWaitForTask(true);
-	m_VideoEncoder->SetMaximumNumberOfReferenceFrames(VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxReferenceFrames);*/
 
 	// Dynamic Properties (Can be changed during Encoding)
 	this->update(data);
