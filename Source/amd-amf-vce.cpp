@@ -210,13 +210,17 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
 		#if (defined _WIN32) | (defined _WIN64)
 		if (IsWindows8OrGreater()) {
 			m_MemoryType = VCEMemoryType_DirectX11;
+			m_UseOpenCL = true;
 		} else if (IsWindowsXPOrGreater()) {
 			m_MemoryType = VCEMemoryType_DirectX9;
+			m_UseOpenCL = true;
 		} else {
 			m_MemoryType = VCEMemoryType_Host;
+			m_UseOpenCL = false;
 		}
 		#else
 		m_MemoryType = VCEMemoryType_OpenGL;
+		m_UseOpenCL = true;
 		#endif
 	}
 
@@ -321,7 +325,8 @@ void Plugin::AMD::VCEEncoder::Start() {
 	}
 
 	// Create Encoder
-	AMF_RESULT res = m_AMFEncoder->Init(Utility::SurfaceFormatAsAMF(m_SurfaceFormat), m_FrameSize.first, m_FrameSize.second);
+	AMF_RESULT res = m_AMFEncoder->Init(Utility::SurfaceFormatAsAMF(m_SurfaceFormat),
+		m_FrameSize.first, m_FrameSize.second);
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Initialization failed with error %ls (code %ld).", res);
 
@@ -436,17 +441,16 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 				AMF_LOG_WARNING("Submission queue is full, dropping frame instead...");
 			} else {
 				m_Input.queue.push(pAMFSurface);
-
 				if (m_InputQueueLastSize != uiQueueSize) {
 					int32_t delta = ((int32_t)uiQueueSize - (int32_t)m_InputQueueLastSize);
 					if (uiQueueSize == 0) {
-						AMF_LOG_DEBUG("Submission queue is empty (%d/%d/%d)", uiQueueSize, (uiQueueSize - m_InputQueueLastSize), m_InputQueueLimit);
+						AMF_LOG_DEBUG("Submission queue is empty. (%d/%d/%d)", uiQueueSize, delta, m_InputQueueLimit);
 						m_InputQueueLastSize = uiQueueSize;
 					} else if (delta >= 5) {
-						AMF_LOG_WARNING("Submission queue size is growing. (%d/%d/%d)", uiQueueSize, (uiQueueSize - m_InputQueueLastSize), m_InputQueueLimit);
+						AMF_LOG_WARNING("Submission queue size is growing. (%d/%d/%d)", uiQueueSize, delta, m_InputQueueLimit);
 						m_InputQueueLastSize = uiQueueSize;
 					} else if (delta <= -5) {
-						AMF_LOG_INFO("Submission queue size is shrinking. (%d/%d/%d)", uiQueueSize, (uiQueueSize - m_InputQueueLastSize), m_InputQueueLimit);
+						AMF_LOG_INFO("Submission queue size is shrinking. (%d/%d/%d)", uiQueueSize, delta, m_InputQueueLimit);
 						m_InputQueueLastSize = uiQueueSize;
 					}
 				}
@@ -1001,9 +1005,9 @@ void Plugin::AMD::VCEEncoder::SetFrameSize(uint32_t width, uint32_t height) {
 		sprintf(msgBuf.data(), "%dx%d", width, height);
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, msgBuf.data());
 	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %dx%d.", width, height);
 	m_FrameSize.first = width;
 	m_FrameSize.second = height;
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %dx%d.", width, height);
 
 	if (this->GetProfileLevel() == VCEProfileLevel_Automatic)
 		this->SetProfileLevel(VCEProfileLevel_Automatic);
@@ -1018,6 +1022,10 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameSize() {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %dx%d.", frameSize.width, frameSize.height);
 	m_FrameSize.first = frameSize.width;
 	m_FrameSize.second = frameSize.height;
+
+	if (this->GetProfileLevel() == VCEProfileLevel_Automatic)
+		this->SetProfileLevel(VCEProfileLevel_Automatic);
+
 	return std::pair<uint32_t, uint32_t>(m_FrameSize);
 }
 
@@ -1034,7 +1042,7 @@ void Plugin::AMD::VCEEncoder::SetFrameRate(uint32_t num, uint32_t den) {
 	m_FrameRateDivisor = (double_t)m_FrameRate.first / (double_t)m_FrameRate.second;
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor * 3);
-
+	
 	if (this->GetProfileLevel() == VCEProfileLevel_Automatic)
 		this->SetProfileLevel(VCEProfileLevel_Automatic);
 }
@@ -1050,6 +1058,10 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameRate() {
 	m_FrameRate.second = frameRate.den;
 	m_FrameRateDivisor = (double_t)frameRate.num / (double_t)frameRate.den;
 	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor * 3);
+
+	if (this->GetProfileLevel() == VCEProfileLevel_Automatic)
+		this->SetProfileLevel(VCEProfileLevel_Automatic);
+
 	return std::pair<uint32_t, uint32_t>(m_FrameRate);
 }
 
