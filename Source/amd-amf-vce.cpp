@@ -753,7 +753,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 		if (!m_Flag_IsStarted)
 			continue;
 
-		amf::AMFDataPtr pData;
+		amf::AMFDataPtr pData = amf::AMFDataPtr();
 		AMF_RESULT res = m_AMFEncoder->QueryOutput(&pData);
 		if (res == AMF_OK) {
 			m_Flag_FirstFrameReceived = true;
@@ -1889,4 +1889,3 @@ bool Plugin::AMD::VCEEncoder::IsRateControlPreanalysisEnabled() {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
-
