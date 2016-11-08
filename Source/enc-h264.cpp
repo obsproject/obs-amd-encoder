@@ -210,7 +210,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, 2);
 	obs_data_set_default_int(data, AMF_H264_VBVBUFFER, 0);
 	obs_data_set_default_int(data, AMF_H264_VBVBUFFER_SIZE, 3500);
-	obs_data_set_default_double(data, AMF_H264_VBVBUFFER_STRICTNESS, 100);
+	obs_data_set_default_double(data, AMF_H264_VBVBUFFER_STRICTNESS, 80);
 	obs_data_set_default_double(data, AMF_H264_VBVBUFFER_FULLNESS, 100);
 	obs_data_set_default_int(data, AMF_H264_MAXIMUMACCESSUNITSIZE, 0);
 	obs_data_set_default_int(data, AMF_H264_FILLERDATA, 1);
@@ -906,8 +906,8 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA), false);
 			obs_data_set_int(data, AMF_H264_VBVBUFFER, 0);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER), false);
-			obs_data_set_double(data, AMF_H264_VBVBUFFER_STRICTNESS, 90);
-			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER_STRICTNESS), false);
+			//obs_data_set_double(data, AMF_H264_VBVBUFFER_STRICTNESS, 80);
+			//obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER_STRICTNESS), false);
 			obs_data_set_double(data, AMF_H264_VBVBUFFER_FULLNESS, 100);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER_FULLNESS), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMACCESSUNITSIZE, 0);
@@ -967,8 +967,8 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA), false);
 			obs_data_set_int(data, AMF_H264_VBVBUFFER, 0);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER), false);
-			obs_data_set_double(data, AMF_H264_VBVBUFFER_STRICTNESS, 75);
-			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER_STRICTNESS), false);
+			//obs_data_set_double(data, AMF_H264_VBVBUFFER_STRICTNESS, 80);
+			//obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER_STRICTNESS), false);
 			obs_data_set_double(data, AMF_H264_VBVBUFFER_FULLNESS, 100);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_VBVBUFFER_FULLNESS), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMACCESSUNITSIZE, 0);
