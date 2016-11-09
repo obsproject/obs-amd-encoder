@@ -47,6 +47,8 @@ MODULE_EXTERN const char *obs_module_text_multi(const char *val, uint8_t depth =
 #define vstr(s) dstr(s)
 #define dstr(s) #s
 
+#define clamp(a,b,c) (a > c ? c : (a < b ? b : a))
+
 #include "Version.h"
 #define PLUGIN_VERSION_FULL				(((uint64_t)PLUGIN_VERSION_MAJOR << 48ull) | ((uint64_t)PLUGIN_VERSION_MINOR << 32ull) | ((uint64_t)PLUGIN_VERSION_PATCH) | ((uint64_t)PLUGIN_VERSION_BUILD))
 #define PLUGIN_VERSION_TEXT				vstr(PLUGIN_VERSION_MAJOR) "." vstr(PLUGIN_VERSION_MINOR) "." vstr(PLUGIN_VERSION_PATCH) "." vstr(PLUGIN_VERSION_BUILD) "-" vstr(AMF_VERSION_MAJOR) "." vstr(AMF_VERSION_MINOR) "." vstr(AMF_VERSION_RELEASE) "." vstr(AMF_VERSION_BUILD_NUM)
@@ -194,6 +196,8 @@ MODULE_EXTERN const char *obs_module_text_multi(const char *val, uint8_t depth =
 #define AMF_H264_USE_OPENCL_DESCRIPTION			TEXT_AMF_H264("UseOpenCL.Description")
 #define AMF_H264_SURFACEFORMAT					TEXT_AMF_H264("SurfaceFormat")
 #define AMF_H264_SURFACEFORMAT_DESCRIPTION		TEXT_AMF_H264("SurfaceFormat.Description")
+#define AMF_H264_NOMINALRANGE					TEXT_AMF_H264("NominalRange")
+#define AMF_H264_NOMINALRANGE_DESCRIPTION		TEXT_AMF_H264("NominalRange.Description")
 #define AMF_H264_VIEW							TEXT_AMF_H264("View")
 #define AMF_H264_VIEW_DESCRIPTION				TEXT_AMF_H264("View.Description")
 #define AMF_H264_VIEW_BASIC						TEXT_AMF_H264("View.Basic")
