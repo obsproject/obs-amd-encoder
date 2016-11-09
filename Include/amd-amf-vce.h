@@ -441,6 +441,7 @@ namespace Plugin {
 			std::shared_ptr<Plugin::AMD::AMF> m_AMF;
 			amf::AMFFactory* m_AMFFactory;
 			amf::AMFContextPtr m_AMFContext;
+			amf::AMFComponentPtr m_AMFConverter;
 			amf::AMFComponentPtr m_AMFEncoder;
 			amf::AMFComputePtr m_AMFCompute;
 

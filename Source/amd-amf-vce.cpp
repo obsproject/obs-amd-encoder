@@ -25,11 +25,17 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Includes
 //////////////////////////////////////////////////////////////////////////
+#include <chrono>
+
 #include "amd-amf-vce.h"
 #include "amd-amf-vce-capabilities.h"
 #include "misc-util.cpp"
-#include <chrono>
 
+// AMF
+#include "components/VideoEncoderVCE.h"
+#include "components/VideoConverter.h"
+
+// Windows
 #ifdef _WIN32
 #include <windows.h>
 #include <VersionHelpers.h>
@@ -296,6 +302,17 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Creating a component object failed with error %ls (code %ld).", res);
 
+	/*/// AMF Component (Converter)
+	res = m_AMFFactory->CreateComponent(m_AMFContext, AMFVideoConverter, &m_AMFConverter);
+	if (res == AMF_OK) {
+		m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_OUTPUT_FORMAT, amf::AMF_SURFACE_NV12);
+		m_AMFConverter->SetProperty(L"InputFormat", amf::AMF_SURFACE_NV12);
+		m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_MEMORY_TYPE, Utility::MemoryTypeAsAMF(m_MemoryType));
+		m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE, AMF_VIDEO_CONVERTER_COLOR_PROFILE_709);
+	} else {
+		m_AMFConverter == nullptr;
+	}*/
+
 	printDebugInfo(m_AMFEncoder);
 
 	AMF_LOG_DEBUG("Initialization complete!");
@@ -432,6 +449,7 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 			// Set Surface Properties
 			pAMFSurface->SetPts(frame->pts / m_FrameRate.second);
 			pAMFSurface->SetProperty(L"Frame", frame->pts);
+			pAMFSurface->SetDuration((uint64_t)ceil(m_FrameRateReverseDivisor * AMF_SECOND));
 
 			// Add to Queue
 			std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
@@ -664,12 +682,17 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 	}
 
 	// AMF requires Partial Range for some reason.
+	if (this->IsNominalRangeEnabled()) { // Only use Full range if actually enabled.
+		vsi->range = VIDEO_RANGE_FULL;
+	} else {
+		vsi->range = VIDEO_RANGE_PARTIAL;
+	}
 	// Also Colorspace is automatic, see: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/6#issuecomment-243473568
-	vsi->range = VIDEO_RANGE_PARTIAL;
-	if (vsi->height <= 780)
+	if (this->GetFrameSize().second <= 780) { // SD content is .601, HD content is .709
 		vsi->colorspace = VIDEO_CS_601;
-	else
+	} else {
 		vsi->colorspace = VIDEO_CS_709;
+	}
 }
 
 void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles Surface Submission
@@ -831,7 +854,6 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 //////////////////////////////////////////////////////////////////////////
 // AMF Properties
 //////////////////////////////////////////////////////////////////////////
-
 
 void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("-- AMD Advanced Media Framework VCE Encoder --");
@@ -1042,7 +1064,7 @@ void Plugin::AMD::VCEEncoder::SetFrameRate(uint32_t num, uint32_t den) {
 	m_FrameRateDivisor = (double_t)m_FrameRate.first / (double_t)m_FrameRate.second;
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor * 3);
-	
+
 	if (this->GetProfileLevel() == VCEProfileLevel_Automatic)
 		this->SetProfileLevel(VCEProfileLevel_Automatic);
 }
@@ -1093,7 +1115,8 @@ Plugin::AMD::VCERateControlMethod Plugin::AMD::VCEEncoder::GetRateControlMethod(
 
 void Plugin::AMD::VCEEncoder::SetTargetBitrate(uint32_t bitrate) {
 	// Clamp Value
-	bitrate = min(max(bitrate, 10000), Plugin::AMD::VCECapabilities::GetInstance()->GetEncoderCaps(m_EncoderType)->maxBitrate);
+	bitrate = clamp(bitrate, 10000,
+		Plugin::AMD::VCECapabilities::GetInstance()->GetEncoderCaps(m_EncoderType)->maxBitrate);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, bitrate);
 	if (res != AMF_OK) {
@@ -1114,7 +1137,8 @@ uint32_t Plugin::AMD::VCEEncoder::GetTargetBitrate() {
 
 void Plugin::AMD::VCEEncoder::SetPeakBitrate(uint32_t bitrate) {
 	// Clamp Value
-	bitrate = min(max(bitrate, 10000), Plugin::AMD::VCECapabilities::GetInstance()->GetEncoderCaps(m_EncoderType)->maxBitrate);
+	bitrate = clamp(bitrate, 10000,
+		Plugin::AMD::VCECapabilities::GetInstance()->GetEncoderCaps(m_EncoderType)->maxBitrate);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, (uint32_t)bitrate);
 	if (res != AMF_OK) {
@@ -1135,7 +1159,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetPeakBitrate() {
 
 void Plugin::AMD::VCEEncoder::SetMinimumQP(uint8_t qp) {
 	// Clamp Value
-	qp = max(min(qp, 51), 0);
+	qp = clamp(qp, 0, 51);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MIN_QP, (uint32_t)qp);
 	if (res != AMF_OK) {
@@ -1156,7 +1180,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetMinimumQP() {
 
 void Plugin::AMD::VCEEncoder::SetMaximumQP(uint8_t qp) {
 	// Clamp Value
-	qp = max(min(qp, 51), 0);
+	qp = clamp(qp, 0, 51);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_QP, (uint32_t)qp);
 	if (res != AMF_OK) {
@@ -1177,7 +1201,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetMaximumQP() {
 
 void Plugin::AMD::VCEEncoder::SetIFrameQP(uint8_t qp) {
 	// Clamp Value
-	qp = max(min(qp, 51), 0);
+	qp = clamp(qp, 0, 51);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_I, (uint32_t)qp);
 	if (res != AMF_OK) {
@@ -1198,7 +1222,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetIFrameQP() {
 
 void Plugin::AMD::VCEEncoder::SetPFrameQP(uint8_t qp) {
 	// Clamp Value
-	qp = max(min(qp, 51), 0);
+	qp = clamp(qp, 0, 51);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_P, (uint32_t)qp);
 	if (res != AMF_OK) {
@@ -1219,7 +1243,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetPFrameQP() {
 
 void Plugin::AMD::VCEEncoder::SetBFrameQP(uint8_t qp) {
 	// Clamp Value
-	qp = max(min(qp, 51), 0);
+	qp = clamp(qp, 0, 51);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_B, (uint32_t)qp);
 	if (res != AMF_OK) {
@@ -1240,7 +1264,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetBFrameQP() {
 
 void Plugin::AMD::VCEEncoder::SetBPictureDeltaQP(int8_t qp) {
 	// Clamp Value
-	qp = max(min(qp, 10), -10);
+	qp = clamp(qp, -10, 10);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, (int32_t)qp);
 	if (res != AMF_OK) {
@@ -1261,7 +1285,7 @@ int8_t Plugin::AMD::VCEEncoder::GetBPictureDeltaQP() {
 
 void Plugin::AMD::VCEEncoder::SetReferenceBPictureDeltaQP(int8_t qp) {
 	// Clamp Value
-	qp = max(min(qp, 10), -10);
+	qp = clamp(qp, -10, 10);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, (int32_t)qp);
 	if (res != AMF_OK) {
@@ -1282,7 +1306,7 @@ int8_t Plugin::AMD::VCEEncoder::GetReferenceBPictureDeltaQP() {
 
 void Plugin::AMD::VCEEncoder::SetVBVBufferSize(uint32_t size) {
 	// Clamp Value
-	size = max(min(size, 100000000), 1000); // 1kbit to 100mbit.
+	size = clamp(size, 1000, 100000000); // 1kbit to 100mbit.
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, (uint32_t)size);
 	if (res != AMF_OK) {
