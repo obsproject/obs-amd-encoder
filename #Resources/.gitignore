@@ -4,5 +4,7 @@
 /Package
 ./Libs
 /Libs
-Installer.iss
-package.bat
+./Installer.iss
+/Installer.iss
+./package.bat
+/package.bat
