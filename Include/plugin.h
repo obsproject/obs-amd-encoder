@@ -196,8 +196,6 @@ MODULE_EXTERN const char *obs_module_text_multi(const char *val, uint8_t depth =
 #define AMF_H264_USE_OPENCL_DESCRIPTION			TEXT_AMF_H264("UseOpenCL.Description")
 #define AMF_H264_SURFACEFORMAT					TEXT_AMF_H264("SurfaceFormat")
 #define AMF_H264_SURFACEFORMAT_DESCRIPTION		TEXT_AMF_H264("SurfaceFormat.Description")
-#define AMF_H264_NOMINALRANGE					TEXT_AMF_H264("NominalRange")
-#define AMF_H264_NOMINALRANGE_DESCRIPTION		TEXT_AMF_H264("NominalRange.Description")
 #define AMF_H264_VIEW							TEXT_AMF_H264("View")
 #define AMF_H264_VIEW_DESCRIPTION				TEXT_AMF_H264("View.Description")
 #define AMF_H264_VIEW_BASIC						TEXT_AMF_H264("View.Basic")
