@@ -132,6 +132,11 @@ namespace Plugin {
 			VCEQualityEnhancementMode_CGSRewrite,
 			VCEQualityEnhancementMode_MGS
 		};
+		enum VCEColorProfile {
+			VCEColorProfile_601,
+			VCEColorProfile_709,
+			VCEColorProfile_2020, // HDR
+		};
 
 		class VCEEncoder {
 			//////////////////////////////////////////////////////////////////////////
@@ -378,8 +383,11 @@ namespace Plugin {
 			void SetGOPSize(uint32_t gopSize);
 			uint32_t GetGOPSize();
 			
-			void SetNominalRangeEnabled(bool enabled);
-			bool IsNominalRangeEnabled();
+			void SetColorProfile(VCEColorProfile profile);
+			VCEColorProfile GetColorProfile();
+
+			void SetFullColorRangeEnabled(bool enabled);
+			bool IsFullColorRangeEnabled();
 
 			void SetWaitForTaskEnabled(bool enabled);
 			bool IsWaitForTaskEnabled();
@@ -488,6 +496,7 @@ namespace Plugin {
 			size_t m_InputQueueLimit,
 				m_InputQueueLastSize;
 			uint32_t m_TimerPeriod;
+			VCEColorProfile m_ColorProfile;
 			
 			#pragma endregion Members
 			//////////////////////////////////////////////////////////////////////////

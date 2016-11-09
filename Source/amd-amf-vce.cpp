@@ -302,16 +302,12 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Creating a component object failed with error %ls (code %ld).", res);
 
-	/*/// AMF Component (Converter)
+	/// AMF Component (Converter)
 	res = m_AMFFactory->CreateComponent(m_AMFContext, AMFVideoConverter, &m_AMFConverter);
-	if (res == AMF_OK) {
-		m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_OUTPUT_FORMAT, amf::AMF_SURFACE_NV12);
-		m_AMFConverter->SetProperty(L"InputFormat", amf::AMF_SURFACE_NV12);
-		m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_MEMORY_TYPE, Utility::MemoryTypeAsAMF(m_MemoryType));
-		m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE, AMF_VIDEO_CONVERTER_COLOR_PROFILE_709);
-	} else {
-		m_AMFConverter == nullptr;
-	}*/
+	if (res != AMF_OK)
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Unable to create VideoConverter component, error %ls (code %ld).", res);
+	m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_MEMORY_TYPE, Utility::MemoryTypeAsAMF(m_MemoryType));
+	m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_OUTPUT_FORMAT, Utility::SurfaceFormatAsAMF(m_SurfaceFormat));
 
 	printDebugInfo(m_AMFEncoder);
 
@@ -346,6 +342,12 @@ void Plugin::AMD::VCEEncoder::Start() {
 		m_FrameSize.first, m_FrameSize.second);
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Initialization failed with error %ls (code %ld).", res);
+
+	// Create Converter
+	m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE, AMF_VIDEO_CONVERTER_COLOR_PROFILE_709);
+	//m_AMFConverter->SetProperty(L"NominalRange", this->IsFullColorRangeEnabled());
+	m_AMFConverter->Init(Utility::SurfaceFormatAsAMF(m_SurfaceFormat),
+		m_FrameSize.first, m_FrameSize.second);
 
 	m_Flag_IsStarted = true;
 
@@ -682,17 +684,17 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 	}
 
 	// AMF requires Partial Range for some reason.
-	if (this->IsNominalRangeEnabled()) { // Only use Full range if actually enabled.
+	if (this->IsFullColorRangeEnabled()) { // Only use Full range if actually enabled.
 		vsi->range = VIDEO_RANGE_FULL;
 	} else {
 		vsi->range = VIDEO_RANGE_PARTIAL;
 	}
 	// Also Colorspace is automatic, see: https://github.com/GPUOpen-LibrariesAndSDKs/AMF/issues/6#issuecomment-243473568
-	if (this->GetFrameSize().second <= 780) { // SD content is .601, HD content is .709
-		vsi->colorspace = VIDEO_CS_601;
-	} else {
-		vsi->colorspace = VIDEO_CS_709;
-	}
+	//if (this->GetFrameSize().second <= 780) { // SD content is .601, HD content is .709
+	//	vsi->colorspace = VIDEO_CS_601;
+	//} else {
+	//	vsi->colorspace = VIDEO_CS_709;
+	//}
 }
 
 void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles Surface Submission
@@ -723,8 +725,19 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 			surface = m_Input.queue.front();
 		}
 
+		/// Convert Frame
+		AMF_RESULT res;
+		amf::AMFDataPtr outbuf;
+
+		res = m_AMFConverter->SubmitInput(surface);
+		if (res != AMF_OK)
+			ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Unable to submit Frame to Converter, error %ls (code %ld).", res);
+		res = m_AMFConverter->QueryOutput(&outbuf);
+		if (res != AMF_OK)
+			ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Unable to retrieve Frame from Converter, error %ls (code %ld).", res);
+
 		/// Submit to AMF
-		AMF_RESULT res = m_AMFEncoder->SubmitInput(surface);
+		res = m_AMFEncoder->SubmitInput(outbuf);
 		if (res == AMF_OK) {
 			m_Flag_FirstFrameSubmitted = true;
 
@@ -859,9 +872,13 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("-- AMD Advanced Media Framework VCE Encoder --");
 	AMF_LOG_INFO("Initialization Parameters: ");
 	AMF_LOG_INFO("  Memory Type: %s", Utility::MemoryTypeAsString(m_MemoryType));
+	if (m_MemoryType != VCEMemoryType_Host) {
+		AMF_LOG_INFO("  Device: %s", m_APIDevice.GetDevice().Name);
+		AMF_LOG_INFO("  OpenCL: %s", m_UseOpenCL ? "Enabled" : "Disabled");
+	}
 	AMF_LOG_INFO("  Surface Format: %s", Utility::SurfaceFormatAsString(m_SurfaceFormat));
-	AMF_LOG_INFO("  Device: %s", m_APIDevice.GetDevice().Name);
-	AMF_LOG_INFO("  OpenCL: %s", m_UseOpenCL ? "Enabled" : "Disabled");
+	try { AMF_LOG_INFO("  Color Profile: %s", this->GetColorProfile() == VCEColorProfile_709 ? "709" : "601"); } catch (...) {}
+	try { AMF_LOG_INFO("  Color Range: %s", this->IsFullColorRangeEnabled() ? "Full" : "Partial"); } catch (...) {}
 	AMF_LOG_INFO("Static Parameters: ");
 	AMF_LOG_INFO("  Usage: %s", Utility::UsageAsString(this->GetUsage()));
 	AMF_LOG_INFO("  Profile: %s %d.%d", Utility::ProfileAsString(this->GetProfile()), this->GetProfileLevel() / 10, this->GetProfileLevel() % 10);
@@ -915,7 +932,6 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("  Half Pixel: %s", this->IsHalfPixelMotionEstimationEnabled() ? "Enabled" : "Disabled");
 	AMF_LOG_INFO("  Quarter Pixel: %s", this->IsQuarterPixelMotionEstimationEnabled() ? "Enabled" : "Disabled");
 	AMF_LOG_INFO("Experimental Parameters: ");
-	try { AMF_LOG_INFO("  Nominal Range: %s", this->IsNominalRangeEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
 	try { AMF_LOG_INFO("  Wait For Task: %s", this->IsWaitForTaskEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
 	try { AMF_LOG_INFO("  Aspect Ratio: %d:%d", this->GetAspectRatio().first, this->GetAspectRatio().second); } catch (...) {}
 	try { AMF_LOG_INFO("  MaxNumRefFrames: %d", this->GetMaximumNumberOfReferenceFrames()); } catch (...) {}
@@ -1778,20 +1794,72 @@ uint32_t Plugin::AMD::VCEEncoder::GetGOPSize() {
 }
 
 
-void Plugin::AMD::VCEEncoder::SetNominalRangeEnabled(bool enabled) {
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"NominalRange", enabled);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
+void Plugin::AMD::VCEEncoder::SetColorProfile(VCEColorProfile profile) {
+	AMF_VIDEO_CONVERTER_COLOR_PROFILE_ENUM pluginToAMF[] = {
+		AMF_VIDEO_CONVERTER_COLOR_PROFILE_601,
+		AMF_VIDEO_CONVERTER_COLOR_PROFILE_709,
+		AMF_VIDEO_CONVERTER_COLOR_PROFILE_2020,
+	};
+	const char* pluginToString[] = {
+		"601",
+		"709",
+		"2020",
+	};
+
+	AMF_RESULT res = m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE,
+		pluginToAMF[profile]);
+	if (res != AMF_OK)
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Unable to set Color Profile, error %ls (code %ld).", res);
+	m_ColorProfile = profile;
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", pluginToString[profile]);
+}
+
+Plugin::AMD::VCEColorProfile Plugin::AMD::VCEEncoder::GetColorProfile() {
+	return m_ColorProfile;
+}
+
+void Plugin::AMD::VCEEncoder::SetFullColorRangeEnabled(bool enabled) {
+	// Info from Mikhail:
+	// - Name may change in the future
+	// - Use GetProperty or GetPropertyDescription to test for older or newer drivers.
+	const wchar_t* names[] = {
+		L"NominalRange", // 16.11.2 and below.
+		L"FullRange"
+	};
+
+	bool enabledTest;
+	AMF_RESULT res = AMF_INVALID_ARG;
+	for (size_t i = 0; i < 2; i++) {
+		if (m_AMFEncoder->GetProperty(names[i], &enabledTest) == AMF_OK) {
+			m_AMFConverter->SetProperty(names[i], enabled);
+			res = m_AMFEncoder->SetProperty(names[i], enabled);
+			break;
+		}
 	}
+	if (res != AMF_OK)
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
-bool Plugin::AMD::VCEEncoder::IsNominalRangeEnabled() {
+bool Plugin::AMD::VCEEncoder::IsFullColorRangeEnabled() {
+	// Info from Mikhail:
+	// - Name may change in the future
+	// - Use GetProperty or GetPropertyDescription to test for older or newer drivers.
+	const wchar_t* names[] = {
+		L"NominalRange", // 16.11.2 and below.
+		L"FullRange"
+	};
+
 	bool enabled;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"NominalRange", &enabled);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	AMF_RESULT res = AMF_INVALID_ARG;
+	for (size_t i = 0; i < 2; i++) {
+		res = m_AMFEncoder->GetProperty(names[i], &enabled);
+		if (res == AMF_OK) {
+			break;
+		}
 	}
+	if (res != AMF_OK)
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
