@@ -596,9 +596,9 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			unlock_properties_modified(props, nullptr, data);
 		}
 
-		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_TARGET), 1000, caps->maxBitrate / 1000, 1);
-		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_PEAK), 1000, caps->maxBitrate / 1000, 1);
-		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_VBVBUFFER_SIZE), 1000, 100000, 1);
+		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_TARGET), 10, caps->maxBitrate / 1000, 1);
+		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_PEAK), 10, caps->maxBitrate / 1000, 1);
+		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_VBVBUFFER_SIZE), 1, 100000, 1);
 	}
 
 	switch (preset) {
@@ -1332,6 +1332,8 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 		(VCEMemoryType)obs_data_get_int(data, AMF_H264_MEMORYTYPE),
 		!!obs_data_get_int(data, AMF_H264_USE_OPENCL),
 		std::string(obs_data_get_string(data, AMF_H264_DEVICE)));
+	m_VideoEncoder->SetColorProfile(voi->colorspace == VIDEO_CS_709 ? VCEColorProfile_709 : VCEColorProfile_601);
+	m_VideoEncoder->SetFullColorRangeEnabled(voi->range == VIDEO_RANGE_FULL);
 
 	/// Static Properties
 	m_VideoEncoder->SetUsage((VCEUsage)obs_data_get_int(data, AMF_H264_USAGE));
@@ -1354,7 +1356,6 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 	m_VideoEncoder->SetScanType((VCEScanType)obs_data_get_int(data, AMF_H264_SCANTYPE));
 	m_VideoEncoder->SetCABACEnabled(!!obs_data_get_int(data, AMF_H264_CABAC));
 	//m_VideoEncoder->SetRateControlPreanalysisEnabled(true);
-	//m_VideoEncoder->SetNominalRangeEnabled(true);
 	//m_VideoEncoder->SetWaitForTaskEnabled(true);
 	//m_VideoEncoder->SetMaximumNumberOfReferenceFrames(VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxReferenceFrames);
 
@@ -1423,7 +1424,7 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 	}
 
 	// Dynamic Properties (Can be changed during Encoding)
-	//this->update(data);
+	this->update(data);
 
 	AMF_LOG_DEBUG("<H264Interface::H264Interface> Complete.");
 }
