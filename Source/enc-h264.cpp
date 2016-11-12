@@ -409,11 +409,6 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_QP_PFRAME_DESCRIPTION));
 	p = obs_properties_add_int_slider(props, AMF_H264_QP_BFRAME, TEXT_T(AMF_H264_QP_BFRAME), 0, 51, 1);
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_QP_BFRAME_DESCRIPTION));
-	/// B-Picture Related
-	p = obs_properties_add_int_slider(props, AMF_H264_QP_BPICTURE_DELTA, TEXT_T(AMF_H264_QP_BPICTURE_DELTA), -10, 10, 1);
-	obs_property_set_long_description(p, TEXT_T(AMF_H264_QP_BPICTURE_DELTA_DESCRIPTION));
-	p = obs_properties_add_int_slider(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, TEXT_T(AMF_H264_QP_REFERENCE_BPICTURE_DELTA), -10, 10, 1);
-	obs_property_set_long_description(p, TEXT_T(AMF_H264_QP_REFERENCE_BPICTURE_DELTA_DESCRIPTION));
 	#pragma endregion Method Parameters
 	#pragma region VBV Buffer
 	p = obs_properties_add_list(props, AMF_H264_VBVBUFFER, TEXT_T(AMF_H264_VBVBUFFER), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
@@ -470,6 +465,11 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_BPICTURE_REFERENCE_DESCRIPTION));
 	obs_property_list_add_int(p, TEXT_T(AMF_UTIL_TOGGLE_DISABLED), 0);
 	obs_property_list_add_int(p, TEXT_T(AMF_UTIL_TOGGLE_ENABLED), 1);
+	/// B-Picture Delta QP
+	p = obs_properties_add_int_slider(props, AMF_H264_QP_BPICTURE_DELTA, TEXT_T(AMF_H264_QP_BPICTURE_DELTA), -10, 10, 1);
+	obs_property_set_long_description(p, TEXT_T(AMF_H264_QP_BPICTURE_DELTA_DESCRIPTION));
+	p = obs_properties_add_int_slider(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, TEXT_T(AMF_H264_QP_REFERENCE_BPICTURE_DELTA), -10, 10, 1);
+	obs_property_set_long_description(p, TEXT_T(AMF_H264_QP_REFERENCE_BPICTURE_DELTA_DESCRIPTION));
 	#pragma endregion B-Pictures
 	/// De-Blocking Filter
 	p = obs_properties_add_list(props, AMF_H264_DEBLOCKINGFILTER, TEXT_T(AMF_H264_DEBLOCKINGFILTER), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
@@ -1092,13 +1092,6 @@ bool Plugin::Interface::H264Interface::view_modified(obs_properties_t *props, ob
 	if (!(vis_basic && vis_rcm_qp_b))
 		obs_data_set_int(data, AMF_H264_QP_BFRAME, obs_data_get_default_int(data, AMF_H264_QP_BFRAME));
 
-	obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_BPICTURE_DELTA), (vis_advanced && vis_rcm_qp_b));
-	obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA), (vis_advanced && vis_rcm_qp_b));
-	if (!(vis_advanced && vis_rcm_qp_b)) {
-		obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, obs_data_get_default_int(data, AMF_H264_QP_BPICTURE_DELTA));
-		obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, obs_data_get_default_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA));
-	}
-
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_VBVBUFFER), vis_advanced);
 	if (!vis_advanced)
 		obs_data_set_int(data, AMF_H264_VBVBUFFER, obs_data_get_default_int(data, AMF_H264_VBVBUFFER));
@@ -1156,16 +1149,32 @@ bool Plugin::Interface::H264Interface::view_modified(obs_properties_t *props, ob
 	if (!vis_master)
 		obs_data_set_int(data, AMF_H264_SLICESPERFRAME, obs_data_get_default_int(data, AMF_H264_SLICESPERFRAME));
 
+	/// B-Pictures - Pattern
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_BPICTURE_PATTERN), vis_advanced && !using_ltr_frames);
-	obs_property_set_visible(obs_properties_get(props, AMF_H264_BPICTURE_REFERENCE), vis_advanced && !using_ltr_frames);
-	if (!vis_advanced) {
+	if (!vis_advanced)
 		obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, obs_data_get_default_int(data, AMF_H264_BPICTURE_PATTERN));
-		obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, obs_data_get_default_int(data, AMF_H264_BPICTURE_REFERENCE));
-	}
 	if (using_ltr_frames) {
 		obs_data_set_int(data, AMF_H264_BPICTURE_PATTERN, VCEBPicturePattern_None);
-		obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
 	}
+
+	/// B-Pictures - Reference
+	bool using_bpictures = obs_data_get_int(data, AMF_H264_BPICTURE_PATTERN) != 0;
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_BPICTURE_REFERENCE), vis_advanced && !using_ltr_frames && using_bpictures);
+	if (!vis_advanced)
+		obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, obs_data_get_default_int(data, AMF_H264_BPICTURE_REFERENCE));
+	if (using_ltr_frames || !using_bpictures)
+		obs_data_set_int(data, AMF_H264_BPICTURE_REFERENCE, 0);
+	bool using_bpictures_ref = obs_data_get_int(data, AMF_H264_BPICTURE_REFERENCE) != 0;
+
+	/// B-Pictures - Normal Delta QP
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_BPICTURE_DELTA), vis_advanced && using_bpictures);
+	if (!(vis_advanced && using_bpictures))
+		obs_data_set_int(data, AMF_H264_QP_BPICTURE_DELTA, obs_data_get_default_int(data, AMF_H264_QP_BPICTURE_DELTA));
+
+	/// B-Pictures - Reference Delta QP
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_QP_REFERENCE_BPICTURE_DELTA), vis_advanced && using_bpictures && using_bpictures_ref);
+	if (!vis_advanced || !using_bpictures || !using_bpictures_ref)
+		obs_data_set_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA, obs_data_get_default_int(data, AMF_H264_QP_REFERENCE_BPICTURE_DELTA));
 
 	// Miscellaneous Properties
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_SCANTYPE), vis_master);
@@ -1508,7 +1517,7 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	m_VideoEncoder->SetHalfPixelMotionEstimationEnabled(!!(obs_data_get_int(data, AMF_H264_MOTIONESTIMATION) & 1));
 	m_VideoEncoder->SetQuarterPixelMotionEstimationEnabled(!!(obs_data_get_int(data, AMF_H264_MOTIONESTIMATION) & 2));
 
-	if (m_VideoEncoder->IsStarted()) { 
+	if (m_VideoEncoder->IsStarted()) {
 		// OBS - Enforce Streaming Service Stuff
 		#pragma region OBS Enforce Streaming Service Settings
 		{
