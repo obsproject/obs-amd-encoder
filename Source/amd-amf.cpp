@@ -76,9 +76,9 @@ Plugin::AMD::AMF::AMF() {
 	AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Initializing...");
 
 	#pragma region Null Class Members
-	m_TimerPeriod =
-		m_AMFVersion_Compiler =
-		m_AMFVersion_Runtime = 0;
+	m_TimerPeriod = 0;
+	m_AMFVersion_Compiler = 0;
+	m_AMFVersion_Runtime = 0;
 	m_AMFModule = 0;
 
 	m_AMFFactory = nullptr;
@@ -202,9 +202,9 @@ Plugin::AMD::AMF::~AMF() {
 		FreeLibrary(m_AMFModule);
 
 	#pragma region Null Class Members
-	m_TimerPeriod =
-		m_AMFVersion_Compiler =
-		m_AMFVersion_Runtime = 0;
+	m_TimerPeriod = 0;
+	m_AMFVersion_Compiler = 0;
+	m_AMFVersion_Runtime = 0;
 	m_AMFModule = 0;
 
 	m_AMFFactory = nullptr;
