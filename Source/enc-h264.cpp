@@ -1508,73 +1508,74 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	m_VideoEncoder->SetHalfPixelMotionEstimationEnabled(!!(obs_data_get_int(data, AMF_H264_MOTIONESTIMATION) & 1));
 	m_VideoEncoder->SetQuarterPixelMotionEstimationEnabled(!!(obs_data_get_int(data, AMF_H264_MOTIONESTIMATION) & 2));
 
-	// OBS - Enforce Streaming Service Stuff
-	#pragma region OBS Enforce Streaming Service Settings
-	{
-		// Rate Control Method
-		const char* t_str = obs_data_get_string(data, "rate_control");
-		if (strcmp(t_str, "") != 0) {
-			if (strcmp(t_str, "CBR") == 0) {
-				m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_ConstantBitrate);
-				m_VideoEncoder->SetFillerDataEnabled(true);
-			} else if (strcmp(t_str, "VBR") == 0) {
-				m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_VariableBitrate_PeakConstrained);
-			} else if (strcmp(t_str, "VBR_LAT") == 0) {
-				m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_VariableBitrate_LatencyConstrained);
-			} else if (strcmp(t_str, "CQP") == 0) {
-				m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_ConstantQP);
+	if (m_VideoEncoder->IsStarted()) { 
+		// OBS - Enforce Streaming Service Stuff
+		#pragma region OBS Enforce Streaming Service Settings
+		{
+			// Rate Control Method
+			const char* t_str = obs_data_get_string(data, "rate_control");
+			if (strcmp(t_str, "") != 0) {
+				if (strcmp(t_str, "CBR") == 0) {
+					m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_ConstantBitrate);
+					m_VideoEncoder->SetFillerDataEnabled(true);
+				} else if (strcmp(t_str, "VBR") == 0) {
+					m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_VariableBitrate_PeakConstrained);
+				} else if (strcmp(t_str, "VBR_LAT") == 0) {
+					m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_VariableBitrate_LatencyConstrained);
+				} else if (strcmp(t_str, "CQP") == 0) {
+					m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_ConstantQP);
+				}
+
+				obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, m_VideoEncoder->GetRateControlMethod());
+			} else {
+				switch (m_VideoEncoder->GetRateControlMethod()) {
+					case VCERateControlMethod_ConstantBitrate:
+						obs_data_set_string(data, "rate_control", "CBR");
+						break;
+					case VCERateControlMethod_VariableBitrate_PeakConstrained:
+						obs_data_set_string(data, "rate_control", "VBR");
+						break;
+					case VCERateControlMethod_VariableBitrate_LatencyConstrained:
+						obs_data_set_string(data, "rate_control", "VBR_LAT");
+						break;
+					case VCERateControlMethod_ConstantQP:
+						obs_data_set_string(data, "rate_control", "CQP");
+						break;
+				}
 			}
 
-			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, m_VideoEncoder->GetRateControlMethod());
-		} else {
-			switch (m_VideoEncoder->GetRateControlMethod()) {
-				case VCERateControlMethod_ConstantBitrate:
-					obs_data_set_string(data, "rate_control", "CBR");
-					break;
-				case VCERateControlMethod_VariableBitrate_PeakConstrained:
-					obs_data_set_string(data, "rate_control", "VBR");
-					break;
-				case VCERateControlMethod_VariableBitrate_LatencyConstrained:
-					obs_data_set_string(data, "rate_control", "VBR_LAT");
-					break;
-				case VCERateControlMethod_ConstantQP:
-					obs_data_set_string(data, "rate_control", "CQP");
-					break;
+			// Bitrate
+			uint64_t bitrateOvr = obs_data_get_int(data, "bitrate") * 1000;
+			if (bitrateOvr != -1) {
+				if (m_VideoEncoder->GetTargetBitrate() > bitrateOvr)
+					m_VideoEncoder->SetTargetBitrate((uint32_t)bitrateOvr);
+
+				if (m_VideoEncoder->GetPeakBitrate() > bitrateOvr)
+					m_VideoEncoder->SetPeakBitrate((uint32_t)bitrateOvr);
+
+				obs_data_set_int(data, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
+
+				obs_data_set_int(data, AMF_H264_BITRATE_TARGET, m_VideoEncoder->GetTargetBitrate() / bitrateMultiplier);
+				obs_data_set_int(data, AMF_H264_BITRATE_PEAK, m_VideoEncoder->GetPeakBitrate() / bitrateMultiplier);
+			} else {
+				obs_data_set_int(data, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
+			}
+
+			// IDR-Period (Keyframes)
+			uint32_t fpsNum = m_VideoEncoder->GetFrameRate().first;
+			uint32_t fpsDen = m_VideoEncoder->GetFrameRate().second;
+			if (obs_data_get_int(data, "keyint_sec") != -1) {
+				m_VideoEncoder->SetIDRPeriod((uint32_t)(obs_data_get_int(data, "keyint_sec") * ((double_t)fpsNum / (double_t)fpsDen)));
+
+				obs_data_set_double(data, AMF_H264_KEYFRAME_INTERVAL, (double_t)obs_data_get_int(data, "keyint_sec"));
+				obs_data_set_int(data, AMF_H264_IDR_PERIOD, (uint32_t)(obs_data_get_int(data, "keyint_sec") * ((double_t)fpsNum / (double_t)fpsDen)));
+			} else {
+				obs_data_set_int(data, "keyint_sec", (uint64_t)(m_VideoEncoder->GetIDRPeriod() / ((double_t)fpsNum / (double_t)fpsDen)));
 			}
 		}
+		#pragma endregion OBS Enforce Streaming Service Settings
 
-		// Bitrate
-		uint64_t bitrateOvr = obs_data_get_int(data, "bitrate") * 1000;
-		if (bitrateOvr != -1) {
-			if (m_VideoEncoder->GetTargetBitrate() > bitrateOvr)
-				m_VideoEncoder->SetTargetBitrate((uint32_t)bitrateOvr);
-
-			if (m_VideoEncoder->GetPeakBitrate() > bitrateOvr)
-				m_VideoEncoder->SetPeakBitrate((uint32_t)bitrateOvr);
-
-			obs_data_set_int(data, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
-
-			obs_data_set_int(data, AMF_H264_BITRATE_TARGET, m_VideoEncoder->GetTargetBitrate() / bitrateMultiplier);
-			obs_data_set_int(data, AMF_H264_BITRATE_PEAK, m_VideoEncoder->GetPeakBitrate() / bitrateMultiplier);
-		} else {
-			obs_data_set_int(data, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
-		}
-
-		// IDR-Period (Keyframes)
-		uint32_t fpsNum = m_VideoEncoder->GetFrameRate().first;
-		uint32_t fpsDen = m_VideoEncoder->GetFrameRate().second;
-		if (obs_data_get_int(data, "keyint_sec") != -1) {
-			m_VideoEncoder->SetIDRPeriod((uint32_t)(obs_data_get_int(data, "keyint_sec") * ((double_t)fpsNum / (double_t)fpsDen)));
-
-			obs_data_set_double(data, AMF_H264_KEYFRAME_INTERVAL, (double_t)obs_data_get_int(data, "keyint_sec"));
-			obs_data_set_int(data, AMF_H264_IDR_PERIOD, (uint32_t)(obs_data_get_int(data, "keyint_sec") * ((double_t)fpsNum / (double_t)fpsDen)));
-		} else {
-			obs_data_set_int(data, "keyint_sec", (uint64_t)(m_VideoEncoder->GetIDRPeriod() / ((double_t)fpsNum / (double_t)fpsDen)));
-		}
-	}
-	#pragma endregion OBS Enforce Streaming Service Settings
-
-	if (m_VideoEncoder->IsStarted()) { // Verify
+		// Verify
 		m_VideoEncoder->LogProperties();
 		if (obs_data_get_int(data, AMF_H264_VIEW) >= ViewMode::Master)
 			AMF_LOG_ERROR("View Mode 'Master' is active, avoid giving anything but basic support. Error is most likely caused by user settings themselves.");
