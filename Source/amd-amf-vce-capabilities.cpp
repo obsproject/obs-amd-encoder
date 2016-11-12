@@ -40,12 +40,8 @@ std::shared_ptr<Plugin::AMD::VCECapabilities> Plugin::AMD::VCECapabilities::GetI
 	static std::shared_ptr<VCECapabilities> __instance = std::make_shared<VCECapabilities>();
 	static std::mutex __mutex;
 
-	try {
-		const std::lock_guard<std::mutex> lock(__mutex);
-		return __instance;
-	} catch (...) {
-		return nullptr;
-	}
+	const std::lock_guard<std::mutex> lock(__mutex);
+	return __instance;
 }
 
 void Plugin::AMD::VCECapabilities::ReportCapabilities() {
@@ -222,13 +218,13 @@ bool Plugin::AMD::VCECapabilities::RefreshCapabilities() {
 		amf::AMFComponentPtr l_AMFComponent;
 		res = l_AMFFactory->CreateComponent(l_AMFContext, capsString[capsIndex], &l_AMFComponent);
 		if (res != AMF_OK) {
-			AMF_LOG_ERROR("Failed to gather Capabilities for Encoder Type %s, error code %d.", (capsIndex == 0 ? "AVC" : (capsIndex == 1 ? "AVC" : "HEVC")), res);
+			AMF_LOG_ERROR("Failed to gather Capabilities for Encoder Type %s, error code %d.", (capsIndex == 0 ? "AVC" : (capsIndex == 1 ? "SVC" : "HEVC")), res);
 			continue;
 		}
 		amf::AMFCapsPtr encCaps;
 		res = l_AMFComponent->GetCaps(&encCaps);
 		if (res != AMF_OK) {
-			AMF_LOG_ERROR("Failed to gather Capabilities for Encoder Type %s, error code %d.", (capsIndex == 0 ? "AVC" : (capsIndex == 1 ? "AVC" : "HEVC")), res);
+			AMF_LOG_ERROR("Failed to gather Capabilities for Encoder Type %s, error code %d.", (capsIndex == 0 ? "AVC" : (capsIndex == 1 ? "SVC" : "HEVC")), res);
 			l_AMFComponent->Terminate();
 			continue;
 		}
