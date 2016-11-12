@@ -67,7 +67,10 @@ MODULE_EXPORT bool obs_module_load(void) {
 
 		// Register Encoders
 		Plugin::Interface::H264Interface::encoder_register();
+	} catch (std::exception& e) {
+		AMF_LOG_ERROR("Uncaught Exception: %s", e.what());
 	} catch (...) {
+		AMF_LOG_ERROR("Uncaught Unknown Exception.");
 	}
 	return true;
 }
