@@ -341,13 +341,14 @@ void Plugin::AMD::VCEEncoder::Start() {
 	AMF_RESULT res = m_AMFEncoder->Init(Utility::SurfaceFormatAsAMF(m_SurfaceFormat),
 		m_FrameSize.first, m_FrameSize.second);
 	if (res != AMF_OK)
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Initialization failed with error %ls (code %ld).", res);
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Encoder initialization failed with error %ls (code %ld).", res);
 
 	// Create Converter
 	m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE, AMF_VIDEO_CONVERTER_COLOR_PROFILE_709);
 	//m_AMFConverter->SetProperty(L"NominalRange", this->IsFullColorRangeEnabled());
-	m_AMFConverter->Init(Utility::SurfaceFormatAsAMF(m_SurfaceFormat),
-		m_FrameSize.first, m_FrameSize.second);
+	res = m_AMFConverter->Init(Utility::SurfaceFormatAsAMF(m_SurfaceFormat), m_FrameSize.first, m_FrameSize.second);
+	if (res != AMF_OK)
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Converter initialization failed with error %ls (code %ld).", res);
 
 	m_Flag_IsStarted = true;
 
