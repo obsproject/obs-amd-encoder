@@ -445,6 +445,9 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 		throw std::exception(error);
 	}
 
+	if (m_Flag_InputThreadCrashed)
+		return false;
+
 	// Convert Frame into a Surface and queue it.
 	if (frame != nullptr) {
 		amf::AMFSurfacePtr pAMFSurface = CreateSurfaceFromFrame(frame);
@@ -526,13 +529,16 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 	return true;
 }
 
-void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* received_packet) {
+bool Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* received_packet) {
 	// Early-Exception if not encoding.
 	if (!m_Flag_IsStarted) {
 		const char* error = "<" __FUNCTION_NAME__ "> Attempted to send input while not running.";
 		AMF_LOG_ERROR("%s", error);
 		throw std::exception(error);
 	}
+
+	if (m_Flag_OutputThreadCrashed)
+		return false;
 
 	if (m_Flag_Threading) { // Threading
 		// Query Output
@@ -562,6 +568,7 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 				}
 			} else {
 				AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> QueryOutput returned error %ls (code %lld).", m_AMF->GetTrace()->GetResultText(res), res);
+				return false;
 			}
 		}
 	}
@@ -628,6 +635,8 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 		mbstowcs(functionName.data(), __FUNCTION__, functionName.size());
 		m_AMF->GetTrace()->TraceW(fileName.data(), __LINE__, AMF_TRACE_TRACE, L"Plugin::GetOutput", 4, L"Packet: Type(%lld), PTS(%4lld), DTS(%4lld), Size(%8lld)", (int64_t)packet->priority, (int64_t)packet->pts, (int64_t)packet->dts, (int64_t)packet->size);
 	}
+
+	return true;
 }
 
 bool Plugin::AMD::VCEEncoder::GetExtraData(uint8_t**& extra_data, size_t*& extra_data_size) {
@@ -730,44 +739,62 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 		AMF_RESULT res;
 		amf::AMFDataPtr outbuf;
 
-		res = m_AMFConverter->SubmitInput(surface);
-		if (res != AMF_OK)
-			ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Unable to submit Frame to Converter, error %ls (code %ld).", res);
-		res = m_AMFConverter->QueryOutput(&outbuf);
-		if (res != AMF_OK)
-			ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Unable to retrieve Frame from Converter, error %ls (code %ld).", res);
+		try {
+			res = m_AMFConverter->SubmitInput(surface);
+			if (res != AMF_OK)
+				ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Unable to submit Frame to Converter, error %ls (code %ld).", res);
+		} catch (...) {
+			AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Exception while submitting frame to converter.");
+			m_Flag_InputThreadCrashed = true;
+			return;
+		}
+		try {
+			res = m_AMFConverter->QueryOutput(&outbuf);
+			if (res != AMF_OK)
+				ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Unable to retrieve Frame from Converter, error %ls (code %ld).", res);
+		} catch (...) {
+			AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Exception while retrieving frame from converter.");
+			m_Flag_InputThreadCrashed = true;
+			return;
+		}
 
 		/// Submit to AMF
-		res = m_AMFEncoder->SubmitInput(outbuf);
-		if (res == AMF_OK) {
-			m_Flag_FirstFrameSubmitted = true;
+		try {
+			res = m_AMFEncoder->SubmitInput(outbuf);
+			if (res == AMF_OK) {
+				m_Flag_FirstFrameSubmitted = true;
 
-			{ // Remove Surface from Queue
-				std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
-				m_Input.queue.pop();
-			}
+				{ // Remove Surface from Queue
+					std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
+					m_Input.queue.pop();
+				}
 
-			// Reset AMF_INPUT_FULL retries.
-			repeatSurfaceSubmission = 0;
+				// Reset AMF_INPUT_FULL retries.
+				repeatSurfaceSubmission = 0;
 
-			// Continue with next Surface.
-			m_Input.condvar.notify_all();
-		} else if (res == AMF_INPUT_FULL) {
-			m_Output.condvar.notify_all();
-			if (repeatSurfaceSubmission < 5) {
-				repeatSurfaceSubmission++;
-
-				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+				// Continue with next Surface.
 				m_Input.condvar.notify_all();
+			} else if (res == AMF_INPUT_FULL) {
+				m_Output.condvar.notify_all();
+				if (repeatSurfaceSubmission < 5) {
+					repeatSurfaceSubmission++;
+
+					std::this_thread::sleep_for(std::chrono::milliseconds(1));
+					m_Input.condvar.notify_all();
+				}
+			} else if (res == AMF_EOF) {
+				// This should never happen, but on the off-chance that it does, just straight up leave the loop.
+				break;
+			} else {
+				// Unknown, unexpected return code.
+				std::vector<char> msgBuf(128);
+				FormatTextWithAMFError(&msgBuf, "%ls (code %d)", Plugin::AMD::AMF::GetInstance()->GetTrace()->GetResultText(res), res);
+				AMF_LOG_WARNING("<" __FUNCTION_NAME__ "> SubmitInput failed with error %s.", msgBuf.data());
 			}
-		} else if (res == AMF_EOF) {
-			// This should never happen, but on the off-chance that it does, just straight up leave the loop.
-			break;
-		} else {
-			// Unknown, unexpected return code.
-			std::vector<char> msgBuf(128);
-			FormatTextWithAMFError(&msgBuf, "%ls (code %d)", Plugin::AMD::AMF::GetInstance()->GetTrace()->GetResultText(res), res);
-			AMF_LOG_WARNING("<" __FUNCTION_NAME__ "> SubmitInput failed with error %s.", msgBuf.data());
+		} catch (...) {
+			AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Exception while submitting frame to encoder.");
+			m_Flag_InputThreadCrashed = true;
+			return;
 		}
 	} while (m_Flag_IsStarted);
 }
@@ -790,28 +817,34 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 		if (!m_Flag_IsStarted)
 			continue;
 
-		amf::AMFDataPtr pData = amf::AMFDataPtr();
-		AMF_RESULT res = m_AMFEncoder->QueryOutput(&pData);
-		if (res == AMF_OK) {
-			m_Flag_FirstFrameReceived = true;
+		try {
+			amf::AMFDataPtr pData = amf::AMFDataPtr();
+			AMF_RESULT res = m_AMFEncoder->QueryOutput(&pData);
+			if (res == AMF_OK) {
+				m_Flag_FirstFrameReceived = true;
 
-			{ // Queue
-				std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
-				m_Output.queue.push(pData);
+				{ // Queue
+					std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
+					m_Output.queue.push(pData);
+				}
+
+				// Continue querying until nothing is left.
+				m_Output.condvar.notify_all();
+			} else if (res == AMF_REPEAT) {
+				m_Input.condvar.notify_all();
+			} else if (res == AMF_EOF) {
+				// This should never happen, but on the off-chance that it does, just straight up leave the loop.
+				break;
+			} else {
+				// Unknown, unexpected return code.
+				std::vector<char> msgBuf(128);
+				FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
+				AMF_LOG_WARNING("<" __FUNCTION_NAME__ "> QueryOutput failed with error %s.", msgBuf.data());
 			}
-
-			// Continue querying until nothing is left.
-			m_Output.condvar.notify_all();
-		} else if (res == AMF_REPEAT) {
-			m_Input.condvar.notify_all();
-		} else if (res == AMF_EOF) {
-			// This should never happen, but on the off-chance that it does, just straight up leave the loop.
-			break;
-		} else {
-			// Unknown, unexpected return code.
-			std::vector<char> msgBuf(128);
-			FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
-			AMF_LOG_WARNING("<" __FUNCTION_NAME__ "> QueryOutput failed with error %s.", msgBuf.data());
+		} catch (...) {
+			AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Exception while retrieving frame from encoder.");
+			m_Flag_OutputThreadCrashed = true;
+			return;
 		}
 	} while (m_Flag_IsStarted);
 }
