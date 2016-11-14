@@ -218,7 +218,7 @@ MODULE_EXTERN const char *obs_module_text_multi(const char *val, uint8_t depth =
 // Threading Specific
 //////////////////////////////////////////////////////////////////////////
 
-#if (defined _WIN32) | (defined _WIN64)
+#if (defined _WIN32) || (defined _WIN64)
 void SetThreadName(uint32_t dwThreadID, const char* threadName);
 void SetThreadName(const char* threadName);
 void SetThreadName(std::thread* thread, const char* threadName);

@@ -63,7 +63,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 		auto instance = Plugin::AMD::AMF::GetInstance();
 
 		// Report AMF Capabilities
-		Plugin::AMD::VCECapabilities::ReportCapabilities();
+		//Plugin::AMD::VCECapabilities::ReportCapabilities();
 
 		// Register Encoders
 		Plugin::Interface::H264Interface::encoder_register();
@@ -142,7 +142,7 @@ const char *obs_module_text_multi(const char *key, uint8_t depth) {
 // Threading Specific
 //////////////////////////////////////////////////////////////////////////
 
-#if (defined _WIN32) | (defined _WIN64) // Windows
+#if (defined _WIN32) || (defined _WIN64) // Windows
 #include <windows.h>
 
 const DWORD MS_VC_EXCEPTION = 0x406D1388;
