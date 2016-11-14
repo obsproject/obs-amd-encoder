@@ -22,6 +22,7 @@ SET(enc-amf_SOURCES
 	"Source/api-d3d11.cpp"
 	"Source/enc-h264.cpp"
 	"Source/plugin.cpp"
+	"Source/misc-util.cpp"
 )
 SET(enc-amf_LIBRARIES
 	version
