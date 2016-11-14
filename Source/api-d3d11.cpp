@@ -286,4 +286,9 @@ Plugin::API::Direct3D11::~Direct3D11() {
 void* Plugin::API::Direct3D11::GetContext() {
 	return pDevice;
 }
+
+Plugin::API::APIType Plugin::API::Direct3D11::GetType() {
+	return APIType_Direct3D11;
+}
+
 #endif
