@@ -46,7 +46,8 @@ namespace Plugin {
 			Direct3D9(Device device);
 			~Direct3D9();
 
-			void* GetContext();
+			virtual void* GetContext() override;
+			virtual APIType GetType() override;
 
 			private:
 			IDirect3D9* pDirect3D;

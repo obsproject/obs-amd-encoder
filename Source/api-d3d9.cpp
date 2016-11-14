@@ -194,4 +194,9 @@ Plugin::API::Direct3D9::~Direct3D9() {
 void* Plugin::API::Direct3D9::GetContext() {
 	return pDirect3DDevice;
 }
+
+Plugin::API::APIType Plugin::API::Direct3D9::GetType() {
+	return APIType_Direct3D9;
+}
+
 #endif
