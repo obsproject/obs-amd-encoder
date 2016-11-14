@@ -602,21 +602,21 @@ void Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 			switch ((AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)pktType) {
 				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR://
 					packet->keyframe = true;				// IDR-Frames are Key-Frames that contain a lot of information.
-					packet->priority = 3;					// Highest priority, always continue streaming with these.
-					packet->drop_priority = 3;				// Dropped IDR-Frames can only be replaced by the next IDR-Frame.
+					//packet->priority = 3;					// Highest priority, always continue streaming with these.
+					//packet->drop_priority = 3;				// Dropped IDR-Frames can only be replaced by the next IDR-Frame.
 					break;
-				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_I:	// I-Frames need only a previous I- or IDR-Frame.
-					packet->priority = 2;					// I- and IDR-Frames will most likely be present.
-					packet->drop_priority = 2;				// So we can continue with a I-Frame when streaming.
-					break;
-				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_P:	// P-Frames need either a previous P-, I- or IDR-Frame.
-					packet->priority = 1;					// We can safely assume that at least one of these is present.
-					packet->drop_priority = 1;				// So we can continue with a P-Frame when streaming.
-					break;
-				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_B:	// B-Frames need either a parent B-, P-, I- or IDR-Frame.
-					packet->priority = 0;					// We don't know if the last non-dropped frame was a B-Frame.
-					packet->drop_priority = 1;				// So require a P-Frame or better to continue streaming.
-					break;
+				//case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_I:	// I-Frames need only a previous I- or IDR-Frame.
+				//	packet->priority = 2;					// I- and IDR-Frames will most likely be present.
+				//	packet->drop_priority = 2;				// So we can continue with a I-Frame when streaming.
+				//	break;
+				//case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_P:	// P-Frames need either a previous P-, I- or IDR-Frame.
+				//	packet->priority = 1;					// We can safely assume that at least one of these is present.
+				//	packet->drop_priority = 1;				// So we can continue with a P-Frame when streaming.
+				//	break;
+				//case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_B:	// B-Frames need either a parent B-, P-, I- or IDR-Frame.
+				//	packet->priority = 0;					// We don't know if the last non-dropped frame was a B-Frame.
+				//	packet->drop_priority = 1;				// So require a P-Frame or better to continue streaming.
+				//	break;
 			}
 		}
 		*received_packet = true;
