@@ -43,13 +43,23 @@ namespace Plugin {
 			~Device();
 		};
 
+		enum APIType {
+			APIType_Base,
+			APIType_Direct3D9,
+			APIType_Direct3D11,
+			APIType_OpenGL,
+		};
+
 		class BaseAPI {
 			public:
 			static std::vector<Plugin::API::Device> EnumerateDevices();
+			static Plugin::API::Device GetDeviceForUniqueId(std::string uniqueId);
+			static Plugin::API::BaseAPI CreateBestAvailableAPIForDevice(Plugin::API::Device device);
 
 			BaseAPI(Device device);
 			virtual ~BaseAPI();
 
+			virtual APIType GetType();
 			virtual void* GetContext();
 			Plugin::API::Device GetDevice();
 			

@@ -28,12 +28,20 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 #include "api-base.h"
 
+#include "api-d3d9.h"
+#include "api-d3d11.h"
+
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#include <VersionHelpers.h>
+#endif
+
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
 
 Plugin::API::Device::Device() {
-	this->Name = "";
+	this->Name = "Default";
 	this->UniqueId = "";
 }
 
@@ -46,7 +54,40 @@ Plugin::API::Device::~Device() {
 }
 
 std::vector<Plugin::API::Device> Plugin::API::BaseAPI::EnumerateDevices() {
+	// Build a list of Devices
+	#if defined(_WIN32) || defined(_WIN64)
+	if (IsWindows8OrGreater()) {
+		return Plugin::API::Direct3D11::EnumerateDevices();
+	} else if (IsWindowsXPOrGreater()) {
+		return Plugin::API::Direct3D9::EnumerateDevices();
+	} else
+		#endif 
+	{ // OpenGL
+		//return Plugin::API::OpenGL::EnumerateDevices();
+	}
 	return std::vector<Plugin::API::Device>();
+}
+
+Plugin::API::Device Plugin::API::BaseAPI::GetDeviceForUniqueId(std::string uniqueId) {
+	auto devices = EnumerateDevices();
+	for (auto device : devices) {
+		if (device.UniqueId == uniqueId)
+			return device;
+	}
+}
+
+Plugin::API::BaseAPI Plugin::API::BaseAPI::CreateBestAvailableAPIForDevice(Plugin::API::Device device) {
+	#if defined(_WIN32) || defined(_WIN64)
+	if (IsWindows8OrGreater()) {
+		return Plugin::API::Direct3D11::Direct3D11(device);
+	} else if (IsWindowsXPOrGreater()) {
+		return Plugin::API::Direct3D9::Direct3D9(device);
+	} else
+		#endif 
+	{ // OpenGL
+	  //return Plugin::API::OpenGL::OpenGL(device);
+	}
+	return BaseAPI(device);
 }
 
 Plugin::API::BaseAPI::BaseAPI(Device device) {
@@ -55,6 +96,10 @@ Plugin::API::BaseAPI::BaseAPI(Device device) {
 
 Plugin::API::BaseAPI::~BaseAPI() {
 
+}
+
+Plugin::API::APIType Plugin::API::BaseAPI::GetType() {
+	return APIType_Base;
 }
 
 void* Plugin::API::BaseAPI::GetContext() {
