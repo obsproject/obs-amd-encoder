@@ -1600,7 +1600,7 @@ bool Plugin::Interface::H264Interface::encode(struct encoder_frame * frame, stru
 	bool retVal = true;
 
 	retVal = m_VideoEncoder->SendInput(frame);
-	m_VideoEncoder->GetOutput(packet, received_packet);
+	retVal = retVal && m_VideoEncoder->GetOutput(packet, received_packet);
 
 	return retVal;
 }
