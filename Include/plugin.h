@@ -188,14 +188,10 @@ MODULE_EXTERN const char *obs_module_text_multi(const char *val, uint8_t depth =
 #define AMF_H264_CABAC_DESCRIPTION				TEXT_AMF_H264("CABAC.Description")
 
 // System Properties
-#define AMF_H264_MEMORYTYPE						TEXT_AMF_H264("MemoryType")
-#define AMF_H264_MEMORYTYPE_DESCRIPTION			TEXT_AMF_H264("MemoryType.Description")
 #define AMF_H264_DEVICE							TEXT_AMF_H264("Device")
 #define AMF_H264_DEVICE_DESCRIPTION				TEXT_AMF_H264("Device.Description")
 #define AMF_H264_USE_OPENCL						TEXT_AMF_H264("UseOpenCL")
 #define AMF_H264_USE_OPENCL_DESCRIPTION			TEXT_AMF_H264("UseOpenCL.Description")
-#define AMF_H264_SURFACEFORMAT					TEXT_AMF_H264("SurfaceFormat")
-#define AMF_H264_SURFACEFORMAT_DESCRIPTION		TEXT_AMF_H264("SurfaceFormat.Description")
 #define AMF_H264_VIEW							TEXT_AMF_H264("View")
 #define AMF_H264_VIEW_DESCRIPTION				TEXT_AMF_H264("View.Description")
 #define AMF_H264_VIEW_BASIC						TEXT_AMF_H264("View.Basic")
