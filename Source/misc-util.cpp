@@ -89,10 +89,7 @@ namespace Plugin {
 				"DirectX11",
 				"OpenGL"
 			};
-			if (memoryType != VCEMemoryType_Auto)
-				return memoryTypeToString[memoryType];
-			else
-				return "Automatic";
+			return memoryTypeToString[memoryType];
 		}
 		inline amf::AMF_MEMORY_TYPE MemoryTypeAsAMF(VCEMemoryType memoryType) {
 			static amf::AMF_MEMORY_TYPE memoryTypeToAMF[] = {
@@ -101,10 +98,7 @@ namespace Plugin {
 				amf::AMF_MEMORY_DX11,
 				amf::AMF_MEMORY_OPENGL,
 			};
-			if (memoryType != VCEMemoryType_Auto)
-				return memoryTypeToAMF[memoryType];
-			else
-				return amf::AMF_MEMORY_HOST;
+			return memoryTypeToAMF[memoryType];
 		}
 
 		inline const char* SurfaceFormatAsString(VCESurfaceFormat surfaceFormat) {
