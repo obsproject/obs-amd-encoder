@@ -205,21 +205,17 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 				device.Name.c_str(), amfInstance->GetTrace()->GetResultText(res), res);
 			continue;
 		}
-
-		if (device.UniqueId != "") {
-			#ifdef _WIN32
-			if (IsWindows8OrGreater()) {
-				Plugin::API::BaseAPI apiDev = Plugin::API::Direct3D11::Direct3D11(device);
+		Plugin::API::BaseAPI apiDev = Plugin::API::BaseAPI::CreateBestAvailableAPIForDevice(device);
+		switch (apiDev.GetType()) {
+			case Plugin::API::APIType_Direct3D11:
 				amfContext->InitDX11(apiDev.GetContext());
-			} else if (IsWindowsXPOrGreater()) {
-				Plugin::API::BaseAPI apiDev = Plugin::API::Direct3D9::Direct3D9(device);
+				break;
+			case Plugin::API::APIType_Direct3D9:
 				amfContext->InitDX9(apiDev.GetContext());
-			} else
-				#endif 
-			{ // OpenGL
-				/*Plugin::API::BaseAPI apiDev = Plugin::API::OpenGL::OpenGL(device);
-				amfContext->InitOpenGL(apiDev.GetContext());*/
-			}
+				break;
+			case Plugin::API::APIType_OpenGL:
+				amfContext->InitOpenGL(apiDev.GetContext(), nullptr, nullptr);
+				break;
 		}
 
 		VCEDeviceCapabilities devAVCCaps, devSVCCaps, devHEVCCaps;
@@ -274,6 +270,7 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 					amfInstance->GetTrace()->GetResultText(res), res);
 				continue;
 			}
+			
 			amf::AMFCapsPtr amfCaps;
 			res = amfComponent->GetCaps(&amfCaps);
 			if (res != AMF_OK) {
