@@ -192,7 +192,7 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 	{ // OpenGL
 		//devices = Plugin::API::OpenGL::EnumerateDevices();
 	}
-	devices.insert(devices.begin(), Plugin::API::Device());
+	//devices.insert(devices.begin(), Plugin::API::Device());
 
 	// Query Information for each Device
 	std::shared_ptr<AMD::AMF> amfInstance = AMD::AMF::GetInstance();
@@ -205,17 +205,23 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 				device.Name.c_str(), amfInstance->GetTrace()->GetResultText(res), res);
 			continue;
 		}
+
 		Plugin::API::BaseAPI apiDev = Plugin::API::BaseAPI::CreateBestAvailableAPIForDevice(device);
 		switch (apiDev.GetType()) {
 			case Plugin::API::APIType_Direct3D11:
-				amfContext->InitDX11(apiDev.GetContext());
+				res = amfContext->InitDX11(apiDev.GetContext());
 				break;
 			case Plugin::API::APIType_Direct3D9:
-				amfContext->InitDX9(apiDev.GetContext());
+				res = amfContext->InitDX9(apiDev.GetContext());
 				break;
 			case Plugin::API::APIType_OpenGL:
-				amfContext->InitOpenGL(apiDev.GetContext(), nullptr, nullptr);
+				res = amfContext->InitOpenGL(apiDev.GetContext(), nullptr, nullptr);
 				break;
+		}
+		if (res != AMF_OK) {
+			AMF_LOG_ERROR("Unable to gather capabilities for device '%s' after initialization, error %ls (code %d).",
+				device.Name.c_str(), amfInstance->GetTrace()->GetResultText(res), res);
+			continue;
 		}
 
 		VCEDeviceCapabilities devAVCCaps, devSVCCaps, devHEVCCaps;
