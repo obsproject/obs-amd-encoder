@@ -53,6 +53,30 @@ Plugin::API::Device::Device(std::string Name, std::string UniqueId) {
 Plugin::API::Device::~Device() {
 }
 
+bool Plugin::API::operator<(const Plugin::API::Device & left, const Plugin::API::Device& right) {
+	return left.UniqueId < right.UniqueId;
+}
+
+bool Plugin::API::operator>(const Plugin::API::Device & left, const Plugin::API::Device& right) {
+	return right < left;
+}
+
+bool Plugin::API::operator<=(const Plugin::API::Device & left, const Plugin::API::Device& right) {
+	return !(right < left);
+}
+
+bool Plugin::API::operator>=(const Plugin::API::Device & left, const Plugin::API::Device& right) {
+	return !(left < right);
+}
+
+bool Plugin::API::operator==(const Plugin::API::Device & left, const Plugin::API::Device& right) {
+	return left.UniqueId == right.UniqueId;
+}
+
+bool Plugin::API::operator!=(const Plugin::API::Device & left, const Plugin::API::Device& right) {
+	return !(left == right);
+}
+
 std::vector<Plugin::API::Device> Plugin::API::BaseAPI::EnumerateDevices() {
 	// Build a list of Devices
 	#if defined(_WIN32) || defined(_WIN64)
@@ -74,9 +98,13 @@ Plugin::API::Device Plugin::API::BaseAPI::GetDeviceForUniqueId(std::string uniqu
 		if (device.UniqueId == uniqueId)
 			return device;
 	}
+	return Plugin::API::Device();
 }
 
 Plugin::API::BaseAPI Plugin::API::BaseAPI::CreateBestAvailableAPIForDevice(Plugin::API::Device device) {
+	if (device.UniqueId == "")
+		return BaseAPI(device);
+
 	#if defined(_WIN32) || defined(_WIN64)
 	if (IsWindows8OrGreater()) {
 		return Plugin::API::Direct3D11::Direct3D11(device);
@@ -88,6 +116,19 @@ Plugin::API::BaseAPI Plugin::API::BaseAPI::CreateBestAvailableAPIForDevice(Plugi
 	  //return Plugin::API::OpenGL::OpenGL(device);
 	}
 	return BaseAPI(device);
+}
+
+Plugin::API::APIType Plugin::API::BaseAPI::GetBestAvailableAPIForDevice() {
+	#if defined(_WIN32) || defined(_WIN64)
+	if (IsWindows8OrGreater()) {
+		return APIType_Direct3D11;
+	} else if (IsWindowsXPOrGreater()) {
+		return APIType_Direct3D9;
+	} else
+		#endif 
+	{ // OpenGL
+		return APIType_OpenGL;
+	}
 }
 
 Plugin::API::BaseAPI::BaseAPI(Device device) {

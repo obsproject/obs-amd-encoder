@@ -41,6 +41,15 @@ namespace Plugin {
 			Device();
 			Device(std::string Name, std::string UniqueId);
 			~Device();
+
+
+			friend bool operator<(const Plugin::API::Device& left, const Plugin::API::Device& right);
+			friend bool operator>(const Plugin::API::Device& left, const Plugin::API::Device& right);
+			friend bool operator<=(const Plugin::API::Device& left, const Plugin::API::Device& right);
+			friend bool operator>=(const Plugin::API::Device& left, const Plugin::API::Device& right);
+
+			friend bool operator==(const Plugin::API::Device& left, const Plugin::API::Device& right);
+			friend bool operator!=(const Plugin::API::Device& left, const Plugin::API::Device& right);
 		};
 
 		enum APIType {
@@ -55,6 +64,7 @@ namespace Plugin {
 			static std::vector<Plugin::API::Device> EnumerateDevices();
 			static Plugin::API::Device GetDeviceForUniqueId(std::string uniqueId);
 			static Plugin::API::BaseAPI CreateBestAvailableAPIForDevice(Plugin::API::Device device);
+			static APIType GetBestAvailableAPIForDevice();
 
 			BaseAPI(Device device);
 			virtual ~BaseAPI();
