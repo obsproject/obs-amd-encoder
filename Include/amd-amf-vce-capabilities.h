@@ -29,11 +29,14 @@ SOFTWARE.
 #include <stdint.h>
 #include <inttypes.h>
 #include <vector>
+#include <list>
+#include <map>
 
 // Plugin
 #include "plugin.h"
 #include "amd-amf.h"
 #include "amd-amf-vce.h"
+#include "api-base.h"
 
 // AMF
 #include "components\ComponentCaps.h"
@@ -44,6 +47,30 @@ SOFTWARE.
 
 namespace Plugin {
 	namespace AMD {
+		struct VCEDeviceCapabilities {
+			amf::AMF_ACCELERATION_TYPE acceleration_type;
+			uint32_t maxProfile;
+			uint32_t maxProfileLevel;
+			uint32_t maxBitrate;
+			uint32_t minReferenceFrames;
+			uint32_t maxReferenceFrames;
+			bool supportsBFrames;
+			bool supportsFixedSliceMode;
+			uint32_t maxTemporalLayers;
+			uint32_t maxNumOfStreams;
+			uint32_t maxNumOfHwInstances;
+
+			struct IOCaps {
+				int32_t minWidth, maxWidth;
+				int32_t minHeight, maxHeight;
+				bool isInterlacedSupported;
+				uint32_t verticalAlignment;
+
+				std::vector<std::pair<amf::AMF_SURFACE_FORMAT, bool>> formats;
+				std::vector<std::pair<amf::AMF_MEMORY_TYPE, bool>> memoryTypes;
+			} input, output;
+		};
+
 		class VCECapabilities {
 			//////////////////////////////////////////////////////////////////////////
 			// Singleton
@@ -51,42 +78,28 @@ namespace Plugin {
 			public:
 			static std::shared_ptr<Plugin::AMD::VCECapabilities> GetInstance();
 			static void ReportCapabilities();
+			static void ReportDeviceCapabilities(Plugin::API::Device device);
+			static void ReportDeviceIOCapabilities(Plugin::API::Device device, VCEEncoderType type, bool output);
 
 			//////////////////////////////////////////////////////////////////////////
 			// Class
 			//////////////////////////////////////////////////////////////////////////
 			public:
-			// Structure
-			struct EncoderCaps {
-				amf::AMF_ACCELERATION_TYPE acceleration_type;
-				uint32_t maxBitrate;
-				uint32_t maxNumOfStreams;
-				uint32_t maxProfile;
-				uint32_t maxProfileLevel;
-				bool supportsBFrames;
-				uint32_t minReferenceFrames;
-				uint32_t maxReferenceFrames;
-				uint32_t maxTemporalLayers;
-				bool supportsFixedSliceMode;
-				uint32_t maxNumOfHwInstances;
-
-				struct IOCaps {
-					int32_t minWidth, maxWidth;
-					int32_t minHeight, maxHeight;
-					bool isInterlacedSupported;
-					uint32_t verticalAlignment;
-
-					std::vector<std::pair<amf::AMF_SURFACE_FORMAT, bool>> formats;
-					std::vector<std::pair<amf::AMF_MEMORY_TYPE, bool>> memoryTypes;
-				} input, output;
-			} m_AVCCaps, m_SVCCaps, m_HEVCCaps;
-			
 			VCECapabilities();
 			~VCECapabilities();
 
-			bool RefreshCapabilities();
-			EncoderCaps* GetEncoderCaps(VCEEncoderType);
-			EncoderCaps::IOCaps* GetIOCaps(VCEEncoderType, bool output);
+			//void QueryCapabilitiesForDevice(VCEMemoryType type, Plugin::API::Device device = Plugin::API::Device());
+
+			bool Refresh();
+			std::vector<Plugin::API::Device> GetDevices();
+			VCEDeviceCapabilities GetDeviceCaps(Plugin::API::Device device, VCEEncoderType type);
+			VCEDeviceCapabilities::IOCaps GetDeviceIOCaps(Plugin::API::Device device, VCEEncoderType type, bool output);
+
+			private:
+			//std::map<VCEMemoryType, std::map<Plugin::API::Device, std::map<VCEEncoderType, VCEDeviceCapabilities>>> tstMap;
+
+			std::vector<Plugin::API::Device> devices;
+			std::map<std::pair<Plugin::API::Device, Plugin::AMD::VCEEncoderType>, VCEDeviceCapabilities> deviceToCapabilities;
 		};
 	}
 }
