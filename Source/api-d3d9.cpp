@@ -118,6 +118,8 @@ BOOL CALLBACK EnumWindowsCallback(HWND handle, LPARAM lParam) {
 }
 
 Plugin::API::Direct3D9::Direct3D9(Device device) : BaseAPI(device) {
+	this->myType = APIType_Direct3D9;
+
 	pDirect3D = Direct3DCreate9(D3D_SDK_VERSION);
 	if (!pDirect3D)
 		throw std::exception("Unable to create D3D9 driver.");
@@ -146,7 +148,7 @@ Plugin::API::Direct3D9::Direct3D9(Device device) : BaseAPI(device) {
 	D3DPRESENT_PARAMETERS pPresentParameter = D3DPRESENT_PARAMETERS();
 	pPresentParameter.BackBufferWidth = 1280;
 	pPresentParameter.BackBufferHeight = 720;
-	pPresentParameter.BackBufferFormat = D3DFORMAT::D3DFMT_R8G8B8;
+	pPresentParameter.BackBufferFormat = D3DFORMAT::D3DFMT_X8R8G8B8;
 	pPresentParameter.BackBufferCount = 2;
 	pPresentParameter.MultiSampleType = D3DMULTISAMPLE_TYPE::D3DMULTISAMPLE_NONE;
 	pPresentParameter.MultiSampleQuality = 0;
@@ -157,12 +159,12 @@ Plugin::API::Direct3D9::Direct3D9(Device device) : BaseAPI(device) {
 	pPresentParameter.AutoDepthStencilFormat = D3DFORMAT::D3DFMT_A1;
 	pPresentParameter.Flags = D3DPRESENTFLAG_VIDEO;
 	pPresentParameter.FullScreen_RefreshRateInHz = 0;
-	pPresentParameter.PresentationInterval = 1;
+	pPresentParameter.PresentationInterval = 60;
 		
 	HRESULT hr = pDirect3D->CreateDevice(usedAdapter,
 		D3DDEVTYPE_HAL,
 		data.bestWindowId,
-		D3DCREATE_DISABLE_DRIVER_MANAGEMENT_EX | D3DCREATE_MULTITHREADED | D3DCREATE_PUREDEVICE | D3DCREATE_MIXED_VERTEXPROCESSING | D3DCREATE_NOWINDOWCHANGES,
+		0, //D3DCREATE_DISABLE_DRIVER_MANAGEMENT_EX | D3DCREATE_MULTITHREADED | D3DCREATE_PUREDEVICE | D3DCREATE_MIXED_VERTEXPROCESSING | D3DCREATE_NOWINDOWCHANGES,
 		&pPresentParameter,
 		&pDirect3DDevice);
 	switch (hr) {
@@ -193,10 +195,6 @@ Plugin::API::Direct3D9::~Direct3D9() {
 
 void* Plugin::API::Direct3D9::GetContext() {
 	return pDirect3DDevice;
-}
-
-Plugin::API::APIType Plugin::API::Direct3D9::GetType() {
-	return APIType_Direct3D9;
 }
 
 #endif

@@ -219,6 +219,8 @@ Plugin::API::Device Plugin::API::Direct3D11::GetDeviceForUniqueId(std::string un
 Plugin::API::Direct3D11::Direct3D11(Device device) : BaseAPI(device) {
 	IDXGIFactory1 *pFactory;
 
+	this->myType = APIType_Direct3D11;
+
 	auto singletonDXGI = SingletonDXGI::GetInstance();
 	if (FAILED(singletonDXGI->CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&pFactory))))
 		throw new std::exception("Unable to create D3D11 driver.");
@@ -287,8 +289,5 @@ void* Plugin::API::Direct3D11::GetContext() {
 	return pDevice;
 }
 
-Plugin::API::APIType Plugin::API::Direct3D11::GetType() {
-	return APIType_Direct3D11;
-}
 
 #endif
