@@ -60,6 +60,10 @@ namespace Plugin {
 		};
 
 		class BaseAPI {
+			friend class Direct3D11;
+			friend class Direct3D9;
+			//friend class OpenGL;
+
 			public:
 			static std::vector<Plugin::API::Device> EnumerateDevices();
 			static Plugin::API::Device GetDeviceForUniqueId(std::string uniqueId);
@@ -69,10 +73,13 @@ namespace Plugin {
 			BaseAPI(Device device);
 			virtual ~BaseAPI();
 
-			virtual APIType GetType();
+			APIType GetType();
 			virtual void* GetContext();
 			Plugin::API::Device GetDevice();
 			
+			protected:
+			APIType myType;
+
 			private:
 			Plugin::API::Device myDevice;
 		};

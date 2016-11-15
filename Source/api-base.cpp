@@ -140,7 +140,7 @@ Plugin::API::BaseAPI::~BaseAPI() {
 }
 
 Plugin::API::APIType Plugin::API::BaseAPI::GetType() {
-	return APIType_Base;
+	return myType;
 }
 
 void* Plugin::API::BaseAPI::GetContext() {
