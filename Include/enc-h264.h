@@ -44,11 +44,8 @@ namespace Plugin {
 			static void get_defaults(obs_data_t *settings);
 			static obs_properties_t* get_properties(void* data);
 			
+			static bool properties_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data);
 			static bool preset_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data);
-			static bool maximum_ltr_frames_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data);
-			static bool rate_control_method_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data);
-			static bool bpictures_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data);
-			static bool view_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data);
 			static bool unlock_properties_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data);
 
 			static void* create(obs_data_t* settings, obs_encoder_t* encoder);
