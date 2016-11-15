@@ -488,11 +488,8 @@ namespace Plugin {
 			bool m_UseOpenCL;
 			VCESurfaceFormat m_SurfaceFormat;
 			bool m_Flag_IsStarted,
-				m_Flag_Threading,
 				m_Flag_FirstFrameSubmitted,
-				m_Flag_FirstFrameReceived,
-				m_Flag_InputThreadCrashed,
-				m_Flag_OutputThreadCrashed;
+				m_Flag_FirstFrameReceived;
 			std::pair<uint32_t, uint32_t> m_FrameSize,
 				m_FrameRate;
 			double_t m_FrameRateDivisor,
