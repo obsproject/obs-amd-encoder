@@ -133,7 +133,7 @@ TARGET_LINK_LIBRARIES(enc-amf
 )
 
 if(BUILD_AMF_ENCODER)
-	install_obs_plugin_with_data(enc-amf enc-amf/Resources)
+	install_obs_plugin_with_data(enc-amf Resources)
 else()
 	math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
 	add_custom_command(TARGET enc-amf POST_BUILD
