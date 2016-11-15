@@ -178,9 +178,10 @@ static void printDebugInfo(amf::AMFComponentPtr m_AMFEncoder) {
 }
 
 Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
-	VCESurfaceFormat p_SurfaceFormat /*= VCESurfaceFormat_NV12*/,
-	VCEMemoryType p_MemoryType /*= VCEMemoryType_Auto*/,
-	bool p_UseOpenCL /*= false*/, std::string p_DeviceUniqueId /*= ""*/) {
+	std::string p_DeviceId/* = ""*/,
+	bool p_OpenCL/* = false*/,
+	VCESurfaceFormat p_SurfaceFormat/* = VCESurfaceFormat_NV12*/
+) {
 	AMF_RESULT res;
 
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Initializing...");
@@ -188,8 +189,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
 	// Solve the optimized away issue.
 	m_EncoderType = p_Type;
 	m_SurfaceFormat = p_SurfaceFormat;
-	m_MemoryType = p_MemoryType;
-	m_UseOpenCL = p_UseOpenCL;
+	m_UseOpenCL = p_OpenCL;
 	m_Flag_IsStarted = false;
 	m_Flag_Threading = true;
 	m_Flag_FirstFrameReceived = false;
@@ -211,80 +211,55 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Creating a context object failed with error %ls (code %ld).", res);
 	}
 
-	// Initialize Memory
-	if (m_MemoryType == VCEMemoryType_Auto) { /// Autodetect best setting depending on platform.
-		#if (defined _WIN32) | (defined _WIN64)
-		if (IsWindows8OrGreater()) {
-			m_MemoryType = VCEMemoryType_DirectX11;
-			m_UseOpenCL = true;
-		} else if (IsWindowsXPOrGreater()) {
-			m_MemoryType = VCEMemoryType_DirectX9;
-			m_UseOpenCL = true;
-		} else {
-			m_MemoryType = VCEMemoryType_Host;
-			m_UseOpenCL = false;
+	// API Init
+	if (p_DeviceId == "") {
+		switch (Plugin::API::BaseAPI::GetBestAvailableAPIForDevice()) {
+			case Plugin::API::APIType_Direct3D11:
+				res = m_AMFContext->InitDX11(nullptr);
+				m_MemoryType = VCEMemoryType_DirectX11;
+				break;
+			case Plugin::API::APIType_Direct3D9:
+				res = m_AMFContext->InitDX9(nullptr);
+				m_MemoryType = VCEMemoryType_DirectX9;
+				break;
+			case Plugin::API::APIType_OpenGL:
+				res = m_AMFContext->InitOpenGL(nullptr, nullptr, nullptr);
+				m_MemoryType = VCEMemoryType_OpenGL;
+				break;
+			case Plugin::API::APIType_Base:
+				m_UseOpenCL = false;
+				m_MemoryType = VCEMemoryType_Host;
+				break;
 		}
-		#else
-		m_MemoryType = VCEMemoryType_OpenGL;
-		m_UseOpenCL = true;
-		#endif
-	}
-
-	switch (m_MemoryType) {
-		case VCEMemoryType_Host:
-			res = AMF_OK;
-			break;
-			#ifdef _WIN32
-		case VCEMemoryType_OpenGL:
-			if (p_DeviceUniqueId.empty()) {
-				res = m_AMFContext->InitOpenGL(nullptr, nullptr, nullptr);
-			} else {
-				res = m_AMFContext->InitOpenGL(nullptr, nullptr, nullptr);
-				/*m_APIDevice = Plugin::API::OpenGL(Plugin::API::OpenGL::GetDeviceForUniqueId(p_DeviceUniqueId));
-				res = m_AMFContext->InitOpenGL(m_APIDevice.GetContext(), nullptr, nullptr);*/
-			}
-			break;
-		case VCEMemoryType_DirectX11:
-			if (IsWindows8OrGreater()) {
-				if (p_DeviceUniqueId.empty()) {
-					res = m_AMFContext->InitDX11(nullptr);
-				} else {
-					m_APIDevice = Plugin::API::Direct3D11(Plugin::API::Direct3D11::GetDeviceForUniqueId(p_DeviceUniqueId));
-					res = m_AMFContext->InitDX11(m_APIDevice.GetContext());
-				}
-			} else {
-				AMF_LOG_ERROR("DirectX 11 is only supported on Windows 8 or newer, using Host Memory Type instead.");
+	} else {
+		m_APIDevice = Plugin::API::BaseAPI::CreateBestAvailableAPIForDevice(Plugin::API::BaseAPI::GetDeviceForUniqueId(p_DeviceId));
+		switch (m_APIDevice.GetType()) {
+			case Plugin::API::APIType_Direct3D11:
+				res = m_AMFContext->InitDX11(m_APIDevice.GetContext());
+				m_MemoryType = VCEMemoryType_DirectX11;
+				break;
+			case Plugin::API::APIType_Direct3D9:
+				res = m_AMFContext->InitDX9(m_APIDevice.GetContext());
+				m_MemoryType = VCEMemoryType_DirectX9;
+				break;
+			case Plugin::API::APIType_OpenGL:
+				res = m_AMFContext->InitOpenGL(m_APIDevice.GetContext(), nullptr, nullptr);
+				m_MemoryType = VCEMemoryType_OpenGL;
+				break;
+			case Plugin::API::APIType_Base: // Not the best case, but whatever.
+				m_UseOpenCL = false;
 				m_MemoryType = VCEMemoryType_Host;
-			}
-			break;
-		case VCEMemoryType_DirectX9:
-			if (IsWindowsXPOrGreater()) {
-				if (p_DeviceUniqueId.empty()) {
-					res = m_AMFContext->InitDX9(nullptr);
-				} else {
-					m_APIDevice = Plugin::API::Direct3D9(Plugin::API::Direct3D9::GetDeviceForUniqueId(p_DeviceUniqueId));
-					res = m_AMFContext->InitDX9(m_APIDevice.GetContext());
-				}
-			} else {
-				AMF_LOG_ERROR("DirectX 9 is only supported on Windows 8 or newer, using Host Memory Type instead.");
-				m_MemoryType = VCEMemoryType_Host;
-			}
-			break;
-			#endif
+				break;
+		}
 	}
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Initializing 3D queue failed with error %ls (code %ld).", res);
 
 	if (m_UseOpenCL) {
-		if (m_MemoryType == VCEMemoryType_Host) {
-			AMF_LOG_WARNING("<" __FUNCTION_NAME__ "> OpenCL can't be used with Memory Type 'Host', disabling...");
-			m_UseOpenCL = false;
-		} else {
-			res = m_AMFContext->InitOpenCL(nullptr);
-			if (res != AMF_OK)
-				ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> InitOpenCL failed with error %ls (code %ld).", res);
-			m_AMFContext->GetCompute(amf::AMF_MEMORY_OPENCL, &m_AMFCompute);
-		}
+		res = m_AMFContext->InitOpenCL(nullptr);
+		if (res != AMF_OK)
+			ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> InitOpenCL failed with error %ls (code %ld).", res);
+		m_AMFContext->GetCompute(amf::AMF_MEMORY_OPENCL, &m_AMFCompute);
 	}
 
 	/// AMF Component (Encoder)
@@ -319,6 +294,10 @@ Plugin::AMD::VCEEncoder::~VCEEncoder() {
 		Stop();
 
 	// AMF
+	if (m_AMFConverter) {
+		m_AMFConverter->Terminate();
+		m_AMFConverter = nullptr;
+	}
 	if (m_AMFEncoder) {
 		m_AMFEncoder->Terminate();
 		m_AMFEncoder = nullptr;
@@ -418,9 +397,9 @@ void Plugin::AMD::VCEEncoder::Stop() {
 		#else
 		m_Input.thread.join();
 		#endif
-	}
+		}
 
-	// Stop AMF Encoder
+		// Stop AMF Encoder
 	if (m_AMFEncoder) {
 		m_AMFEncoder->Drain();
 		m_AMFEncoder->Flush();
@@ -431,7 +410,7 @@ void Plugin::AMD::VCEEncoder::Stop() {
 	std::queue<amf::AMFDataPtr>().swap(m_Output.queue);
 	m_PacketDataBuffer.clear();
 	m_ExtraDataBuffer.clear();
-}
+		}
 
 bool Plugin::AMD::VCEEncoder::IsStarted() {
 	return m_Flag_IsStarted;
@@ -578,7 +557,7 @@ bool Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 		{ // Attempt to dequeue an Item.
 			std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
 			if (m_Output.queue.size() == 0)
-				return;
+				return true;
 
 			pAMFData = m_Output.queue.front();
 			m_Output.queue.pop();
@@ -907,7 +886,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("Initialization Parameters: ");
 	AMF_LOG_INFO("  Memory Type: %s", Utility::MemoryTypeAsString(m_MemoryType));
 	if (m_MemoryType != VCEMemoryType_Host) {
-		AMF_LOG_INFO("  Device: %s", m_APIDevice.GetDevice().Name);
+		AMF_LOG_INFO("  Device: %s", m_APIDevice.GetDevice().Name.c_str());
 		AMF_LOG_INFO("  OpenCL: %s", m_UseOpenCL ? "Enabled" : "Disabled");
 	}
 	AMF_LOG_INFO("  Surface Format: %s", Utility::SurfaceFormatAsString(m_SurfaceFormat));
@@ -932,7 +911,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("    Maximum: %d", this->GetMaximumQP());
 	AMF_LOG_INFO("    I-Frame: %d", this->GetIFrameQP());
 	AMF_LOG_INFO("    P-Frame: %d", this->GetPFrameQP());
-	if (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames) {
+	if (VCECapabilities::GetInstance()->GetDeviceCaps(m_APIDevice.GetDevice(), VCEEncoderType_AVC).supportsBFrames) {
 		try { AMF_LOG_INFO("    B-Frame: %d", this->GetBFrameQP()); } catch (...) {}
 		try { AMF_LOG_INFO("    B-Picture Delta QP: %d", this->GetBPictureDeltaQP()); } catch (...) {}
 		try { AMF_LOG_INFO("    Reference B-Picture Delta QP: %d", this->GetReferenceBPictureDeltaQP()); } catch (...) {}
@@ -953,7 +932,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("  IDR Period: %d frames", this->GetIDRPeriod());
 	AMF_LOG_INFO("  Header Insertion Spacing: %d frames", this->GetHeaderInsertionSpacing());
 	AMF_LOG_INFO("  Deblocking Filter: %s", this->IsDeblockingFilterEnabled() ? "Enabled" : "Disabled");
-	if (VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->supportsBFrames) {
+	if (VCECapabilities::GetInstance()->GetDeviceCaps(m_APIDevice.GetDevice(), VCEEncoderType_AVC).supportsBFrames) {
 		AMF_LOG_INFO("  B-Picture Pattern: %d", this->GetBPicturePattern());
 		AMF_LOG_INFO("  B-Picture Reference: %s", this->IsBPictureReferenceEnabled() ? "Enabled" : "Disabled");
 	} else {
@@ -974,7 +953,10 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	try { AMF_LOG_INFO("  Quality Enhancement Mode: %s", Utility::QualityEnhancementModeAsString(this->GetQualityEnhancementMode())); } catch (...) {}
 	try { AMF_LOG_INFO("  VBAQ: %s", this->IsVBAQEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
 
+	Plugin::AMD::VCECapabilities::ReportDeviceCapabilities(m_APIDevice.GetDevice());
+
 	printDebugInfo(m_AMFEncoder);
+	AMF_LOG_INFO("-- AMD Advanced Media Framework VCE Encoder --");
 }
 
 /************************************************************************/
@@ -1166,7 +1148,7 @@ Plugin::AMD::VCERateControlMethod Plugin::AMD::VCEEncoder::GetRateControlMethod(
 void Plugin::AMD::VCEEncoder::SetTargetBitrate(uint32_t bitrate) {
 	// Clamp Value
 	bitrate = clamp(bitrate, 10000,
-		Plugin::AMD::VCECapabilities::GetInstance()->GetEncoderCaps(m_EncoderType)->maxBitrate);
+		Plugin::AMD::VCECapabilities::GetInstance()->GetDeviceCaps(m_APIDevice.GetDevice(), VCEEncoderType_AVC).maxBitrate);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, bitrate);
 	if (res != AMF_OK) {
@@ -1188,7 +1170,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetTargetBitrate() {
 void Plugin::AMD::VCEEncoder::SetPeakBitrate(uint32_t bitrate) {
 	// Clamp Value
 	bitrate = clamp(bitrate, 10000,
-		Plugin::AMD::VCECapabilities::GetInstance()->GetEncoderCaps(m_EncoderType)->maxBitrate);
+		Plugin::AMD::VCECapabilities::GetInstance()->GetDeviceCaps(m_APIDevice.GetDevice(), VCEEncoderType_AVC).maxBitrate);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, (uint32_t)bitrate);
 	if (res != AMF_OK) {

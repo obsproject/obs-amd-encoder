@@ -56,8 +56,6 @@ namespace Plugin {
 			VCEMemoryType_DirectX9,		// DirectX9
 			VCEMemoryType_DirectX11,	// DirectX11
 			VCEMemoryType_OpenGL,		// OpenGL
-
-			VCEMemoryType_Auto = -1,	// Auto-Detect
 		};
 		enum VCESurfaceFormat {
 			// 4:2:0 Formats
@@ -103,7 +101,11 @@ namespace Plugin {
 			VCEProfileLevel_42,
 			VCEProfileLevel_50 = 50,
 			VCEProfileLevel_51,
-			VCEProfileLevel_52
+			VCEProfileLevel_52,
+			VCEProfileLevel_53,
+			VCEProfileLevel_60 = 60,
+			VCEProfileLevel_61,
+			VCEProfileLevel_62,
 		};
 		enum VCERateControlMethod {
 			VCERateControlMethod_ConstantQP,
@@ -154,10 +156,10 @@ namespace Plugin {
 			//////////////////////////////////////////////////////////////////////////
 			public:
 			VCEEncoder(VCEEncoderType p_Type,
-				VCESurfaceFormat p_SurfaceFormat = VCESurfaceFormat_NV12,
-				VCEMemoryType p_MemoryType = VCEMemoryType_Auto,
-				bool p_UseOpenCL = false,
-				std::string p_DeviceUniqueId = "");
+				std::string p_DeviceId = "",
+				bool p_OpenCL = false,
+				VCESurfaceFormat p_SurfaceFormat = VCESurfaceFormat_NV12
+			);
 			~VCEEncoder();
 			#pragma endregion Initializer & Finalizer
 
@@ -170,7 +172,7 @@ namespace Plugin {
 			void Stop();
 			bool IsStarted();
 			bool SendInput(struct encoder_frame* frame);
-			void GetOutput(struct encoder_packet* packet, bool* received_packet);
+			bool GetOutput(struct encoder_packet* packet, bool* received_packet);
 			bool GetExtraData(uint8_t**& data, size_t*& size);
 			void GetVideoInfo(struct video_scale_info*& vsi);
 
