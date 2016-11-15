@@ -31,6 +31,7 @@ SOFTWARE.
 #include <vector>
 #include <string>
 #include <sstream>
+#include <stdlib.h>
 
 #include <dxgi.h>
 #include <d3d11.h>
@@ -69,7 +70,7 @@ class SingletonDXGI {
 	HRESULT CreateDXGIFactory1(REFIID riid, _Out_ void **ppFactory) {
 		if (hModule == 0)
 			return S_FALSE;
-		
+
 		typedef HRESULT(__stdcall *t_CreateDXGIFactory1)(REFIID, void**);
 		t_CreateDXGIFactory1 pCreateDXGIFactory1 = (t_CreateDXGIFactory1)GetProcAddress(hModule, "CreateDXGIFactory1");
 
@@ -127,7 +128,7 @@ class SingletonD3D11 {
 		t_D3D11CreateDevice pD3D11CreateDevice = (t_D3D11CreateDevice)GetProcAddress(hModule, "D3D11CreateDevice");
 
 		if (pD3D11CreateDevice) {
-			return pD3D11CreateDevice(pAdapter, DriverType, Software, Flags, pFeatureLevels, FeatureLevels, 
+			return pD3D11CreateDevice(pAdapter, DriverType, Software, Flags, pFeatureLevels, FeatureLevels,
 				SDKVersion, ppDevice, pFeatureLevel, ppImmediateContext);
 		}
 		return S_FALSE;
@@ -142,11 +143,9 @@ Plugin::API::Device BuildDeviceFromAdapter(DXGI_ADAPTER_DESC1* pAdapter) {
 		return Device("INVALID DEVICE", "");
 
 	std::vector<char> uidBuf(1024);
-	sprintf(uidBuf.data(), "%ld:%ld:%ld:%ld",
-		pAdapter->VendorId,
-		pAdapter->DeviceId,
-		pAdapter->SubSysId,
-		pAdapter->Revision);
+	sprintf(uidBuf.data(), "%ld:%ld",
+		pAdapter->AdapterLuid.LowPart,
+		pAdapter->AdapterLuid.HighPart);
 
 	std::vector<char> nameBuf(1024);
 	wcstombs(nameBuf.data(), pAdapter->Description, 1024);
@@ -226,22 +225,24 @@ Plugin::API::Direct3D11::Direct3D11(Device device) : BaseAPI(device) {
 		throw new std::exception("Unable to create D3D11 driver.");
 
 	try {
-		IDXGIAdapter1 *pAdapter = NULL,
-			*pAdapter2 = NULL;
-		for (uint32_t iAdapterIndex = 0; pFactory->EnumAdapters1(iAdapterIndex, &pAdapter2) != DXGI_ERROR_NOT_FOUND; iAdapterIndex++) {
-			DXGI_ADAPTER_DESC1 adapterDesc = DXGI_ADAPTER_DESC1();
-			std::memset(&adapterDesc, 0, sizeof(DXGI_ADAPTER_DESC1));
+		IDXGIAdapter1 *pAdapter = NULL;
+		if (device.UniqueId != "") {
+			IDXGIAdapter1 *pAdapter2 = NULL;
+			for (uint32_t iAdapterIndex = 0; pFactory->EnumAdapters1(iAdapterIndex, &pAdapter2) != DXGI_ERROR_NOT_FOUND; iAdapterIndex++) {
+				DXGI_ADAPTER_DESC1 adapterDesc = DXGI_ADAPTER_DESC1();
+				std::memset(&adapterDesc, 0, sizeof(DXGI_ADAPTER_DESC1));
 
-			if (pAdapter2->GetDesc1(&adapterDesc) == S_OK) {
-				// Only allow AMD devices to be listed here.
-				if (adapterDesc.VendorId != 0x1002)
-					continue;
+				if (pAdapter2->GetDesc1(&adapterDesc) == S_OK) {
+					// Only allow AMD devices to be listed here.
+					if (adapterDesc.VendorId != 0x1002)
+						continue;
 
-				Plugin::API::Device device2 = BuildDeviceFromAdapter(&adapterDesc);
+					Plugin::API::Device device2 = BuildDeviceFromAdapter(&adapterDesc);
 
-				if (device.UniqueId == device2.UniqueId) {
-					pAdapter = pAdapter2;
-					break;
+					if (device.UniqueId == device2.UniqueId) {
+						pAdapter = pAdapter2;
+						break;
+					}
 				}
 			}
 		}
@@ -249,20 +250,37 @@ Plugin::API::Direct3D11::Direct3D11(Device device) : BaseAPI(device) {
 		try {
 			D3D_FEATURE_LEVEL featureLevels[] = {
 				D3D_FEATURE_LEVEL_11_1,
-				D3D_FEATURE_LEVEL_11_0,
+				D3D_FEATURE_LEVEL_11_0
 			};
+			D3D_FEATURE_LEVEL featureLevel;
 			uint32_t flags =
 				D3D11_CREATE_DEVICE_BGRA_SUPPORT |
 				D3D11_CREATE_DEVICE_DISABLE_GPU_TIMEOUT |
 				D3D11_CREATE_DEVICE_VIDEO_SUPPORT;
 
-			auto singletonD3D11 = SingletonD3D11::GetInstance();
-			HRESULT hr = singletonD3D11->D3D11CreateDevice(pAdapter, D3D_DRIVER_TYPE_UNKNOWN, NULL,
-				flags, featureLevels, 2, D3D11_SDK_VERSION,
-				&pDevice, NULL, &pDeviceContext);
+			DXGI_ADAPTER_DESC desc;
+			if (pAdapter != NULL) {
+				pAdapter->GetDesc(&desc);
+			}
 
+			auto singletonD3D11 = SingletonD3D11::GetInstance();
+			HRESULT hr = singletonD3D11->D3D11CreateDevice(
+				pAdapter, pAdapter == NULL ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN,
+				NULL, flags,
+				featureLevels, _countof(featureLevels),
+				D3D11_SDK_VERSION,
+				&pDevice, &featureLevel, &pDeviceContext);
 			if (FAILED(hr)) {
-				throw new std::exception("Unable to create D3D11 device.");
+				AMF_LOG_ERROR("Unable to create D3D11.1 device.");
+				hr = singletonD3D11->D3D11CreateDevice(
+					pAdapter, pAdapter == NULL ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN,
+					NULL, flags,
+					featureLevels + 1, _countof(featureLevels) - 1,
+					D3D11_SDK_VERSION,
+					&pDevice, &featureLevel, &pDeviceContext);
+				if (FAILED(hr)) {
+					throw std::exception("Unable to create D3D11 device.");
+				}
 			}
 		} catch (...) {
 			if (pAdapter)
