@@ -15,42 +15,34 @@ Pull Request titles should follow the guidelines for committing changes and also
 
 # Building
 
-## Getting Started
-This plugin is included in the Open Broadcaster Studio project itself.  
-This is only necessary if you wish to verify functionality with a standalone build.
+## Step 1: Get the pre-requisites
+This plugin is included in the Open Broadcaster Studio project itself. This is only necessary if you wish to verify functionality with a standalone build.
 
-## Pre-Requisites
+### Pre-Requisites
 * [Visual Studio® 2013 or Visual Studio® 2015 (Community or better)](http://visualstudio.com/)
 * Windows 10 SDK (Version 10586 or better, bundled with Visual Studio)
 * [OBS Studio](https://github.com/jp9000/obs-studio)
 * [AMF SDK](https://github.com/GPUOpen-LibrariesAndSDKs/AMF)
 * [InnoSetup](http://www.jrsoftware.org/isinfo.php)
+* CMake
 
-### Step 1: Third Party Headers
+## Step 2: Configure with CMake
+Point CMake at the source code and use either /build32 for 32-bit or /build64 for 64-bit as the binaries path.
 
-#### Open Broadcaster Studio
-1. Clone the [Open Broadcaster Studio Source Code](https://github.com/jp9000/obs-studio).
-2. Build both x86 and x64 with the same Visual Studio version you indent to use for the plugin.
-3. Create a *Soft Link* (Directory Junction) in /#ThirdParty/ to the cloned repository, call it 'OBS-Studio'.<br>
-Ex (Windows): mklink /J ./#ThirdParty/OBS-Studio C:/Src/OBS/
-4. Verify that it works by visiting the ./#ThirdParty/OBS-Studio directory.
+The following variables are needed to be set for a successful build:
 
-#### AMD Advanced Media Framework SDK (AMF SDK)
-1. Clone the [AMF SDK](https://github.com/GPUOpen-LibrariesAndSDKs/AMF).
-2. Create a *Soft Link* (Directory Junction) in /#ThirdParty/ to the cloned repository, call it 'AMD-AMF-SDK'.<br>
-Ex (Windows): mklink /J ./#ThirdParty/AMD-AMF-SDK C:/Src/AMF/
-3. Verify that it works by visiting the ./#ThirdParty/AMD-AMF-SDK directory.
+* PATH_AMDAMFSDK - Path to the cloned AMF SDK repository.
+* PATH_OBSStudio - Path to the cloned OBS Studio repository.
 
-### Step 2: Build the Project
+Once you have set these, you can generate the project files.
 
-1. Open the Visual Studio Solution file.
-2. Build for both x86 and x64 (Normal or Batch Build).
-3. Binaries should be located in /#Build/$(Configuration)/
-4. (Optional) Create Archives and an Installer with the package.bat in /#Resources/.
+## Step 3: Build with CMake
+1. Open the project file 
+2. Build
 
-If any errors during building or creating the archives and installer, start again from Step 1.
+Binaries will be located in /#Build and in the chosen binary path. An Installer can be created using the package.bat in /#Resources.
 
-### Step 3: Verify Functionality
+## Step 3: Verify Functionality
 
 *[You can only do this with an AMD APU or GPU installed](https://github.com/Xaymar/obs-studio_amf-encoder-plugin/wiki/Hardware,-GCN-and-VCE-Limits)*.  
 Install the plugin into your OBS Studio installation or test environment and select it in either Simple Output Mode or Advanced Output Mode. It should encode fine without crashing at any point.
