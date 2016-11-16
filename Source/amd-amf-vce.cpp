@@ -211,45 +211,27 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
 	}
 
 	// API Init
-	if (p_DeviceId == "") {
-		switch (Plugin::API::APIBase::GetBestAvailableAPI()) {
-			case Plugin::API::APIType_Direct3D11:
-				res = m_AMFContext->InitDX11(nullptr);
-				m_MemoryType = VCEMemoryType_DirectX11;
-				break;
-			case Plugin::API::APIType_Direct3D9:
-				res = m_AMFContext->InitDX9(nullptr);
-				m_MemoryType = VCEMemoryType_DirectX9;
-				break;
-			case Plugin::API::APIType_OpenGL:
-				res = m_AMFContext->InitOpenGL(nullptr, nullptr, nullptr);
-				m_MemoryType = VCEMemoryType_OpenGL;
-				break;
-			case Plugin::API::APIType_Base:
-				m_UseOpenCL = false;
-				m_MemoryType = VCEMemoryType_Host;
-				break;
-		}
-	} else {
-		m_APIDevice = Plugin::API::APIBase::CreateBestAvailableAPI(Plugin::API::APIBase::GetDeviceForUniqueId(p_DeviceId));
-		switch (m_APIDevice->GetType()) {
-			case Plugin::API::APIType_Direct3D11:
-				res = m_AMFContext->InitDX11(m_APIDevice->GetContext());
-				m_MemoryType = VCEMemoryType_DirectX11;
-				break;
-			case Plugin::API::APIType_Direct3D9:
-				res = m_AMFContext->InitDX9(m_APIDevice->GetContext());
-				m_MemoryType = VCEMemoryType_DirectX9;
-				break;
-			case Plugin::API::APIType_OpenGL:
-				res = m_AMFContext->InitOpenGL(m_APIDevice->GetContext(), nullptr, nullptr);
-				m_MemoryType = VCEMemoryType_OpenGL;
-				break;
-			case Plugin::API::APIType_Base: // Not the best case, but whatever.
-				m_UseOpenCL = false;
-				m_MemoryType = VCEMemoryType_Host;
-				break;
-		}
+	if (p_DeviceId == "") { // Use primary/available AMD devices only.
+		p_DeviceId = Plugin::AMD::VCECapabilities::GetInstance()->GetDevices().begin()->UniqueId;
+	}
+	m_APIDevice = Plugin::API::APIBase::CreateBestAvailableAPI(Plugin::API::APIBase::GetDeviceForUniqueId(p_DeviceId));
+	switch (m_APIDevice->GetType()) {
+		case Plugin::API::APIType_Direct3D11:
+			res = m_AMFContext->InitDX11(m_APIDevice->GetContext());
+			m_MemoryType = VCEMemoryType_DirectX11;
+			break;
+		case Plugin::API::APIType_Direct3D9:
+			res = m_AMFContext->InitDX9(m_APIDevice->GetContext());
+			m_MemoryType = VCEMemoryType_DirectX9;
+			break;
+		case Plugin::API::APIType_OpenGL:
+			res = m_AMFContext->InitOpenGL(m_APIDevice->GetContext(), nullptr, nullptr);
+			m_MemoryType = VCEMemoryType_OpenGL;
+			break;
+		case Plugin::API::APIType_Base: // Not the best case, but whatever.
+			m_UseOpenCL = false;
+			m_MemoryType = VCEMemoryType_Host;
+			break;
 	}
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Initializing 3D queue failed with error %ls (code %ld).", res);
