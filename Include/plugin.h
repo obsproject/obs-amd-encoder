@@ -101,12 +101,19 @@ MODULE_EXTERN const char *obs_module_text_multi(const char *val, uint8_t depth =
 #define AMF_H264_USAGE_ULTRALOWLATENCY			TEXT_AMF_H264("Usage.UltraLowLatency")
 #define AMF_H264_USAGE_LOWLATENCY				TEXT_AMF_H264("Usage.LowLatency")
 #define AMF_H264_USAGE_WEBCAM					TEXT_AMF_H264("Usage.Webcam")
+#define AMF_H264_QUALITY_PRESET					TEXT_AMF_H264("QualityPreset")
+#define AMF_H264_QUALITY_PRESET_DESCRIPTION		TEXT_AMF_H264("QualityPreset.Description")
+#define AMF_H264_QUALITY_PRESET_SPEED			TEXT_AMF_H264("QualityPreset.Speed")
+#define AMF_H264_QUALITY_PRESET_BALANCED		TEXT_AMF_H264("QualityPreset.Balanced")
+#define AMF_H264_QUALITY_PRESET_QUALITY			TEXT_AMF_H264("QualityPreset.Quality")
 #define AMF_H264_PROFILE						TEXT_AMF_H264("Profile")
 #define AMF_H264_PROFILE_DESCRIPTION			TEXT_AMF_H264("Profile.Description")
 #define AMF_H264_PROFILELEVEL					TEXT_AMF_H264("ProfileLevel")
 #define AMF_H264_PROFILELEVEL_DESCRIPTION		TEXT_AMF_H264("ProfileLevel.Description")
 #define AMF_H264_MAXIMUMLTRFRAMES				TEXT_AMF_H264("MaximumLTRFrames")
 #define AMF_H264_MAXIMUMLTRFRAMES_DESCRIPTION	TEXT_AMF_H264("MaximumLTRFrames.Description")
+#define AMF_H264_CODINGTYPE						TEXT_AMF_H264("CodingType")
+#define AMF_H264_CODINGTYPE_DESCRIPTION			TEXT_AMF_H264("CodingType.Description")
 
 // Rate Control Properties
 #define AMF_H264_RATECONTROLMETHOD				TEXT_AMF_H264("RateControlMethod")
@@ -169,11 +176,6 @@ MODULE_EXTERN const char *obs_module_text_multi(const char *val, uint8_t depth =
 #define AMF_H264_INTRAREFRESHNUMMBSPERSLOT_DESCRIPTION	TEXT_AMF_H264("IntraRefreshNumMBsPerSlot.Description")
 
 // Miscellaneous Properties
-#define AMF_H264_QUALITY_PRESET					TEXT_AMF_H264("QualityPreset")
-#define AMF_H264_QUALITY_PRESET_DESCRIPTION		TEXT_AMF_H264("QualityPreset.Description")
-#define AMF_H264_QUALITY_PRESET_SPEED			TEXT_AMF_H264("QualityPreset.Speed")
-#define AMF_H264_QUALITY_PRESET_BALANCED		TEXT_AMF_H264("QualityPreset.Balanced")
-#define AMF_H264_QUALITY_PRESET_QUALITY			TEXT_AMF_H264("QualityPreset.Quality")
 #define AMF_H264_SCANTYPE						TEXT_AMF_H264("ScanType")
 #define AMF_H264_SCANTYPE_DESCRIPTION			TEXT_AMF_H264("ScanType.Description")
 #define AMF_H264_SCANTYPE_PROGRESSIVE			TEXT_AMF_H264("ScanType.Progressive")
@@ -184,8 +186,6 @@ MODULE_EXTERN const char *obs_module_text_multi(const char *val, uint8_t depth =
 #define AMF_H264_MOTIONESTIMATION_HALF			TEXT_AMF_H264("MotionEstimation.Half")
 #define AMF_H264_MOTIONESTIMATION_QUARTER		TEXT_AMF_H264("MotionEstimation.Quarter")
 #define AMF_H264_MOTIONESTIMATION_BOTH			TEXT_AMF_H264("MotionEstimation.Both")
-#define AMF_H264_CABAC							TEXT_AMF_H264("CABAC")
-#define AMF_H264_CABAC_DESCRIPTION				TEXT_AMF_H264("CABAC.Description")
 
 // System Properties
 #define AMF_H264_DEVICE							TEXT_AMF_H264("Device")
