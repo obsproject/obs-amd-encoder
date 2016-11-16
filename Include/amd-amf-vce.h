@@ -57,17 +57,22 @@ namespace Plugin {
 			VCEMemoryType_DirectX11,	// DirectX11
 			VCEMemoryType_OpenGL,		// OpenGL
 		};
-		enum VCESurfaceFormat {
+		enum VCEColorFormat {
 			// 4:2:0 Formats
-			VCESurfaceFormat_NV12,	// NV12
-			VCESurfaceFormat_I420,	// YUV 4:2:0
+			VCEColorFormat_NV12,	// NV12
+			VCEColorFormat_I420,	// YUV 4:2:0
 			// 4:2:2 Formats
-			VCESurfaceFormat_YUY2,
+			VCEColorFormat_YUY2,
 			// Uncompressed
-			VCESurfaceFormat_BGRA,	// ARGB
-			VCESurfaceFormat_RGBA,	// RGBA
+			VCEColorFormat_BGRA,	// ARGB
+			VCEColorFormat_RGBA,	// RGBA
 			// Other
-			VCESurfaceFormat_GRAY,
+			VCEColorFormat_GRAY,
+		};
+		enum VCEColorProfile {
+			VCEColorProfile_601,
+			VCEColorProfile_709,
+			VCEColorProfile_2020, // HDR
 		};
 
 		// Static Properties
@@ -76,6 +81,11 @@ namespace Plugin {
 			VCEUsage_UltraLowLatency,
 			VCEUsage_LowLatency,
 			VCEUsage_Webcam,			// For SVC
+		};
+		enum VCEQualityPreset {
+			VCEQualityPreset_Speed,
+			VCEQualityPreset_Balanced,
+			VCEQualityPreset_Quality,
 		};
 		enum VCEProfile {
 			VCEProfile_Baseline = 66,
@@ -107,6 +117,17 @@ namespace Plugin {
 			VCEProfileLevel_61,
 			VCEProfileLevel_62,
 		};
+		enum VCEScanType {
+			VCEScanType_Progressive,
+			VCEScanType_Interlaced,
+		};
+		enum VCECodingType {
+			VCECodingType_Default,
+			VCECodingType_CALV,
+			VCECodingType_CABAC,
+		};
+
+		// Dynamic Properties
 		enum VCERateControlMethod {
 			VCERateControlMethod_ConstantQP,
 			VCERateControlMethod_ConstantBitrate,
@@ -118,26 +139,6 @@ namespace Plugin {
 			VCEBPicturePattern_One,
 			VCEBPicturePattern_Two,
 			VCEBPicturePattern_Three,
-		};
-		enum VCEScanType {
-			VCEScanType_Progressive,
-			VCEScanType_Interlaced,
-		};
-		enum VCEQualityPreset {
-			VCEQualityPreset_Speed,
-			VCEQualityPreset_Balanced,
-			VCEQualityPreset_Quality,
-		};
-		enum VCEQualityEnhancementMode {
-			VCEQualityEnhancementMode_Disabled,
-			VCEQualityEnhancementMode_CGS,
-			VCEQualityEnhancementMode_CGSRewrite,
-			VCEQualityEnhancementMode_MGS
-		};
-		enum VCEColorProfile {
-			VCEColorProfile_601,
-			VCEColorProfile_709,
-			VCEColorProfile_2020, // HDR
 		};
 
 		class VCEEncoder {
@@ -158,7 +159,7 @@ namespace Plugin {
 			VCEEncoder(VCEEncoderType p_Type,
 				std::string p_DeviceId = "",
 				bool p_OpenCL = false,
-				VCESurfaceFormat p_SurfaceFormat = VCESurfaceFormat_NV12
+				VCEColorFormat p_SurfaceFormat = VCEColorFormat_NV12
 			);
 			~VCEEncoder();
 			#pragma endregion Initializer & Finalizer
@@ -196,6 +197,11 @@ namespace Plugin {
 			*	Must be called first if you want to override properties. */
 			void SetUsage(VCEUsage usage);
 			VCEUsage GetUsage();
+
+			/** Quality Preset
+			* Static Property, changes cause a restart. */
+			void SetQualityPreset(VCEQualityPreset preset);
+			VCEQualityPreset GetQualityPreset();
 			
 			/*	H.264 Profile */
 			void SetProfile(VCEProfile profile);
@@ -216,9 +222,24 @@ namespace Plugin {
 			void SetMaximumLongTermReferenceFrames(uint32_t maximumLTRFrames);	// Long-Term Reference Frames. If 0, Encoder decides, if non-0 B-Pictures and Intra-Refresh are not supported.
 			uint32_t GetMaximumLongTermReferenceFrames();
 
+			/* Coding Type */
+			void SetCodingType(VCECodingType type);
+			VCECodingType GetCodingType();
+
 			/************************************************************************/
-			/* Resolution Properties                                                */
+			/* Frame Properties                                                     */
 			/************************************************************************/
+
+			void SetColorProfile(VCEColorProfile profile);
+			VCEColorProfile GetColorProfile();
+
+			void SetFullColorRangeEnabled(bool enabled);
+			bool IsFullColorRangeEnabled();
+
+			/* Selects progressive or interlaced scan
+			* Static Property, changes cause a restart. */
+			void SetScanType(VCEScanType scanType);
+			VCEScanType GetScanType();
 
 			/*	Output Resolution */
 			void SetFrameSize(uint32_t width, uint32_t height);
@@ -353,17 +374,7 @@ namespace Plugin {
 			/************************************************************************/
 			/* Miscellaneous Control Properties                                     */
 			/************************************************************************/
-
-			/** Quality Preset
-			 * Static Property, changes cause a restart. */
-			void SetQualityPreset(VCEQualityPreset preset);
-			VCEQualityPreset GetQualityPreset();
-
-			/* Selects progressive or interlaced scan
-			 * Static Property, changes cause a restart. */
-			void SetScanType(VCEScanType scanType);
-			VCEScanType GetScanType();
-
+			
 			/* Turns on/off half-pixel motion estimation */
 			void SetHalfPixelMotionEstimationEnabled(bool enabled);
 			bool IsHalfPixelMotionEstimationEnabled();
@@ -372,24 +383,12 @@ namespace Plugin {
 			void SetQuarterPixelMotionEstimationEnabled(bool enabled);
 			bool IsQuarterPixelMotionEstimationEnabled();
 
-			/** Enable CABAC entropy coding instead of CALV.
-			 * CABAC is a more efficient way of compressing data and on
-			 *  average 5% extra data to be stored in the same bitrate.
-			 * Static Property, changes cause a restart. */
-			void SetCABACEnabled(bool enabled);
-			bool IsCABACEnabled();
-
 			/************************************************************************/
 			/* Hidden Properties                                                    */
 			/************************************************************************/
+			
 			void SetGOPSize(uint32_t gopSize);
 			uint32_t GetGOPSize();
-			
-			void SetColorProfile(VCEColorProfile profile);
-			VCEColorProfile GetColorProfile();
-
-			void SetFullColorRangeEnabled(bool enabled);
-			bool IsFullColorRangeEnabled();
 
 			void SetWaitForTaskEnabled(bool enabled);
 			bool IsWaitForTaskEnabled();
@@ -397,13 +396,9 @@ namespace Plugin {
 			void SetAspectRatio(uint32_t x, uint32_t y);
 			std::pair<uint32_t, uint32_t> GetAspectRatio();
 
-			void SetQualityEnhancementMode(VCEQualityEnhancementMode mode);
-			VCEQualityEnhancementMode GetQualityEnhancementMode();
-
 			void SetMaximumNumberOfReferenceFrames(uint32_t frameCount);
 			uint32_t GetMaximumNumberOfReferenceFrames();
 
-			void SetMaxMBPerSec(uint32_t maxMBPerSec);
 			uint32_t GetMaxMBPerSec();
 
 			void SetInstanceID(uint32_t instanceId);
@@ -415,20 +410,20 @@ namespace Plugin {
 			void SetRateControlPreanalysisEnabled(bool enabled);
 			bool IsRateControlPreanalysisEnabled();
 
-			void SetIntraRefreshNumberOfStripes(uint32_t stripes);
+			void SetIntraRefreshNumberOfStripes(uint32_t stripes); // 0 - INT_MAX
 			uint32_t GetIntraRefreshNumberOfStripes();
 
-			void SetSliceMode(uint32_t mode);
+			void SetSliceMode(uint32_t mode); // 1 or 2
 			uint32_t GetSliceMode();
 
-			void SetMaximumSliceSize(uint32_t size);
+			void SetMaximumSliceSize(uint32_t size); // 0 - INT_MAX
 			uint32_t GetMaximumSliceSize();
 
 			// - SliceControlMode: AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB_ROW, AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB
-			void SetSliceControlMode(uint32_t mode);
+			void SetSliceControlMode(uint32_t mode); // 0, 1, 2, 3
 			uint32_t GetSliceControlMode();
 
-			void SetSliceControlSize(uint32_t size);
+			void SetSliceControlSize(uint32_t size); // 0 - INT_MAX
 			uint32_t GetSliceControlSize();
 
 			// HEVC Parameters
@@ -486,7 +481,7 @@ namespace Plugin {
 			VCEEncoderType m_EncoderType;
 			VCEMemoryType m_MemoryType;
 			bool m_UseOpenCL;
-			VCESurfaceFormat m_SurfaceFormat;
+			VCEColorFormat m_SurfaceFormat;
 			bool m_Flag_IsStarted,
 				m_Flag_FirstFrameSubmitted,
 				m_Flag_FirstFrameReceived;

@@ -180,7 +180,7 @@ static void printDebugInfo(amf::AMFComponentPtr m_AMFEncoder) {
 Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
 	std::string p_DeviceId/* = ""*/,
 	bool p_OpenCL/* = false*/,
-	VCESurfaceFormat p_SurfaceFormat/* = VCESurfaceFormat_NV12*/
+	VCEColorFormat p_SurfaceFormat/* = VCESurfaceFormat_NV12*/
 ) {
 	AMF_RESULT res;
 
@@ -569,25 +569,25 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 
 	switch (m_SurfaceFormat) {
 		// 4:2:0 Formats
-		case VCESurfaceFormat_NV12:
+		case VCEColorFormat_NV12:
 			vsi->format = VIDEO_FORMAT_NV12;
 			break;
-		case VCESurfaceFormat_I420:
+		case VCEColorFormat_I420:
 			vsi->format = VIDEO_FORMAT_I420;
 			break;
 		// 4:2:2 Formats
-		case VCESurfaceFormat_YUY2:
+		case VCEColorFormat_YUY2:
 			vsi->format = VIDEO_FORMAT_YUY2;
 			break;
 		// Uncompressed
-		case VCESurfaceFormat_RGBA:
+		case VCEColorFormat_RGBA:
 			vsi->format = VIDEO_FORMAT_RGBA;
 			break;
-		case VCESurfaceFormat_BGRA:
+		case VCEColorFormat_BGRA:
 			vsi->format = VIDEO_FORMAT_BGRA;
 			break;
 		// Other
-		case VCESurfaceFormat_GRAY:
+		case VCEColorFormat_GRAY:
 			vsi->format = VIDEO_FORMAT_Y800;
 			break;
 	}
@@ -796,7 +796,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("  Frame Rate: %d/%d", this->GetFrameRate().first, this->GetFrameRate().second);
 	AMF_LOG_INFO("  Quality Preset: %s", Utility::QualityPresetAsString(this->GetQualityPreset()));
 	AMF_LOG_INFO("  Scan Type: %s", this->GetScanType() == VCEScanType_Progressive ? "Progressive" : "Interlaced");
-	try { AMF_LOG_INFO("  CABAC: %s", this->IsCABACEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
+	try { AMF_LOG_INFO("  Coding Type: %s", Utility::CodingTypeAsString(this->GetCodingType())); } catch (...) {}
 	AMF_LOG_INFO("Rate Control Parameters: ");
 	AMF_LOG_INFO("  Method: %s", Utility::RateControlMethodAsString(this->GetRateControlMethod()));
 	AMF_LOG_INFO("  Bitrate: ");
@@ -846,7 +846,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	try { AMF_LOG_INFO("  MaxNumRefFrames: %d", this->GetMaximumNumberOfReferenceFrames()); } catch (...) {}
 	try { AMF_LOG_INFO("  MaxMBPerSec: %d", this->GetMaxMBPerSec()); } catch (...) {}
 	try { AMF_LOG_INFO("  Pre-Analysis Pass: %s", this->IsRateControlPreanalysisEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
-	try { AMF_LOG_INFO("  Quality Enhancement Mode: %s", Utility::QualityEnhancementModeAsString(this->GetQualityEnhancementMode())); } catch (...) {}
+	//try { AMF_LOG_INFO("  Quality Enhancement Mode: %s", Utility::QualityEnhancementModeAsString(this->GetQualityEnhancementMode())); } catch (...) {}
 	try { AMF_LOG_INFO("  VBAQ: %s", this->IsVBAQEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
 
 	Plugin::AMD::VCECapabilities::ReportDeviceCapabilities(m_APIDevice->GetDevice());
@@ -878,6 +878,46 @@ Plugin::AMD::VCEUsage Plugin::AMD::VCEEncoder::GetUsage() {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.",
 		Utility::UsageAsString(Utility::UsageFromAMF(usage)));
 	return Utility::UsageFromAMF(usage);
+}
+
+void Plugin::AMD::VCEEncoder::SetQualityPreset(VCEQualityPreset preset) {
+	static AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM CustomToAMF[] = {
+		AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED,
+		AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED,
+		AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY,
+	};
+	static char* CustomToName[] = {
+		"Speed",
+		"Balanced",
+		"Quality",
+	};
+
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, (uint32_t)CustomToAMF[preset]);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, CustomToName[preset]);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", CustomToName[preset]);
+}
+
+Plugin::AMD::VCEQualityPreset Plugin::AMD::VCEEncoder::GetQualityPreset() {
+	static VCEQualityPreset AMFToCustom[] = {
+		VCEQualityPreset_Balanced,
+		VCEQualityPreset_Speed,
+		VCEQualityPreset_Quality,
+	};
+	static char* CustomToName[] = {
+		"Speed",
+		"Balanced",
+		"Quality",
+	};
+
+	uint32_t preset;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, &preset);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", CustomToName[AMFToCustom[preset]]);
+	return AMFToCustom[preset];
 }
 
 void Plugin::AMD::VCEEncoder::SetProfile(VCEProfile profile) {
@@ -944,9 +984,129 @@ uint32_t Plugin::AMD::VCEEncoder::GetMaximumLongTermReferenceFrames() {
 	return maximumLTRFrames;
 }
 
+void Plugin::AMD::VCEEncoder::SetCodingType(VCECodingType type) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"CABACEnable", type);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, Utility::CodingTypeAsString(type));
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", Utility::CodingTypeAsString(type));
+}
+
+VCECodingType Plugin::AMD::VCEEncoder::GetCodingType() {
+	uint64_t type;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"CABACEnable", &type);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", Utility::CodingTypeAsString((VCECodingType)type));
+	return (VCECodingType)type;
+}
+
 /************************************************************************/
-/* Resolution Properties                                                */
+/* Frame Properties                                                     */
 /************************************************************************/
+
+void Plugin::AMD::VCEEncoder::SetColorProfile(VCEColorProfile profile) {
+	AMF_VIDEO_CONVERTER_COLOR_PROFILE_ENUM pluginToAMF[] = {
+		AMF_VIDEO_CONVERTER_COLOR_PROFILE_601,
+		AMF_VIDEO_CONVERTER_COLOR_PROFILE_709,
+		AMF_VIDEO_CONVERTER_COLOR_PROFILE_2020,
+	};
+	const char* pluginToString[] = {
+		"601",
+		"709",
+		"2020",
+	};
+
+	AMF_RESULT res = m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE,
+		pluginToAMF[profile]);
+	if (res != AMF_OK)
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Unable to set Color Profile, error %ls (code %ld).", res);
+	m_ColorProfile = profile;
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", pluginToString[profile]);
+}
+
+Plugin::AMD::VCEColorProfile Plugin::AMD::VCEEncoder::GetColorProfile() {
+	return m_ColorProfile;
+}
+
+void Plugin::AMD::VCEEncoder::SetFullColorRangeEnabled(bool enabled) {
+	// Info from Mikhail:
+	// - Name may change in the future
+	// - Use GetProperty or GetPropertyDescription to test for older or newer drivers.
+	const wchar_t* names[] = {
+		L"NominalRange", // 16.11.2 and below.
+		L"FullRange"
+	};
+
+	bool enabledTest;
+	AMF_RESULT res = AMF_INVALID_ARG;
+	for (size_t i = 0; i < 2; i++) {
+		if (m_AMFEncoder->GetProperty(names[i], &enabledTest) == AMF_OK) {
+			m_AMFConverter->SetProperty(names[i], enabled);
+			res = m_AMFEncoder->SetProperty(names[i], enabled);
+			break;
+		}
+	}
+	if (res != AMF_OK)
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
+}
+
+bool Plugin::AMD::VCEEncoder::IsFullColorRangeEnabled() {
+	// Info from Mikhail:
+	// - Name may change in the future
+	// - Use GetProperty or GetPropertyDescription to test for older or newer drivers.
+	const wchar_t* names[] = {
+		L"NominalRange", // 16.11.2 and below.
+		L"FullRange"
+	};
+
+	bool enabled;
+	AMF_RESULT res = AMF_INVALID_ARG;
+	for (size_t i = 0; i < 2; i++) {
+		res = m_AMFEncoder->GetProperty(names[i], &enabled);
+		if (res == AMF_OK) {
+			break;
+		}
+	}
+	if (res != AMF_OK)
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", enabled ? "Enabled" : "Disabled");
+	return enabled;
+}
+
+void Plugin::AMD::VCEEncoder::SetScanType(VCEScanType scanType) {
+	static AMF_VIDEO_ENCODER_SCANTYPE_ENUM CustomToAMF[] = {
+		AMF_VIDEO_ENCODER_SCANTYPE_PROGRESSIVE,
+		AMF_VIDEO_ENCODER_SCANTYPE_INTERLACED,
+	};
+	static char* CustomToName[] = {
+		"Progressive",
+		"Interlaced",
+	};
+
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SCANTYPE, (uint32_t)CustomToAMF[scanType]);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, CustomToName[scanType]);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", CustomToName[scanType]);
+}
+
+Plugin::AMD::VCEScanType Plugin::AMD::VCEEncoder::GetScanType() {
+	static char* CustomToName[] = {
+		"Progressive",
+		"Interlaced",
+	};
+
+	uint32_t scanType;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_SCANTYPE, &scanType);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", CustomToName[scanType]);
+	return (Plugin::AMD::VCEScanType)scanType;
+}
 
 void Plugin::AMD::VCEEncoder::SetFrameSize(uint32_t width, uint32_t height) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, ::AMFConstructSize(width, height));
@@ -1270,18 +1430,18 @@ void Plugin::AMD::VCEEncoder::SetVBVBufferAutomatic(double_t strictness) {
 
 			double_t bitrate = frameSize.first * frameSize.second;
 			switch (this->m_SurfaceFormat) {
-				case VCESurfaceFormat_NV12:
-				case VCESurfaceFormat_I420:
+				case VCEColorFormat_NV12:
+				case VCEColorFormat_I420:
 					bitrate *= 1.5;
 					break;
-				case VCESurfaceFormat_YUY2:
+				case VCEColorFormat_YUY2:
 					bitrate *= 4;
 					break;
-				case VCESurfaceFormat_BGRA:
-				case VCESurfaceFormat_RGBA:
+				case VCEColorFormat_BGRA:
+				case VCEColorFormat_RGBA:
 					bitrate *= 3;
 					break;
-				case VCESurfaceFormat_GRAY:
+				case VCEColorFormat_GRAY:
 					bitrate *= 1;
 					break;
 			}
@@ -1553,78 +1713,6 @@ uint32_t Plugin::AMD::VCEEncoder::GetIntraRefreshMBsNumberPerSlot() {
 /* Miscellaneous Control Properties                                     */
 /************************************************************************/
 
-void Plugin::AMD::VCEEncoder::SetQualityPreset(VCEQualityPreset preset) {
-	static AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM CustomToAMF[] = {
-		AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED,
-		AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED,
-		AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY,
-	};
-	static char* CustomToName[] = {
-		"Speed",
-		"Balanced",
-		"Quality",
-	};
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, (uint32_t)CustomToAMF[preset]);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, CustomToName[preset]);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", CustomToName[preset]);
-}
-
-Plugin::AMD::VCEQualityPreset Plugin::AMD::VCEEncoder::GetQualityPreset() {
-	static VCEQualityPreset AMFToCustom[] = {
-		VCEQualityPreset_Balanced,
-		VCEQualityPreset_Speed,
-		VCEQualityPreset_Quality,
-	};
-	static char* CustomToName[] = {
-		"Speed",
-		"Balanced",
-		"Quality",
-	};
-
-	uint32_t preset;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, &preset);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", CustomToName[AMFToCustom[preset]]);
-	return AMFToCustom[preset];
-}
-
-void Plugin::AMD::VCEEncoder::SetScanType(VCEScanType scanType) {
-	static AMF_VIDEO_ENCODER_SCANTYPE_ENUM CustomToAMF[] = {
-		AMF_VIDEO_ENCODER_SCANTYPE_PROGRESSIVE,
-		AMF_VIDEO_ENCODER_SCANTYPE_INTERLACED,
-	};
-	static char* CustomToName[] = {
-		"Progressive",
-		"Interlaced",
-	};
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SCANTYPE, (uint32_t)CustomToAMF[scanType]);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, CustomToName[scanType]);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", CustomToName[scanType]);
-}
-
-Plugin::AMD::VCEScanType Plugin::AMD::VCEEncoder::GetScanType() {
-	static char* CustomToName[] = {
-		"Progressive",
-		"Interlaced",
-	};
-
-	uint32_t scanType;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_SCANTYPE, &scanType);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", CustomToName[scanType]);
-	return (Plugin::AMD::VCEScanType)scanType;
-}
-
 void Plugin::AMD::VCEEncoder::SetHalfPixelMotionEstimationEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, enabled);
 	if (res != AMF_OK) {
@@ -1661,24 +1749,6 @@ bool Plugin::AMD::VCEEncoder::IsQuarterPixelMotionEstimationEnabled() {
 	return enabled;
 }
 
-void Plugin::AMD::VCEEncoder::SetCABACEnabled(bool enabled) {
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"CABACEnable", enabled);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
-}
-
-bool Plugin::AMD::VCEEncoder::IsCABACEnabled() {
-	bool enabled;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"CABACEnable", &enabled);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", enabled ? "Enabled" : "Disabled");
-	return enabled;
-}
-
 /************************************************************************/
 /* Hidden Properties                                                    */
 /************************************************************************/
@@ -1703,77 +1773,6 @@ uint32_t Plugin::AMD::VCEEncoder::GetGOPSize() {
 	}
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", size);
 	return size;
-}
-
-
-void Plugin::AMD::VCEEncoder::SetColorProfile(VCEColorProfile profile) {
-	AMF_VIDEO_CONVERTER_COLOR_PROFILE_ENUM pluginToAMF[] = {
-		AMF_VIDEO_CONVERTER_COLOR_PROFILE_601,
-		AMF_VIDEO_CONVERTER_COLOR_PROFILE_709,
-		AMF_VIDEO_CONVERTER_COLOR_PROFILE_2020,
-	};
-	const char* pluginToString[] = {
-		"601",
-		"709",
-		"2020",
-	};
-
-	AMF_RESULT res = m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE,
-		pluginToAMF[profile]);
-	if (res != AMF_OK)
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Unable to set Color Profile, error %ls (code %ld).", res);
-	m_ColorProfile = profile;
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", pluginToString[profile]);
-}
-
-Plugin::AMD::VCEColorProfile Plugin::AMD::VCEEncoder::GetColorProfile() {
-	return m_ColorProfile;
-}
-
-void Plugin::AMD::VCEEncoder::SetFullColorRangeEnabled(bool enabled) {
-	// Info from Mikhail:
-	// - Name may change in the future
-	// - Use GetProperty or GetPropertyDescription to test for older or newer drivers.
-	const wchar_t* names[] = {
-		L"NominalRange", // 16.11.2 and below.
-		L"FullRange"
-	};
-
-	bool enabledTest;
-	AMF_RESULT res = AMF_INVALID_ARG;
-	for (size_t i = 0; i < 2; i++) {
-		if (m_AMFEncoder->GetProperty(names[i], &enabledTest) == AMF_OK) {
-			m_AMFConverter->SetProperty(names[i], enabled);
-			res = m_AMFEncoder->SetProperty(names[i], enabled);
-			break;
-		}
-	}
-	if (res != AMF_OK)
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
-}
-
-bool Plugin::AMD::VCEEncoder::IsFullColorRangeEnabled() {
-	// Info from Mikhail:
-	// - Name may change in the future
-	// - Use GetProperty or GetPropertyDescription to test for older or newer drivers.
-	const wchar_t* names[] = {
-		L"NominalRange", // 16.11.2 and below.
-		L"FullRange"
-	};
-
-	bool enabled;
-	AMF_RESULT res = AMF_INVALID_ARG;
-	for (size_t i = 0; i < 2; i++) {
-		res = m_AMFEncoder->GetProperty(names[i], &enabled);
-		if (res == AMF_OK) {
-			break;
-		}
-	}
-	if (res != AMF_OK)
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", enabled ? "Enabled" : "Disabled");
-	return enabled;
 }
 
 void Plugin::AMD::VCEEncoder::SetWaitForTaskEnabled(bool enabled) {
@@ -1814,24 +1813,6 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetAspectRatio() {
 	return std::pair<uint32_t, uint32_t>(aspectRatio.num, aspectRatio.den);
 }
 
-void Plugin::AMD::VCEEncoder::SetQualityEnhancementMode(VCEQualityEnhancementMode mode) {
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"QualityEnhancementMode", (uint32_t)mode);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, Utility::QualityEnhancementModeAsString(mode));
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", Utility::QualityEnhancementModeAsString(mode));
-}
-
-Plugin::AMD::VCEQualityEnhancementMode Plugin::AMD::VCEEncoder::GetQualityEnhancementMode() {
-	uint32_t mode;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"QualityEnhancementMode", &mode);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", Utility::QualityEnhancementModeAsString((VCEQualityEnhancementMode)mode));
-	return (VCEQualityEnhancementMode)mode;
-}
-
 void Plugin::AMD::VCEEncoder::SetMaximumNumberOfReferenceFrames(uint32_t numFrames) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"MaxNumRefFrames", (uint32_t)numFrames);
 	if (res != AMF_OK) {
@@ -1848,14 +1829,6 @@ uint32_t Plugin::AMD::VCEEncoder::GetMaximumNumberOfReferenceFrames() {
 	}
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", numFrames);
 	return numFrames;
-}
-
-void Plugin::AMD::VCEEncoder::SetMaxMBPerSec(uint32_t maxMBPerSec) {
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"MaxMBPerSec", (uint32_t)maxMBPerSec);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, maxMBPerSec);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", maxMBPerSec);
 }
 
 uint32_t Plugin::AMD::VCEEncoder::GetMaxMBPerSec() {
