@@ -1,9 +1,9 @@
-# User Experience Update
-This update changes the behaviour of presets so that they now disable interaction with properties that end up being overriden and limit the range of properties that are allowed to be changed. The reason for this is to reduce 'bug' reports in which the user just forgot to deselect the preset again.
+# Multi-GPU Support And Filler Data Fix
+With this update the encoder plugin now supports multi-GPU setups, such as RX 480 + R9 390, R9 285 + R9 290, and others. You can select which GPU to use with the Advanced View Mode. The UI will also now update according to the supported features of the selected GPU and by default uses the primary GPU. Unsupported features will be hidden, just like unused features.
 
-The defaults and the presets have also been slightly modified. VBV Buffer Strictness now defaults to 0% and all presets no longer override VBV Buffer properties.
+The 'Filler Data' property has now been fixed, Delta QP for B-Pictures is now visible when not using Constant QP, 'Memory Type' and 'Surface Format' have been removed and 'CABAC' has been replaced with 'Coding Type'. 'Memory Type' is now automatically using the best available and 'Surface Format' is taken from OBS settings.
 
-A few bugs have also been fixed. Stable APU drivers should now work fine with this version again, the submission queue shouldn't fill up at the beginning of encoding while VCE isn't yet ready and color profile and range are now correctly applied from OBS Advanced Settings. Full Range is only supported on some drivers and hardware so far.
+Additionally a crash with AMD Hybrid/Switchable GPU setups was fixed and these systems should now be able to use the encoder. It will now default to using the best available AMD GPU in the system if it can detect it.
 
 ## Notes
 
@@ -11,10 +11,13 @@ Due to the nature of changes since 1.3 users might experience that their setting
 
 ## Changelog
 
-* Added: Experimental Full Range encoding support for certain hardware and drivers.
-* Fixed: Color Profile and Range will now be taken from OBS Studios Advanced settings.
-* Fixed: Stable APU drivers should now work fine again.
-* Fixed: Submission queue should no longer fill up when first starting encoding by waiting up to 5 seconds for the first frame to actually be submitted.
-* Changed: Presets will disable options that they override now and limit changeable within the allowed range.
-* Changed: Default of VBV Buffer Strictness is now 0%.
-* Changed: All presets no longer override VBV Buffer properties.
+* Added: Full multi-GPU encoding support.
+* Added: 'Coding Type' property which replaces 'CABAC'.
+* Fixed: Filler Data was always being forced on for CBR.
+* Fixed: Users should now be able to modify Delta QP for B-Pictures even when not using Constant QP.
+* Fixed: Crash on OBS start on AMD Hybrid/Switchable GPU systems.
+* Changed: Default device is always the primary/best available AMD GPU in the system.
+* Changed: B-Picture properties will be properly hidden now if not in use.
+* Removed: 'Memory Type' property as the plugin will now always use the best available API.
+* Removed: 'Surface Format' property as the plugin will now use the OBS settings for this.
+* Removed: Deprecated encoder entry has been fully removed now.
