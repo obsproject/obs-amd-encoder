@@ -212,7 +212,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
 
 	// API Init
 	if (p_DeviceId == "") {
-		switch (Plugin::API::BaseAPI::GetBestAvailableAPIForDevice()) {
+		switch (Plugin::API::APIBase::GetBestAvailableAPI()) {
 			case Plugin::API::APIType_Direct3D11:
 				res = m_AMFContext->InitDX11(nullptr);
 				m_MemoryType = VCEMemoryType_DirectX11;
@@ -231,18 +231,18 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
 				break;
 		}
 	} else {
-		m_APIDevice = Plugin::API::BaseAPI::CreateBestAvailableAPIForDevice(Plugin::API::BaseAPI::GetDeviceForUniqueId(p_DeviceId));
-		switch (m_APIDevice.GetType()) {
+		m_APIDevice = Plugin::API::APIBase::CreateBestAvailableAPI(Plugin::API::APIBase::GetDeviceForUniqueId(p_DeviceId));
+		switch (m_APIDevice->GetType()) {
 			case Plugin::API::APIType_Direct3D11:
-				res = m_AMFContext->InitDX11(m_APIDevice.GetContext());
+				res = m_AMFContext->InitDX11(m_APIDevice->GetContext());
 				m_MemoryType = VCEMemoryType_DirectX11;
 				break;
 			case Plugin::API::APIType_Direct3D9:
-				res = m_AMFContext->InitDX9(m_APIDevice.GetContext());
+				res = m_AMFContext->InitDX9(m_APIDevice->GetContext());
 				m_MemoryType = VCEMemoryType_DirectX9;
 				break;
 			case Plugin::API::APIType_OpenGL:
-				res = m_AMFContext->InitOpenGL(m_APIDevice.GetContext(), nullptr, nullptr);
+				res = m_AMFContext->InitOpenGL(m_APIDevice->GetContext(), nullptr, nullptr);
 				m_MemoryType = VCEMemoryType_OpenGL;
 				break;
 			case Plugin::API::APIType_Base: // Not the best case, but whatever.
@@ -800,7 +800,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("Initialization Parameters: ");
 	AMF_LOG_INFO("  Memory Type: %s", Utility::MemoryTypeAsString(m_MemoryType));
 	if (m_MemoryType != VCEMemoryType_Host) {
-		AMF_LOG_INFO("  Device: %s", m_APIDevice.GetDevice().Name.c_str());
+		AMF_LOG_INFO("  Device: %s", m_APIDevice->GetDevice().Name.c_str());
 		AMF_LOG_INFO("  OpenCL: %s", m_UseOpenCL ? "Enabled" : "Disabled");
 	}
 	AMF_LOG_INFO("  Surface Format: %s", Utility::SurfaceFormatAsString(m_SurfaceFormat));
@@ -825,7 +825,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("    Maximum: %d", this->GetMaximumQP());
 	AMF_LOG_INFO("    I-Frame: %d", this->GetIFrameQP());
 	AMF_LOG_INFO("    P-Frame: %d", this->GetPFrameQP());
-	if (VCECapabilities::GetInstance()->GetDeviceCaps(m_APIDevice.GetDevice(), VCEEncoderType_AVC).supportsBFrames) {
+	if (VCECapabilities::GetInstance()->GetDeviceCaps(m_APIDevice->GetDevice(), VCEEncoderType_AVC).supportsBFrames) {
 		try { AMF_LOG_INFO("    B-Frame: %d", this->GetBFrameQP()); } catch (...) {}
 		try { AMF_LOG_INFO("    B-Picture Delta QP: %d", this->GetBPictureDeltaQP()); } catch (...) {}
 		try { AMF_LOG_INFO("    Reference B-Picture Delta QP: %d", this->GetReferenceBPictureDeltaQP()); } catch (...) {}
@@ -846,7 +846,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("  IDR Period: %d frames", this->GetIDRPeriod());
 	AMF_LOG_INFO("  Header Insertion Spacing: %d frames", this->GetHeaderInsertionSpacing());
 	AMF_LOG_INFO("  Deblocking Filter: %s", this->IsDeblockingFilterEnabled() ? "Enabled" : "Disabled");
-	if (VCECapabilities::GetInstance()->GetDeviceCaps(m_APIDevice.GetDevice(), VCEEncoderType_AVC).supportsBFrames) {
+	if (VCECapabilities::GetInstance()->GetDeviceCaps(m_APIDevice->GetDevice(), VCEEncoderType_AVC).supportsBFrames) {
 		AMF_LOG_INFO("  B-Picture Pattern: %d", this->GetBPicturePattern());
 		AMF_LOG_INFO("  B-Picture Reference: %s", this->IsBPictureReferenceEnabled() ? "Enabled" : "Disabled");
 	} else {
@@ -867,7 +867,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	try { AMF_LOG_INFO("  Quality Enhancement Mode: %s", Utility::QualityEnhancementModeAsString(this->GetQualityEnhancementMode())); } catch (...) {}
 	try { AMF_LOG_INFO("  VBAQ: %s", this->IsVBAQEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
 
-	Plugin::AMD::VCECapabilities::ReportDeviceCapabilities(m_APIDevice.GetDevice());
+	Plugin::AMD::VCECapabilities::ReportDeviceCapabilities(m_APIDevice->GetDevice());
 
 	printDebugInfo(m_AMFEncoder);
 	AMF_LOG_INFO("-- AMD Advanced Media Framework VCE Encoder --");
@@ -1062,7 +1062,7 @@ Plugin::AMD::VCERateControlMethod Plugin::AMD::VCEEncoder::GetRateControlMethod(
 void Plugin::AMD::VCEEncoder::SetTargetBitrate(uint32_t bitrate) {
 	// Clamp Value
 	bitrate = clamp(bitrate, 10000,
-		Plugin::AMD::VCECapabilities::GetInstance()->GetDeviceCaps(m_APIDevice.GetDevice(), VCEEncoderType_AVC).maxBitrate);
+		Plugin::AMD::VCECapabilities::GetInstance()->GetDeviceCaps(m_APIDevice->GetDevice(), VCEEncoderType_AVC).maxBitrate);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, bitrate);
 	if (res != AMF_OK) {
@@ -1084,7 +1084,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetTargetBitrate() {
 void Plugin::AMD::VCEEncoder::SetPeakBitrate(uint32_t bitrate) {
 	// Clamp Value
 	bitrate = clamp(bitrate, 10000,
-		Plugin::AMD::VCECapabilities::GetInstance()->GetDeviceCaps(m_APIDevice.GetDevice(), VCEEncoderType_AVC).maxBitrate);
+		Plugin::AMD::VCECapabilities::GetInstance()->GetDeviceCaps(m_APIDevice->GetDevice(), VCEEncoderType_AVC).maxBitrate);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, (uint32_t)bitrate);
 	if (res != AMF_OK) {
