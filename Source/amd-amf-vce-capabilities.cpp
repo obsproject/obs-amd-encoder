@@ -66,7 +66,7 @@ void Plugin::AMD::VCECapabilities::ReportDeviceCapabilities(Plugin::API::Device 
 
 	AMF_LOG_INFO("Capabilities for Device '%s':", device.Name.c_str());
 
-	VCEEncoderType types[] = { VCEEncoderType_AVC, VCEEncoderType_SVC, VCEEncoderType_HEVC };
+	VCEEncoderType types[] = { VCEEncoderType_AVC, VCEEncoderType_SVC };
 	for (VCEEncoderType type : types) {
 		auto caps = inst->GetDeviceCaps(device, type);
 
@@ -82,12 +82,12 @@ void Plugin::AMD::VCECapabilities::ReportDeviceCapabilities(Plugin::API::Device 
 		AMF_LOG_INFO("      # of Streams: %ld", caps.maxNumOfStreams);
 		AMF_LOG_INFO("      # of Instances: %ld", caps.maxNumOfHwInstances);
 		AMF_LOG_INFO("      Profile: %s", Plugin::Utility::ProfileAsString((VCEProfile)caps.maxProfile));
-		AMF_LOG_INFO("      Level: %d.%d", caps.maxProfileLevel / 10, caps.maxTemporalLayers % 10);
+		AMF_LOG_INFO("      Level: %ld.%ld", caps.maxProfileLevel / 10, caps.maxProfileLevel % 10);
 		AMF_LOG_INFO("      Bitrate: %ld", caps.maxBitrate);
-		AMF_LOG_INFO("      Temporal Layers: %d", caps.maxTemporalLayers);
-		AMF_LOG_INFO("      Reference Frames: %d (min) - %d (max)", caps.minReferenceFrames, caps.maxReferenceFrames);
+		AMF_LOG_INFO("      Temporal Layers: %ld", caps.maxTemporalLayers);
+		AMF_LOG_INFO("      Reference Frames: %ld (min) - %ld (max)", caps.minReferenceFrames, caps.maxReferenceFrames);
 		AMF_LOG_INFO("    Features")
-		AMF_LOG_INFO("      B-Frames: %s", caps.supportsBFrames ? "Supported" : "Not Supported");
+			AMF_LOG_INFO("      B-Frames: %s", caps.supportsBFrames ? "Supported" : "Not Supported");
 		AMF_LOG_INFO("      Fixed Slice Mode: %s", caps.supportsFixedSliceMode ? "Supported" : "Not Supported");
 		AMF_LOG_INFO("    Input");
 		ReportDeviceIOCapabilities(device, type, false);
@@ -100,7 +100,7 @@ void Plugin::AMD::VCECapabilities::ReportDeviceIOCapabilities(Plugin::API::Devic
 	auto amf = Plugin::AMD::AMF::GetInstance();
 	auto inst = GetInstance();
 	auto ioCaps = inst->GetDeviceIOCaps(device, type, output);
-	AMF_LOG_INFO("      Resolution: %ldx%ld - %ldx%ld", 
+	AMF_LOG_INFO("      Resolution: %ldx%ld - %ldx%ld",
 		ioCaps.minWidth, ioCaps.minHeight,
 		ioCaps.maxWidth, ioCaps.maxHeight);
 	AMF_LOG_INFO("      Vertical Alignment: %ld", ioCaps.verticalAlignment);
@@ -132,11 +132,6 @@ Plugin::AMD::VCECapabilities::VCECapabilities() {
 }
 
 Plugin::AMD::VCECapabilities::~VCECapabilities() {}
-
-//void Plugin::AMD::VCECapabilities::QueryCapabilitiesForDevice(VCEMemoryType type, Plugin::API::Device device /*= Plugin::API::Device()*/) {
-//	
-//
-//}
 
 static AMF_RESULT GetIOCapability(bool output, amf::AMFCapsPtr amfCaps, Plugin::AMD::VCEDeviceCapabilities::IOCaps* caps) {
 	AMF_RESULT res = AMF_OK;
@@ -206,16 +201,16 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 			continue;
 		}
 
-		Plugin::API::BaseAPI apiDev = Plugin::API::BaseAPI::CreateBestAvailableAPIForDevice(device);
-		switch (apiDev.GetType()) {
+		auto apiDev = Plugin::API::APIBase::CreateBestAvailableAPI(device);
+		switch (apiDev->GetType()) {
 			case Plugin::API::APIType_Direct3D11:
-				res = amfContext->InitDX11(apiDev.GetContext());
+				res = amfContext->InitDX11(apiDev->GetContext());
 				break;
 			case Plugin::API::APIType_Direct3D9:
-				res = amfContext->InitDX9(apiDev.GetContext());
+				res = amfContext->InitDX9(apiDev->GetContext());
 				break;
 			case Plugin::API::APIType_OpenGL:
-				res = amfContext->InitOpenGL(apiDev.GetContext(), nullptr, nullptr);
+				res = amfContext->InitOpenGL(apiDev->GetContext(), nullptr, nullptr);
 				break;
 		}
 		if (res != AMF_OK) {
@@ -224,19 +219,21 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 			continue;
 		}
 
-		VCEDeviceCapabilities devAVCCaps, devSVCCaps, devHEVCCaps;
+		VCEDeviceCapabilities devAVCCaps, devSVCCaps;
 		const wchar_t* capsString[] = {
 			AMFVideoEncoderVCE_AVC,
 			AMFVideoEncoderVCE_SVC,
-			L"AMFVideoEncoderHW_HEVC"
 		};
 		VCEDeviceCapabilities* caps[] = {
 			&devAVCCaps,
 			&devSVCCaps,
-			&devHEVCCaps
+		};
+		VCEEncoderType capsType[] = {
+			VCEEncoderType_AVC,
+			VCEEncoderType_SVC,
 		};
 
-		for (uint8_t capsIndex = 0; capsIndex < 3; capsIndex++) {
+		for (uint8_t capsIndex = 0; capsIndex < _countof(caps); capsIndex++) {
 			#pragma region Null Structure
 			caps[capsIndex]->acceleration_type = amf::AMF_ACCEL_NOT_SUPPORTED;
 			caps[capsIndex]->maxBitrate =
@@ -276,7 +273,7 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 					amfInstance->GetTrace()->GetResultText(res), res);
 				continue;
 			}
-			
+
 			amf::AMFCapsPtr amfCaps;
 			res = amfComponent->GetCaps(&amfCaps);
 			if (res != AMF_OK) {
@@ -314,20 +311,14 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 			}
 
 			amfComponent->Terminate();
+
+			// Register
+			deviceToCapabilities.insert_or_assign(
+				std::pair<Plugin::API::Device, Plugin::AMD::VCEEncoderType>(device, capsType[capsIndex]),
+				*caps[capsIndex]);
 		}
 
 		amfContext->Terminate();
-
-		// Register
-		deviceToCapabilities.insert_or_assign(
-			std::pair<Plugin::API::Device, Plugin::AMD::VCEEncoderType>(device, VCEEncoderType_AVC),
-			devAVCCaps);
-		deviceToCapabilities.insert_or_assign(
-			std::pair<Plugin::API::Device, Plugin::AMD::VCEEncoderType>(device, VCEEncoderType_SVC),
-			devSVCCaps);
-		deviceToCapabilities.insert_or_assign(
-			std::pair<Plugin::API::Device, Plugin::AMD::VCEEncoderType>(device, VCEEncoderType_HEVC),
-			devHEVCCaps);
 	}
 
 	return true;
