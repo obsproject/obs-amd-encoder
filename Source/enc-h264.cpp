@@ -85,32 +85,6 @@ void Plugin::Interface::H264Interface::encoder_register() {
 	encoder_info->get_extra_data = &get_extra_data;
 
 	obs_register_encoder(encoder_info);
-
-	//////////////////////////////////////////////////////////////////////////
-	// Deprecated old Encoder
-	static obs_encoder_info* encoder_info_simple = new obs_encoder_info();
-	static const char* encoder_name_simple = "amd_amf_h264_simple";
-
-	std::memset(encoder_info_simple, 0, sizeof(obs_encoder_info));
-
-	// Initialize Structure
-	encoder_info_simple->id = encoder_name_simple;
-	encoder_info_simple->type = obs_encoder_type::OBS_ENCODER_VIDEO;
-	encoder_info_simple->codec = encoder_codec;
-
-	// Functions
-	encoder_info_simple->get_name = &get_name_simple;
-	encoder_info_simple->get_defaults = &get_defaults;
-	encoder_info_simple->get_properties = &get_properties;
-	encoder_info_simple->create = &create;
-	encoder_info_simple->destroy = &destroy;
-	encoder_info_simple->encode = &encode;
-	encoder_info_simple->update = &update;
-	encoder_info_simple->get_video_info = &get_video_info;
-	encoder_info_simple->get_extra_data = &get_extra_data;
-
-	obs_register_encoder(encoder_info_simple);
-	//////////////////////////////////////////////////////////////////////////
 }
 
 const char* Plugin::Interface::H264Interface::get_name(void*) {
@@ -252,7 +226,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 }
 
 static void fill_device_list(obs_property_t* p) {
-	std::vector<Plugin::API::Device> devices = Plugin::API::BaseAPI::EnumerateDevices();
+	std::vector<Plugin::API::Device> devices = Plugin::API::APIBase::EnumerateDevices();
 
 	obs_property_list_clear(p);
 	obs_property_list_add_string(p, TEXT_T(AMF_UTIL_DEFAULT), "");
@@ -523,7 +497,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 
 	#pragma region Device Capabilities
 	const char* deviceId = obs_data_get_string(data, AMF_H264_DEVICE);
-	auto device = Plugin::API::BaseAPI::GetDeviceForUniqueId(deviceId);
+	auto device = Plugin::API::APIBase::GetDeviceForUniqueId(deviceId);
 	auto caps = Plugin::AMD::VCECapabilities::GetInstance();
 	auto devCaps = caps->GetDeviceCaps(device, VCEEncoderType_AVC);
 	#pragma endregion Device Capabilities
@@ -825,7 +799,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data) {
 	#pragma region Device Capabilities
 	const char* deviceId = obs_data_get_string(data, AMF_H264_DEVICE);
-	auto device = Plugin::API::BaseAPI::GetDeviceForUniqueId(deviceId);
+	auto device = Plugin::API::APIBase::GetDeviceForUniqueId(deviceId);
 	auto caps = Plugin::AMD::VCECapabilities::GetInstance();
 	auto devCaps = caps->GetDeviceCaps(device, VCEEncoderType_AVC);
 	#pragma endregion Device Capabilities
@@ -1471,7 +1445,7 @@ Plugin::Interface::H264Interface::~H264Interface() {
 bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	#pragma region Device Capabilities
 	const char* deviceId = obs_data_get_string(data, AMF_H264_DEVICE);
-	auto device = Plugin::API::BaseAPI::GetDeviceForUniqueId(deviceId);
+	auto device = Plugin::API::APIBase::GetDeviceForUniqueId(deviceId);
 	auto caps = Plugin::AMD::VCECapabilities::GetInstance();
 	auto devCaps = caps->GetDeviceCaps(device, VCEEncoderType_AVC);
 	#pragma endregion Device Capabilities
