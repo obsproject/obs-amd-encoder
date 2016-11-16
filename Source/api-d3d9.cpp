@@ -117,7 +117,7 @@ BOOL CALLBACK EnumWindowsCallback(HWND handle, LPARAM lParam) {
 	return FALSE;
 }
 
-Plugin::API::Direct3D9::Direct3D9(Device device) : BaseAPI(device) {
+Plugin::API::Direct3D9::Direct3D9(Device device) : APIBase(device) {
 	this->myType = APIType_Direct3D9;
 
 	pDirect3D = Direct3DCreate9(D3D_SDK_VERSION);

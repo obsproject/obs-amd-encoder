@@ -215,7 +215,7 @@ Plugin::API::Device Plugin::API::Direct3D11::GetDeviceForUniqueId(std::string un
 	return device;
 }
 
-Plugin::API::Direct3D11::Direct3D11(Device device) : BaseAPI(device) {
+Plugin::API::Direct3D11::Direct3D11(Device device) : APIBase(device) {
 	IDXGIFactory1 *pFactory;
 
 	this->myType = APIType_Direct3D11;
