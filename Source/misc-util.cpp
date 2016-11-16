@@ -82,6 +82,7 @@ namespace Plugin {
 			return VCEProfileLevel_52;
 		}
 
+		#pragma region VCEMemoryType
 		inline const char* MemoryTypeAsString(VCEMemoryType memoryType) {
 			static const char* memoryTypeToString[] = {
 				"Host",
@@ -100,8 +101,9 @@ namespace Plugin {
 			};
 			return memoryTypeToAMF[memoryType];
 		}
-
-		inline const char* SurfaceFormatAsString(VCESurfaceFormat surfaceFormat) {
+		#pragma endregion VCEMemoryType
+		#pragma region VCESurfaceFormat
+		inline const char* SurfaceFormatAsString(VCEColorFormat surfaceFormat) {
 			static const char* surfaceFormatToString[] = {
 				"NV12",
 				"I420",
@@ -112,7 +114,7 @@ namespace Plugin {
 			};
 			return surfaceFormatToString[surfaceFormat];
 		}
-		inline amf::AMF_SURFACE_FORMAT SurfaceFormatAsAMF(VCESurfaceFormat surfaceFormat) {
+		inline amf::AMF_SURFACE_FORMAT SurfaceFormatAsAMF(VCEColorFormat surfaceFormat) {
 			static amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
 				// 4:2:0 Formats
 				amf::AMF_SURFACE_NV12,
@@ -127,7 +129,8 @@ namespace Plugin {
 			};
 			return surfaceFormatToAMF[surfaceFormat];
 		}
-
+		#pragma endregion VCESurfaceFormat
+		#pragma region VCEUsage
 		inline const char* UsageAsString(VCEUsage usage) {
 			static const char* usageToString[] = {
 				"Transcoding",
@@ -155,7 +158,18 @@ namespace Plugin {
 			};
 			return usageFromAMF[usage];
 		}
-
+		#pragma endregion VCEUsage
+		#pragma region VCEQualityPreset
+		inline const char* QualityPresetAsString(VCEQualityPreset preset) {
+			static const char* qualityPresetToString[] = {
+				"Speed",
+				"Balanced",
+				"Quality"
+			};
+			return qualityPresetToString[preset];
+		}
+		#pragma endregion VCEQualityPreset
+		#pragma region VCEProfile
 		inline const char* ProfileAsString(VCEProfile profile) {
 			switch (profile) {
 				case VCEProfile_Baseline:
@@ -172,16 +186,8 @@ namespace Plugin {
 
 			return "Invalid";
 		}
-
-		inline const char* QualityPresetAsString(VCEQualityPreset preset) {
-			static const char* qualityPresetToString[] = {
-				"Speed",
-				"Balanced",
-				"Quality"
-			};
-			return qualityPresetToString[preset];
-		}
-
+		#pragma endregion VCEProfile
+		#pragma region VCERateControlMethod
 		inline const char* RateControlMethodAsString(VCERateControlMethod method) {
 			static const char* rateControlMethodToString[] = {
 				"Constant Quantization Parameter (CQP)",
@@ -209,15 +215,15 @@ namespace Plugin {
 			};
 			return AMFToCustom[method];
 		}
+		#pragma endregion VCERateControlMethod
 
-		inline const char* QualityEnhancementModeAsString(VCEQualityEnhancementMode mode) {
-			static const char* strings[] = {
-				"Disabled",
-				"CGS",
-				"CGS Rewrite",
-				"MGS"
+		inline const char* CodingTypeAsString(VCECodingType type) {
+			const char* TypeToString[] = {
+				"Default",
+				"CABAC",
+				"CALV",
 			};
-			return strings[mode];
+			return TypeToString[type];
 		}
 	}
 }
