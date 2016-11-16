@@ -77,7 +77,7 @@ bool Plugin::API::operator!=(const Plugin::API::Device & left, const Plugin::API
 	return !(left == right);
 }
 
-std::vector<Plugin::API::Device> Plugin::API::BaseAPI::EnumerateDevices() {
+std::vector<Plugin::API::Device> Plugin::API::APIBase::EnumerateDevices() {
 	// Build a list of Devices
 	#if defined(_WIN32) || defined(_WIN64)
 	if (IsWindows8OrGreater()) {
@@ -92,7 +92,7 @@ std::vector<Plugin::API::Device> Plugin::API::BaseAPI::EnumerateDevices() {
 	return std::vector<Plugin::API::Device>();
 }
 
-Plugin::API::Device Plugin::API::BaseAPI::GetDeviceForUniqueId(std::string uniqueId) {
+Plugin::API::Device Plugin::API::APIBase::GetDeviceForUniqueId(std::string uniqueId) {
 	auto devices = EnumerateDevices();
 	for (auto device : devices) {
 		if (device.UniqueId == uniqueId)
@@ -101,24 +101,23 @@ Plugin::API::Device Plugin::API::BaseAPI::GetDeviceForUniqueId(std::string uniqu
 	return Plugin::API::Device();
 }
 
-Plugin::API::BaseAPI Plugin::API::BaseAPI::CreateBestAvailableAPIForDevice(Plugin::API::Device device) {
-	if (device.UniqueId == "")
-		return BaseAPI(device);
-
+std::unique_ptr<Plugin::API::APIBase> Plugin::API::APIBase::CreateBestAvailableAPI(Plugin::API::Device device) {
+	std::unique_ptr<Plugin::API::APIBase> retVal;
 	#if defined(_WIN32) || defined(_WIN64)
 	if (IsWindows8OrGreater()) {
-		return Plugin::API::Direct3D11::Direct3D11(device);
+		retVal = std::make_unique<Plugin::API::Direct3D11>(device);
 	} else if (IsWindowsXPOrGreater()) {
-		return Plugin::API::Direct3D9::Direct3D9(device);
+		retVal = std::make_unique<Plugin::API::Direct3D9>(device);
 	} else
 		#endif 
 	{ // OpenGL
 	  //return Plugin::API::OpenGL::OpenGL(device);
+		retVal = std::make_unique<Plugin::API::APIBase>();
 	}
-	return BaseAPI(device);
+	return retVal;
 }
 
-Plugin::API::APIType Plugin::API::BaseAPI::GetBestAvailableAPIForDevice() {
+Plugin::API::APIType Plugin::API::APIBase::GetBestAvailableAPI() {
 	#if defined(_WIN32) || defined(_WIN64)
 	if (IsWindows8OrGreater()) {
 		return APIType_Direct3D11;
@@ -131,22 +130,25 @@ Plugin::API::APIType Plugin::API::BaseAPI::GetBestAvailableAPIForDevice() {
 	}
 }
 
-Plugin::API::BaseAPI::BaseAPI(Device device) {
+Plugin::API::APIBase::APIBase() {
+	myDevice = Plugin::API::Device();
+}
+
+Plugin::API::APIBase::APIBase(Device device) {
 	myDevice = device;
 }
 
-Plugin::API::BaseAPI::~BaseAPI() {
-
+Plugin::API::APIBase::~APIBase() {
 }
 
-Plugin::API::APIType Plugin::API::BaseAPI::GetType() {
+Plugin::API::APIType Plugin::API::APIBase::GetType() {
 	return myType;
 }
 
-void* Plugin::API::BaseAPI::GetContext() {
+void* Plugin::API::APIBase::GetContext() {
 	return nullptr;
 }
 
-Plugin::API::Device Plugin::API::BaseAPI::GetDevice() {
+Plugin::API::Device Plugin::API::APIBase::GetDevice() {
 	return myDevice;
 }

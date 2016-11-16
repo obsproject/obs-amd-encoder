@@ -59,26 +59,26 @@ namespace Plugin {
 			APIType_OpenGL,
 		};
 
-		class BaseAPI {
-			friend class Direct3D11;
-			friend class Direct3D9;
-			//friend class OpenGL;
-
+		class APIBase {
 			public:
 			static std::vector<Plugin::API::Device> EnumerateDevices();
 			static Plugin::API::Device GetDeviceForUniqueId(std::string uniqueId);
-			static Plugin::API::BaseAPI CreateBestAvailableAPIForDevice(Plugin::API::Device device);
-			static APIType GetBestAvailableAPIForDevice();
 
-			BaseAPI(Device device);
-			virtual ~BaseAPI();
+			static Plugin::API::APIType GetBestAvailableAPI();
+			static std::unique_ptr<Plugin::API::APIBase>
+				CreateBestAvailableAPI(Plugin::API::Device device);
 
-			APIType GetType();
-			virtual void* GetContext();
+			APIBase();
+			APIBase(Device device);
+			virtual ~APIBase();
+
 			Plugin::API::Device GetDevice();
+
+			virtual Plugin::API::APIType GetType();
+			virtual void* GetContext();
 			
 			protected:
-			APIType myType;
+			Plugin::API::APIType myType;
 
 			private:
 			Plugin::API::Device myDevice;
