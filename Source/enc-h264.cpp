@@ -162,15 +162,15 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_string(data, "profile", "");
 	obs_data_set_string(data, "preset", "");
 	#pragma endregion OBS - Enforce Streaming Service Restrictions
-	
-	// Cached Data
-	obs_data_set_string(data, "lastDeviceId", "InvalidUniqueDeviceId");
-	obs_data_set_int(data, "lastView", -1);
-	obs_data_set_int(data, "lastRCM", -1);
-	obs_data_set_int(data, "lastVBVBufferMode", -1);
-	obs_data_set_int(data, "lastBPicturePattern", -1);
-	obs_data_set_int(data, "lastBPictureReference", -1);
 
+	// Cached Data
+	obs_data_set_string(data, "last" vstr(AMF_H264_DEVICE), "InvalidUniqueDeviceId");
+	obs_data_set_int(data, "last" vstr(AMF_H264_VIEW), -1);
+	obs_data_set_int(data, "last" vstr(AMF_H264_RATECONTROLMETHOD), -1);
+	obs_data_set_int(data, "last" vstr(AMF_H264_VBVBUFFER), -1);
+	obs_data_set_int(data, "last" vstr(AMF_H264_BPICTURE_PATTERN), -1);
+	obs_data_set_int(data, "last" vstr(AMF_H264_BPICTURE_REFERENCE), -1);
+	
 	// Preset
 	obs_data_set_default_int(data, AMF_H264_PRESET, -1);
 
@@ -221,8 +221,8 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, AMF_H264_USE_OPENCL, 0);
 
 	obs_data_set_default_int(data, AMF_H264_VIEW, ViewMode::Basic);
-	obs_data_set_default_int(data, AMF_H264_UNLOCK_PROPERTIES, 0);
-	obs_data_set_default_bool(data, AMF_H264_DEBUG, 0);
+	obs_data_set_default_bool(data, AMF_H264_UNLOCK_PROPERTIES, false);
+	obs_data_set_default_bool(data, AMF_H264_DEBUG, false);
 }
 
 static void fill_device_list(obs_property_t* p) {
@@ -373,6 +373,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_BPICTURE_REFERENCE_DESCRIPTION));
 	obs_property_list_add_int(p, TEXT_T(AMF_UTIL_TOGGLE_DISABLED), 0);
 	obs_property_list_add_int(p, TEXT_T(AMF_UTIL_TOGGLE_ENABLED), 1);
+	obs_property_set_modified_callback(p, properties_modified);
 	/// B-Picture Delta QP
 	p = obs_properties_add_int_slider(props, AMF_H264_QP_BPICTURE_DELTA, TEXT_T(AMF_H264_QP_BPICTURE_DELTA), -10, 10, 1);
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_QP_BPICTURE_DELTA_DESCRIPTION));
@@ -438,7 +439,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	/// Unlock Properties to full range.
 	p = obs_properties_add_bool(props, AMF_H264_UNLOCK_PROPERTIES, TEXT_T(AMF_H264_UNLOCK_PROPERTIES));
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_UNLOCK_PROPERTIES_DESCRIPTION));
-	obs_property_set_modified_callback(p, unlock_properties_modified);
+	obs_property_set_modified_callback(p, properties_modified);
 
 	/// Debug
 	p = obs_properties_add_bool(props, AMF_H264_DEBUG, TEXT_T(AMF_H264_DEBUG));
@@ -503,10 +504,10 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 	#pragma endregion Device Capabilities
 
 	#pragma region Rebuild UI
-	const char* lastDeviceId = obs_data_get_string(data, "lastDeviceId");
-	if (strcmp(lastDeviceId, deviceId) != 0) {
-		uint32_t unlockedDivisor = obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000;
-
+	bool unlocked = obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES);
+	bool lastUnlocked = obs_data_get_bool(data, "last" vstr(AMF_H264_UNLOCK_PROPERTIES));
+	const char* lastDeviceId = obs_data_get_string(data, "last" vstr(AMF_H264_DEVICE));
+	if (strcmp(lastDeviceId, deviceId) != 0 || (unlocked != lastUnlocked)) {
 		#pragma region Static Properties
 		#pragma region Profile
 		p = obs_properties_get(props, AMF_H264_PROFILE);
@@ -573,14 +574,46 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		#pragma endregion Profile Level
 		#pragma endregion Static Properties
 
-		#pragma region Rate Control Properties
-		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_TARGET),
-			10000 / unlockedDivisor, devCaps.maxBitrate / unlockedDivisor, 1);
-		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_PEAK),
-			10000 / unlockedDivisor, devCaps.maxBitrate / unlockedDivisor, 1);
-		#pragma endregion Rate Control Properties
+		#pragma region Unlockable Stuff
+		// Store values.
+		uint64_t bitrateTarget = obs_data_get_int(data, AMF_H264_BITRATE_TARGET),
+			bitratePeak = obs_data_get_int(data, AMF_H264_BITRATE_PEAK),
+			vbvBufferSize = obs_data_get_int(data, AMF_H264_VBVBUFFER_SIZE);
 
-		obs_data_set_string(data, "lastDeviceId", deviceId);
+		// Set proper limits
+		uint32_t limitDivisor = unlocked ? 1 : 1000;
+		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_TARGET),
+			10000 / limitDivisor,
+			devCaps.maxBitrate / limitDivisor,
+			1);
+		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_PEAK),
+			10000 / limitDivisor,
+			devCaps.maxBitrate / limitDivisor,
+			1);
+		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_VBVBUFFER_SIZE),
+			1000 / limitDivisor,
+			100000000 / limitDivisor,
+			1);
+		obs_property_float_set_limits(obs_properties_get(props, AMF_H264_KEYFRAME_INTERVAL),
+			unlocked ? 0 : 1,
+			100,
+			1);
+		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_IDR_PERIOD),
+			unlocked ? 0 : 1,
+			1000,
+			1);
+
+		// Restore values.
+		uint64_t valDivisor = (lastUnlocked && !unlocked ? 1000 : 1);
+		uint64_t valMultiplier = (unlocked && !lastUnlocked ? 1000 : 1);
+
+		obs_data_set_int(data, AMF_H264_BITRATE_TARGET, (bitrateTarget * valMultiplier) / valDivisor);
+		obs_data_set_int(data, AMF_H264_BITRATE_PEAK, (bitratePeak * valMultiplier) / valDivisor);
+		obs_data_set_int(data, AMF_H264_VBVBUFFER_SIZE, (vbvBufferSize * valMultiplier) / valDivisor);
+		#pragma endregion Unlockable Stuff
+
+		obs_data_set_bool(data, "last" vstr(AMF_H264_UNLOCK_PROPERTIES), unlocked);
+		obs_data_set_string(data, "last" vstr(AMF_H264_DEVICE), deviceId);
 		result = true;
 	}
 	#pragma endregion Rebuild UI
@@ -592,9 +625,9 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		vis_expert = view >= ViewMode::Expert,
 		vis_master = view >= ViewMode::Master;
 
-	uint32_t lastView = (uint32_t)obs_data_get_int(data, "lastView");
+	uint32_t lastView = (uint32_t)obs_data_get_int(data, "last" vstr(AMF_H264_VIEW));
 	if (lastView != view) {
-		obs_data_set_int(data, "lastView", view);
+		obs_data_set_int(data, "last" vstr(AMF_H264_VIEW), view);
 		result = true;
 	}
 
@@ -649,8 +682,8 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		AMF_H264_MAXIMUMACCESSUNITSIZE,
 		AMF_H264_IDR_PERIOD,
 		AMF_H264_HEADER_INSERTION_SPACING,
-		AMF_H264_INTRAREFRESHNUMMBSPERSLOT,
 		AMF_H264_SLICESPERFRAME,
+		AMF_H264_INTRAREFRESHNUMMBSPERSLOT,
 		AMF_H264_SCANTYPE,
 		AMF_H264_UNLOCK_PROPERTIES,
 	};
@@ -697,9 +730,9 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 			break;
 	}
 
-	VCERateControlMethod lastRCM = (VCERateControlMethod)obs_data_get_int(data, "lastRCM");
+	VCERateControlMethod lastRCM = (VCERateControlMethod)obs_data_get_int(data, "last" vstr(AMF_H264_RATECONTROLMETHOD));
 	if (lastRCM != rcm) {
-		obs_data_set_int(data, "lastRCM", rcm);
+		obs_data_set_int(data, "last" vstr(AMF_H264_RATECONTROLMETHOD), rcm);
 		result = true;
 	}
 
@@ -739,9 +772,9 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 	uint32_t vbvBufferMode = (uint32_t)obs_data_get_int(data, AMF_H264_VBVBUFFER);
 	bool vbvBufferVisible = vis_advanced;
 
-	uint32_t lastVBVBufferMode = (uint32_t)obs_data_get_int(data, "lastVBVBufferMode");
+	uint32_t lastVBVBufferMode = (uint32_t)obs_data_get_int(data, "last" vstr(AMF_H264_VBVBUFFER));
 	if (lastVBVBufferMode != vbvBufferMode) {
-		obs_data_set_int(data, "lastVBVBufferMode", vbvBufferMode);
+		obs_data_set_int(data, "last" vstr(AMF_H264_VBVBUFFER), vbvBufferMode);
 		result = true;
 	}
 
@@ -762,9 +795,9 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		obs_data_default_single(props, data, AMF_H264_BPICTURE_PATTERN);
 	bool usingBPictures = obs_data_get_int(data, AMF_H264_BPICTURE_PATTERN) != 0;
 
-	bool lastUsingBPictures = obs_data_get_int(data, "lastBPicturePattern") != 0;
+	bool lastUsingBPictures = obs_data_get_int(data, "last" vstr(AMF_H264_BPICTURE_PATTERN)) != 0;
 	if (usingBPictures != lastUsingBPictures) {
-		obs_data_set_int(data, "lastBPicturePattern", obs_data_get_int(data, AMF_H264_BPICTURE_PATTERN));
+		obs_data_set_int(data, "last" vstr(AMF_H264_BPICTURE_PATTERN), obs_data_get_int(data, AMF_H264_BPICTURE_PATTERN));
 		result = true;
 	}
 
@@ -774,9 +807,9 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		obs_data_default_single(props, data, AMF_H264_BPICTURE_REFERENCE);
 	bool usingBPictureReference = obs_data_get_int(data, AMF_H264_BPICTURE_REFERENCE) == 1;
 
-	bool lastUsingBPictureReference = obs_data_get_int(data, "lastBPictureReference") != 0;
+	bool lastUsingBPictureReference = obs_data_get_int(data, "last" vstr(AMF_H264_BPICTURE_REFERENCE)) != 0;
 	if (usingBPictureReference != lastUsingBPictureReference) {
-		obs_data_set_int(data, "lastBPictureReference", obs_data_get_int(data, AMF_H264_BPICTURE_REFERENCE));
+		obs_data_set_int(data, "last" vstr(AMF_H264_BPICTURE_REFERENCE), obs_data_get_int(data, AMF_H264_BPICTURE_REFERENCE));
 		result = true;
 	}
 
@@ -790,8 +823,6 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 	#pragma endregion B-Frames
 	#pragma endregion Special Logic
 	#pragma endregion View Mode
-
-	unlock_properties_modified(props, nullptr, data);
 
 	return result;
 }
@@ -817,7 +848,7 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			// System Properties
 			obs_data_set_int(data, AMF_H264_UNLOCK_PROPERTIES, 0);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_UNLOCK_PROPERTIES), false);
-			unlock_properties_modified(props, nullptr, data);
+			properties_modified(props, nullptr, data);
 		}
 
 		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_TARGET), 10, devCaps.maxBitrate / 1000, 1);
@@ -1221,49 +1252,8 @@ bool Plugin::Interface::H264Interface::preset_modified(obs_properties_t *props, 
 			break;
 			#pragma endregion YouTube
 	}
-	unlock_properties_modified(props, nullptr, data);
+	properties_modified(props, nullptr, data);
 	return properties_modified(props, nullptr, data);
-}
-
-bool Plugin::Interface::H264Interface::unlock_properties_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data) {
-	bool unlocked = obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES);
-	bool last_unlocked = obs_data_get_bool(data, "last_" vstr(AMF_H264_UNLOCK_PROPERTIES));
-
-	if (last_unlocked != unlocked) {
-		uint32_t m = (unlocked == true ? 1000 : 1),
-			d = (unlocked == false ? 1000 : 1);
-		obs_data_set_int(data, AMF_H264_BITRATE_TARGET, (obs_data_get_int(data, AMF_H264_BITRATE_TARGET) * m) / d);
-		obs_data_set_int(data, AMF_H264_BITRATE_PEAK, (obs_data_get_int(data, AMF_H264_BITRATE_PEAK) * m) / d);
-		obs_data_set_int(data, AMF_H264_VBVBUFFER_SIZE, (obs_data_get_int(data, AMF_H264_VBVBUFFER_SIZE) * m) / d);
-
-		obs_data_set_bool(data, "last_" vstr(AMF_H264_UNLOCK_PROPERTIES), unlocked);
-
-		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_TARGET),
-			obs_property_int_min(obs_properties_get(props, AMF_H264_BITRATE_TARGET)) / d * m,
-			obs_property_int_max(obs_properties_get(props, AMF_H264_BITRATE_TARGET)) / d * m, 1);
-		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_PEAK),
-			obs_property_int_min(obs_properties_get(props, AMF_H264_BITRATE_PEAK)) / d * m,
-			obs_property_int_max(obs_properties_get(props, AMF_H264_BITRATE_PEAK)) / d * m, 1);
-		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_VBVBUFFER_SIZE),
-			obs_property_int_min(obs_properties_get(props, AMF_H264_VBVBUFFER_SIZE)) / d * m,
-			obs_property_int_max(obs_properties_get(props, AMF_H264_VBVBUFFER_SIZE)) / d * m, 1);
-	}
-
-	if (unlocked) {
-		//obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_TARGET), 1000, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate, 1);
-		//obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_PEAK), 1000, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate, 1);
-		//obs_property_int_set_limits(obs_properties_get(props, AMF_H264_VBVBUFFER_SIZE), 1000, 100000000, 1);
-		obs_property_float_set_limits(obs_properties_get(props, AMF_H264_KEYFRAME_INTERVAL), 0, 100, 1);
-		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_IDR_PERIOD), 0, 1000, 1);
-	} else {
-		//obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_TARGET), 1, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / 1000, 1);
-		//obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_PEAK), 1, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / 1000, 1);
-		//obs_property_int_set_limits(obs_properties_get(props, AMF_H264_VBVBUFFER_SIZE), 1, 100000, 1);
-		obs_property_float_set_limits(obs_properties_get(props, AMF_H264_KEYFRAME_INTERVAL), 1, 100, 1);
-		obs_property_int_set_limits(obs_properties_get(props, AMF_H264_IDR_PERIOD), 1, 1000, 1);
-	}
-
-	return true;
 }
 
 bool Plugin::Interface::H264Interface::update(void *data, obs_data_t *settings) {
