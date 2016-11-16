@@ -286,9 +286,9 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	#pragma region Coding Type
 	p = obs_properties_add_list(props, AMF_H264_CODINGTYPE, TEXT_T(AMF_H264_CODINGTYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_CODINGTYPE_DESCRIPTION));
-	obs_property_list_add_int(p, TEXT_T(AMF_UTIL_DEFAULT), 0);
-	obs_property_list_add_int(p, "CALVC", 1);
-	obs_property_list_add_int(p, "CABAC", 1);
+	obs_property_list_add_int(p, TEXT_T(AMF_UTIL_DEFAULT), VCECodingType_Default);
+	obs_property_list_add_int(p, "CALVC", VCECodingType_CALV);
+	obs_property_list_add_int(p, "CABAC", VCECodingType_CABAC);
 	#pragma endregion Coding Type
 	#pragma endregion Static Properties
 
