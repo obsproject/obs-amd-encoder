@@ -329,6 +329,9 @@ std::vector<Plugin::API::Device> Plugin::AMD::VCECapabilities::GetDevices() {
 }
 
 Plugin::AMD::VCEDeviceCapabilities Plugin::AMD::VCECapabilities::GetDeviceCaps(Plugin::API::Device device, VCEEncoderType type) {
+	if (deviceToCapabilities.empty())
+		return Plugin::AMD::VCEDeviceCapabilities();
+
 	if (device.UniqueId == "")
 		return deviceToCapabilities.begin()->second;
 
@@ -340,6 +343,9 @@ Plugin::AMD::VCEDeviceCapabilities Plugin::AMD::VCECapabilities::GetDeviceCaps(P
 }
 
 Plugin::AMD::VCEDeviceCapabilities::IOCaps Plugin::AMD::VCECapabilities::GetDeviceIOCaps(Plugin::API::Device device, VCEEncoderType type, bool output) {
+	if (deviceToCapabilities.empty())
+		return Plugin::AMD::VCEDeviceCapabilities::IOCaps();
+
 	if (device.UniqueId == "") {
 		if (output)
 			return deviceToCapabilities.begin()->second.output;
