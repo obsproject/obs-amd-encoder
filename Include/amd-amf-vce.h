@@ -112,7 +112,6 @@ namespace Plugin {
 			VCEProfileLevel_50 = 50,
 			VCEProfileLevel_51,
 			VCEProfileLevel_52,
-			VCEProfileLevel_53,
 			VCEProfileLevel_60 = 60,
 			VCEProfileLevel_61,
 			VCEProfileLevel_62,
