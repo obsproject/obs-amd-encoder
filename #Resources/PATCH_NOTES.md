@@ -1,9 +1,11 @@
-# Multi-GPU Support And Filler Data Fix
+# Multi-GPU Support And Filler Data Fix (Hotfix 1)
 With this update the encoder plugin now supports multi-GPU setups, such as RX 480 + R9 390, R9 285 + R9 290, and others. You can select which GPU to use with the Advanced View Mode. The UI will also now update according to the supported features of the selected GPU and by default uses the primary GPU. Unsupported features will be hidden, just like unused features.
 
 The 'Filler Data' property has now been fixed, Delta QP for B-Pictures is now visible when not using Constant QP, 'Memory Type' and 'Surface Format' have been removed and 'CABAC' has been replaced with 'Coding Type'. 'Memory Type' is now automatically using the best available and 'Surface Format' is taken from OBS settings.
 
 Additionally a crash with AMD Hybrid/Switchable GPU setups was fixed and these systems should now be able to use the encoder. It will now default to using the best available AMD GPU in the system if it can detect it.
+
+Hotfix: Fixed Presets not being applied properly
 
 ## Notes
 
@@ -11,6 +13,7 @@ Due to the nature of changes since 1.3 users might experience that their setting
 
 ## Changelog
 
+* (Hotfix) Fixed: Presets were not being applied properly.
 * Added: Full multi-GPU encoding support.
 * Added: 'Coding Type' property which replaces 'CABAC'.
 * Fixed: Filler Data was always being forced on for CBR.
