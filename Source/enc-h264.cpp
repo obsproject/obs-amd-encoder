@@ -537,8 +537,6 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 				obs_property_list_add_int(p, "6.1", VCEProfileLevel_61);
 			case 60:
 				obs_property_list_add_int(p, "6.0", VCEProfileLevel_60);
-			case 53:
-				obs_property_list_add_int(p, "5.3", VCEProfileLevel_53);
 			case 52:
 				obs_property_list_add_int(p, "5.2", VCEProfileLevel_52);
 			case 51:
