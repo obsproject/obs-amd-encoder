@@ -33,7 +33,7 @@ SET(enc-amf_LIBRARIES
 SET(enc-amf_VERSION_MAJOR 1)
 SET(enc-amf_VERSION_MINOR 4)
 SET(enc-amf_VERSION_PATCH 2)
-SET(enc-amf_VERSION_BUILD 0)
+SET(enc-amf_VERSION_BUILD 1)
 configure_file(
 	"${PROJECT_SOURCE_DIR}/#Resources/package.in.bat"
 	"${PROJECT_SOURCE_DIR}/#Resources/package.bat"
