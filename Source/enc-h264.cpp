@@ -519,7 +519,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 			#pragma region Default
 		{
 			obs_property_t* pn = obs_properties_first(props);
-			while (pn) {
+			do {
 				const char* name = obs_property_name(pn);
 				switch (obs_property_get_type(pn)) {
 					case obs_property_type::OBS_PROPERTY_BOOL:
@@ -549,8 +549,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 						break;
 				}
 				obs_property_set_enabled(pn, true);
-				obs_property_next(&pn);
-			}
+			} while (obs_property_next(&pn));
 		}
 		break;
 		#pragma endregion Default
