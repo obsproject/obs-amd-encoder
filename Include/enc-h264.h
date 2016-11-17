@@ -45,7 +45,6 @@ namespace Plugin {
 			static obs_properties_t* get_properties(void* data);
 			
 			static bool properties_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data);
-			static bool preset_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data);
 
 			static void* create(obs_data_t* settings, obs_encoder_t* encoder);
 			static void destroy(void* data);
