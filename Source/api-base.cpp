@@ -83,7 +83,7 @@ std::vector<Plugin::API::Device> Plugin::API::APIBase::EnumerateDevices() {
 	if (IsWindows8OrGreater()) {
 		return Plugin::API::Direct3D11::EnumerateDevices();
 	} else if (IsWindowsXPOrGreater()) {
-		return Plugin::API::Direct3D9::EnumerateDevices();
+		//return Plugin::API::Direct3D9::EnumerateDevices();
 	} else
 		#endif 
 	{ // OpenGL
@@ -102,17 +102,16 @@ Plugin::API::Device Plugin::API::APIBase::GetDeviceForUniqueId(std::string uniqu
 }
 
 std::unique_ptr<Plugin::API::APIBase> Plugin::API::APIBase::CreateBestAvailableAPI(Plugin::API::Device device) {
-	std::unique_ptr<Plugin::API::APIBase> retVal;
+	std::unique_ptr<Plugin::API::APIBase> retVal = std::make_unique<Plugin::API::APIBase>();
 	#if defined(_WIN32) || defined(_WIN64)
 	if (IsWindows8OrGreater()) {
 		retVal = std::make_unique<Plugin::API::Direct3D11>(device);
 	} else if (IsWindowsXPOrGreater()) {
-		retVal = std::make_unique<Plugin::API::Direct3D9>(device);
+		//retVal = std::make_unique<Plugin::API::Direct3D9>(device);
 	} else
 		#endif 
 	{ // OpenGL
 	  //return Plugin::API::OpenGL::OpenGL(device);
-		retVal = std::make_unique<Plugin::API::APIBase>();
 	}
 	return retVal;
 }
@@ -128,6 +127,7 @@ Plugin::API::APIType Plugin::API::APIBase::GetBestAvailableAPI() {
 	{ // OpenGL
 		return APIType_OpenGL;
 	}
+	return APIType_Base;
 }
 
 Plugin::API::APIBase::APIBase() {
