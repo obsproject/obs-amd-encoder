@@ -101,6 +101,21 @@ Plugin::API::Device Plugin::API::APIBase::GetDeviceForUniqueId(std::string uniqu
 	return Plugin::API::Device();
 }
 
+Plugin::API::Device Plugin::API::APIBase::GetDeviceForContext(void* context) {
+	#if defined(_WIN32) || defined(_WIN64)
+	if (IsWindows8OrGreater()) {
+		// DirectX 11
+		return Direct3D11::GetDeviceForContext(context);
+	} else if (IsWindowsXPOrGreater()) {
+		// DirectX 9
+	} else
+		#endif 
+	{
+		// OpenGL
+	}
+	return Plugin::API::Device();
+}
+
 std::unique_ptr<Plugin::API::APIBase> Plugin::API::APIBase::CreateBestAvailableAPI(Plugin::API::Device device) {
 	std::unique_ptr<Plugin::API::APIBase> retVal = std::make_unique<Plugin::API::APIBase>();
 	#if defined(_WIN32) || defined(_WIN64)

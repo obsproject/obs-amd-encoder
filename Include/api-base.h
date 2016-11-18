@@ -63,10 +63,10 @@ namespace Plugin {
 			public:
 			static std::vector<Plugin::API::Device> EnumerateDevices();
 			static Plugin::API::Device GetDeviceForUniqueId(std::string uniqueId);
+			static Plugin::API::Device GetDeviceForContext(void* context);
 
 			static Plugin::API::APIType GetBestAvailableAPI();
-			static std::unique_ptr<Plugin::API::APIBase>
-				CreateBestAvailableAPI(Plugin::API::Device device);
+			static std::unique_ptr<Plugin::API::APIBase> CreateBestAvailableAPI(Plugin::API::Device device);
 
 			APIBase();
 			APIBase(Device device);
