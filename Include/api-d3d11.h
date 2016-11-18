@@ -23,13 +23,11 @@ SOFTWARE.
 */
 
 #pragma once
-#ifdef _WIN32
+
 //////////////////////////////////////////////////////////////////////////
 // Includes
 //////////////////////////////////////////////////////////////////////////
 #include "api-base.h"
-
-#include <d3d11.h>
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -40,16 +38,19 @@ namespace Plugin {
 			public:
 			static std::vector<Plugin::API::Device> EnumerateDevices();
 			static Plugin::API::Device GetDeviceForUniqueId(std::string uniqueId);
+			static Plugin::API::Device GetDeviceForContext(void* context);
 
+			public:
 			Direct3D11(Device device);
 			~Direct3D11();
 
+			virtual Plugin::API::APIType GetType() override;
 			virtual void* GetContext() override;
 
+
 			private:
-			ID3D11Device* pDevice;
-			ID3D11DeviceContext* pDeviceContext;
+			void* pDevice;
+			void* pDeviceContext;
 		};
 	}
 }
-#endif
