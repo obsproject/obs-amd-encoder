@@ -62,11 +62,11 @@ enum ViewMode {
 };
 
 void Plugin::Interface::H264Interface::encoder_register() {
-	static obs_encoder_info* encoder_info = new obs_encoder_info();
+	static std::unique_ptr<obs_encoder_info> encoder_info;
 	static const char* encoder_name = "amd_amf_h264";
 	static const char* encoder_codec = "h264";
 
-	std::memset(encoder_info, 0, sizeof(obs_encoder_info));
+	std::memset(encoder_info.get(), 0, sizeof(obs_encoder_info));
 
 	// Initialize Structure
 	encoder_info->id = encoder_name;
@@ -84,7 +84,7 @@ void Plugin::Interface::H264Interface::encoder_register() {
 	encoder_info->get_video_info = &get_video_info;
 	encoder_info->get_extra_data = &get_extra_data;
 
-	obs_register_encoder(encoder_info);
+	obs_register_encoder(encoder_info.get());
 }
 
 const char* Plugin::Interface::H264Interface::get_name(void*) {
@@ -229,7 +229,6 @@ static void fill_device_list(obs_property_t* p) {
 	std::vector<Plugin::API::Device> devices = Plugin::API::APIBase::EnumerateDevices();
 
 	obs_property_list_clear(p);
-	obs_property_list_add_string(p, TEXT_T(AMF_UTIL_DEFAULT), "");
 	for (Plugin::API::Device device : devices) {
 		obs_property_list_add_string(p, device.Name.c_str(), device.UniqueId.c_str());
 	}
@@ -271,12 +270,10 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	#pragma region Profile
 	p = obs_properties_add_list(props, AMF_H264_PROFILE, TEXT_T(AMF_H264_PROFILE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_PROFILE_DESCRIPTION));
-	obs_property_list_add_int(p, "NOT INITIALIZED", 0xFFFFFFFFFFFFFFFFull);
 	#pragma endregion Profile
 	#pragma region Profile Level
 	p = obs_properties_add_list(props, AMF_H264_PROFILELEVEL, TEXT_T(AMF_H264_PROFILELEVEL), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_PROFILELEVEL_DESCRIPTION));
-	obs_property_list_add_int(p, "NOT INITIALIZED", 0xFFFFFFFFFFFFFFFFull);
 	#pragma endregion Profile Levels
 	#pragma region Long Term Reference Frames
 	p = obs_properties_add_int_slider(props, AMF_H264_MAXIMUMLTRFRAMES, TEXT_T(AMF_H264_MAXIMUMLTRFRAMES), 0, 2, 1);
