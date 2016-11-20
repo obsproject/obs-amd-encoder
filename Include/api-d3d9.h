@@ -38,19 +38,14 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 namespace Plugin {
 	namespace API {
-		class Direct3D9 : public APIBase {
-			public:
-			static std::vector<Plugin::API::Device> EnumerateDevices();
-			static Plugin::API::Device GetDeviceForUniqueId(std::string uniqueId);
+		class Direct3D9 : public Base {
+			virtual std::string GetName() override;
+			virtual std::vector<Adapter> EnumerateAdapters() override;
 
-			Direct3D9(Device device);
-			~Direct3D9();
-
-			virtual void* GetContext() override;
-
-			private:
-			IDirect3D9* pDirect3D;
-			IDirect3DDevice9* pDirect3DDevice;
+			virtual void* CreateInstanceOnAdapter(Adapter adapter) override;
+			virtual Adapter GetAdapterForInstance(void* pInstance) override;
+			virtual void* GetContextFromInstance(void* pInstance) override;
+			virtual void DestroyInstance(void* pInstance) override;
 		};
 	}
 }

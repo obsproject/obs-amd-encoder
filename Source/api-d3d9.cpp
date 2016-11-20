@@ -22,179 +22,183 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifdef _WIN32
 //////////////////////////////////////////////////////////////////////////
 // Includes
 //////////////////////////////////////////////////////////////////////////
 #include "api-d3d9.h"
+
+#include <mutex>
+#include <list>
+
+#include <d3d9.h>
+#include <atlutil.h>
 
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
 using namespace Plugin::API;
 
-Plugin::API::Device BuildDeviceFromAdapter(D3DADAPTER_IDENTIFIER9* pAdapter) {
-	if (pAdapter == nullptr)
-		return Device("INVALID DEVICE", "");
-
-	std::vector<char> uidBuf(1024);
-	sprintf(uidBuf.data(), "%ld:%ld:%ld:%ld",
-		pAdapter->VendorId,
-		pAdapter->DeviceId,
-		pAdapter->SubSysId,
-		pAdapter->Revision);
-
-	std::vector<char> nameBuf(1024);
-	sprintf(nameBuf.data(), "%s (%s)",
-		pAdapter->DeviceName,
-		pAdapter->Description);
-
-	return Device(std::string(nameBuf.data()), std::string(uidBuf.data()));
+std::string Plugin::API::Direct3D9::GetName() {
+	return std::string("Direct3D 9");
 }
 
+std::vector<Adapter> Plugin::API::Direct3D9::EnumerateAdapters() {
+	ATL::CComPtr<IDirect3D9Ex> pD3DEx;
+	HRESULT hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3DEx);
+	if (FAILED(hr))
+		throw std::exception("<" __FUNCTION_NAME__ "> Failed to enumerate adapters, error code %X.", hr);
 
-std::vector<Plugin::API::Device> Plugin::API::Direct3D9::EnumerateDevices() {
-	std::vector<Plugin::API::Device> devices = std::vector<Plugin::API::Device>();
+	std::vector<Adapter> adapters;
+	std::list<LUID> enumeratedLUIDs;
+	D3DADAPTER_IDENTIFIER9 adapterIdentifier;
+	for (size_t adapterIndex = 0;
+		!FAILED(pD3DEx->GetAdapterIdentifier((UINT)adapterIndex, 0, &adapterIdentifier));
+		adapterIndex++) {
 
-	IDirect3D9* pDirect3D = Direct3DCreate9(D3D_SDK_VERSION);
-
-	uint32_t adapterCount = pDirect3D->GetAdapterCount();
-	for (uint32_t adapterIndex = 0; adapterIndex < adapterCount; adapterIndex++) {
-		D3DADAPTER_IDENTIFIER9 adapterDesc = D3DADAPTER_IDENTIFIER9();
-		pDirect3D->GetAdapterIdentifier(adapterIndex, 0, &adapterDesc);
-
-		if (adapterDesc.VendorId != 0x1002)
+		if (adapterIdentifier.VendorId != 0x1002 /* AMD */)
 			continue;
 
-		Device device = BuildDeviceFromAdapter(&adapterDesc);
-		devices.push_back(device);
-	}
-
-	pDirect3D->Release();
-
-	return devices;
-}
-
-Plugin::API::Device Plugin::API::Direct3D9::GetDeviceForUniqueId(std::string uniqueId) {
-	Plugin::API::Device device = Device("", "");
-
-	IDirect3D9* pDirect3D = Direct3DCreate9(D3D_SDK_VERSION);
-
-	uint32_t adapterCount = pDirect3D->GetAdapterCount();
-	for (uint32_t adapterIndex = 0; adapterIndex <= adapterCount; adapterIndex++) {
-		D3DADAPTER_IDENTIFIER9 adapterDesc = D3DADAPTER_IDENTIFIER9();
-		pDirect3D->GetAdapterIdentifier(adapterIndex, 0, &adapterDesc);
-
-		if (adapterDesc.VendorId != 0x1002)
+		LUID adapterLUID;
+		if (FAILED(pD3DEx->GetAdapterLUID((UINT)adapterIndex, &adapterLUID)))
 			continue;
 
-		Device device2 = BuildDeviceFromAdapter(&adapterDesc);
-		if (device2.UniqueId == uniqueId)
-			device = device2;
+		bool enumerated = false;
+		for (LUID enumeratedLUID : enumeratedLUIDs) {
+			if ((enumeratedLUID.LowPart == adapterLUID.LowPart)
+				&& (enumeratedLUID.HighPart == adapterLUID.HighPart)) {
+				enumerated = true;
+				break;
+			}
+		}
+		if (enumerated)
+			continue;
+		else
+			enumeratedLUIDs.push_back(adapterLUID);
+
+		adapters.emplace_back(
+			Adapter(adapterLUID.LowPart, adapterLUID.HighPart,
+				std::string(adapterIdentifier.Description)));
 	}
 
-	pDirect3D->Release();
-
-	return device;
+	return adapters;
 }
 
-struct EnumWindowsData {
-	DWORD processId;
-	HWND bestWindowId;
+struct Direct3D9Instance {
+	ATL::CComPtr<IDirect3D9Ex> d3d;
+	ATL::CComPtr<IDirect3DDevice9Ex> device;
 };
 
-BOOL CALLBACK EnumWindowsCallback(HWND handle, LPARAM lParam) {
-	EnumWindowsData* data = (EnumWindowsData*)lParam;
+void* Plugin::API::Direct3D9::CreateInstanceOnAdapter(Adapter adapter) {
+	ATL::CComPtr<IDirect3D9Ex> pD3DEx;
+	HRESULT hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3DEx);
+	if (FAILED(hr))
+		throw std::exception("<" __FUNCTION_NAME__ "> Unable to create Direct3D 9 instance, error code %X.", hr);
 
-	DWORD processId;
-	GetWindowThreadProcessId(handle, &processId);
-	if ((processId == data->processId)
-		&& (GetWindow(handle, GW_OWNER) == (HWND)0)
-		&& (IsWindowVisible(handle))) {
-		return TRUE;
-	}
-	data->bestWindowId = handle;
-	return FALSE;
-}
+	size_t adapterNum = (size_t)-1;
+	D3DADAPTER_IDENTIFIER9 adapterIdentifier;
+	for (size_t adapterIndex = 0;
+		!FAILED(pD3DEx->GetAdapterIdentifier((UINT)adapterIndex, 0, &adapterIdentifier));
+		adapterIndex++) {
 
-Plugin::API::Direct3D9::Direct3D9(Device device) : APIBase(device) {
-	this->myType = APIType_Direct3D9;
-
-	pDirect3D = Direct3DCreate9(D3D_SDK_VERSION);
-	if (!pDirect3D)
-		throw std::exception("Unable to create D3D9 driver.");
-
-	// Find Adapter Index
-	uint32_t usedAdapter = 0;
-	uint32_t adapterCount = pDirect3D->GetAdapterCount();
-	for (uint32_t adapterIndex = 0; adapterIndex <= adapterCount; adapterIndex++) {
-		D3DADAPTER_IDENTIFIER9 adapterDesc = D3DADAPTER_IDENTIFIER9();
-		pDirect3D->GetAdapterIdentifier(adapterIndex, 0, &adapterDesc);
-
-		if (adapterDesc.VendorId != 0x1002)
+		if (adapterIdentifier.VendorId != 0x1002 /* AMD */)
 			continue;
 
-		Device device2 = BuildDeviceFromAdapter(&adapterDesc);
-		if (device2.UniqueId == device.UniqueId) {
-			usedAdapter = adapterIndex++;
+		LUID adapterLUID;
+		if (FAILED(pD3DEx->GetAdapterLUID((UINT)adapterIndex, &adapterLUID)))
+			continue;
+
+		if ((adapterLUID.LowPart == adapter.idLow)
+			&& (adapterLUID.HighPart == adapter.idHigh)) {
+			adapterNum = adapterIndex;
 			break;
 		}
 	}
+	if (adapterNum == -1)
+		throw std::invalid_argument("adapter");
 
-	EnumWindowsData data = EnumWindowsData();
-	data.processId = GetCurrentProcessId();
-	EnumWindows(EnumWindowsCallback, (LPARAM)&data);
+	D3DPRESENT_PARAMETERS presentParameters;
+	std::memset(&presentParameters, 0, sizeof(D3DPRESENT_PARAMETERS));
+	presentParameters.BackBufferWidth = 1;
+	presentParameters.BackBufferHeight = 1;
+	presentParameters.BackBufferFormat = D3DFMT_A8B8G8R8;
+	presentParameters.Windowed = TRUE;
+	presentParameters.SwapEffect = D3DSWAPEFFECT_COPY;
+	presentParameters.hDeviceWindow = GetDesktopWindow();
+	presentParameters.Flags = D3DPRESENTFLAG_VIDEO;
+	presentParameters.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
 
-	D3DPRESENT_PARAMETERS pPresentParameter = D3DPRESENT_PARAMETERS();
-	pPresentParameter.BackBufferWidth = 1280;
-	pPresentParameter.BackBufferHeight = 720;
-	pPresentParameter.BackBufferFormat = D3DFORMAT::D3DFMT_X8R8G8B8;
-	pPresentParameter.BackBufferCount = 2;
-	pPresentParameter.MultiSampleType = D3DMULTISAMPLE_TYPE::D3DMULTISAMPLE_NONE;
-	pPresentParameter.MultiSampleQuality = 0;
-	pPresentParameter.SwapEffect = D3DSWAPEFFECT::D3DSWAPEFFECT_DISCARD;
-	pPresentParameter.hDeviceWindow = data.bestWindowId;
-	pPresentParameter.Windowed = TRUE;
-	pPresentParameter.EnableAutoDepthStencil = FALSE;
-	pPresentParameter.AutoDepthStencilFormat = D3DFORMAT::D3DFMT_A1;
-	pPresentParameter.Flags = D3DPRESENTFLAG_VIDEO;
-	pPresentParameter.FullScreen_RefreshRateInHz = 0;
-	pPresentParameter.PresentationInterval = 60;
-		
-	HRESULT hr = pDirect3D->CreateDevice(usedAdapter,
-		D3DDEVTYPE_HAL,
-		data.bestWindowId,
-		0, //D3DCREATE_DISABLE_DRIVER_MANAGEMENT_EX | D3DCREATE_MULTITHREADED | D3DCREATE_PUREDEVICE | D3DCREATE_MIXED_VERTEXPROCESSING | D3DCREATE_NOWINDOWCHANGES,
-		&pPresentParameter,
-		&pDirect3DDevice);
-	switch (hr) {
-		case D3DERR_DEVICELOST:
-			throw std::exception("D3DERR_DEVICELOST");
-			break;
-		case D3DERR_INVALIDCALL:
-			throw std::exception("D3DERR_INVALIDCALL");
-			break;
-		case D3DERR_NOTAVAILABLE:
-			throw std::exception("D3DERR_NOTAVAILABLE");
-			break;
-		case D3DERR_OUTOFVIDEOMEMORY:
-			throw std::exception("D3DERR_OUTOFVIDEOMEMORY");
-			break;
-	}
+	D3DCAPS9    ddCaps;
+	std::memset(&ddCaps, 0, sizeof(ddCaps));
+	hr = pD3DEx->GetDeviceCaps((UINT)adapterNum, D3DDEVTYPE_HAL, &ddCaps);
 	if (FAILED(hr))
-		throw std::exception("Unable to create D3D9 device.");
+		throw std::runtime_error("Unable to query capabilities for D3D9 adapter.");
+
+	DWORD       vp = 0;
+	if (ddCaps.DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT) {
+		vp = D3DCREATE_HARDWARE_VERTEXPROCESSING;
+	} else {
+		vp = D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+	}
+
+	ATL::CComPtr<IDirect3DDevice9Ex> pD3DDeviceEx;
+	hr = pD3DEx->CreateDeviceEx(
+		(UINT)adapterNum, D3DDEVTYPE_HAL,
+		presentParameters.hDeviceWindow,
+		vp | D3DCREATE_NOWINDOWCHANGES | D3DCREATE_MULTITHREADED | D3DCREATE_FPU_PRESERVE,
+		&presentParameters,
+		NULL,
+		&pD3DDeviceEx
+	);
+	if (FAILED(hr))
+		throw std::runtime_error("Unable to create D3D9 device.");
+
+	Direct3D9Instance* instance = new Direct3D9Instance();
+	instance->d3d = pD3DEx;
+	instance->device = pD3DDeviceEx;
+	return instance;
 }
 
-Plugin::API::Direct3D9::~Direct3D9() {
-	if (pDirect3DDevice)
-		pDirect3DDevice->Release();
+Plugin::API::Adapter Plugin::API::Direct3D9::GetAdapterForInstance(void* pInstance) {
+	if (pInstance == nullptr)
+		throw std::invalid_argument("instance");
 
-	if (pDirect3D)
-		pDirect3D->Release();
+	Direct3D9Instance* instance = static_cast<Direct3D9Instance*>(pInstance);
+	if (instance == nullptr)
+		throw std::invalid_argument("instance");
+
+	D3DDEVICE_CREATION_PARAMETERS par;
+	HRESULT hr = instance->device->GetCreationParameters(&par);
+	if (FAILED(hr))
+		throw std::runtime_error("Unable to get adapter from D3D9 device.");
+
+	auto adapters = Direct3D9::EnumerateAdapters();
+	if (par.AdapterOrdinal > adapters.size())
+		return *adapters.begin();
+	
+	auto adapter = adapters.begin();
+	for (size_t n = 0; n < par.AdapterOrdinal; n++)
+		adapter++;
+	return *adapter;	
 }
 
-void* Plugin::API::Direct3D9::GetContext() {
-	return pDirect3DDevice;
+void* Plugin::API::Direct3D9::GetContextFromInstance(void* pInstance) {
+	if (pInstance == nullptr)
+		throw std::invalid_argument("instance");
+
+	Direct3D9Instance* instance = static_cast<Direct3D9Instance*>(pInstance);
+	if (instance == nullptr)
+		throw std::invalid_argument("instance");
+
+	return instance->device;
 }
 
-#endif
+void Plugin::API::Direct3D9::DestroyInstance(void* pInstance) {
+	if (pInstance == nullptr)
+		throw std::invalid_argument("instance");
+
+	Direct3D9Instance* instance = static_cast<Direct3D9Instance*>(pInstance);
+	if (instance == nullptr)
+		throw std::invalid_argument("instance");
+
+	delete instance;
+}
