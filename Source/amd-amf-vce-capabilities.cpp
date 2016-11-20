@@ -64,6 +64,9 @@ void Plugin::AMD::VCECapabilities::ReportCapabilities() {
 void Plugin::AMD::VCECapabilities::ReportDeviceCapabilities(Plugin::API::Device device) {
 	auto inst = GetInstance();
 
+	if (device.UniqueId == "") // Make sure there is always a device selected.
+		device = *inst->GetDevices().begin()._Ptr;
+
 	AMF_LOG_INFO("Capabilities for Device '%s':", device.Name.c_str());
 
 	VCEEncoderType types[] = { VCEEncoderType_AVC, VCEEncoderType_SVC };
@@ -187,7 +190,7 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 	{ // OpenGL
 		//devices = Plugin::API::OpenGL::EnumerateDevices();
 	}
-	//devices.insert(devices.begin(), Plugin::API::Device());
+	devices.insert(devices.begin(), Plugin::API::Device());
 
 	// Query Information for each Device
 	std::shared_ptr<AMD::AMF> amfInstance = AMD::AMF::GetInstance();
@@ -201,7 +204,7 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 			continue;
 		}
 
-		auto apiDev = Plugin::API::APIBase::CreateBestAvailableAPI(device);
+		auto apiDev = Plugin::API::Base::CreateBestAvailableAPI(device);
 		switch (apiDev->GetType()) {
 			case Plugin::API::APIType_Direct3D11:
 				res = amfContext->InitDX11(apiDev->GetContext());

@@ -32,6 +32,7 @@ SOFTWARE.
 
 // Plugin
 #include "plugin.h"
+#include "api-base.h"
 #include "amd-amf.h"
 #include "amd-amf-vce-capabilities.h"
 #include "enc-h264.h"
@@ -56,25 +57,39 @@ OBS_MODULE_USE_DEFAULT_LOCALE("enc-amf", "en-US");
 *                   false to indicate failure and unload the module
 */
 MODULE_EXPORT bool obs_module_load(void) {
-	try {
-		AMF_LOG_INFO("Version " PLUGIN_VERSION_TEXT);
+	// Initialize Graphics APIs
+	Plugin::API::Base::Initialize();
 
-		// Load AMF Runtime
-		auto instance = Plugin::AMD::AMF::GetInstance();
+	for (size_t index = 0; index < Plugin::API::Base::GetAPICount(); index++) {
+		auto api = Plugin::API::Base::GetAPIInstance(index);
 
-		// Report AMF Capabilities
-		//Plugin::AMD::VCECapabilities::ReportCapabilities();
-
-		// Register Encoders
-		Plugin::Interface::H264Interface::encoder_register();
-	} catch (std::exception& e) {
-		AMF_LOG_ERROR("Uncaught Exception: %s", e.what());
-	} catch (std::exception* e) {
-		AMF_LOG_ERROR("Uncaught Exception: %s", e->what());
-		delete e;
-	} catch (...) {
-		AMF_LOG_ERROR("Uncaught Unknown Exception.");
+		AMF_LOG_INFO("Enumerating Adapters on API '%s'...", api->GetName().c_str());
+		auto adapters = api->EnumerateAdapters();
+		for (auto adapter : adapters) {
+			AMF_LOG_INFO("  %s", adapter.Name.c_str());
+		}
 	}
+
+
+	//try {
+	//	AMF_LOG_INFO("Version " PLUGIN_VERSION_TEXT);
+
+	//	// Load AMF Runtime
+	//	auto instance = Plugin::AMD::AMF::GetInstance();
+
+	//	// Report AMF Capabilities
+	//	//Plugin::AMD::VCECapabilities::ReportCapabilities();
+
+	//	// Register Encoders
+	//	Plugin::Interface::H264Interface::encoder_register();
+	//} catch (std::exception& e) {
+	//	AMF_LOG_ERROR("Uncaught Exception: %s", e.what());
+	//} catch (std::exception* e) {
+	//	AMF_LOG_ERROR("Uncaught Exception: %s", e->what());
+	//	delete e;
+	//} catch (...) {
+	//	AMF_LOG_ERROR("Uncaught Unknown Exception.");
+	//}
 	return true;
 }
 

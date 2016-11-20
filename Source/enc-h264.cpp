@@ -62,10 +62,22 @@ enum ViewMode {
 };
 
 void Plugin::Interface::H264Interface::encoder_register() {
-	static std::unique_ptr<obs_encoder_info> encoder_info;
+	// Ensure that there is a supported AMD GPU.
+	bool haveAVCsupport = false;
+	auto vcecaps = VCECapabilities::GetInstance();
+	auto devices = vcecaps->GetDevices();
+	for (auto device : devices) {
+		auto caps = vcecaps->GetDeviceCaps(device, VCEEncoderType_AVC);
+		if (caps.acceleration_type != amf::AMF_ACCEL_NOT_SUPPORTED)
+			haveAVCsupport = true;
+	}
+	if (!haveAVCsupport)
+		return;
+
+	// Create structure
+	static std::unique_ptr<obs_encoder_info> encoder_info = std::make_unique<obs_encoder_info>();
 	static const char* encoder_name = "amd_amf_h264";
 	static const char* encoder_codec = "h264";
-
 	std::memset(encoder_info.get(), 0, sizeof(obs_encoder_info));
 
 	// Initialize Structure
@@ -226,7 +238,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 }
 
 static void fill_device_list(obs_property_t* p) {
-	std::vector<Plugin::API::Device> devices = Plugin::API::APIBase::EnumerateDevices();
+	std::vector<Plugin::API::Device> devices = Plugin::API::Base::EnumerateDevices();
 
 	obs_property_list_clear(p);
 	for (Plugin::API::Device device : devices) {
@@ -911,7 +923,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 
 	#pragma region Device Capabilities
 	const char* deviceId = obs_data_get_string(data, AMF_H264_DEVICE);
-	auto device = Plugin::API::APIBase::GetDeviceForUniqueId(deviceId);
+	auto device = Plugin::API::Base::GetDeviceForUniqueId(deviceId);
 	auto caps = Plugin::AMD::VCECapabilities::GetInstance();
 	auto devCaps = caps->GetDeviceCaps(device, VCEEncoderType_AVC);
 	#pragma endregion Device Capabilities
@@ -1417,7 +1429,7 @@ Plugin::Interface::H264Interface::~H264Interface() {
 bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	#pragma region Device Capabilities
 	const char* deviceId = obs_data_get_string(data, AMF_H264_DEVICE);
-	auto device = Plugin::API::APIBase::GetDeviceForUniqueId(deviceId);
+	auto device = Plugin::API::Base::GetDeviceForUniqueId(deviceId);
 	auto caps = Plugin::AMD::VCECapabilities::GetInstance();
 	auto devCaps = caps->GetDeviceCaps(device, VCEEncoderType_AVC);
 	#pragma endregion Device Capabilities

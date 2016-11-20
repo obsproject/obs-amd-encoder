@@ -197,7 +197,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
 	m_FrameRate.first = 30; m_FrameRate.second = 1;
 	m_FrameRateDivisor = ((double_t)m_FrameRate.first / (double_t)m_FrameRate.second);
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
-	m_InputQueueLimit = (uint32_t)(m_FrameRateDivisor * 3);
+	m_InputQueueLimit = (uint32_t)(m_FrameRateDivisor);
 	m_InputQueueLastSize = 0;
 	m_TimerPeriod = 1;
 
@@ -214,18 +214,18 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
 	if (p_DeviceId == "") { // Use primary/available AMD devices only.
 		p_DeviceId = Plugin::AMD::VCECapabilities::GetInstance()->GetDevices().begin()->UniqueId;
 	}
-	m_APIDevice = Plugin::API::APIBase::CreateBestAvailableAPI(Plugin::API::APIBase::GetDeviceForUniqueId(p_DeviceId));
-	switch (m_APIDevice->GetType()) {
+	m_APIInstance = Plugin::API::Base::CreateBestAvailableAPI(Plugin::API::Base::GetDeviceForUniqueId(p_DeviceId));
+	switch (m_APIInstance->GetType()) {
 		case Plugin::API::APIType_Direct3D11:
-			res = m_AMFContext->InitDX11(m_APIDevice->GetContext());
+			res = m_AMFContext->InitDX11(m_APIInstance->GetContext());
 			m_MemoryType = VCEMemoryType_DirectX11;
 			break;
 		case Plugin::API::APIType_Direct3D9:
-			res = m_AMFContext->InitDX9(m_APIDevice->GetContext());
+			res = m_AMFContext->InitDX9(m_APIInstance->GetContext());
 			m_MemoryType = VCEMemoryType_DirectX9;
 			break;
 		case Plugin::API::APIType_OpenGL:
-			res = m_AMFContext->InitOpenGL(m_APIDevice->GetContext(), nullptr, nullptr);
+			res = m_AMFContext->InitOpenGL(m_APIInstance->GetContext(), nullptr, nullptr);
 			m_MemoryType = VCEMemoryType_OpenGL;
 			break;
 		case Plugin::API::APIType_Base: // Not the best case, but whatever.
@@ -235,6 +235,14 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
 	}
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Initializing 3D queue failed with error %ls (code %ld).", res);
+	if (m_AMFContext->GetDX11Device()) {
+		m_APIDevice = Plugin::API::Base::GetDeviceForContext(m_AMFContext->GetDX11Device());
+	} else if (m_AMFContext->GetDX9Device()) {
+		m_APIDevice = Plugin::API::Base::GetDeviceForContext(m_AMFContext->GetDX9Device());
+	} else if (m_AMFContext->GetOpenGLContext()) {
+		m_APIDevice = Plugin::API::Base::GetDeviceForContext(m_AMFContext->GetOpenGLContext());
+	}
+	AMF_LOG_INFO("Automatically selected device: %s", m_APIDevice.Name);
 
 	if (m_UseOpenCL) {
 		res = m_AMFContext->InitOpenCL(nullptr);
@@ -262,8 +270,12 @@ Plugin::AMD::VCEEncoder::VCEEncoder(VCEEncoderType p_Type,
 	res = m_AMFFactory->CreateComponent(m_AMFContext, AMFVideoConverter, &m_AMFConverter);
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Unable to create VideoConverter component, error %ls (code %ld).", res);
-	m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_MEMORY_TYPE, Utility::MemoryTypeAsAMF(m_MemoryType));
-	m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_OUTPUT_FORMAT, Utility::SurfaceFormatAsAMF(m_SurfaceFormat));
+	res = m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_MEMORY_TYPE, Utility::MemoryTypeAsAMF(m_MemoryType));
+	if (res != AMF_OK)
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Memory Type not supported by VideoConverter component, error %ls (code %ld).", res);
+	res = m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_OUTPUT_FORMAT, Utility::SurfaceFormatAsAMF(m_SurfaceFormat));
+	if (res != AMF_OK)
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Color Format not supported by VideoConverter component, error %ls (code %ld).", res);
 
 	printDebugInfo(m_AMFEncoder);
 
@@ -405,40 +417,55 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 	}
 
 	// Convert Frame into a Surface and queue it.
-	if (frame != nullptr) {
-		amf::AMFSurfacePtr pAMFSurface = CreateSurfaceFromFrame(frame);
-		if (pAMFSurface) {
-			// Set Surface Properties
-			pAMFSurface->SetPts(frame->pts / m_FrameRate.second);
-			pAMFSurface->SetProperty(L"Frame", frame->pts);
-			pAMFSurface->SetDuration((uint64_t)ceil(m_FrameRateReverseDivisor * AMF_SECOND));
+	amf::AMFSurfacePtr pAMFSurface = CreateSurfaceFromFrame(frame);
+	if (pAMFSurface) {
+		// Set Surface Properties
+		pAMFSurface->SetPts(frame->pts / m_FrameRate.second);
+		pAMFSurface->SetProperty(L"Frame", frame->pts);
+		pAMFSurface->SetDuration((uint64_t)ceil(m_FrameRateReverseDivisor * AMF_SECOND));
 
-			// Add to Queue
-			std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
-			size_t uiQueueSize = m_Input.queue.size();
+		// Attempt to queue for 1 second (forces "Encoding overloaded" message to appear).
+		bool queueSuccessful = false;
+		auto queueStart = std::chrono::high_resolution_clock::now();
+		size_t queueSize = m_InputQueueLimit;
+		do {
+			{
+				std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
+				queueSize = m_Input.queue.size();
+			}
 
-			if (uiQueueSize >= m_InputQueueLimit) {
-				AMF_LOG_WARNING("Submission queue is full, dropping frame instead...");
-			} else {
+			// Push into queue if it has room.
+			if (queueSize < m_InputQueueLimit) {
+				std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
 				m_Input.queue.push(pAMFSurface);
-				if (m_InputQueueLastSize != uiQueueSize) {
-					int32_t delta = ((int32_t)uiQueueSize - (int32_t)m_InputQueueLastSize);
-					if (uiQueueSize == 0) {
-						AMF_LOG_DEBUG("Submission queue is empty. (%d/%d/%d)", uiQueueSize, delta, m_InputQueueLimit);
-						m_InputQueueLastSize = uiQueueSize;
-					} else if (delta >= 5) {
-						AMF_LOG_WARNING("Submission queue size is growing. (%d/%d/%d)", uiQueueSize, delta, m_InputQueueLimit);
-						m_InputQueueLastSize = uiQueueSize;
-					} else if (delta <= -5) {
-						AMF_LOG_INFO("Submission queue size is shrinking. (%d/%d/%d)", uiQueueSize, delta, m_InputQueueLimit);
-						m_InputQueueLastSize = uiQueueSize;
-					}
-				}
+				queueSuccessful = true;
+			} else {
+				// Wake up submission thread.
+				m_Input.condvar.notify_all();
+			}
+
+			// Sleep
+			std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
+		} while ((queueSuccessful == false) && (std::chrono::high_resolution_clock::now() - queueStart <= std::chrono::seconds(1)));
+
+		// Report status.
+		if (queueSuccessful) {
+			int32_t queueSizeDelta = m_InputQueueLastSize - queueSize;
+
+			if (queueSizeDelta < -5) {
+				AMF_LOG_DEBUG("Queue is shrinking.");
+				m_InputQueueLastSize = queueSize;
+			} else if (queueSizeDelta > 5) {
+				AMF_LOG_WARNING("GPU Encoder overloaded, queue is growing... (%ld,%ld,%ld)",
+					m_InputQueueLastSize, queueSizeDelta, queueSize);
+				m_InputQueueLastSize = queueSize;
 			}
 		} else {
-			AMF_LOG_ERROR("Unable copy frame for submission, terminating...");
-			return false;
+			AMF_LOG_ERROR("GPU Encoder overloaded, dropping frame instead...");
 		}
+	} else {
+		AMF_LOG_ERROR("Unable copy frame for submission, terminating...");
+		return false;
 	}
 
 	/// Signal Thread Wakeup
@@ -469,35 +496,46 @@ bool Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 		throw std::exception(error);
 	}
 
-	/// Signal Thread Wakeup
-	m_Output.condvar.notify_all();
+	// Attempt to dequeue for 1 second.
+	bool dequeueSuccessful = false;
+	auto dequeueStart = std::chrono::high_resolution_clock::now();
+	amf::AMFDataPtr pAMFData;
+	do {
+		// Signal Output Thread to wake up.
+		m_Output.condvar.notify_all();
 
-	if (received_packet != nullptr) {
-		amf::AMFDataPtr pAMFData;
-		{ // Attempt to dequeue an Item.
+		// Attempt to dequeue a packet.
+		{
 			std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
 			if (m_Output.queue.size() == 0)
-				return true;
+				continue;
 
 			pAMFData = m_Output.queue.front();
 			m_Output.queue.pop();
-		}
 
+			dequeueSuccessful = true;
+		}
+	} while ((dequeueSuccessful == false) && (std::chrono::high_resolution_clock::now() - dequeueStart < std::chrono::seconds(1)));
+
+	if (dequeueSuccessful) {
 		// We've got a DataPtr, let's use it.
 		amf::AMFBufferPtr pAMFBuffer = amf::AMFBufferPtr(pAMFData);
-
+		
 		// Assemble Packet
 		packet->type = OBS_ENCODER_VIDEO;
 		/// Data
-		size_t oldBufferSize = pAMFBuffer->GetSize();
-		if (m_PacketDataBuffer.size() < oldBufferSize) {
-			size_t newBufferSize = (size_t)exp2(ceil(log2(oldBufferSize)));
+		packet->size = pAMFBuffer->GetSize();
+		if (m_PacketDataBuffer.size() < packet->size) {
+			size_t newBufferSize = (size_t)exp2(ceil(log2(packet->size)));
 			AMF_LOG_DEBUG("Packet Buffer was resized to %d byte from %d byte.", newBufferSize, m_PacketDataBuffer.size());
 			m_PacketDataBuffer.resize(newBufferSize);
 		}
 		packet->data = m_PacketDataBuffer.data();
-		packet->size = oldBufferSize;
-		std::memcpy(packet->data, pAMFBuffer->GetNative(), packet->size);
+		if (m_UseOpenCL) {
+			m_AMFCompute->CopyBufferToHost(pAMFBuffer, 0, packet->size, packet->data, true);
+		} else {
+			std::memcpy(packet->data, pAMFBuffer->GetNative(), packet->size);
+		}
 		/// Timestamps
 		packet->dts = (pAMFData->GetPts() - 2) * m_FrameRate.second; // Offset by 2 to support B-Pictures
 		pAMFBuffer->GetProperty(L"Frame", &packet->pts);
@@ -782,7 +820,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("Initialization Parameters: ");
 	AMF_LOG_INFO("  Memory Type: %s", Utility::MemoryTypeAsString(m_MemoryType));
 	if (m_MemoryType != VCEMemoryType_Host) {
-		AMF_LOG_INFO("  Device: %s", m_APIDevice->GetDevice().Name.c_str());
+		AMF_LOG_INFO("  Device: %s", m_APIInstance->GetDevice().Name.c_str());
 		AMF_LOG_INFO("  OpenCL: %s", m_UseOpenCL ? "Enabled" : "Disabled");
 	}
 	AMF_LOG_INFO("  Surface Format: %s", Utility::SurfaceFormatAsString(m_SurfaceFormat));
@@ -807,7 +845,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("    Maximum: %d", this->GetMaximumQP());
 	AMF_LOG_INFO("    I-Frame: %d", this->GetIFrameQP());
 	AMF_LOG_INFO("    P-Frame: %d", this->GetPFrameQP());
-	if (VCECapabilities::GetInstance()->GetDeviceCaps(m_APIDevice->GetDevice(), VCEEncoderType_AVC).supportsBFrames) {
+	if (VCECapabilities::GetInstance()->GetDeviceCaps(m_APIInstance->GetDevice(), VCEEncoderType_AVC).supportsBFrames) {
 		try { AMF_LOG_INFO("    B-Frame: %d", this->GetBFrameQP()); } catch (...) {}
 		try { AMF_LOG_INFO("    B-Picture Delta QP: %d", this->GetBPictureDeltaQP()); } catch (...) {}
 		try { AMF_LOG_INFO("    Reference B-Picture Delta QP: %d", this->GetReferenceBPictureDeltaQP()); } catch (...) {}
@@ -828,7 +866,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("  IDR Period: %d frames", this->GetIDRPeriod());
 	AMF_LOG_INFO("  Header Insertion Spacing: %d frames", this->GetHeaderInsertionSpacing());
 	AMF_LOG_INFO("  Deblocking Filter: %s", this->IsDeblockingFilterEnabled() ? "Enabled" : "Disabled");
-	if (VCECapabilities::GetInstance()->GetDeviceCaps(m_APIDevice->GetDevice(), VCEEncoderType_AVC).supportsBFrames) {
+	if (VCECapabilities::GetInstance()->GetDeviceCaps(m_APIInstance->GetDevice(), VCEEncoderType_AVC).supportsBFrames) {
 		AMF_LOG_INFO("  B-Picture Pattern: %d", this->GetBPicturePattern());
 		AMF_LOG_INFO("  B-Picture Reference: %s", this->IsBPictureReferenceEnabled() ? "Enabled" : "Disabled");
 	} else {
@@ -849,7 +887,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	//try { AMF_LOG_INFO("  Quality Enhancement Mode: %s", Utility::QualityEnhancementModeAsString(this->GetQualityEnhancementMode())); } catch (...) {}
 	try { AMF_LOG_INFO("  VBAQ: %s", this->IsVBAQEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
 
-	Plugin::AMD::VCECapabilities::ReportDeviceCapabilities(m_APIDevice->GetDevice());
+	Plugin::AMD::VCECapabilities::ReportDeviceCapabilities(m_APIInstance->GetDevice());
 
 	printDebugInfo(m_AMFEncoder);
 	AMF_LOG_INFO("-- AMD Advanced Media Framework VCE Encoder --");
@@ -1151,7 +1189,7 @@ void Plugin::AMD::VCEEncoder::SetFrameRate(uint32_t num, uint32_t den) {
 	m_FrameRate.second = den;
 	m_FrameRateDivisor = (double_t)m_FrameRate.first / (double_t)m_FrameRate.second;
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
-	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor * 3);
+	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor);
 
 	if (this->GetProfileLevel() == VCEProfileLevel_Automatic)
 		this->SetProfileLevel(VCEProfileLevel_Automatic);
@@ -1167,7 +1205,7 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameRate() {
 	m_FrameRate.first = frameRate.num;
 	m_FrameRate.second = frameRate.den;
 	m_FrameRateDivisor = (double_t)frameRate.num / (double_t)frameRate.den;
-	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor * 3);
+	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor);
 
 	if (this->GetProfileLevel() == VCEProfileLevel_Automatic)
 		this->SetProfileLevel(VCEProfileLevel_Automatic);
@@ -1204,7 +1242,7 @@ Plugin::AMD::VCERateControlMethod Plugin::AMD::VCEEncoder::GetRateControlMethod(
 void Plugin::AMD::VCEEncoder::SetTargetBitrate(uint32_t bitrate) {
 	// Clamp Value
 	bitrate = clamp(bitrate, 10000,
-		Plugin::AMD::VCECapabilities::GetInstance()->GetDeviceCaps(m_APIDevice->GetDevice(), VCEEncoderType_AVC).maxBitrate);
+		Plugin::AMD::VCECapabilities::GetInstance()->GetDeviceCaps(m_APIInstance->GetDevice(), VCEEncoderType_AVC).maxBitrate);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, bitrate);
 	if (res != AMF_OK) {
@@ -1226,7 +1264,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetTargetBitrate() {
 void Plugin::AMD::VCEEncoder::SetPeakBitrate(uint32_t bitrate) {
 	// Clamp Value
 	bitrate = clamp(bitrate, 10000,
-		Plugin::AMD::VCECapabilities::GetInstance()->GetDeviceCaps(m_APIDevice->GetDevice(), VCEEncoderType_AVC).maxBitrate);
+		Plugin::AMD::VCECapabilities::GetInstance()->GetDeviceCaps(m_APIInstance->GetDevice(), VCEEncoderType_AVC).maxBitrate);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, (uint32_t)bitrate);
 	if (res != AMF_OK) {
