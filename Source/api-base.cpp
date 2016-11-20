@@ -28,6 +28,7 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 #include "api-base.h"
 
+#include "api-opengl.h"
 #include "api-d3d9.h"
 #include "api-d3d11.h"
 
@@ -39,6 +40,7 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
+using namespace Plugin::API;
 
 Plugin::API::Device::Device() {
 	this->Name = "Default";
@@ -50,8 +52,7 @@ Plugin::API::Device::Device(std::string Name, std::string UniqueId) {
 	this->UniqueId = UniqueId;
 }
 
-Plugin::API::Device::~Device() {
-}
+Plugin::API::Device::~Device() {}
 
 bool Plugin::API::operator<(const Plugin::API::Device & left, const Plugin::API::Device& right) {
 	return left.UniqueId < right.UniqueId;
@@ -77,93 +78,53 @@ bool Plugin::API::operator!=(const Plugin::API::Device & left, const Plugin::API
 	return !(left == right);
 }
 
-std::vector<Plugin::API::Device> Plugin::API::APIBase::EnumerateDevices() {
-	// Build a list of Devices
-	#if defined(_WIN32) || defined(_WIN64)
-	if (IsWindows8OrGreater()) {
-		return Plugin::API::Direct3D11::EnumerateDevices();
-	} else if (IsWindowsXPOrGreater()) {
-		//return Plugin::API::Direct3D9::EnumerateDevices();
-	} else
-		#endif 
-	{ // OpenGL
-		//return Plugin::API::OpenGL::EnumerateDevices();
-	}
-	return std::vector<Plugin::API::Device>();
-}
+//////////////////////////////////////////////////////////////////////////
+// API Index
+//////////////////////////////////////////////////////////////////////////
+static std::vector<std::shared_ptr<Base>> s_APIInstances;
 
-Plugin::API::Device Plugin::API::APIBase::GetDeviceForUniqueId(std::string uniqueId) {
-	auto devices = EnumerateDevices();
-	for (auto device : devices) {
-		if (device.UniqueId == uniqueId)
-			return device;
-	}
-	return Plugin::API::Device();
-}
-
-Plugin::API::Device Plugin::API::APIBase::GetDeviceForContext(void* context) {
-	#if defined(_WIN32) || defined(_WIN64)
+void Plugin::API::Base::Initialize() {
+	// DirectX 11
+	#ifdef _WIN32
 	if (IsWindows8OrGreater()) {
-		// DirectX 11
-		return Direct3D11::GetDeviceForContext(context);
-	} else if (IsWindowsXPOrGreater()) {
-		// DirectX 9
-	} else
-		#endif 
+		s_APIInstances.insert(s_APIInstances.end(), std::make_shared<Direct3D11>());
+	}
+	#endif
+
+	// DirectX 9
+	#ifdef _WIN32
+	if (IsWindowsXPOrGreater()) {
+		s_APIInstances.insert(s_APIInstances.end(), std::make_shared<Direct3D9>());
+	}
+	#endif
+
+	// OpenGL
 	{
-		// OpenGL
+		s_APIInstances.insert(s_APIInstances.end(), std::make_shared<OpenGL>());
 	}
-	return Plugin::API::Device();
 }
 
-std::unique_ptr<Plugin::API::APIBase> Plugin::API::APIBase::CreateBestAvailableAPI(Plugin::API::Device device) {
-	std::unique_ptr<Plugin::API::APIBase> retVal = std::make_unique<Plugin::API::APIBase>();
-	#if defined(_WIN32) || defined(_WIN64)
-	if (IsWindows8OrGreater()) {
-		retVal = std::make_unique<Plugin::API::Direct3D11>(device);
-	} else if (IsWindowsXPOrGreater()) {
-		//retVal = std::make_unique<Plugin::API::Direct3D9>(device);
-	} else
-		#endif 
-	{ // OpenGL
-	  //return Plugin::API::OpenGL::OpenGL(device);
-	}
-	return retVal;
+size_t Plugin::API::Base::GetAPICount() {
+	return s_APIInstances.size();
 }
 
-Plugin::API::APIType Plugin::API::APIBase::GetBestAvailableAPI() {
-	#if defined(_WIN32) || defined(_WIN64)
-	if (IsWindows8OrGreater()) {
-		return APIType_Direct3D11;
-	} else if (IsWindowsXPOrGreater()) {
-		return APIType_Direct3D9;
-	} else
-		#endif 
-	{ // OpenGL
-		return APIType_OpenGL;
-	}
-	return APIType_Base;
+std::shared_ptr<Base> Plugin::API::Base::GetAPIInstance(size_t index) {
+	auto indAPI = s_APIInstances.begin();
+	for (size_t n = 0; n < index; n++)
+		indAPI++;
+	
+	if (indAPI == s_APIInstances.end())
+		throw std::exception("Invalid API Index");
+
+	return *indAPI;
 }
 
-Plugin::API::APIBase::APIBase() {
-	myDevice = Plugin::API::Device();
-}
+std::string Plugin::API::Base::GetAPIName(size_t index) {
+	auto indAPI = s_APIInstances.begin();
+	indAPI + index; // Advanced by x elements.
 
-Plugin::API::APIBase::APIBase(Device device) {
-	myDevice = device;
-}
+	if (indAPI == s_APIInstances.end())
+		throw std::exception("Invalid API Index");
 
-Plugin::API::APIBase::~APIBase() {
-}
-
-Plugin::API::APIType Plugin::API::APIBase::GetType() {
-	return myType;
-}
-
-void* Plugin::API::APIBase::GetContext() {
-	return nullptr;
-}
-
-Plugin::API::Device Plugin::API::APIBase::GetDevice() {
-	return myDevice;
+	return indAPI->get()->GetName();
 }

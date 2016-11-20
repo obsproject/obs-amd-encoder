@@ -27,7 +27,9 @@ SOFTWARE.
 // Includes
 //////////////////////////////////////////////////////////////////////////
 #include "plugin.h"
+
 #include <vector>
+#include <map>
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -59,29 +61,36 @@ namespace Plugin {
 			APIType_OpenGL,
 		};
 
-		class APIBase {
+		struct Adapter {
+			int32_t idLow, idHigh;
+			std::string Name;
+
+			Adapter(int32_t idLow, int32_t idHigh, std::string Name)
+				: idLow(idLow), idHigh(idHigh), Name(Name) {}
+		};
+
+		class Base {
+			//////////////////////////////////////////////////////////////////////////
+			// API Index
+			//////////////////////////////////////////////////////////////////////////
 			public:
-			static std::vector<Plugin::API::Device> EnumerateDevices();
-			static Plugin::API::Device GetDeviceForUniqueId(std::string uniqueId);
-			static Plugin::API::Device GetDeviceForContext(void* context);
+			static void Initialize();
 
-			static Plugin::API::APIType GetBestAvailableAPI();
-			static std::unique_ptr<Plugin::API::APIBase> CreateBestAvailableAPI(Plugin::API::Device device);
+			static size_t GetAPICount();
+			static std::shared_ptr<Base> GetAPIInstance(size_t index);
+			static std::string GetAPIName(size_t index);
 
-			APIBase();
-			APIBase(Device device);
-			virtual ~APIBase();
+			//////////////////////////////////////////////////////////////////////////
+			// API
+			//////////////////////////////////////////////////////////////////////////
+			public:
+			virtual std::string GetName() = 0;
 
-			Plugin::API::Device GetDevice();
-
-			virtual Plugin::API::APIType GetType();
-			virtual void* GetContext();
-			
-			protected:
-			Plugin::API::APIType myType;
-
-			private:
-			Plugin::API::Device myDevice;
+			virtual std::vector<Adapter> EnumerateAdapters() = 0;
+			virtual void* CreateInstanceOnAdapter(Adapter adapter) = 0;
+			virtual Adapter GetAdapterForInstance(void* instance) = 0;
+			virtual void* GetContextFromInstance(void* instance) = 0;
+			virtual void DestroyInstance(void* instance) = 0;
 		};
 	}
 }
