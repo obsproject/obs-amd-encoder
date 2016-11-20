@@ -33,17 +33,16 @@ SOFTWARE.
 #include <stdlib.h>
 #include <mutex>
 
-#ifdef _WIN32
 #include <dxgi.h>
+#include <dxgi1_4.h>
 #include <d3d11.h>
-#endif
+#include <atlutil.h>
 
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
 using namespace Plugin::API;
 
-#ifdef _WIN32
 class SingletonDXGI {
 	public:
 
@@ -68,6 +67,18 @@ class SingletonDXGI {
 			FreeLibrary(hModule);
 	}
 
+	HRESULT CreateDXGIFactory(REFIID riid, _Out_ void **ppFactory) {
+		if (hModule == 0)
+			return S_FALSE;
+
+		typedef HRESULT(__stdcall *t_CreateDXGIFactory)(REFIID, void**);
+		t_CreateDXGIFactory pCreateDXGIFactory = (t_CreateDXGIFactory)GetProcAddress(hModule, "CreateDXGIFactory");
+
+		if (pCreateDXGIFactory) {
+			return pCreateDXGIFactory(riid, ppFactory);
+		}
+		return S_FALSE;
+	}
 	HRESULT CreateDXGIFactory1(REFIID riid, _Out_ void **ppFactory) {
 		if (hModule == 0)
 			return S_FALSE;
@@ -80,10 +91,47 @@ class SingletonDXGI {
 		}
 		return S_FALSE;
 	}
+	HRESULT CreateDXGIFactory2(REFIID riid, _Out_ void **ppFactory) {
+		if (hModule == 0)
+			return S_FALSE;
+
+		typedef HRESULT(__stdcall *t_CreateDXGIFactory2)(REFIID, void**);
+		t_CreateDXGIFactory2 pCreateDXGIFactory2 = (t_CreateDXGIFactory2)GetProcAddress(hModule, "CreateDXGIFactory2");
+
+		if (pCreateDXGIFactory2) {
+			return pCreateDXGIFactory2(riid, ppFactory);
+		}
+		return S_FALSE;
+	}
+	HRESULT CreateDXGIFactory3(REFIID riid, _Out_ void **ppFactory) {
+		if (hModule == 0)
+			return S_FALSE;
+
+		typedef HRESULT(__stdcall *t_CreateDXGIFactory3)(REFIID, void**);
+		t_CreateDXGIFactory3 pCreateDXGIFactory3 = (t_CreateDXGIFactory3)GetProcAddress(hModule, "CreateDXGIFactory3");
+
+		if (pCreateDXGIFactory3) {
+			return pCreateDXGIFactory3(riid, ppFactory);
+		}
+		return S_FALSE;
+	}
+	HRESULT CreateDXGIFactory4(REFIID riid, _Out_ void **ppFactory) {
+		if (hModule == 0)
+			return S_FALSE;
+
+		typedef HRESULT(__stdcall *t_CreateDXGIFactory4)(REFIID, void**);
+		t_CreateDXGIFactory4 pCreateDXGIFactory4 = (t_CreateDXGIFactory4)GetProcAddress(hModule, "CreateDXGIFactory4");
+
+		if (pCreateDXGIFactory4) {
+			return pCreateDXGIFactory4(riid, ppFactory);
+		}
+		return S_FALSE;
+	}
 
 	private:
 	HMODULE hModule;
 };
+
 class SingletonD3D11 {
 	public:
 
@@ -139,230 +187,147 @@ class SingletonD3D11 {
 	HMODULE hModule;
 };
 
-Plugin::API::Device BuildDeviceFromAdapter(DXGI_ADAPTER_DESC* pAdapter) {
-	if (pAdapter == nullptr)
-		return Device("INVALID DEVICE", "");
-
-	std::vector<char> uidBuf(1024);
-	sprintf(uidBuf.data(), "%ld:%ld",
-		pAdapter->AdapterLuid.LowPart,
-		pAdapter->AdapterLuid.HighPart);
-
-	std::vector<char> nameBuf(1024);
-	wcstombs(nameBuf.data(), pAdapter->Description, 1024);
-
-	return Device(std::string(nameBuf.data()), std::string(uidBuf.data()));
+std::string Plugin::API::Direct3D11::GetName() {
+	return std::string("Direct3D 11");
 }
-#endif
 
-std::vector<Plugin::API::Device> Plugin::API::Direct3D11::EnumerateDevices() {
-	std::vector<Plugin::API::Device> devices = std::vector<Plugin::API::Device>();
+std::vector<Adapter> Plugin::API::Direct3D11::EnumerateAdapters() {
+	auto dxgiInst = SingletonDXGI::GetInstance();
 
-	#ifdef _WIN32
-	IDXGIFactory1* pFactory = NULL;
-	auto singletonDXGI = SingletonDXGI::GetInstance();
-	HRESULT hr = singletonDXGI->CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&pFactory));
-	if (FAILED(hr)) {
-		return devices;
+	ATL::CComPtr<IDXGIFactory1> dxgiFactory;
+	HRESULT hr = dxgiInst->CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&dxgiFactory);
+	if (FAILED(hr))
+		throw std::exception("<" __FUNCTION_NAME__ "> Failed to enumerate adapters, error code %X.", hr);
+
+	std::vector<Adapter> adapters;
+	IDXGIAdapter1* dxgiAdapter = nullptr;
+	for (size_t adapterIndex = 0;
+		!FAILED(dxgiFactory->EnumAdapters1((UINT)adapterIndex, &dxgiAdapter));
+		adapterIndex++) {
+		DXGI_ADAPTER_DESC1 desc = DXGI_ADAPTER_DESC1();
+		dxgiAdapter->GetDesc1(&desc);
+
+		if (desc.VendorId != 0x1002 /* AMD */)
+			continue;
+
+		std::vector<char> descBuf(sizeof(DXGI_ADAPTER_DESC::Description));
+		wcstombs(descBuf.data(), desc.Description, descBuf.size());
+		adapters.push_back(Adapter(
+			desc.AdapterLuid.LowPart,
+			desc.AdapterLuid.HighPart,
+			std::string(descBuf.data())
+		));
 	}
 
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Enumerating devices: ");
-
-	IDXGIAdapter* pAdapter = NULL;
-	for (uint32_t iAdapterIndex = 0; pFactory->EnumAdapters(iAdapterIndex, &pAdapter) != DXGI_ERROR_NOT_FOUND; iAdapterIndex++) {
-		DXGI_ADAPTER_DESC adapterDesc = DXGI_ADAPTER_DESC();
-		std::memset(&adapterDesc, 0, sizeof(DXGI_ADAPTER_DESC));
-
-		if (pAdapter->GetDesc(&adapterDesc) == S_OK) {
-			AMF_LOG_DEBUG("<" __FUNCTION_NAME__ ">   [%d] %ls",
-				iAdapterIndex,
-				adapterDesc.Description);
-
-			// Only allow AMD devices to be listed here.
-			if (adapterDesc.VendorId != 0x1002)
-				continue;
-
-			devices.push_back(BuildDeviceFromAdapter(&adapterDesc));
-		}
-	}
-
-	pFactory->Release();
-	#endif
-
-	return devices;
+	return adapters;
 }
 
-Plugin::API::Device Plugin::API::Direct3D11::GetDeviceForUniqueId(std::string uniqueId) {
-	Plugin::API::Device device = Device();
+struct Direct3D11Instance {
+	ATL::CComPtr<IDXGIFactory4> factory;
+	ATL::CComPtr<ID3D11Device> device;
+	ATL::CComPtr<ID3D11DeviceContext> context;
+};
 
-	#ifdef _WIN32
-	IDXGIFactory1* pFactory = NULL;
-	auto singletonDXGI = SingletonDXGI::GetInstance();
-	HRESULT hr = singletonDXGI->CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&pFactory));
-	if (FAILED(hr)) {
-		return device;
-	}
+void* Plugin::API::Direct3D11::CreateInstanceOnAdapter(Adapter adapter) {
+	HRESULT hr;
 
-	IDXGIAdapter* pAdapter = NULL;
-	for (uint32_t iAdapterIndex = 0; pFactory->EnumAdapters(iAdapterIndex, &pAdapter) != DXGI_ERROR_NOT_FOUND; iAdapterIndex++) {
-		DXGI_ADAPTER_DESC adapterDesc = DXGI_ADAPTER_DESC();
-		std::memset(&adapterDesc, 0, sizeof(DXGI_ADAPTER_DESC));
+	auto dxgiInst = SingletonDXGI::GetInstance();
 
-		if (pAdapter->GetDesc(&adapterDesc) == S_OK) {
-			// Only allow AMD devices to be listed here.
-			if (adapterDesc.VendorId != 0x1002)
-				continue;
+	ATL::CComPtr<IDXGIFactory4> dxgiFactory;
+	hr = dxgiInst->CreateDXGIFactory1(__uuidof(IDXGIFactory4), (void**)&dxgiFactory);
+	if (FAILED(hr))
+		throw std::exception("<" __FUNCTION_NAME__ "> Failed to enumerate adapters, error code %X.", hr);
 
-			Plugin::API::Device device2 = BuildDeviceFromAdapter(&adapterDesc);
+	LUID adapterLUID;
+	adapterLUID.LowPart = adapter.idLow;
+	adapterLUID.HighPart = adapter.idHigh;
 
-			if (uniqueId == device2.UniqueId) {
-				device = device2;
-				break;
-			}
-		}
-	}
+	ATL::CComPtr<IDXGIAdapter> dxgiAdapter;
+	hr = dxgiFactory->EnumAdapterByLuid(adapterLUID, __uuidof(IDXGIAdapter), (void**)&dxgiAdapter);
+	if (FAILED(hr))
+		throw std::invalid_argument("adapter");
 
-	pFactory->Release();
-	#endif
+	// Create D3D Stuff
+	auto d3dInst = SingletonD3D11::GetInstance();
+	D3D_FEATURE_LEVEL featureLevels[] = {
+		D3D_FEATURE_LEVEL_11_1,
+		D3D_FEATURE_LEVEL_11_0
+	};
+	uint32_t flags =
+		D3D11_CREATE_DEVICE_BGRA_SUPPORT |
+		D3D11_CREATE_DEVICE_VIDEO_SUPPORT;
 
-	return device;
+	ID3D11Device* d3dDevice;
+	ID3D11DeviceContext* d3dContext;
+
+	hr = d3dInst->D3D11CreateDevice(
+		dxgiAdapter,
+		dxgiAdapter == NULL ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN,
+		NULL,
+		flags,
+		featureLevels, _countof(featureLevels),
+		D3D11_SDK_VERSION,
+		&d3dDevice,
+		NULL,
+		&d3dContext);
+	if (FAILED(hr))
+		throw std::exception("<" __FUNCTION_NAME__ "> Unable to create D3D11.1 device.");
+
+	Direct3D11Instance* instance = new Direct3D11Instance();
+	instance->factory = dxgiFactory;
+	instance->device = d3dDevice;
+	instance->context = d3dContext;
+	return instance;
 }
 
-Plugin::API::Device Plugin::API::Direct3D11::GetDeviceForContext(void* context) {
-	Plugin::API::Device device = Device();
+Plugin::API::Adapter Plugin::API::Direct3D11::GetAdapterForInstance(void* pInstance) {
+	HRESULT hr;
 
-	#ifdef _WIN32
-	if (!context)
-		return Device();
+	if (pInstance == nullptr)
+		throw std::invalid_argument("instance");
 
-	ID3D11Device* d3dDevice = static_cast<ID3D11Device*>(context);
-	if (!d3dDevice)
-		return Device();
+	Direct3D11Instance* instance = static_cast<Direct3D11Instance*>(pInstance);
+	if (instance == nullptr)
+		throw std::invalid_argument("instance");
 
-	IDXGIDevice* dxgiDevice = nullptr;
-	d3dDevice->QueryInterface(&dxgiDevice);
-	if (!dxgiDevice)
-		return Device();
+	ATL::CComPtr<IDXGIAdapter> dxgiAdapter;
+	hr = instance->device->QueryInterface(&dxgiAdapter);
+	if (FAILED(hr))
+		throw std::runtime_error("<" __FUNCTION_NAME__ "> Failed to query Adapter from D3D11 device.");
 
-	IDXGIAdapter* dxgiAdapter = nullptr;
-	dxgiDevice->GetAdapter(&dxgiAdapter);
+	DXGI_ADAPTER_DESC adapterDesc;
+	hr = dxgiAdapter->GetDesc(&adapterDesc);
+	if (FAILED(hr))
+		throw std::runtime_error("<" __FUNCTION_NAME__ "> Failed to get description from DXGI adapter.");
 
-	DXGI_ADAPTER_DESC dxgiAdapterDesc = DXGI_ADAPTER_DESC();
-	dxgiAdapter->GetDesc(&dxgiAdapterDesc);
+	std::vector<char> descBuf(sizeof(DXGI_ADAPTER_DESC::Description));
+	wcstombs(descBuf.data(), adapterDesc.Description, descBuf.size());
 
-	dxgiAdapter->Release();
-	dxgiDevice->Release();
-
-	device = BuildDeviceFromAdapter(&dxgiAdapterDesc);
-	#endif
-
-	return device;
+	return Adapter(
+		adapterDesc.AdapterLuid.LowPart,
+		adapterDesc.AdapterLuid.HighPart,
+		std::string(descBuf.data())
+	);
 }
 
-Plugin::API::Direct3D11::Direct3D11(Device device) : APIBase(device) {
-	#ifdef _WIN32
-	IDXGIFactory1 *pFactory;
+void* Plugin::API::Direct3D11::GetContextFromInstance(void* pInstance) {
+	if (pInstance == nullptr)
+		throw std::invalid_argument("instance");
 
-	auto singletonDXGI = SingletonDXGI::GetInstance();
-	if (FAILED(singletonDXGI->CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&pFactory))))
-		throw std::exception("Unable to create D3D11 driver.");
+	Direct3D11Instance* instance = static_cast<Direct3D11Instance*>(pInstance);
+	if (instance == nullptr)
+		throw std::invalid_argument("instance");
 
-	try {
-		IDXGIAdapter *pAdapter = NULL;
-		if (device.UniqueId != "") {
-			IDXGIAdapter *pAdapter2 = NULL;
-			for (uint32_t iAdapterIndex = 0; pFactory->EnumAdapters(iAdapterIndex, &pAdapter2) != DXGI_ERROR_NOT_FOUND; iAdapterIndex++) {
-				DXGI_ADAPTER_DESC adapterDesc = DXGI_ADAPTER_DESC();
-				std::memset(&adapterDesc, 0, sizeof(DXGI_ADAPTER_DESC));
-
-				if (pAdapter2->GetDesc(&adapterDesc) == S_OK) {
-					// Only allow AMD devices to be listed here.
-					if (adapterDesc.VendorId != 0x1002)
-						continue;
-
-					Plugin::API::Device device2 = BuildDeviceFromAdapter(&adapterDesc);
-
-					if (device.UniqueId == device2.UniqueId) {
-						pAdapter = pAdapter2;
-						break;
-					}
-				}
-			}
-		}
-
-		try {
-			D3D_FEATURE_LEVEL featureLevels[] = {
-				D3D_FEATURE_LEVEL_11_1,
-				D3D_FEATURE_LEVEL_11_0
-			};
-			D3D_FEATURE_LEVEL featureLevel;
-			uint32_t flags =
-				D3D11_CREATE_DEVICE_BGRA_SUPPORT |
-				D3D11_CREATE_DEVICE_DISABLE_GPU_TIMEOUT |
-				D3D11_CREATE_DEVICE_VIDEO_SUPPORT;
-
-			DXGI_ADAPTER_DESC desc;
-			if (pAdapter != NULL) {
-				pAdapter->GetDesc(&desc);
-			}
-
-			auto singletonD3D11 = SingletonD3D11::GetInstance();
-			HRESULT hr = singletonD3D11->D3D11CreateDevice(
-				pAdapter, pAdapter == NULL ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN,
-				NULL, flags,
-				featureLevels, _countof(featureLevels),
-				D3D11_SDK_VERSION,
-				reinterpret_cast<ID3D11Device**>(&pDevice),
-				&featureLevel,
-				reinterpret_cast<ID3D11DeviceContext**>(&pDeviceContext));
-			if (FAILED(hr)) {
-				AMF_LOG_ERROR("Unable to create D3D11.1 device.");
-				hr = singletonD3D11->D3D11CreateDevice(
-					pAdapter, pAdapter == NULL ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN,
-					NULL, flags,
-					featureLevels + 1, _countof(featureLevels) - 1,
-					D3D11_SDK_VERSION,
-					reinterpret_cast<ID3D11Device**>(&pDevice),
-					&featureLevel,
-					reinterpret_cast<ID3D11DeviceContext**>(&pDeviceContext));
-				if (FAILED(hr)) {
-					throw std::exception("Unable to create D3D11 device.");
-				}
-			}
-		} catch (...) {
-			if (pAdapter)
-				pAdapter->Release();
-
-			throw;
-		}
-	} catch (...) {
-		if (pFactory)
-			pFactory->Release();
-
-		throw;
-	}
-	#else
-	throw std::exception("Platform not supported!");
-	#endif
+	return instance->device;
 }
 
-Plugin::API::Direct3D11::~Direct3D11() {
-	#ifdef _WIN32
-	if (pDeviceContext)
-		static_cast<ID3D11DeviceContext*>(pDeviceContext)->Release();
-	pDeviceContext = nullptr;
-	if (pDevice)
-		static_cast<ID3D11Device*>(pDevice)->Release();
-	pDevice = nullptr;
-	#else
-	throw std::exception("Platform not supported!");
-	#endif
-}
+void Plugin::API::Direct3D11::DestroyInstance(void* pInstance) {
+	if (pInstance == nullptr)
+		throw std::invalid_argument("instance");
 
-Plugin::API::APIType Plugin::API::Direct3D11::GetType() {
-	return APIType_Direct3D11;
-}
+	Direct3D11Instance* instance = static_cast<Direct3D11Instance*>(pInstance);
+	if (instance == nullptr)
+		throw std::invalid_argument("instance");
 
-void* Plugin::API::Direct3D11::GetContext() {
-	return pDevice;
+	delete instance;
 }
