@@ -9,6 +9,7 @@ SET(enc-amf_HEADERS
 	"Include/api-base.h"
 	"Include/api-d3d9.h"
 	"Include/api-d3d11.h"
+	"Include/api-opengl.h"
 	"Include/enc-h264.h"
 	"Include/plugin.h"
 	"${PROJECT_BINARY_DIR}/Include/Version.h"
@@ -20,9 +21,10 @@ SET(enc-amf_SOURCES
 	"Source/api-base.cpp"
 	"Source/api-d3d9.cpp"
 	"Source/api-d3d11.cpp"
+	"Source/api-opengl.cpp"
 	"Source/enc-h264.cpp"
-	"Source/plugin.cpp"
 	"Source/misc-util.cpp"
+	"Source/plugin.cpp"
 )
 SET(enc-amf_LIBRARIES
 	version
