@@ -23,24 +23,25 @@ SOFTWARE.
 */
 
 #pragma once
-#ifdef _WIN32
+
 //////////////////////////////////////////////////////////////////////////
 // Includes
 //////////////////////////////////////////////////////////////////////////
 #include "api-base.h"
 
-#define D3D_DEBUG_INFO
-#include <d3d9.h>
-#pragma comment(lib, "d3d9.lib")
-
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
+
 namespace Plugin {
 	namespace API {
 		class Direct3D9 : public Base {
 			virtual std::string GetName() override;
+			virtual APIType GetType() override;
+
 			virtual std::vector<Adapter> EnumerateAdapters() override;
+			virtual Adapter GetAdapterById(uint32_t idLow, uint32_t idHigh);
+			virtual Adapter GetAdapterByName(std::string name);
 
 			virtual void* CreateInstanceOnAdapter(Adapter adapter) override;
 			virtual Adapter GetAdapterForInstance(void* pInstance) override;
@@ -49,4 +50,3 @@ namespace Plugin {
 		};
 	}
 }
-#endif

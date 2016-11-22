@@ -30,6 +30,10 @@ SOFTWARE.
 #include <mutex>
 #include <list>
 
+#ifdef _DEBUG
+#define D3D_DEBUG_INFO
+#endif
+#pragma comment(lib, "d3d9.lib")
 #include <d3d9.h>
 #include <atlutil.h>
 
@@ -83,6 +87,22 @@ std::vector<Adapter> Plugin::API::Direct3D9::EnumerateAdapters() {
 	return adapters;
 }
 
+Plugin::API::Adapter Plugin::API::Direct3D9::GetAdapterById(uint32_t idLow, uint32_t idHigh) {
+	for (auto adapter : EnumerateAdapters()) {
+		if ((adapter.idLow == idLow) && (adapter.idHigh == idHigh))
+			return adapter;
+	}
+	return *(EnumerateAdapters().begin());
+}
+
+Plugin::API::Adapter Plugin::API::Direct3D9::GetAdapterByName(std::string name) {
+	for (auto adapter : EnumerateAdapters()) {
+		if (adapter.Name == name)
+			return adapter;
+	}
+	return *(EnumerateAdapters().begin());
+}
+
 struct Direct3D9Instance {
 	ATL::CComPtr<IDirect3D9Ex> d3d;
 	ATL::CComPtr<IDirect3DDevice9Ex> device;
@@ -118,14 +138,14 @@ void* Plugin::API::Direct3D9::CreateInstanceOnAdapter(Adapter adapter) {
 
 	D3DPRESENT_PARAMETERS presentParameters;
 	std::memset(&presentParameters, 0, sizeof(D3DPRESENT_PARAMETERS));
-	presentParameters.BackBufferWidth = 1;
-	presentParameters.BackBufferHeight = 1;
-	presentParameters.BackBufferFormat = D3DFMT_A8B8G8R8;
+	presentParameters.BackBufferWidth = 0;
+	presentParameters.BackBufferHeight = 0;
+	presentParameters.BackBufferFormat = D3DFMT_UNKNOWN;
 	presentParameters.Windowed = TRUE;
 	presentParameters.SwapEffect = D3DSWAPEFFECT_COPY;
 	presentParameters.hDeviceWindow = GetDesktopWindow();
 	presentParameters.Flags = D3DPRESENTFLAG_VIDEO;
-	presentParameters.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+	presentParameters.PresentationInterval = D3DPRESENT_INTERVAL_DEFAULT;
 
 	D3DCAPS9    ddCaps;
 	std::memset(&ddCaps, 0, sizeof(ddCaps));
@@ -142,9 +162,10 @@ void* Plugin::API::Direct3D9::CreateInstanceOnAdapter(Adapter adapter) {
 
 	ATL::CComPtr<IDirect3DDevice9Ex> pD3DDeviceEx;
 	hr = pD3DEx->CreateDeviceEx(
-		(UINT)adapterNum, D3DDEVTYPE_HAL,
+		(UINT)adapterNum,
+		D3DDEVTYPE_HAL,
 		presentParameters.hDeviceWindow,
-		vp | D3DCREATE_NOWINDOWCHANGES | D3DCREATE_MULTITHREADED | D3DCREATE_FPU_PRESERVE,
+		vp | D3DCREATE_NOWINDOWCHANGES | D3DCREATE_MULTITHREADED,
 		&presentParameters,
 		NULL,
 		&pD3DDeviceEx
@@ -201,4 +222,8 @@ void Plugin::API::Direct3D9::DestroyInstance(void* pInstance) {
 		throw std::invalid_argument("instance");
 
 	delete instance;
+}
+
+Plugin::API::APIType Plugin::API::Direct3D9::GetType() {
+	return APIType_Direct3D9;
 }
