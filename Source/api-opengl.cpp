@@ -49,18 +49,38 @@ std::vector<Adapter> Plugin::API::OpenGL::EnumerateAdapters() {
 	return adapters;
 }
 
+Plugin::API::Adapter Plugin::API::OpenGL::GetAdapterById(uint32_t idLow, uint32_t idHigh) {
+	for (auto adapter : EnumerateAdapters()) {
+		if ((adapter.idLow == idLow) && (adapter.idHigh == idHigh))
+			return adapter;
+	}
+	return *(EnumerateAdapters().begin());
+}
+
+Plugin::API::Adapter Plugin::API::OpenGL::GetAdapterByName(std::string name) {
+	for (auto adapter : EnumerateAdapters()) {
+		if (adapter.Name == name)
+			return adapter;
+	}
+	return *(EnumerateAdapters().begin());
+}
+
 void* Plugin::API::OpenGL::CreateInstanceOnAdapter(Adapter adapter) {
-	throw std::logic_error("The method or operation is not implemented.");
+	return nullptr;
 }
 
 void Plugin::API::OpenGL::DestroyInstance(void* instance) {
-	throw std::logic_error("The method or operation is not implemented.");
+	return;
 }
 
 Plugin::API::Adapter Plugin::API::OpenGL::GetAdapterForInstance(void* instance) {
-	throw std::logic_error("The method or operation is not implemented.");
+	return *(EnumerateAdapters().begin());
 }
 
 void* Plugin::API::OpenGL::GetContextFromInstance(void* instance) {
-	throw std::logic_error("The method or operation is not implemented.");
+	return nullptr;
+}
+
+Plugin::API::APIType Plugin::API::OpenGL::GetType() {
+	return APIType_OpenGL;
 }

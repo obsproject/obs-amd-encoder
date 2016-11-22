@@ -37,7 +37,11 @@ namespace Plugin {
 	namespace API {
 		class OpenGL : public Base {
 			virtual std::string GetName() override;
+			virtual APIType GetType() override;
+
 			virtual std::vector<Adapter> EnumerateAdapters() override;
+			virtual Adapter GetAdapterById(uint32_t idLow, uint32_t idHigh);
+			virtual Adapter GetAdapterByName(std::string name);
 
 			virtual void* CreateInstanceOnAdapter(Adapter adapter) override;
 			virtual Adapter GetAdapterForInstance(void* instance) override;
