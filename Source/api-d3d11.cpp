@@ -222,6 +222,22 @@ std::vector<Adapter> Plugin::API::Direct3D11::EnumerateAdapters() {
 	return adapters;
 }
 
+Plugin::API::Adapter Plugin::API::Direct3D11::GetAdapterById(uint32_t idLow, uint32_t idHigh) {
+	for (auto adapter : EnumerateAdapters()) {
+		if ((adapter.idLow == idLow) && (adapter.idHigh == idHigh))
+			return adapter;
+	}
+	return *(EnumerateAdapters().begin());
+}
+
+Plugin::API::Adapter Plugin::API::Direct3D11::GetAdapterByName(std::string name) {
+	for (auto adapter : EnumerateAdapters()) {
+		if (adapter.Name == name)
+			return adapter;
+	}
+	return *(EnumerateAdapters().begin());
+}
+
 struct Direct3D11Instance {
 	ATL::CComPtr<IDXGIFactory4> factory;
 	ATL::CComPtr<ID3D11Device> device;
@@ -330,4 +346,8 @@ void Plugin::API::Direct3D11::DestroyInstance(void* pInstance) {
 		throw std::invalid_argument("instance");
 
 	delete instance;
+}
+
+Plugin::API::APIType Plugin::API::Direct3D11::GetType() {
+	return APIType_Direct3D11;
 }

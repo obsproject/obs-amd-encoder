@@ -37,7 +37,11 @@ namespace Plugin {
 	namespace API {
 		class Direct3D11 : public Base {
 			virtual std::string GetName() override;
+			virtual APIType GetType() override;
+
 			virtual std::vector<Adapter> EnumerateAdapters() override;
+			virtual Adapter GetAdapterById(uint32_t idLow, uint32_t idHigh) override;
+			virtual Adapter GetAdapterByName(std::string name) override;
 
 			virtual void* CreateInstanceOnAdapter(Adapter adapter) override;
 			virtual Adapter GetAdapterForInstance(void* pInstance) override;
