@@ -57,39 +57,54 @@ OBS_MODULE_USE_DEFAULT_LOCALE("enc-amf", "en-US");
 *                   false to indicate failure and unload the module
 */
 MODULE_EXPORT bool obs_module_load(void) {
-	// Initialize Graphics APIs
-	Plugin::API::Base::Initialize();
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Loading...");
 
-	for (size_t index = 0; index < Plugin::API::Base::GetAPICount(); index++) {
-		auto api = Plugin::API::Base::GetAPIInstance(index);
-
-		AMF_LOG_INFO("Enumerating Adapters on API '%s'...", api->GetName().c_str());
-		auto adapters = api->EnumerateAdapters();
-		for (auto adapter : adapters) {
-			AMF_LOG_INFO("  %s", adapter.Name.c_str());
-		}
+	// Attempt to load AMF Runtime
+	try {
+		Plugin::AMD::AMF::GetInstance();
+	} catch (std::exception& e) {
+		AMF_LOG_ERROR("%s", e.what());
+		return true;
+	} catch (std::exception* e) {
+		AMF_LOG_ERROR("%s", e->what());
+		delete e;
+		return true;
+	} catch (...) {
+		AMF_LOG_ERROR("Unknown Exception.");
+		return true;
 	}
 
+	// Initialize Graphics APIs
+	try {
+		Plugin::API::Base::Initialize();
+	} catch (std::exception& e) {
+		AMF_LOG_ERROR("%s", e.what());
+		return true;
+	} catch (std::exception* e) {
+		AMF_LOG_ERROR("%s", e->what());
+		delete e;
+		return true;
+	} catch (...) {
+		AMF_LOG_ERROR("Unknown Exception.");
+		return true;
+	}
 
-	//try {
-	//	AMF_LOG_INFO("Version " PLUGIN_VERSION_TEXT);
+	// Register Encoder
+	try {
+		Plugin::Interface::H264Interface::encoder_register();
+	} catch (std::exception& e) {
+		AMF_LOG_ERROR("%s", e.what());
+		return true;
+	} catch (std::exception* e) {
+		AMF_LOG_ERROR("%s", e->what());
+		delete e;
+		return true;
+	} catch (...) {
+		AMF_LOG_ERROR("Unknown Exception.");
+		return true;
+	}
 
-	//	// Load AMF Runtime
-	//	auto instance = Plugin::AMD::AMF::GetInstance();
-
-	//	// Report AMF Capabilities
-	//	//Plugin::AMD::VCECapabilities::ReportCapabilities();
-
-	//	// Register Encoders
-	//	Plugin::Interface::H264Interface::encoder_register();
-	//} catch (std::exception& e) {
-	//	AMF_LOG_ERROR("Uncaught Exception: %s", e.what());
-	//} catch (std::exception* e) {
-	//	AMF_LOG_ERROR("Uncaught Exception: %s", e->what());
-	//	delete e;
-	//} catch (...) {
-	//	AMF_LOG_ERROR("Uncaught Unknown Exception.");
-	//}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Complete.");
 	return true;
 }
 
