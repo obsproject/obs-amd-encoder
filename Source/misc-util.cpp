@@ -82,6 +82,24 @@ namespace Plugin {
 			return VCEProfileLevel_52;
 		}
 
+		#pragma region VCEEncoderType
+		inline const char* VCEEncoderTypeAsString(VCEEncoderType type) {
+			const char* types[] = {
+				"AVC",
+				"SVC",
+				"HEVC"
+			};
+			return types[type];
+		}
+		inline const wchar_t* VCEEncoderTypeAsAMF(VCEEncoderType type) {
+			const wchar_t* types[] = {
+				AMFVideoEncoderVCE_AVC,
+				AMFVideoEncoderVCE_SVC,
+				L"AMFVideoEncoderHW_HEVC"
+			};
+			return types[type];
+		}
+		#pragma endregion VCEEncoderType
 		#pragma region VCEMemoryType
 		inline const char* MemoryTypeAsString(VCEMemoryType memoryType) {
 			static const char* memoryTypeToString[] = {
