@@ -28,9 +28,10 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 #include "api-base.h"
 
-#include "api-opengl.h"
 #include "api-d3d9.h"
 #include "api-d3d11.h"
+#include "api-host.h"
+#include "api-opengl.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
@@ -42,39 +43,30 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 using namespace Plugin::API;
 
-Plugin::API::Device::Device() {
-	this->Name = "Default";
-	this->UniqueId = "";
+bool Plugin::API::operator<(const Plugin::API::Adapter & left, const Plugin::API::Adapter & right) {
+	if (left == right)
+		return left.Name < right.Name;
+	else
+		return (((uint64_t)left.idLow + ((uint64_t)left.idHigh << 32)) < ((uint64_t)right.idLow + ((uint64_t)right.idHigh << 32)));
 }
 
-Plugin::API::Device::Device(std::string Name, std::string UniqueId) {
-	this->Name = Name;
-	this->UniqueId = UniqueId;
-}
-
-Plugin::API::Device::~Device() {}
-
-bool Plugin::API::operator<(const Plugin::API::Device & left, const Plugin::API::Device& right) {
-	return left.UniqueId < right.UniqueId;
-}
-
-bool Plugin::API::operator>(const Plugin::API::Device & left, const Plugin::API::Device& right) {
+bool Plugin::API::operator>(const Plugin::API::Adapter & left, const Plugin::API::Adapter & right) {
 	return right < left;
 }
 
-bool Plugin::API::operator<=(const Plugin::API::Device & left, const Plugin::API::Device& right) {
+bool Plugin::API::operator<=(const Plugin::API::Adapter & left, const Plugin::API::Adapter & right) {
 	return !(right < left);
 }
 
-bool Plugin::API::operator>=(const Plugin::API::Device & left, const Plugin::API::Device& right) {
+bool Plugin::API::operator>=(const Plugin::API::Adapter & left, const Plugin::API::Adapter & right) {
 	return !(left < right);
 }
 
-bool Plugin::API::operator==(const Plugin::API::Device & left, const Plugin::API::Device& right) {
-	return left.UniqueId == right.UniqueId;
+bool Plugin::API::operator==(const Plugin::API::Adapter & left, const Plugin::API::Adapter & right) {
+	return ((left.idLow == right.idLow) && (right.idHigh == right.idHigh));
 }
 
-bool Plugin::API::operator!=(const Plugin::API::Device & left, const Plugin::API::Device& right) {
+bool Plugin::API::operator!=(const Plugin::API::Adapter & left, const Plugin::API::Adapter & right) {
 	return !(left == right);
 }
 
@@ -102,6 +94,11 @@ void Plugin::API::Base::Initialize() {
 	{
 		s_APIInstances.insert(s_APIInstances.end(), std::make_shared<OpenGL>());
 	}
+
+	// Host
+	{
+		s_APIInstances.insert(s_APIInstances.end(), std::make_shared<Host>());
+	}
 }
 
 size_t Plugin::API::Base::GetAPICount() {
@@ -112,7 +109,7 @@ std::shared_ptr<Base> Plugin::API::Base::GetAPIInstance(size_t index) {
 	auto indAPI = s_APIInstances.begin();
 	for (size_t n = 0; n < index; n++)
 		indAPI++;
-	
+
 	if (indAPI == s_APIInstances.end())
 		throw std::exception("Invalid API Index");
 
@@ -127,4 +124,27 @@ std::string Plugin::API::Base::GetAPIName(size_t index) {
 		throw std::exception("Invalid API Index");
 
 	return indAPI->get()->GetName();
+}
+
+
+std::shared_ptr<Base> Plugin::API::Base::GetAPIByName(std::string name) {
+	for (auto api : s_APIInstances) {
+		if (name == api->GetName()) {
+			return api;
+		}
+	}
+	// If none was found, return the first one.
+	return *s_APIInstances.begin();
+}
+
+std::vector<std::shared_ptr<Base>> Plugin::API::Base::EnumerateAPIs() {
+	return std::vector<std::shared_ptr<Base>>(s_APIInstances);
+}
+
+std::vector<std::string> Plugin::API::Base::EnumerateAPINames() {
+	std::vector<std::string> names;
+	for (auto api : s_APIInstances) {
+		names.push_back(api->GetName());
+	}
+	return names;
 }

@@ -36,26 +36,8 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 namespace Plugin {
 	namespace API {
-		struct Device {
-			std::string Name;
-			std::string UniqueId;
-
-			Device();
-			Device(std::string Name, std::string UniqueId);
-			~Device();
-
-
-			friend bool operator<(const Plugin::API::Device& left, const Plugin::API::Device& right);
-			friend bool operator>(const Plugin::API::Device& left, const Plugin::API::Device& right);
-			friend bool operator<=(const Plugin::API::Device& left, const Plugin::API::Device& right);
-			friend bool operator>=(const Plugin::API::Device& left, const Plugin::API::Device& right);
-
-			friend bool operator==(const Plugin::API::Device& left, const Plugin::API::Device& right);
-			friend bool operator!=(const Plugin::API::Device& left, const Plugin::API::Device& right);
-		};
-
 		enum APIType {
-			APIType_Base,
+			APIType_Host,
 			APIType_Direct3D9,
 			APIType_Direct3D11,
 			APIType_OpenGL,
@@ -65,8 +47,16 @@ namespace Plugin {
 			int32_t idLow, idHigh;
 			std::string Name;
 
-			Adapter(int32_t idLow, int32_t idHigh, std::string Name)
-				: idLow(idLow), idHigh(idHigh), Name(Name) {}
+			Adapter() : idLow(0), idHigh(0), Name("Invalid Device") {}
+			Adapter(int32_t idLow, int32_t idHigh, std::string Name) : idLow(idLow), idHigh(idHigh), Name(Name) {}
+
+			friend bool operator<(const Plugin::API::Adapter& left, const Plugin::API::Adapter& right);
+			friend bool operator>(const Plugin::API::Adapter& left, const Plugin::API::Adapter& right);
+			friend bool operator<=(const Plugin::API::Adapter& left, const Plugin::API::Adapter& right);
+			friend bool operator>=(const Plugin::API::Adapter& left, const Plugin::API::Adapter& right);
+
+			friend bool operator==(const Plugin::API::Adapter& left, const Plugin::API::Adapter& right);
+			friend bool operator!=(const Plugin::API::Adapter& left, const Plugin::API::Adapter& right);
 		};
 
 		class Base {
@@ -79,14 +69,21 @@ namespace Plugin {
 			static size_t GetAPICount();
 			static std::shared_ptr<Base> GetAPIInstance(size_t index);
 			static std::string GetAPIName(size_t index);
+			static std::shared_ptr<Base> GetAPIByName(std::string name);
+			static std::vector<std::shared_ptr<Base>> EnumerateAPIs();
+			static std::vector<std::string> EnumerateAPINames();
 
 			//////////////////////////////////////////////////////////////////////////
 			// API
 			//////////////////////////////////////////////////////////////////////////
 			public:
 			virtual std::string GetName() = 0;
+			virtual APIType GetType() = 0;
 
 			virtual std::vector<Adapter> EnumerateAdapters() = 0;
+			virtual Adapter GetAdapterById(uint32_t idLow, uint32_t idHigh) = 0;
+			virtual Adapter GetAdapterByName(std::string name) = 0;
+
 			virtual void* CreateInstanceOnAdapter(Adapter adapter) = 0;
 			virtual Adapter GetAdapterForInstance(void* instance) = 0;
 			virtual void* GetContextFromInstance(void* instance) = 0;
