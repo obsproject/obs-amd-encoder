@@ -786,13 +786,11 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	try { AMF_LOG_INFO("  Color Range: %s", this->IsFullColorRangeEnabled() ? "Full" : "Partial"); } catch (...) {}
 	AMF_LOG_INFO("Static Parameters: ");
 	AMF_LOG_INFO("  Usage: %s", Utility::UsageAsString(this->GetUsage()));
+	AMF_LOG_INFO("  Quality Preset: %s", Utility::QualityPresetAsString(this->GetQualityPreset()));
 	AMF_LOG_INFO("  Profile: %s %d.%d", Utility::ProfileAsString(this->GetProfile()), this->GetProfileLevel() / 10, this->GetProfileLevel() % 10);
-	AMF_LOG_INFO("  Maximum Long-Term Reference Frames: %d", this->GetMaximumLongTermReferenceFrames());
 	AMF_LOG_INFO("  Frame Size: %dx%d", this->GetFrameSize().first, this->GetFrameSize().second);
 	AMF_LOG_INFO("  Frame Rate: %d/%d", this->GetFrameRate().first, this->GetFrameRate().second);
-	AMF_LOG_INFO("  Quality Preset: %s", Utility::QualityPresetAsString(this->GetQualityPreset()));
 	AMF_LOG_INFO("  Scan Type: %s", this->GetScanType() == VCEScanType_Progressive ? "Progressive" : "Interlaced");
-	try { AMF_LOG_INFO("  Coding Type: %s", Utility::CodingTypeAsString(this->GetCodingType())); } catch (...) {}
 	AMF_LOG_INFO("Rate Control Parameters: ");
 	AMF_LOG_INFO("  Method: %s", Utility::RateControlMethodAsString(this->GetRateControlMethod()));
 	AMF_LOG_INFO("  Bitrate: ");
@@ -815,10 +813,8 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("    Filler Data: %s", this->IsFillerDataEnabled() ? "Enabled" : "Disabled");
 	AMF_LOG_INFO("    Frame Skipping: %s", this->IsFrameSkippingEnabled() ? "Enabled" : "Disabled");
 	AMF_LOG_INFO("    Enforce HRD Restrictions: %s", this->IsEnforceHRDRestrictionsEnabled() ? "Enabled" : "Disabled");
-	AMF_LOG_INFO("  Maximum Access Unit Size: %d bits", this->GetMaximumAccessUnitSize());
 	AMF_LOG_INFO("Frame Control Parameters: ");
 	AMF_LOG_INFO("  IDR Period: %d frames", this->GetIDRPeriod());
-	AMF_LOG_INFO("  Header Insertion Spacing: %d frames", this->GetHeaderInsertionSpacing());
 	AMF_LOG_INFO("  Deblocking Filter: %s", this->IsDeblockingFilterEnabled() ? "Enabled" : "Disabled");
 	if (VCECapabilities::GetInstance()->GetAdapterCapabilities(m_API, m_APIAdapter, VCEEncoderType_AVC).supportsBFrames) {
 		AMF_LOG_INFO("  B-Frame Pattern: %d", this->GetBFramePattern());
@@ -831,18 +827,22 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 		AMF_LOG_INFO("  B-Frame Reference: N/A");
 		AMF_LOG_INFO("  B-Frame Reference Delta QP: N/A");
 	}
-	AMF_LOG_INFO("  Intra-Refresh MBs Number per Slot: %d", this->GetIntraRefreshMacroblocksPerSlot());
-	AMF_LOG_INFO("  Slices Per Frame: %d", this->GetSlicesPerFrame());
 	AMF_LOG_INFO("Motion Estimation Parameters: ");
 	AMF_LOG_INFO("  Half Pixel: %s", this->IsHalfPixelMotionEstimationEnabled() ? "Enabled" : "Disabled");
 	AMF_LOG_INFO("  Quarter Pixel: %s", this->IsQuarterPixelMotionEstimationEnabled() ? "Enabled" : "Disabled");
 	AMF_LOG_INFO("Experimental Parameters: ");
+	AMF_LOG_INFO("  Maximum Long-Term Reference Frames: %d", this->GetMaximumLongTermReferenceFrames());
+	try { AMF_LOG_INFO("  Coding Type: %s", Utility::CodingTypeAsString(this->GetCodingType())); } catch (...) {}
+	AMF_LOG_INFO("  Maximum Access Unit Size: %d bits", this->GetMaximumAccessUnitSize());
+	AMF_LOG_INFO("  Header Insertion Spacing: %d frames", this->GetHeaderInsertionSpacing());
+	AMF_LOG_INFO("  Slices Per Frame: %d", this->GetSlicesPerFrame());
+	AMF_LOG_INFO("  Intra-Refresh MBs Number per Slot: %d", this->GetIntraRefreshMacroblocksPerSlot());
 	try { AMF_LOG_INFO("  Wait For Task: %s", this->IsWaitForTaskEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
-	try { AMF_LOG_INFO("  Aspect Ratio: %d:%d", this->GetAspectRatio().first, this->GetAspectRatio().second); } catch (...) {}
-	try { AMF_LOG_INFO("  MaxNumRefFrames: %d", this->GetMaximumReferenceFrames()); } catch (...) {}
-	try { AMF_LOG_INFO("  MaxMBPerSec: %d", this->GetMaxMBPerSec()); } catch (...) {}
 	try { AMF_LOG_INFO("  Pre-Analysis Pass: %s", this->IsPreanalysisPassEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
 	try { AMF_LOG_INFO("  VBAQ: %s", this->IsVBAQEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
+	try { AMF_LOG_INFO("  Maximum Reference Frames: %d", this->GetMaximumReferenceFrames()); } catch (...) {}
+	try { AMF_LOG_INFO("  MaxMBPerSec: %d", this->GetMaxMBPerSec()); } catch (...) {}
+	try { AMF_LOG_INFO("  Aspect Ratio: %d:%d", this->GetAspectRatio().first, this->GetAspectRatio().second); } catch (...) {}
 	//try { AMF_LOG_INFO("  Quality Enhancement Mode: %s", Utility::QualityEnhancementModeAsString(this->GetQualityEnhancementMode())); } catch (...) {}
 
 	//Plugin::AMD::VCECapabilities::ReportDeviceCapabilities(m_APIInstance->GetDevice());
