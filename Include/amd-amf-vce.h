@@ -121,9 +121,9 @@ namespace Plugin {
 			VCEScanType_Interlaced,
 		};
 		enum VCECodingType {
-			VCECodingType_Default,
-			VCECodingType_CALV,
-			VCECodingType_CABAC,
+			VCECodingType_Default = 0,
+			VCECodingType_CABAC = 1,
+			VCECodingType_CALVC = 2,
 		};
 
 		// Dynamic Properties
@@ -388,58 +388,67 @@ namespace Plugin {
 			bool IsQuarterPixelMotionEstimationEnabled();
 
 			/************************************************************************/
-			/* Hidden Properties                                                    */
+			/* Experimental Properties                                              */
 			/************************************************************************/
+			uint32_t GetMaxMBPerSec();
 			
-			void SetGOPSize(uint32_t gopSize);
-			uint32_t GetGOPSize();
-
 			void SetWaitForTaskEnabled(bool enabled);
 			bool IsWaitForTaskEnabled();
 
-			void SetAspectRatio(uint32_t x, uint32_t y);
-			std::pair<uint32_t, uint32_t> GetAspectRatio();
-
-			void SetMaximumNumberOfReferenceFrames(uint32_t frameCount);
-			uint32_t GetMaximumNumberOfReferenceFrames();
-
-			uint32_t GetMaxMBPerSec();
-
-			void SetInstanceID(uint32_t instanceId);
-			uint32_t GetInstanceID();
+			void SetPreanalysisPassEnabled(bool enabled);
+			bool IsPreanalysisPassEnabled();
 
 			// VBAQ = Variable Bitrate Average Quality?
 			void SetVBAQEnabled(bool enabled);
 			bool IsVBAQEnabled();
 
-			void SetPreanalysisPassEnabled(bool enabled);
-			bool IsPreanalysisPassEnabled();
+			void SetGOPSize(uint32_t gopSize);
+			uint32_t GetGOPSize();
 
-			// Stripe = Slice?
-			// Intra-Refresh Coding
-			void SetIntraRefreshNumberOfStripes(uint32_t stripes); // 0 - INT_MAX
-			uint32_t GetIntraRefreshNumberOfStripes();
+			void SetGOPAlignmentEnabled(bool enabled);
+			bool IsGOPAlignementEnabled();
 
-			void SetSliceMode(uint32_t mode); // 1 or 2
-			uint32_t GetSliceMode();
+			void SetMaximumReferenceFrames(uint32_t frameCount);
+			uint32_t GetMaximumReferenceFrames();
+			
+			void SetAspectRatio(uint32_t x, uint32_t y);
+			std::pair<uint32_t, uint32_t> GetAspectRatio();
 
-			void SetMaximumSliceSize(uint32_t size); // 0 - INT_MAX
-			uint32_t GetMaximumSliceSize();
+			// More:
+			// - CodecId (H264 = 5, H264SVC = 8, 2xUNKNOWN)
+			// - EngineType (Auto = 0, DX9 = 1, DX11 = 2, XVBA = 3)
+			// - ConstraintSetFlags (0 - 255, 1 byte bitset?)
+			// - EanbleVBAQ (bool)
+			// - LowLatencyInternal (bool)
+			// - CommonLowLatencyInternal (bool)
+			// - SliceControlMode (0 - 3)
+			// - SliceControlSize (0 - INT_MAX)
+			// - UniqueInstance (0 - INT_MAX)
+			// - EncoderMaxInstances (1 - 2)
+			// - MultiInstanceMode (bool)
+			// - MultiInstanceCurrentQueue (0 - 1)
 
-			// - SliceControlMode: AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB_ROW, AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB
-			void SetSliceControlMode(uint32_t mode); // 0, 1, 2, 3
-			uint32_t GetSliceControlMode();
+			//
+			//void SetInstanceID(uint32_t instanceId);
+			//uint32_t GetInstanceID();
+			//
+			//// Stripe = Slice?
+			//// Intra-Refresh Coding
+			//void SetIntraRefreshNumberOfStripes(uint32_t stripes); // 0 - INT_MAX
+			//uint32_t GetIntraRefreshNumberOfStripes();
 
-			void SetSliceControlSize(uint32_t size); // 0 - INT_MAX
-			uint32_t GetSliceControlSize();
+			//void SetSliceMode(uint32_t mode); // 1 or 2 (Horizontal or Vertical?)
+			//uint32_t GetSliceMode();
 
-			// HEVC Parameters
-			// - MinQP_I, MaxQP_I
-			// - MinQP_P, MaxQP_P
-			// - QPCBOFFSET, QPCROFFSET
-			// - GOPPerIDR
-			// - GOPSizeMin, GOPSizeMax
-			// - EnableGOPAlignment
+			//void SetMaximumSliceSize(uint32_t size); // 0 - INT_MAX
+			//uint32_t GetMaximumSliceSize();
+
+			//// - SliceControlMode: AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB_ROW, AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB
+			//void SetSliceControlMode(uint32_t mode); // 0, 1, 2, 3
+			//uint32_t GetSliceControlMode();
+
+			//void SetSliceControlSize(uint32_t size); // 0 - INT_MAX
+			//uint32_t GetSliceControlSize();
 
 			#pragma endregion Methods
 			//////////////////////////////////////////////////////////////////////////

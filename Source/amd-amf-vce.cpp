@@ -255,19 +255,16 @@ Plugin::AMD::VCEEncoder::~VCEEncoder() {
 		Stop();
 
 	// AMF
-	if (m_AMFConverter) {
+	if (m_AMFConverter)
 		m_AMFConverter->Terminate();
-		m_AMFConverter = nullptr;
-	}
-	if (m_AMFEncoder) {
+	if (m_AMFEncoder)
 		m_AMFEncoder->Terminate();
-		m_AMFEncoder = nullptr;
-	}
-	if (m_AMFContext) {
+	if (m_AMFContext)
 		m_AMFContext->Terminate();
-		m_AMFContext = nullptr;
-	}
-	m_AMFFactory = nullptr;
+
+	// API
+	if (m_APIInstance)
+		m_API->DestroyInstance(m_APIInstance);
 }
 
 void Plugin::AMD::VCEEncoder::Start() {
@@ -498,11 +495,11 @@ bool Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 			m_PacketDataBuffer.resize(newBufferSize);
 		}
 		packet->data = m_PacketDataBuffer.data();
-		if (m_OpenCL) {
+		/*if (m_OpenCL) {
 			m_AMFCompute->CopyBufferToHost(pAMFBuffer, 0, packet->size, packet->data, true);
-		} else {
+		} else {*/
 			std::memcpy(packet->data, pAMFBuffer->GetNative(), packet->size);
-		}
+		//}
 		/// Timestamps
 		packet->dts = (pAMFData->GetPts() - 2) * m_FrameRate.second; // Offset by 2 to support B-Frames
 		pAMFBuffer->GetProperty(L"Frame", &packet->pts);
@@ -842,7 +839,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("Experimental Parameters: ");
 	try { AMF_LOG_INFO("  Wait For Task: %s", this->IsWaitForTaskEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
 	try { AMF_LOG_INFO("  Aspect Ratio: %d:%d", this->GetAspectRatio().first, this->GetAspectRatio().second); } catch (...) {}
-	try { AMF_LOG_INFO("  MaxNumRefFrames: %d", this->GetMaximumNumberOfReferenceFrames()); } catch (...) {}
+	try { AMF_LOG_INFO("  MaxNumRefFrames: %d", this->GetMaximumReferenceFrames()); } catch (...) {}
 	try { AMF_LOG_INFO("  MaxMBPerSec: %d", this->GetMaxMBPerSec()); } catch (...) {}
 	try { AMF_LOG_INFO("  Pre-Analysis Pass: %s", this->IsPreanalysisPassEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
 	try { AMF_LOG_INFO("  VBAQ: %s", this->IsVBAQEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
@@ -1579,7 +1576,7 @@ bool Plugin::AMD::VCEEncoder::IsEnforceHRDRestrictionsEnabled() {
 
 void Plugin::AMD::VCEEncoder::SetIDRPeriod(uint32_t period) {
 	// Clamp Value
-	period = max(min(period, m_FrameRate.second * 1000), 1); // 1-1000 so that OBS can actually quit.
+	period = max(min(period, 1000), 1); // 1-1000 so that OBS can actually quit.
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, (uint32_t)period);
 	if (res != AMF_OK) {
@@ -1755,26 +1752,14 @@ bool Plugin::AMD::VCEEncoder::IsQuarterPixelMotionEstimationEnabled() {
 /* Hidden Properties                                                    */
 /************************************************************************/
 
-void Plugin::AMD::VCEEncoder::SetGOPSize(uint32_t size) {
-	AMF_LOG_WARNING("Using unsupported SetGOPSize function. Unexpected behaviour may happen.");
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"GOPSize", (uint32_t)size);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, size);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", size);
-}
-
-uint32_t Plugin::AMD::VCEEncoder::GetGOPSize() {
-	AMF_LOG_WARNING("Using unsupported GetGOPSize function. Unexpected behaviour may happen.");
-
-	uint32_t size;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"GOPSize", &size);
+uint32_t Plugin::AMD::VCEEncoder::GetMaxMBPerSec() {
+	uint32_t maxMBPerSec;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"MaxMBPerSec", &maxMBPerSec);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", size);
-	return size;
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", maxMBPerSec);
+	return maxMBPerSec;
 }
 
 void Plugin::AMD::VCEEncoder::SetWaitForTaskEnabled(bool enabled) {
@@ -1795,6 +1780,101 @@ bool Plugin::AMD::VCEEncoder::IsWaitForTaskEnabled() {
 	return enabled;
 }
 
+void Plugin::AMD::VCEEncoder::SetPreanalysisPassEnabled(bool enabled) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"RateControlPreanalysisEnable", enabled);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
+}
+
+bool Plugin::AMD::VCEEncoder::IsPreanalysisPassEnabled() {
+	bool enabled;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"RateControlPreanalysisEnable", &enabled);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", enabled ? "Enabled" : "Disabled");
+	return enabled;
+}
+
+void Plugin::AMD::VCEEncoder::SetVBAQEnabled(bool enabled) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"EanbleVBAQ", enabled); // ToDo: Typo in AMF.
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
+}
+
+bool Plugin::AMD::VCEEncoder::IsVBAQEnabled() {
+	bool enabled;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"EanbleVBAQ", &enabled); // ToDo: Typo in AMF.
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", enabled ? "Enabled" : "Disabled");
+	return enabled;
+}
+
+void Plugin::AMD::VCEEncoder::SetGOPSize(uint32_t size) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"GOPSize", (uint32_t)size);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, size);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", size);
+}
+
+uint32_t Plugin::AMD::VCEEncoder::GetGOPSize() {
+	uint32_t size;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"GOPSize", &size);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", size);
+	return size;
+}
+
+void Plugin::AMD::VCEEncoder::SetGOPAlignmentEnabled(bool enabled) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"EnableGOPAlignment", enabled);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
+}
+
+bool Plugin::AMD::VCEEncoder::IsGOPAlignementEnabled() {
+	bool enabled;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"EnableGOPAlignment", &enabled);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", enabled ? "Enabled" : "Disabled");
+	return enabled;
+}
+
+void Plugin::AMD::VCEEncoder::SetMaximumReferenceFrames(uint32_t numFrames) {
+	auto caps = VCECapabilities::GetInstance()->GetAdapterCapabilities(m_API, m_APIAdapter, VCEEncoderType_AVC);
+	numFrames = clamp(numFrames,
+		caps.minReferenceFrames,
+		caps.maxReferenceFrames);
+
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"MaxNumRefFrames", (uint32_t)numFrames);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, numFrames);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", numFrames);
+}
+
+uint32_t Plugin::AMD::VCEEncoder::GetMaximumReferenceFrames() {
+	uint32_t numFrames;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"MaxNumRefFrames", &numFrames);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", numFrames);
+	return numFrames;
+}
+
 void Plugin::AMD::VCEEncoder::SetAspectRatio(uint32_t num, uint32_t den) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"AspectRatio", ::AMFConstructRate(num, den));
 	if (res != AMF_OK) {
@@ -1813,58 +1893,4 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetAspectRatio() {
 	}
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d:%d.", aspectRatio.num, aspectRatio.den);
 	return std::pair<uint32_t, uint32_t>(aspectRatio.num, aspectRatio.den);
-}
-
-void Plugin::AMD::VCEEncoder::SetMaximumNumberOfReferenceFrames(uint32_t numFrames) {
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"MaxNumRefFrames", (uint32_t)numFrames);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, numFrames);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", numFrames);
-}
-
-uint32_t Plugin::AMD::VCEEncoder::GetMaximumNumberOfReferenceFrames() {
-	uint32_t numFrames;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"MaxNumRefFrames", &numFrames);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", numFrames);
-	return numFrames;
-}
-
-uint32_t Plugin::AMD::VCEEncoder::GetMaxMBPerSec() {
-	uint32_t maxMBPerSec;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"MaxMBPerSec", &maxMBPerSec);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", maxMBPerSec);
-	return maxMBPerSec;
-}
-
-void Plugin::AMD::VCEEncoder::SetVBAQEnabled(bool enabled) {
-
-}
-
-bool Plugin::AMD::VCEEncoder::IsVBAQEnabled() {
-	return false;
-}
-
-void Plugin::AMD::VCEEncoder::SetPreanalysisPassEnabled(bool enabled) {
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"RateControlPreanalysisEnable", enabled);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
-}
-
-bool Plugin::AMD::VCEEncoder::IsPreanalysisPassEnabled() {
-	bool enabled;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"RateControlPreanalysisEnable", &enabled);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", enabled ? "Enabled" : "Disabled");
-	return enabled;
 }
