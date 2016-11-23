@@ -238,7 +238,7 @@ void Plugin::AMD::AMF::EnableDebugTrace(bool enable) {
 
 	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, false);
 	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_CONSOLE, AMF_TRACE_ERROR);
-	#ifdef DEBUG
+	#ifdef _DEBUG
 	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, true);
 	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, AMF_TRACE_TEST);
 	m_AMFTrace->SetPath(L"C:/AMFTrace.log");
