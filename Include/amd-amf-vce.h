@@ -133,11 +133,11 @@ namespace Plugin {
 			VCERateControlMethod_VariableBitrate_PeakConstrained,
 			VCERateControlMethod_VariableBitrate_LatencyConstrained,
 		};
-		enum VCEBPicturePattern {
-			VCEBPicturePattern_None,
-			VCEBPicturePattern_One,
-			VCEBPicturePattern_Two,
-			VCEBPicturePattern_Three,
+		enum VCEBFramePattern {
+			VCEBFramePattern_None,
+			VCEBFramePattern_One,
+			VCEBFramePattern_Two,
+			VCEBFramePattern_Three,
 		};
 
 		class VCEEncoder {
@@ -155,9 +155,11 @@ namespace Plugin {
 			#pragma region Initializer & Finalizer
 			//////////////////////////////////////////////////////////////////////////
 			public:
-			VCEEncoder(VCEEncoderType p_Type,
-				std::string p_DeviceId = "",
-				bool p_OpenCL = false,
+			VCEEncoder(
+				VCEEncoderType p_Type,
+				std::string p_VideoAPI,
+				uint64_t p_VideoAdapterId,
+				bool p_OpenCL,
 				VCEColorFormat p_SurfaceFormat = VCEColorFormat_NV12
 			);
 			~VCEEncoder();
@@ -215,10 +217,10 @@ namespace Plugin {
 			 *	Remarks:
 			 *  - When == 0, the encoder may or may not use LTRs during encoding.
 			 *	- When >0, the user has control over all LTR.
-			 *	- With user control of LTR, B-pictures and Intra-refresh features are not supported.
+			 *	- With user control of LTR, B-Frames and Intra-refresh features are not supported.
 			 *	- The actual maximum number of LTRs allowed depends on H.264 Annex A Table A-1 Level limits, which defines dependencies between the H.264 Level number, encoding resolution, and DPB size. The DPB size limit impacts the maximum number of LTR allowed.
 			 **/
-			void SetMaximumLongTermReferenceFrames(uint32_t maximumLTRFrames);	// Long-Term Reference Frames. If 0, Encoder decides, if non-0 B-Pictures and Intra-Refresh are not supported.
+			void SetMaximumLongTermReferenceFrames(uint32_t maximumLTRFrames);	// Long-Term Reference Frames. If 0, Encoder decides, if non-0 B-Frames and Intra-Refresh are not supported.
 			uint32_t GetMaximumLongTermReferenceFrames();
 
 			/* Coding Type */
@@ -229,9 +231,11 @@ namespace Plugin {
 			/* Frame Properties                                                     */
 			/************************************************************************/
 
+			// Set which Color Profile the input frame is.
 			void SetColorProfile(VCEColorProfile profile);
 			VCEColorProfile GetColorProfile();
 
+			// Set if the input frame is in full color range.
 			void SetFullColorRangeEnabled(bool enabled);
 			bool IsFullColorRangeEnabled();
 
@@ -260,7 +264,7 @@ namespace Plugin {
 			*
 			*	Remarks:
 			*	- When SVC encoding is enabled, all Rate-control parameters (with some restrictions) can be configured differently for a particular SVC-layer. An SVC-layer is denoted by an index pair [SVC-Temporal Layer index][SVC-Quality Layer index]. E.g. The bitrate may be configured differently for SVC-layers [0][0] and [1][0].
-			*	- We restrict all SVC layers to have the same Rate Control method. Some RC parameters are not enabled with SVC encoding (e.g. all parameters related to B-pictures).
+			*	- We restrict all SVC layers to have the same Rate Control method. Some RC parameters are not enabled with SVC encoding (e.g. all parameters related to B-Frames).
 			**/
 			void SetRateControlMethod(VCERateControlMethod method);
 			VCERateControlMethod GetRateControlMethod();
@@ -281,7 +285,7 @@ namespace Plugin {
 			void SetMaximumQP(uint8_t qp);
 			uint8_t GetMaximumQP();
 
-			/*	Sets the Constant QP for I-Pictures.
+			/*	Sets the Constant QP for I-Frames.
 			*
 			*	Remarks:
 			*	- Only available for CQP rate control method.
@@ -289,7 +293,7 @@ namespace Plugin {
 			void SetIFrameQP(uint8_t qp);
 			uint8_t GetIFrameQP();
 
-			/*	Sets the Constant QP for P-Pictures.
+			/*	Sets the Constant QP for P-Frames.
 			*
 			*	Remarks:
 			*	- Only available for CQP rate control method.
@@ -297,21 +301,13 @@ namespace Plugin {
 			void SetPFrameQP(uint8_t qp);
 			uint8_t GetPFrameQP();
 
-			/*	Sets the Constant QP for B-Pictures.
+			/*	Sets the Constant QP for B-Frames.
 			*
 			*	Remarks:
 			*	- Only available for CQP rate control method.
 			**/
 			void SetBFrameQP(uint8_t qp);
 			uint8_t GetBFrameQP();
-
-			/* Selects the delta QP of non-reference B-Pictures with respect to I pictures */
-			void SetBPictureDeltaQP(int8_t qp);
-			int8_t GetBPictureDeltaQP();
-
-			/* Selects delta QP of reference B-Pictures with respect to I pictures */
-			void SetReferenceBPictureDeltaQP(int8_t qp);
-			int8_t GetReferenceBPictureDeltaQP();
 
 			/*	Sets the VBV Buffer Size in bits */
 			void SetVBVBufferSize(uint32_t size);
@@ -339,7 +335,7 @@ namespace Plugin {
 			bool IsEnforceHRDRestrictionsEnabled();
 
 			/************************************************************************/
-			/* Picture Control Properties                                           */
+			/* Frame Control Properties                                           */
 			/************************************************************************/
 
 			/*	Sets IDR period. IDRPeriod= 0 turns IDR off */
@@ -350,13 +346,21 @@ namespace Plugin {
 			void SetHeaderInsertionSpacing(uint32_t spacing); // Similar to IDR Period, spacing (in frames) between headers.
 			uint32_t GetHeaderInsertionSpacing();
 
-			/*	Sets the number of consecutive B-pictures in a GOP. BPicturesPattern = 0 indicates that B-pictures are not used */
-			void SetBPicturePattern(VCEBPicturePattern pattern);
-			VCEBPicturePattern GetBPicturePattern();
+			/*	Sets the number of consecutive B-Frames in a GOP. BFramesPattern = 0 indicates that B-Frames are not used */
+			void SetBFramePattern(VCEBFramePattern pattern);
+			VCEBFramePattern GetBFramePattern();
 
-			/*	Enables or disables using B-pictures as references */
-			void SetBPictureReferenceEnabled(bool enabled);
-			bool IsBPictureReferenceEnabled();
+			/* Selects the delta QP of non-reference B-Frames with respect to the last non-B-Frame */
+			void SetBFrameDeltaQP(int8_t qp);
+			int8_t GetBFrameDeltaQP();
+
+			/*	Enables or disables using B-Frames as references */
+			void SetBFrameReferenceEnabled(bool enabled);
+			bool IsBFrameReferenceEnabled();
+
+			/* Selects delta QP of reference B-Frames with respect to the last non-B-Frame */
+			void SetBFrameReferenceDeltaQP(int8_t qp);
+			int8_t GetBFrameReferenceDeltaQP();
 
 			/*	Turns on/off the Deblocking Filter */
 			void SetDeblockingFilterEnabled(bool enabled);
@@ -366,9 +370,10 @@ namespace Plugin {
 			void SetSlicesPerFrame(uint32_t slices);
 			uint32_t GetSlicesPerFrame();
 
-			/*	Sets the number of intra-refresh macro-blocks per slot */
-			void SetIntraRefreshMBsNumberPerSlot(uint32_t mbs);
-			uint32_t GetIntraRefreshMBsNumberPerSlot();
+			// Macroblocks per Intra-Refresh Slot
+			// Intra-Refresh Coding
+			void SetIntraRefreshMacroblocksPerSlot(uint32_t macroblocks);
+			uint32_t GetIntraRefreshMacroblocksPerSlot();
 
 			/************************************************************************/
 			/* Miscellaneous Control Properties                                     */
@@ -403,12 +408,15 @@ namespace Plugin {
 			void SetInstanceID(uint32_t instanceId);
 			uint32_t GetInstanceID();
 
+			// VBAQ = Variable Bitrate Average Quality?
 			void SetVBAQEnabled(bool enabled);
 			bool IsVBAQEnabled();
 
-			void SetRateControlPreanalysisEnabled(bool enabled);
-			bool IsRateControlPreanalysisEnabled();
+			void SetPreanalysisPassEnabled(bool enabled);
+			bool IsPreanalysisPassEnabled();
 
+			// Stripe = Slice?
+			// Intra-Refresh Coding
 			void SetIntraRefreshNumberOfStripes(uint32_t stripes); // 0 - INT_MAX
 			uint32_t GetIntraRefreshNumberOfStripes();
 
@@ -450,8 +458,9 @@ namespace Plugin {
 			amf::AMFComputePtr m_AMFCompute;
 
 			// API References
-			std::unique_ptr<Plugin::API::Base> m_APIInstance;
-			Plugin::API::Device m_APIDevice;
+			std::shared_ptr<Plugin::API::Base> m_API;
+			Plugin::API::Adapter m_APIAdapter;
+			void* m_APIInstance;
 
 			// Static Buffers
 			std::vector<uint8_t> m_PacketDataBuffer;
@@ -480,7 +489,7 @@ namespace Plugin {
 			// Internal Properties
 			VCEEncoderType m_EncoderType;
 			VCEMemoryType m_MemoryType;
-			bool m_UseOpenCL;
+			bool m_OpenCL;
 			VCEColorFormat m_SurfaceFormat;
 			bool m_Flag_IsStarted,
 				m_Flag_FirstFrameSubmitted,
