@@ -31,6 +31,7 @@ SOFTWARE.
 #include <vector>
 #include <list>
 #include <map>
+#include <tuple>
 
 // Plugin
 #include "plugin.h"
@@ -47,7 +48,7 @@ SOFTWARE.
 
 namespace Plugin {
 	namespace AMD {
-		struct VCEDeviceCapabilities {
+		volatile struct VCEDeviceCapabilities {
 			amf::AMF_ACCELERATION_TYPE acceleration_type;
 			uint32_t maxProfile;
 			uint32_t maxProfileLevel;
@@ -63,12 +64,14 @@ namespace Plugin {
 			struct IOCaps {
 				int32_t minWidth, maxWidth;
 				int32_t minHeight, maxHeight;
-				bool isInterlacedSupported;
+				bool supportsInterlaced;
 				uint32_t verticalAlignment;
 
 				std::vector<std::pair<amf::AMF_SURFACE_FORMAT, bool>> formats;
 				std::vector<std::pair<amf::AMF_MEMORY_TYPE, bool>> memoryTypes;
 			} input, output;
+
+			Plugin::AMD::VCEDeviceCapabilities::VCEDeviceCapabilities();
 		};
 
 		class VCECapabilities {
@@ -77,10 +80,10 @@ namespace Plugin {
 			//////////////////////////////////////////////////////////////////////////
 			public:
 			static std::shared_ptr<Plugin::AMD::VCECapabilities> GetInstance();
-			static void ReportCapabilities();
+			/*static void ReportCapabilities();
 			static void ReportDeviceCapabilities(Plugin::API::Device device);
 			static void ReportDeviceIOCapabilities(Plugin::API::Device device, VCEEncoderType type, bool output);
-
+*/
 			//////////////////////////////////////////////////////////////////////////
 			// Class
 			//////////////////////////////////////////////////////////////////////////
@@ -88,18 +91,14 @@ namespace Plugin {
 			VCECapabilities();
 			~VCECapabilities();
 
-			//void QueryCapabilitiesForDevice(VCEMemoryType type, Plugin::API::Device device = Plugin::API::Device());
-
 			bool Refresh();
-			std::vector<Plugin::API::Device> GetDevices();
-			VCEDeviceCapabilities GetDeviceCaps(Plugin::API::Device device, VCEEncoderType type);
-			VCEDeviceCapabilities::IOCaps GetDeviceIOCaps(Plugin::API::Device device, VCEEncoderType type, bool output);
+			std::vector<std::pair<VCEEncoderType, VCEDeviceCapabilities>>
+				GetAllAdapterCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter);
+			VCEDeviceCapabilities
+				GetAdapterCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter, VCEEncoderType type);
 
 			private:
-			//std::map<VCEMemoryType, std::map<Plugin::API::Device, std::map<VCEEncoderType, VCEDeviceCapabilities>>> tstMap;
-
-			std::vector<Plugin::API::Device> devices;
-			std::map<std::pair<Plugin::API::Device, Plugin::AMD::VCEEncoderType>, VCEDeviceCapabilities> deviceToCapabilities;
+			std::map<std::tuple<std::string, Plugin::API::Adapter, Plugin::AMD::VCEEncoderType>, VCEDeviceCapabilities> capabilityMap;
 		};
 	}
 }
