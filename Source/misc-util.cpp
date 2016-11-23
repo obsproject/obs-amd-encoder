@@ -236,12 +236,15 @@ namespace Plugin {
 		#pragma endregion VCERateControlMethod
 
 		inline const char* CodingTypeAsString(VCECodingType type) {
-			const char* TypeToString[] = {
-				"Default",
-				"CABAC",
-				"CALV",
-			};
-			return TypeToString[type];
+			switch (type) {
+				case VCECodingType_CABAC:
+					return "CABAC";
+				case VCECodingType_CALVC:
+					return "CALVC";
+				case VCECodingType_Default:
+				default:
+					return "Default";
+			}
 		}
 	}
 }
