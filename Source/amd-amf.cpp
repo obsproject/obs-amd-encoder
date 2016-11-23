@@ -121,11 +121,9 @@ Plugin::AMD::AMF::AMF() {
 		"\\ProductVersion");
 
 	// Retrieve file description for language and code page "i". 
-	void* lpBuffer;
-	uint32_t dwBytes;
-	VerQueryValueA(pBlock, buf.data(), &lpBuffer, &dwBytes);
-
-	AMF_LOG_INFO("Runtime Library is on Version %.*s.", dwBytes, lpBuffer);
+	void* pProductVersion;
+	uint32_t lProductVersionSize;
+	VerQueryValueA(pBlock, buf.data(), &pProductVersion, &lProductVersionSize);
 	#endif _WIN32 // Windows: Get Product Version
 
 	/// Find Function for Querying AMF Version.
@@ -143,16 +141,6 @@ Plugin::AMD::AMF::AMF() {
 	res = AMFQueryVersion(&m_AMFVersion_Runtime);
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<Plugin::AMD::AMF::AMF> Querying Version failed with error %ls (code %ld).", res);
-	/// Log some Information for Supporters.
-	AMF_LOG_INFO("Runtime is on Version %d.%d.%d.%d, compiled against Version %d.%d.%d.%d.",
-		(uint16_t)((m_AMFVersion_Runtime >> 48ull) & 0xFFFF),
-		(uint16_t)((m_AMFVersion_Runtime >> 32ull) & 0xFFFF),
-		(uint16_t)((m_AMFVersion_Runtime >> 16ull) & 0xFFFF),
-		(uint16_t)((m_AMFVersion_Runtime & 0xFFFF)),
-		(uint16_t)((m_AMFVersion_Compiler >> 48ull) & 0xFFFF),
-		(uint16_t)((m_AMFVersion_Compiler >> 32ull) & 0xFFFF),
-		(uint16_t)((m_AMFVersion_Compiler >> 16ull) & 0xFFFF),
-		(uint16_t)((m_AMFVersion_Compiler & 0xFFFF)));
 	#pragma endregion Query AMF Runtime Version
 
 		/// Find Function for Initializing AMF.
@@ -186,6 +174,19 @@ Plugin::AMD::AMF::AMF() {
 	/// Register Custom Trace Writer and disable Debug Tracing.
 	m_AMFTrace->RegisterWriter(L"OBSWriter", CustomWriter::GetInstance().get(), true);
 	this->EnableDebugTrace(false);
+
+	// Log success
+	AMF_LOG_INFO("Version " PLUGIN_VERSION_TEXT " loaded (Compiled: %d.%d.%d.%d, Runtime: %d.%d.%d.%d, Library: %.*s).",
+		(uint16_t)((m_AMFVersion_Runtime >> 48ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Runtime >> 32ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Runtime >> 16ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Runtime & 0xFFFF)),
+		(uint16_t)((m_AMFVersion_Compiler >> 48ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Compiler >> 32ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Compiler >> 16ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Compiler & 0xFFFF)),
+		lProductVersionSize, pProductVersion
+	);
 
 	AMF_LOG_DEBUG("<Plugin::AMD::AMF::AMF> Initialized.");
 }
