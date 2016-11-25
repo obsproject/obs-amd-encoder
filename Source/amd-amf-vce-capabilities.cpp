@@ -82,83 +82,93 @@ std::shared_ptr<Plugin::AMD::VCECapabilities> Plugin::AMD::VCECapabilities::GetI
 	return __instance;
 }
 
-//void Plugin::AMD::VCECapabilities::ReportCapabilities() {
-//	auto inst = GetInstance();
-//
-//	auto devs = inst->GetDevices();
-//	for (auto dev : devs) {
-//		ReportDeviceCapabilities(dev);
-//	}
-//}
-//
-//void Plugin::AMD::VCECapabilities::ReportDeviceCapabilities(Plugin::API::Device device) {
-//	auto inst = GetInstance();
-//
-//	if (device.UniqueId == "") // Make sure there is always a device selected.
-//		device = *inst->GetDevices().begin()._Ptr;
-//
-//	AMF_LOG_INFO("Capabilities for Device '%s':", device.Name.c_str());
-//
-//	VCEEncoderType types[] = { VCEEncoderType_AVC, VCEEncoderType_SVC };
-//	for (VCEEncoderType type : types) {
-//		auto caps = inst->GetDeviceCaps(device, type);
-//
-//		AMF_LOG_INFO("  %s (Acceleration: %s)",
-//			(type == VCEEncoderType_AVC ? "AVC" : (type == VCEEncoderType_SVC ? "SVC" : (type == VCEEncoderType_HEVC ? "HEVC" : "Unknown"))),
-//			(caps.acceleration_type == amf::AMF_ACCEL_SOFTWARE ? "Software" : (caps.acceleration_type == amf::AMF_ACCEL_GPU ? "GPU" : (caps.acceleration_type == amf::AMF_ACCEL_HARDWARE ? "Hardware" : "None")))
-//		);
-//
-//		if (caps.acceleration_type == amf::AMF_ACCEL_NOT_SUPPORTED)
-//			continue;
-//
-//		AMF_LOG_INFO("    Limits");
-//		AMF_LOG_INFO("      # of Streams: %ld", caps.maxNumOfStreams);
-//		AMF_LOG_INFO("      # of Instances: %ld", caps.maxNumOfHwInstances);
-//		AMF_LOG_INFO("      Profile: %s", Plugin::Utility::ProfileAsString((VCEProfile)caps.maxProfile));
-//		AMF_LOG_INFO("      Level: %ld.%ld", caps.maxProfileLevel / 10, caps.maxProfileLevel % 10);
-//		AMF_LOG_INFO("      Bitrate: %ld", caps.maxBitrate);
-//		AMF_LOG_INFO("      Temporal Layers: %ld", caps.maxTemporalLayers);
-//		AMF_LOG_INFO("      Reference Frames: %ld (min) - %ld (max)", caps.minReferenceFrames, caps.maxReferenceFrames);
-//		AMF_LOG_INFO("    Features");
-//		AMF_LOG_INFO("      B-Frames: %s", caps.supportsBFrames ? "Supported" : "Not Supported");
-//		AMF_LOG_INFO("      Fixed Slice Mode: %s", caps.supportsFixedSliceMode ? "Supported" : "Not Supported");
-//		AMF_LOG_INFO("    Input");
-//		ReportDeviceIOCapabilities(device, type, false);
-//		AMF_LOG_INFO("    Output");
-//		ReportDeviceIOCapabilities(device, type, true);
-//	}
-//}
-//
-//void Plugin::AMD::VCECapabilities::ReportDeviceIOCapabilities(Plugin::API::Device device, VCEEncoderType type, bool output) {
-//	auto amf = Plugin::AMD::AMF::GetInstance();
-//	auto inst = GetInstance();
-//	auto ioCaps = inst->GetDeviceIOCaps(device, type, output);
-//	AMF_LOG_INFO("      Resolution: %ldx%ld - %ldx%ld",
-//		ioCaps.minWidth, ioCaps.minHeight,
-//		ioCaps.maxWidth, ioCaps.maxHeight);
-//	AMF_LOG_INFO("      Vertical Alignment: %ld", ioCaps.verticalAlignment);
-//	AMF_LOG_INFO("      Interlaced: %s", ioCaps.supportsInterlaced ? "Supported" : "Not Supported");
-//	std::stringstream formatstr;
-//	for (auto format : ioCaps.formats) {
-//		std::vector<char> buf(1024);
-//		wcstombs(buf.data(), amf->GetTrace()->SurfaceGetFormatName(format.first), 1024);
-//		formatstr
-//			<< buf.data()
-//			<< (format.second ? " (Native)" : "")
-//			<< ", ";
-//	}
-//	AMF_LOG_INFO("      Formats: %s", formatstr.str().c_str());
-//	std::stringstream memorystr;
-//	for (auto memory : ioCaps.memoryTypes) {
-//		std::vector<char> buf(1024);
-//		wcstombs(buf.data(), amf->GetTrace()->GetMemoryTypeName(memory.first), 1024);
-//		memorystr
-//			<< buf.data()
-//			<< (memory.second ? " (Native)" : "")
-//			<< ", ";
-//	}
-//	AMF_LOG_INFO("      Memory Types: %s", memorystr.str().c_str());
-//}
+void Plugin::AMD::VCECapabilities::ReportCapabilities(std::shared_ptr<Plugin::API::Base> api) {
+	auto inst = GetInstance();
+	auto adapters = api->EnumerateAdapters();
+	for (auto adapter : adapters) {
+		ReportAdapterCapabilities(api, adapter);
+	}
+}
+
+void Plugin::AMD::VCECapabilities::ReportAdapterCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter) {
+	auto inst = GetInstance();
+	VCEEncoderType types[] = {
+		VCEEncoderType_AVC,
+		VCEEncoderType_SVC,
+	};
+	for (auto type : types) {
+		AMF_LOG_INFO("Capabilities for Device '%s' on API %s:",
+			adapter.Name.c_str(),
+			api->GetName().c_str());
+
+		ReportAdapterTypeCapabilities(api, adapter, type);
+	}
+}
+
+void Plugin::AMD::VCECapabilities::ReportAdapterTypeCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter, VCEEncoderType type) {
+	auto inst = GetInstance();
+	auto caps = inst->GetAdapterCapabilities(api, adapter, type);
+
+	AMF_LOG_INFO("  %s (Acceleration: %s)",
+		(type == VCEEncoderType_AVC ? "AVC" : (type == VCEEncoderType_SVC ? "SVC" : (type == VCEEncoderType_HEVC ? "HEVC" : "Unknown"))),
+		(caps.acceleration_type == amf::AMF_ACCEL_SOFTWARE ? "Software" : (caps.acceleration_type == amf::AMF_ACCEL_GPU ? "GPU" : (caps.acceleration_type == amf::AMF_ACCEL_HARDWARE ? "Hardware" : "None")))
+	);
+
+	if (caps.acceleration_type == amf::AMF_ACCEL_NOT_SUPPORTED)
+		return;
+
+	AMF_LOG_INFO("    Limits");
+	AMF_LOG_INFO("      Profile: %s", Plugin::Utility::ProfileAsString((VCEProfile)caps.maxProfile));
+	AMF_LOG_INFO("      Profile Level: %ld.%ld", caps.maxProfileLevel / 10, caps.maxProfileLevel % 10);
+	AMF_LOG_INFO("      Bitrate: %ld", caps.maxBitrate);
+	AMF_LOG_INFO("      Reference Frames: %ld (min) - %ld (max)", caps.minReferenceFrames, caps.maxReferenceFrames);
+	if (type == VCEEncoderType_SVC)
+		AMF_LOG_INFO("      Temporal Layers: %ld", caps.maxTemporalLayers);
+	AMF_LOG_INFO("    Features");
+	AMF_LOG_INFO("      B-Frames: %s", caps.supportsBFrames ? "Supported" : "Not Supported");
+	AMF_LOG_INFO("      Fixed Slice Mode: %s", caps.supportsFixedSliceMode ? "Supported" : "Not Supported");
+	AMF_LOG_INFO("    Instancing");
+	AMF_LOG_INFO("      # of Streams: %ld", caps.maxNumOfStreams);
+	AMF_LOG_INFO("      # of Instances: %ld", caps.maxNumOfHwInstances);
+	AMF_LOG_INFO("    Input");
+	ReportAdapterTypeIOCapabilities(api, adapter, type, false);
+	AMF_LOG_INFO("    Output");
+	ReportAdapterTypeIOCapabilities(api, adapter, type, true);
+}
+
+void Plugin::AMD::VCECapabilities::ReportAdapterTypeIOCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter, VCEEncoderType type, bool output) {
+	auto amf = Plugin::AMD::AMF::GetInstance();
+
+	auto inst = GetInstance();
+	VCEDeviceCapabilities::IOCaps ioCaps = output
+		? inst->GetAdapterCapabilities(api, adapter, type).output
+		: inst->GetAdapterCapabilities(api, adapter, type).input;
+	AMF_LOG_INFO("      Resolution: %ldx%ld - %ldx%ld",
+		ioCaps.minWidth, ioCaps.minHeight,
+		ioCaps.maxWidth, ioCaps.maxHeight);
+	AMF_LOG_INFO("      Vertical Alignment: %ld", ioCaps.verticalAlignment);
+	AMF_LOG_INFO("      Interlaced: %s", ioCaps.supportsInterlaced ? "Supported" : "Not Supported");
+	std::stringstream formatstr;
+	for (auto format : ioCaps.formats) {
+		std::vector<char> buf(1024);
+		wcstombs(buf.data(), amf->GetTrace()->SurfaceGetFormatName(format.first), 1024);
+		formatstr
+			<< buf.data()
+			<< (format.second ? " (Native)" : "")
+			<< ", ";
+	}
+	AMF_LOG_INFO("      Formats: %s", formatstr.str().c_str());
+	std::stringstream memorystr;
+	for (auto memory : ioCaps.memoryTypes) {
+		std::vector<char> buf(1024);
+		wcstombs(buf.data(), amf->GetTrace()->GetMemoryTypeName(memory.first), 1024);
+		memorystr
+			<< buf.data()
+			<< (memory.second ? " (Native)" : "")
+			<< ", ";
+	}
+	AMF_LOG_INFO("      Memory Types: %s", memorystr.str().c_str());
+}
 
 Plugin::AMD::VCECapabilities::VCECapabilities() {
 	this->Refresh();
@@ -297,8 +307,8 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 						AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> GetInputCaps failed for device '%s' with codec '%ls', error %ls (code %d).",
 							adapter.Name.c_str(),
 							Plugin::Utility::VCEEncoderTypeAsString(type),
-							amfInstance->GetTrace()->GetResultText(res), res);			
-					
+							amfInstance->GetTrace()->GetResultText(res), res);
+
 					if (GetIOCapability(true, amfCaps, &(devCaps.output)) != AMF_OK)
 						AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> GetOutputCaps failed capabilities for device '%s' with codec '%ls', error %ls (code %d).",
 							adapter.Name.c_str(),
@@ -307,7 +317,7 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 				}
 
 				amfComponent->Terminate();
-				
+
 				// Insert
 				capabilityMap.insert(std::make_pair(
 					std::make_tuple(api->GetName(), adapter, type),

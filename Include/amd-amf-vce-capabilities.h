@@ -80,10 +80,17 @@ namespace Plugin {
 			//////////////////////////////////////////////////////////////////////////
 			public:
 			static std::shared_ptr<Plugin::AMD::VCECapabilities> GetInstance();
-			/*static void ReportCapabilities();
-			static void ReportDeviceCapabilities(Plugin::API::Device device);
-			static void ReportDeviceIOCapabilities(Plugin::API::Device device, VCEEncoderType type, bool output);
-*/
+			static void ReportCapabilities(std::shared_ptr<Plugin::API::Base> api);
+			static void ReportAdapterCapabilities(std::shared_ptr<Plugin::API::Base> api,
+				Plugin::API::Adapter adapter);
+			static void ReportAdapterTypeCapabilities(std::shared_ptr<Plugin::API::Base> api,
+				Plugin::API::Adapter adapter,
+				VCEEncoderType type);
+			static void ReportAdapterTypeIOCapabilities(std::shared_ptr<Plugin::API::Base> api,
+				Plugin::API::Adapter adapter,
+				VCEEncoderType type,
+				bool output);
+
 			//////////////////////////////////////////////////////////////////////////
 			// Class
 			//////////////////////////////////////////////////////////////////////////
