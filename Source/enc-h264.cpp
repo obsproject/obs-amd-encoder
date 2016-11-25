@@ -193,7 +193,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_double(data, AMF_H264_VBVBUFFER_FULLNESS, 100);
 	obs_data_set_default_int(data, AMF_H264_MAXIMUMACCESSUNITSIZE, 0);
 	obs_data_set_default_int(data, AMF_H264_FILLERDATA, 1);
-	obs_data_set_default_int(data, AMF_H264_FRAMESKIPPING, 1);
+	obs_data_set_default_int(data, AMF_H264_FRAMESKIPPING, 0);
 	obs_data_set_default_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY, 1);
 
 	// Frame Control Properties
@@ -221,7 +221,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, AMF_H264_PREANALYSISPASS, 0);
 	obs_data_set_default_int(data, AMF_H264_VBAQ, 0);
 	obs_data_set_default_int(data, AMF_H264_GOPSIZE, 0);
-	obs_data_set_default_int(data, AMF_H264_ENABLEGOPALIGNMENT, 1);
+	obs_data_set_default_int(data, AMF_H264_GOPALIGNMENT, 1);
 	obs_data_set_default_int(data, AMF_H264_MAXIMUMREFERENCEFRAMES, 4);
 
 	// System Properties
@@ -471,8 +471,8 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_GOPSIZE_DESCRIPTION));
 
 	/// GOP Alignment
-	p = obs_properties_add_list(props, AMF_H264_ENABLEGOPALIGNMENT, TEXT_T(AMF_H264_ENABLEGOPALIGNMENT), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_set_long_description(p, TEXT_T(AMF_H264_ENABLEGOPALIGNMENT_DESCRIPTION));
+	p = obs_properties_add_list(props, AMF_H264_GOPALIGNMENT, TEXT_T(AMF_H264_GOPALIGNMENT), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_set_long_description(p, TEXT_T(AMF_H264_GOPALIGNMENT_DESCRIPTION));
 	obs_property_list_add_int(p, TEXT_T(AMF_UTIL_TOGGLE_DISABLED), 0);
 	obs_property_list_add_int(p, TEXT_T(AMF_UTIL_TOGGLE_ENABLED), 1);
 
@@ -564,13 +564,18 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 	obs_property_t* p;
 
 	#pragma region Presets
-	Presets preset = (Presets)obs_data_get_int(data, AMF_H264_PRESET);
-	{ // Reset State
+	Presets lastPreset = (Presets)obs_data_get_int(data, "last" vstr(AMF_H264_PRESET)),
+		preset = (Presets)obs_data_get_int(data, AMF_H264_PRESET);
+	if (lastPreset != preset) { // Reset State
 		obs_property_t* pn = obs_properties_first(props);
 		do {
 			obs_property_set_enabled(pn, true);
 		} while (obs_property_next(&pn));
+
+		result = true;
 	}
+	if (preset != Presets::None)
+		result = true;
 
 	switch (preset) {
 		case ResetToDefaults:
@@ -1126,7 +1131,6 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		AMF_H264_DEBLOCKINGFILTER,
 		AMF_H264_VIDEOAPI,
 		AMF_H264_VIDEOADAPTER,
-		AMF_H264_OPENCL,
 	};
 	for (auto prop : advancedProps) {
 		obs_property_set_visible(obs_properties_get(props, prop), vis_advanced);
@@ -1163,7 +1167,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		AMF_H264_PREANALYSISPASS,
 		AMF_H264_VBAQ,
 		AMF_H264_GOPSIZE,
-		AMF_H264_ENABLEGOPALIGNMENT,
+		AMF_H264_GOPALIGNMENT,
 		AMF_H264_MAXIMUMREFERENCEFRAMES,
 	};
 	for (auto prop : masterProps) {
@@ -1300,9 +1304,12 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 	}
 	#pragma endregion VBV Buffer
 
-
+	/// OpenCL
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_OPENCL),
+		vis_advanced && (obs_data_get_int(data, AMF_H264_VIDEOAPI) != Plugin::API::APIType_Host));
+	if (!vis_advanced || (obs_data_get_int(data, AMF_H264_VIDEOAPI) == Plugin::API::APIType_Host))
+		obs_data_default_single(props, data, AMF_H264_OPENCL);
 	#pragma endregion Special Logic
-
 	#pragma endregion View Mode
 
 	return result;
@@ -1576,9 +1583,9 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	m_VideoEncoder->SetWaitForTaskEnabled(!!obs_data_get_int(data, AMF_H264_WAITFORTASK));
 	m_VideoEncoder->SetPreanalysisPassEnabled(!!obs_data_get_int(data, AMF_H264_PREANALYSISPASS));
 	m_VideoEncoder->SetVBAQEnabled(!!obs_data_get_int(data, AMF_H264_VBAQ));
-	m_VideoEncoder->SetGOPSize(obs_data_get_int(data, AMF_H264_GOPSIZE));
-	m_VideoEncoder->SetGOPAlignmentEnabled(!!obs_data_get_int(data, AMF_H264_ENABLEGOPALIGNMENT));
-	m_VideoEncoder->SetMaximumReferenceFrames(obs_data_get_int(data, AMF_H264_MAXIMUMREFERENCEFRAMES));
+	m_VideoEncoder->SetGOPSize((uint32_t)obs_data_get_int(data, AMF_H264_GOPSIZE));
+	m_VideoEncoder->SetGOPAlignmentEnabled(!!obs_data_get_int(data, AMF_H264_GOPALIGNMENT));
+	m_VideoEncoder->SetMaximumReferenceFrames((uint32_t)obs_data_get_int(data, AMF_H264_MAXIMUMREFERENCEFRAMES));
 
 	if (m_VideoEncoder->IsStarted()) {
 		// OBS - Enforce Streaming Service Stuff
