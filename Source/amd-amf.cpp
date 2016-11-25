@@ -47,7 +47,10 @@ class CustomWriter : public amf::AMFTraceWriter {
 		const wchar_t* realmsg = &(message[(33 + wcslen(scope) + 2)]); // Skip Time & Scope
 		size_t msgLen = wcslen(realmsg) - (sizeof(wchar_t));
 
-		blog(LOG_INFO, "[%ls] %.*ls", scope, msgLen, realmsg);
+		blog(LOG_INFO, "[AMF Encoder] [%.*ls][%ls] %.*ls", 
+			12, &(message[11]),
+			scope, 
+			msgLen, realmsg);
 	}
 
 	virtual void Flush() override {}
