@@ -225,6 +225,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(
 	}
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Initializing Video API failed with error %ls (code %ld).", res);
+
 	/// Initialize OpenCL if user selected it.
 	if (m_OpenCL) {
 		res = m_AMFContext->InitOpenCL(nullptr);
@@ -232,9 +233,11 @@ Plugin::AMD::VCEEncoder::VCEEncoder(
 			ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> InitOpenCL failed with error %ls (code %ld).", res);
 		m_AMFContext->GetCompute(amf::AMF_MEMORY_OPENCL, &m_AMFCompute);
 	}
+
 	/// Create the AMF Encoder component.
 	if (m_AMFFactory->CreateComponent(m_AMFContext, Plugin::Utility::VCEEncoderTypeAsAMF(p_Type), &m_AMFEncoder) != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Creating a component object failed with error %ls (code %ld).", res);
+
 	/// Create the AMF Converter component.
 	if (m_AMFFactory->CreateComponent(m_AMFContext, AMFVideoConverter, &m_AMFConverter) != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Unable to create VideoConverter component, error %ls (code %ld).", res);
@@ -261,10 +264,15 @@ Plugin::AMD::VCEEncoder::~VCEEncoder() {
 		m_AMFEncoder->Terminate();
 	if (m_AMFContext)
 		m_AMFContext->Terminate();
+	m_AMFConverter = nullptr;
+	m_AMFEncoder = nullptr;
+	m_AMFContext = nullptr;
 
 	// API
 	if (m_APIInstance)
 		m_API->DestroyInstance(m_APIInstance);
+	m_APIInstance = nullptr;
+	m_API = nullptr;
 }
 
 void Plugin::AMD::VCEEncoder::Start() {
@@ -384,8 +392,12 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 	// Attempt to queue for 1 second (forces "Encoding overloaded" message to appear).
 	bool queueSuccessful = false;
 	auto queueStart = std::chrono::high_resolution_clock::now();
+	auto queueDuration = std::chrono::nanoseconds((uint64_t)floor(m_FrameRateReverseDivisor * 1000000));
 	size_t queueSize = m_InputQueueLimit;
 	do {
+		// Wake up submission thread.
+		m_Input.condvar.notify_all();
+
 		{
 			std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
 			queueSize = m_Input.queue.size();
@@ -406,16 +418,15 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 			{
 				std::unique_lock<std::mutex> qlock(m_Input.queuemutex);
 				m_Input.queue.push(pAMFSurface);
+				queueSize++;
 			}
 			queueSuccessful = true;
-		} else {
-			// Wake up submission thread.
-			m_Input.condvar.notify_all();
+			break;
 		}
 
 		// Sleep
-		std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
-	} while ((queueSuccessful == false) && (std::chrono::high_resolution_clock::now() - queueStart <= std::chrono::seconds(1)));
+		std::this_thread::sleep_for(queueDuration / 4);
+	} while ((queueSuccessful == false) && (std::chrono::high_resolution_clock::now() - queueStart <= queueDuration));
 
 	// Report status.
 	if (queueSuccessful) {
@@ -441,7 +452,7 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 		auto diff = std::chrono::high_resolution_clock::now() - startsubmit;
 		do {
 			diff = std::chrono::high_resolution_clock::now() - startsubmit;
-			std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		} while ((diff <= std::chrono::seconds(5)) && !m_Flag_FirstFrameSubmitted);
 		if (!m_Flag_FirstFrameSubmitted)
 			throw std::exception("Unable to submit first frame, terminating...");
@@ -460,29 +471,23 @@ bool Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 		throw std::exception(error);
 	}
 
-	// Attempt to dequeue for 1 second.
-	bool dequeueSuccessful = false;
-	auto dequeueStart = std::chrono::high_resolution_clock::now();
-	amf::AMFDataPtr pAMFData;
-	do {
-		// Signal Output Thread to wake up.
-		m_Output.condvar.notify_all();
+	// Signal Output Thread to wake up.
+	m_Output.condvar.notify_all();
 
-		// Attempt to dequeue a packet.
+	// Dequeue a Packet
+	{
+		std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
+		if (m_Output.queue.size() == 0)
+			return true;
+	}
+
+	// We've got a DataPtr, let's use it.
+	{
+		amf::AMFDataPtr pAMFData = m_Output.queue.front();
 		{
 			std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
-			if (m_Output.queue.size() == 0)
-				continue;
-
-			pAMFData = m_Output.queue.front();
 			m_Output.queue.pop();
-
-			dequeueSuccessful = true;
 		}
-	} while ((dequeueSuccessful == false) && (std::chrono::high_resolution_clock::now() - dequeueStart < std::chrono::seconds(1)));
-
-	if (dequeueSuccessful) {
-		// We've got a DataPtr, let's use it.
 		amf::AMFBufferPtr pAMFBuffer = amf::AMFBufferPtr(pAMFData);
 
 		// Assemble Packet
@@ -495,11 +500,7 @@ bool Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 			m_PacketDataBuffer.resize(newBufferSize);
 		}
 		packet->data = m_PacketDataBuffer.data();
-		/*if (m_OpenCL) {
-			m_AMFCompute->CopyBufferToHost(pAMFBuffer, 0, packet->size, packet->data, true);
-		} else {*/
-			std::memcpy(packet->data, pAMFBuffer->GetNative(), packet->size);
-		//}
+		std::memcpy(packet->data, pAMFBuffer->GetNative(), packet->size);
 		/// Timestamps
 		packet->dts = (pAMFData->GetPts() - 2) * m_FrameRate.second; // Offset by 2 to support B-Frames
 		pAMFBuffer->GetProperty(L"Frame", &packet->pts);
@@ -660,8 +661,6 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 			m_Output.condvar.notify_all();
 			if (repeatSurfaceSubmission < 5) {
 				repeatSurfaceSubmission++;
-
-				std::this_thread::sleep_for(std::chrono::milliseconds(1));
 				m_Input.condvar.notify_all();
 			}
 		} else if (res == AMF_EOF) {
@@ -673,6 +672,8 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 			FormatTextWithAMFError(&msgBuf, "%ls (code %d)", Plugin::AMD::AMF::GetInstance()->GetTrace()->GetResultText(res), res);
 			AMF_LOG_WARNING("<" __FUNCTION_NAME__ "> SubmitInput failed with error %s.", msgBuf.data());
 		}
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
 	} while (m_Flag_IsStarted);
 }
 
@@ -717,6 +718,8 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 			FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
 			AMF_LOG_WARNING("<" __FUNCTION_NAME__ "> QueryOutput failed with error %s.", msgBuf.data());
 		}
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
 	} while (m_Flag_IsStarted);
 }
 
@@ -774,7 +777,7 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 //////////////////////////////////////////////////////////////////////////
 
 void Plugin::AMD::VCEEncoder::LogProperties() {
-	AMF_LOG_INFO("-- AMD Advanced Media Framework VCE Encoder --");
+	AMF_LOG_INFO("-- AMD Advanced Media Framework Encoder --");
 	AMF_LOG_INFO("Initialization Parameters: ");
 	AMF_LOG_INFO("  Memory Type: %s", Utility::MemoryTypeAsString(m_MemoryType));
 	if (m_MemoryType != VCEMemoryType_Host) {
@@ -845,7 +848,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	try { AMF_LOG_INFO("  Aspect Ratio: %d:%d", this->GetAspectRatio().first, this->GetAspectRatio().second); } catch (...) {}
 	//try { AMF_LOG_INFO("  Quality Enhancement Mode: %s", Utility::QualityEnhancementModeAsString(this->GetQualityEnhancementMode())); } catch (...) {}
 
-	//Plugin::AMD::VCECapabilities::ReportDeviceCapabilities(m_APIInstance->GetDevice());
+	Plugin::AMD::VCECapabilities::ReportAdapterCapabilities(m_API, m_APIAdapter);
 
 	#ifdef _DEBUG
 	printDebugInfo(m_AMFEncoder);
