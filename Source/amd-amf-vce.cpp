@@ -463,11 +463,19 @@ bool Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 	m_Output.condvar.notify_all();
 
 	// Dequeue a Packet
-	{
+	bool queueSuccessful = false;
+	auto queueStart = std::chrono::high_resolution_clock::now();
+	auto queueDuration = std::chrono::nanoseconds((uint64_t)floor(m_FrameRateReverseDivisor * 1000000));
+	do {
 		std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
-		if (m_Output.queue.size() == 0)
-			return true;
-	}
+		if (m_Output.queue.size() != 0)
+			queueSuccessful = true;			
+
+		// Sleep
+		std::this_thread::sleep_for(queueDuration / 4);
+	} while ((queueSuccessful == false) && (std::chrono::high_resolution_clock::now() - queueStart <= queueDuration));
+	if (!queueSuccessful)
+		return true;
 
 	// We've got a DataPtr, let's use it.
 	{
