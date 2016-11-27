@@ -346,8 +346,8 @@ namespace Plugin {
 			bool IsWaitForTaskEnabled();
 
 			// Preanalysis Pass is AMDs version of Two-Pass hardware encoding.
-			void SetPreanalysisPassEnabled(bool enabled);
-			bool IsPreanalysisPassEnabled();
+			void SetPreAnalysisPassEnabled(bool enabled);
+			bool IsPreAnalysisPassEnabled();
 
 			// VBAQ = Variable Bitrate Average Quality?
 			// - EanbleVBAQ (bool)

@@ -841,7 +841,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("  Slices Per Frame: %d", this->GetSlicesPerFrame());
 	AMF_LOG_INFO("  Intra-Refresh MBs Number per Slot: %d", this->GetIntraRefreshMacroblocksPerSlot());
 	try { AMF_LOG_INFO("  Wait For Task: %s", this->IsWaitForTaskEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
-	try { AMF_LOG_INFO("  Pre-Analysis Pass: %s", this->IsPreanalysisPassEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
+	try { AMF_LOG_INFO("  Pre-Analysis Pass: %s", this->IsPreAnalysisPassEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
 	try { AMF_LOG_INFO("  VBAQ: %s", this->IsVBAQEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
 	try { AMF_LOG_INFO("  Maximum Reference Frames: %d", this->GetMaximumReferenceFrames()); } catch (...) {}
 	try { AMF_LOG_INFO("  MaxMBPerSec: %d", this->GetMaxMBPerSec()); } catch (...) {}
@@ -1726,7 +1726,7 @@ bool Plugin::AMD::VCEEncoder::IsWaitForTaskEnabled() {
 	return enabled;
 }
 
-void Plugin::AMD::VCEEncoder::SetPreanalysisPassEnabled(bool enabled) {
+void Plugin::AMD::VCEEncoder::SetPreAnalysisPassEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"RateControlPreanalysisEnable", enabled);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
@@ -1734,7 +1734,7 @@ void Plugin::AMD::VCEEncoder::SetPreanalysisPassEnabled(bool enabled) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
-bool Plugin::AMD::VCEEncoder::IsPreanalysisPassEnabled() {
+bool Plugin::AMD::VCEEncoder::IsPreAnalysisPassEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"RateControlPreanalysisEnable", &enabled);
 	if (res != AMF_OK) {
