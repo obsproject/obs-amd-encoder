@@ -1,31 +1,29 @@
-# Multi-GPU Support And Filler Data Fix (Hotfix 3)
-With this update the encoder plugin now supports multi-GPU setups, such as RX 480 + R9 390, R9 285 + R9 290, and others. You can select which GPU to use with the Advanced View Mode. The UI will also now update according to the supported features of the selected GPU and by default uses the primary GPU. Unsupported features will be hidden, just like unused features.
+# The Multi-GPU Update
+Once again back to change things around, the multi-GPU code has finally been rewritten and properly implemented - which means that DirectX 11 and DirectX 9 are now fully supported. So rejoice Windows 7 users, you can now choose which GPU the encoding should take place on (with the limitation that a Monitor must be connected)! Needless to say, this change removes the old multi-GPU selection properties with the new revamped ones: 'Video API' and 'Video Adapter'.
 
-The 'Filler Data' property has now been fixed, Delta QP for B-Pictures is now visible when not using Constant QP, 'Memory Type' and 'Surface Format' have been removed and 'CABAC' has been replaced with 'Coding Type'. 'Memory Type' is now automatically using the best available and 'Surface Format' is taken from OBS settings.
+Some changes to the available properties and internal logic have also been done. Properties are now reordered to be closer to the order they are applied in, some properties have been renamed and the 'Master' view mode has grown quite a bit. 'Frame Skipping' no longer defaults to being enabled, 'B-Frame QP' is now properly hidden, 'Profile' now has two new options ('Constrained Baseline' and 'Constrained High'), 'Video Adapter' and 'OpenCL' are now properly hidden and changing 'Preset' should now properly reset property states. Also 'Unlock Properties' was removed due to it causing more issues that it was worth.
 
-Additionally a crash with AMD Hybrid/Switchable GPU setups was fixed and these systems should now be able to use the encoder. It will now default to using the best available AMD GPU in the system if it can detect it.
+Some changes were also done internally to make the plugin run better. Startup log output has been reduced to one line at the request of people handling support, a crash with very high Keyframe Intervals has been fixed and the frame queue has been reduced from 3 seconds to 1 second.
 
-Hotfix 3: Fixed a crash due to use of incomplete DirectX9 backend.
-Hotfix 2: Fixed a potential crash when opening settings.
-Hotfix 1: Fixed Presets not being applied properly
+One major change was done to how frames are submitting and packets are retrieved and that is that the plugin will now attempt to submit a frame or retrieve a packet for a specific amount of time (1000/framerate milliseconds) before giving up. Due to this change OBS will now show the 'Encoding overloaded' message when the encoder is overloaded.
 
 ## Notes
-
-Due to the nature of changes since 1.3 users might experience that their settings have vanished or are incorrect. Please revalidate your settings or even create a clean profile to work off of.
+This change includes renaming some properties so some settings might be lost and have to be set again (B-Frames, Experimental Properties). Please revalidate your settings or even create a clean profile to work off of.
 
 ## Changelog
-
-* (Hotfix 3) Fixed: Crash due to use of incomplete DirectX9 backend.
-* (Hotfix 2) Fixed: Potential crash when opening the settings.
-* (Hotfix 1) Fixed: Presets were not being applied properly.
-* Added: Full multi-GPU encoding support.
-* Added: 'Coding Type' property which replaces 'CABAC'.
-* Fixed: Filler Data was always being forced on for CBR.
-* Fixed: Users should now be able to modify Delta QP for B-Pictures even when not using Constant QP.
-* Fixed: Crash on OBS start on AMD Hybrid/Switchable GPU systems.
-* Changed: Default device is always the primary/best available AMD GPU in the system.
-* Changed: B-Picture properties will be properly hidden now if not in use.
-* Changed: B-Pictures defaults to 0 and B-Picture Reference defaults to Disabled.
-* Removed: 'Memory Type' property as the plugin will now always use the best available API.
-* Removed: 'Surface Format' property as the plugin will now use the OBS settings for this.
-* Removed: Deprecated encoder entry has been fully removed now.
+* Added: New Multi-GPU code with full support for DirectX 11 and DirectX 9 and partial support for OpenGL and Host mode.
+* Added: Additional experimental Properties to View Mode 'Master': 'Coding Type', 'Maximum LTR Frames', 'Header Insertion Spacing', 'Slices Per Frame', 'Slice Mode', 'Maximum Slice Size', 'Slice Control Mode', 'Slice Control Size', 'Intra-Refresh Number of Stripes', 'Intra-Refresh Macroblocks Per Slot', 'Wait For Task', 'Pre-Analysis Pass', 'VBAQ', 'GOP Size', 'GOP Alignment', 'Maximum Reference Frames'.
+* Added: H264 Profiles 'Constrained Baseline' and 'Constrained High'.
+* Changed: Added timestamps to logs created with the 'Debug' property enabled.
+* Changed: Reduced startup log output to only a single line.
+* Changed: Reduced frame queue size from 3 seconds to 1 second.
+* Changed: Renamed properties that used 'Picture' to use 'Frame' instead.
+* Changed: Default for 'Frame Skipping' is 'Disabled' now.
+* Changed: Order of properties is now similar to how they are applied.
+* Fixed: H264 Encoder will only be listed if it detected a GPU with AVC encoding support.
+* Fixed: Hide property 'B-Frame QP' when B-Frames aren't used or not supported.
+* Fixed: Hide properties 'Video Adapter' and 'OpenCL' when the selected API does not support them.
+* Fixed: Changing presets should now reset property states correctly.
+* Fixed: OBS now shows 'Encoding overloaded' when encoding is actually taking too long.
+* Fixed: Crash with very high Keyframe Intervals.
+* Removed: Property 'Unlock Properties' due to difficulties.
