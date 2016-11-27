@@ -16,4 +16,3 @@ POPD
 "%InnoSetup%" /cc "Installer.iss"
 
 POPD
-PAUSE
