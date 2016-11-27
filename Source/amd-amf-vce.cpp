@@ -51,14 +51,6 @@ static void FormatTextWithAMFError(std::vector<char>* buffer, const char* format
 }
 
 // Class
-void Plugin::AMD::VCEEncoder::InputThreadMain(Plugin::AMD::VCEEncoder* p_this) {
-	p_this->InputThreadLogic();
-}
-
-void Plugin::AMD::VCEEncoder::OutputThreadMain(Plugin::AMD::VCEEncoder* p_this) {
-	p_this->OutputThreadLogic();
-}
-
 #ifdef _DEBUG
 static void fastPrintVariant(const char* text, amf::AMFVariantStruct variant) {
 	std::vector<char> buf(1024);
@@ -247,10 +239,6 @@ Plugin::AMD::VCEEncoder::VCEEncoder(
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Color Format not supported by VideoConverter component, error %ls (code %ld).", res);
 
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Initialized.");
-
-	#ifdef _DEBUG
-	printDebugInfo(m_AMFEncoder);
-	#endif
 }
 
 Plugin::AMD::VCEEncoder::~VCEEncoder() {
@@ -483,9 +471,10 @@ bool Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 
 	// We've got a DataPtr, let's use it.
 	{
-		amf::AMFDataPtr pAMFData = m_Output.queue.front();
+		amf::AMFDataPtr pAMFData;
 		{
 			std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
+			pAMFData = m_Output.queue.front();
 			m_Output.queue.pop();
 		}
 		amf::AMFBufferPtr pAMFBuffer = amf::AMFBufferPtr(pAMFData);
@@ -601,6 +590,14 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 	} else {
 		vsi->range = VIDEO_RANGE_PARTIAL;
 	}
+}
+
+void Plugin::AMD::VCEEncoder::InputThreadMain(Plugin::AMD::VCEEncoder* p_this) {
+	p_this->InputThreadLogic();
+}
+
+void Plugin::AMD::VCEEncoder::OutputThreadMain(Plugin::AMD::VCEEncoder* p_this) {
+	p_this->OutputThreadLogic();
 }
 
 void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles Surface Submission
@@ -723,7 +720,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 	} while (m_Flag_IsStarted);
 }
 
-amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encoder_frame*& frame) {
+inline amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encoder_frame*& frame) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFSurfacePtr pSurface = nullptr;
 	if (m_OpenCL) {
@@ -752,6 +749,7 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 			ThrowExceptionWithAMFError("AllocSurface failed with error %ls (code %d).", res);
 
 		size_t planeCount = pSurface->GetPlanesCount();
+		#pragma loop(hint_parallel(2))
 		for (uint8_t i = 0; i < planeCount; i++) {
 			amf::AMFPlanePtr plane = pSurface->GetPlaneAt(i);
 			void* plane_nat = plane->GetNative();
@@ -761,7 +759,9 @@ amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encode
 			for (int32_t py = 0; py < height; py++) {
 				int32_t plane_off = py * hpitch;
 				int32_t frame_off = py * frame->linesize[i];
-				std::memcpy(static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off), static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
+				std::memcpy(
+					static_cast<void*>(static_cast<uint8_t*>(plane_nat) + plane_off),
+					static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
 			}
 		}
 
@@ -856,10 +856,6 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 
 	AMF_LOG_INFO("-- AMD Advanced Media Framework VCE Encoder --");
 }
-
-/************************************************************************/
-/* Static Properties                                                    */
-/************************************************************************/
 
 void Plugin::AMD::VCEEncoder::SetUsage(VCEUsage usage) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE,
@@ -965,49 +961,6 @@ Plugin::AMD::VCEProfileLevel Plugin::AMD::VCEEncoder::GetProfileLevel() {
 	return (VCEProfileLevel)(profileLevel);
 }
 
-void Plugin::AMD::VCEEncoder::SetMaximumLongTermReferenceFrames(uint32_t maximumLTRFrames) {
-	// Clamp Parameter Value
-	maximumLTRFrames = max(min(maximumLTRFrames, 2), 0);
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, (uint32_t)maximumLTRFrames);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, maximumLTRFrames);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", maximumLTRFrames);
-}
-
-uint32_t Plugin::AMD::VCEEncoder::GetMaximumLongTermReferenceFrames() {
-	uint32_t maximumLTRFrames;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, &maximumLTRFrames);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", maximumLTRFrames);
-	return maximumLTRFrames;
-}
-
-void Plugin::AMD::VCEEncoder::SetCodingType(VCECodingType type) {
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"CABACEnable", type);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, Utility::CodingTypeAsString(type));
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", Utility::CodingTypeAsString(type));
-}
-
-VCECodingType Plugin::AMD::VCEEncoder::GetCodingType() {
-	uint64_t type;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"CABACEnable", &type);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", Utility::CodingTypeAsString((VCECodingType)type));
-	return (VCECodingType)type;
-}
-
-/************************************************************************/
-/* Frame Properties                                                     */
-/************************************************************************/
-
 void Plugin::AMD::VCEEncoder::SetColorProfile(VCEColorProfile profile) {
 	AMF_VIDEO_CONVERTER_COLOR_PROFILE_ENUM pluginToAMF[] = {
 		AMF_VIDEO_CONVERTER_COLOR_PROFILE_601,
@@ -1078,39 +1031,7 @@ bool Plugin::AMD::VCEEncoder::IsFullColorRangeEnabled() {
 	return enabled;
 }
 
-void Plugin::AMD::VCEEncoder::SetScanType(VCEScanType scanType) {
-	static AMF_VIDEO_ENCODER_SCANTYPE_ENUM CustomToAMF[] = {
-		AMF_VIDEO_ENCODER_SCANTYPE_PROGRESSIVE,
-		AMF_VIDEO_ENCODER_SCANTYPE_INTERLACED,
-	};
-	static char* CustomToName[] = {
-		"Progressive",
-		"Interlaced",
-	};
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SCANTYPE, (uint32_t)CustomToAMF[scanType]);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, CustomToName[scanType]);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", CustomToName[scanType]);
-}
-
-Plugin::AMD::VCEScanType Plugin::AMD::VCEEncoder::GetScanType() {
-	static char* CustomToName[] = {
-		"Progressive",
-		"Interlaced",
-	};
-
-	uint32_t scanType;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_SCANTYPE, &scanType);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", CustomToName[scanType]);
-	return (Plugin::AMD::VCEScanType)scanType;
-}
-
-void Plugin::AMD::VCEEncoder::SetFrameSize(uint32_t width, uint32_t height) {
+void Plugin::AMD::VCEEncoder::SetResolution(uint32_t width, uint32_t height) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, ::AMFConstructSize(width, height));
 	if (res != AMF_OK) {
 		std::vector<char> msgBuf(128);
@@ -1177,9 +1098,37 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameRate() {
 	return std::pair<uint32_t, uint32_t>(m_FrameRate);
 }
 
-/************************************************************************/
-/* Rate Control Properties                                              */
-/************************************************************************/
+void Plugin::AMD::VCEEncoder::SetScanType(VCEScanType scanType) {
+	static AMF_VIDEO_ENCODER_SCANTYPE_ENUM CustomToAMF[] = {
+		AMF_VIDEO_ENCODER_SCANTYPE_PROGRESSIVE,
+		AMF_VIDEO_ENCODER_SCANTYPE_INTERLACED,
+	};
+	static char* CustomToName[] = {
+		"Progressive",
+		"Interlaced",
+	};
+
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SCANTYPE, (uint32_t)CustomToAMF[scanType]);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, CustomToName[scanType]);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", CustomToName[scanType]);
+}
+
+Plugin::AMD::VCEScanType Plugin::AMD::VCEEncoder::GetScanType() {
+	static char* CustomToName[] = {
+		"Progressive",
+		"Interlaced",
+	};
+
+	uint32_t scanType;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_SCANTYPE, &scanType);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", CustomToName[scanType]);
+	return (Plugin::AMD::VCEScanType)scanType;
+}
 
 void Plugin::AMD::VCEEncoder::SetRateControlMethod(VCERateControlMethod method) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD,
@@ -1352,48 +1301,6 @@ uint8_t Plugin::AMD::VCEEncoder::GetBFrameQP() {
 	return (uint8_t)qp;
 }
 
-void Plugin::AMD::VCEEncoder::SetBFrameDeltaQP(int8_t qp) {
-	// Clamp Value
-	qp = clamp(qp, -10, 10);
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, (int32_t)qp);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, qp);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", qp);
-}
-
-int8_t Plugin::AMD::VCEEncoder::GetBFrameDeltaQP() {
-	int32_t qp;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, &qp);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", qp);
-	return (int8_t)qp;
-}
-
-void Plugin::AMD::VCEEncoder::SetBFrameReferenceDeltaQP(int8_t qp) {
-	// Clamp Value
-	qp = clamp(qp, -10, 10);
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, (int32_t)qp);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, qp);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", qp);
-}
-
-int8_t Plugin::AMD::VCEEncoder::GetBFrameReferenceDeltaQP() {
-	int32_t qp;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, &qp);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", qp);
-	return (int8_t)qp;
-}
-
 void Plugin::AMD::VCEEncoder::SetVBVBufferSize(uint32_t size) {
 	// Clamp Value
 	size = clamp(size, 1000, 100000000); // 1kbit to 100mbit.
@@ -1498,27 +1405,6 @@ double_t Plugin::AMD::VCEEncoder::GetInitialVBVBufferFullness() {
 	return ((double_t)vbvBufferFullness / 64.0);
 }
 
-void Plugin::AMD::VCEEncoder::SetMaximumAccessUnitSize(uint32_t size) {
-	// Clamp Value
-	size = max(min(size, 100000000), 0); // 1kbit to 100mbit.
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, (uint32_t)size);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d bits failed with error %ls (code %d).", res, size);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d bits.", size);
-}
-
-uint32_t Plugin::AMD::VCEEncoder::GetMaximumAccessUnitSize() {
-	uint32_t size;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, &size);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", size);
-	return size;
-}
-
 void Plugin::AMD::VCEEncoder::SetFillerDataEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, enabled);
 	if (res != AMF_OK) {
@@ -1573,10 +1459,6 @@ bool Plugin::AMD::VCEEncoder::IsEnforceHRDRestrictionsEnabled() {
 	return enabled;
 }
 
-/************************************************************************/
-/* Frame Control Properties                                           */
-/************************************************************************/
-
 void Plugin::AMD::VCEEncoder::SetIDRPeriod(uint32_t period) {
 	// Clamp Value
 	period = max(min(period, 1000), 1); // 1-1000 so that OBS can actually quit.
@@ -1598,27 +1480,6 @@ uint32_t Plugin::AMD::VCEEncoder::GetIDRPeriod() {
 	return period;
 }
 
-void Plugin::AMD::VCEEncoder::SetHeaderInsertionSpacing(uint32_t spacing) {
-	// Clamp Value
-	spacing = max(min(spacing, m_FrameRate.second * 1000), 0);
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING, (uint32_t)spacing);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, spacing);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", spacing);
-}
-
-uint32_t Plugin::AMD::VCEEncoder::GetHeaderInsertionSpacing() {
-	int32_t headerInsertionSpacing;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING, &headerInsertionSpacing);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", headerInsertionSpacing);
-	return headerInsertionSpacing;
-}
-
 void Plugin::AMD::VCEEncoder::SetBFramePattern(VCEBFramePattern pattern) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, (uint32_t)pattern);
 	if (res != AMF_OK) {
@@ -1635,6 +1496,27 @@ Plugin::AMD::VCEBFramePattern Plugin::AMD::VCEEncoder::GetBFramePattern() {
 	}
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", pattern);
 	return (Plugin::AMD::VCEBFramePattern)pattern;
+}
+
+void Plugin::AMD::VCEEncoder::SetBFrameDeltaQP(int8_t qp) {
+	// Clamp Value
+	qp = clamp(qp, -10, 10);
+
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, (int32_t)qp);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, qp);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", qp);
+}
+
+int8_t Plugin::AMD::VCEEncoder::GetBFrameDeltaQP() {
+	int32_t qp;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, &qp);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", qp);
+	return (int8_t)qp;
 }
 
 void Plugin::AMD::VCEEncoder::SetBFrameReferenceEnabled(bool enabled) {
@@ -1655,6 +1537,27 @@ bool Plugin::AMD::VCEEncoder::IsBFrameReferenceEnabled() {
 	return enabled;
 }
 
+void Plugin::AMD::VCEEncoder::SetBFrameReferenceDeltaQP(int8_t qp) {
+	// Clamp Value
+	qp = clamp(qp, -10, 10);
+
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, (int32_t)qp);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, qp);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", qp);
+}
+
+int8_t Plugin::AMD::VCEEncoder::GetBFrameReferenceDeltaQP() {
+	int32_t qp;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, &qp);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", qp);
+	return (int8_t)qp;
+}
+
 void Plugin::AMD::VCEEncoder::SetDeblockingFilterEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER, enabled);
 	if (res != AMF_OK) {
@@ -1672,48 +1575,6 @@ bool Plugin::AMD::VCEEncoder::IsDeblockingFilterEnabled() {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", enabled ? "Enabled" : "Disabled");
 	return enabled;
 }
-
-void Plugin::AMD::VCEEncoder::SetSlicesPerFrame(uint32_t slices) {
-	slices = max(slices, 1);
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, (uint32_t)slices);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, slices);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", slices);
-}
-
-uint32_t Plugin::AMD::VCEEncoder::GetSlicesPerFrame() {
-	uint32_t slices;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, &slices);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", slices);
-	return slices;
-}
-
-void Plugin::AMD::VCEEncoder::SetIntraRefreshMacroblocksPerSlot(uint32_t mbs) {
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, (uint32_t)mbs);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, mbs);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", mbs);
-}
-
-uint32_t Plugin::AMD::VCEEncoder::GetIntraRefreshMacroblocksPerSlot() {
-	int32_t mbs;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, &mbs);
-	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
-	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", mbs);
-	return mbs;
-}
-
-/************************************************************************/
-/* Miscellaneous Control Properties                                     */
-/************************************************************************/
 
 void Plugin::AMD::VCEEncoder::SetHalfPixelMotionEstimationEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, enabled);
@@ -1751,9 +1612,10 @@ bool Plugin::AMD::VCEEncoder::IsQuarterPixelMotionEstimationEnabled() {
 	return enabled;
 }
 
-/************************************************************************/
-/* Hidden Properties                                                    */
-/************************************************************************/
+//////////////////////////////////////////////////////////////////////////
+// EXPERIMENTAL PROPERTIES - MAY BREAK AT ANY POINT IN TIME!
+//////////////////////////////////////////////////////////////////////////
+// Their effect may vary from driver to driver, card to card.
 
 uint32_t Plugin::AMD::VCEEncoder::GetMaxMBPerSec() {
 	uint32_t maxMBPerSec;
@@ -1763,6 +1625,87 @@ uint32_t Plugin::AMD::VCEEncoder::GetMaxMBPerSec() {
 	}
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", maxMBPerSec);
 	return maxMBPerSec;
+}
+
+void Plugin::AMD::VCEEncoder::SetHeaderInsertionSpacing(uint32_t spacing) {
+	// Clamp Value
+	spacing = max(min(spacing, m_FrameRate.second * 1000), 0);
+
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING, (uint32_t)spacing);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, spacing);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", spacing);
+}
+
+uint32_t Plugin::AMD::VCEEncoder::GetHeaderInsertionSpacing() {
+	int32_t headerInsertionSpacing;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING, &headerInsertionSpacing);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", headerInsertionSpacing);
+	return headerInsertionSpacing;
+}
+
+void Plugin::AMD::VCEEncoder::SetMaximumLongTermReferenceFrames(uint32_t maximumLTRFrames) {
+	// Clamp Parameter Value
+	maximumLTRFrames = max(min(maximumLTRFrames, 2), 0);
+
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, (uint32_t)maximumLTRFrames);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, maximumLTRFrames);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", maximumLTRFrames);
+}
+
+uint32_t Plugin::AMD::VCEEncoder::GetMaximumLongTermReferenceFrames() {
+	uint32_t maximumLTRFrames;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, &maximumLTRFrames);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", maximumLTRFrames);
+	return maximumLTRFrames;
+}
+
+void Plugin::AMD::VCEEncoder::SetCodingType(VCECodingType type) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"CABACEnable", type);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, Utility::CodingTypeAsString(type));
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", Utility::CodingTypeAsString(type));
+}
+
+VCECodingType Plugin::AMD::VCEEncoder::GetCodingType() {
+	uint64_t type;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"CABACEnable", &type);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", Utility::CodingTypeAsString((VCECodingType)type));
+	return (VCECodingType)type;
+}
+
+void Plugin::AMD::VCEEncoder::SetMaximumAccessUnitSize(uint32_t size) {
+	// Clamp Value
+	size = max(min(size, 100000000), 0); // 1kbit to 100mbit.
+
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, (uint32_t)size);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d bits failed with error %ls (code %d).", res, size);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d bits.", size);
+}
+
+uint32_t Plugin::AMD::VCEEncoder::GetMaximumAccessUnitSize() {
+	uint32_t size;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, &size);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", size);
+	return size;
 }
 
 void Plugin::AMD::VCEEncoder::SetWaitForTaskEnabled(bool enabled) {
@@ -1896,4 +1839,156 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetAspectRatio() {
 	}
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d:%d.", aspectRatio.num, aspectRatio.den);
 	return std::pair<uint32_t, uint32_t>(aspectRatio.num, aspectRatio.den);
+}
+
+void Plugin::AMD::VCEEncoder::SetIntraRefreshMacroblocksPerSlot(uint32_t mbs) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, (uint32_t)mbs);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, mbs);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", mbs);
+}
+
+uint32_t Plugin::AMD::VCEEncoder::GetIntraRefreshMacroblocksPerSlot() {
+	int32_t mbs;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, &mbs);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", mbs);
+	return mbs;
+}
+
+void Plugin::AMD::VCEEncoder::SetIntraRefreshNumberOfStripes(uint32_t stripes) {
+	stripes = clamp(stripes, 0, INT_MAX);
+
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"IntraRefreshNumOfStripes", (uint32_t)stripes);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, stripes);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", stripes);
+
+}
+
+uint32_t Plugin::AMD::VCEEncoder::GetIntraRefreshNumberOfStripes() {
+	uint32_t stripes;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"IntraRefreshNumOfStripes", &stripes);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", stripes);
+	return stripes;
+}
+
+void Plugin::AMD::VCEEncoder::SetSlicesPerFrame(uint32_t slices) {
+	slices = max(slices, 1);
+
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, (uint32_t)slices);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, slices);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", slices);
+}
+
+uint32_t Plugin::AMD::VCEEncoder::GetSlicesPerFrame() {
+	uint32_t slices;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, &slices);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", slices);
+	return slices;
+}
+
+void Plugin::AMD::VCEEncoder::SetSliceMode(VCESliceMode mode) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"SliceMode", (uint32_t)mode);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, Utility::SliceModeAsString(mode));
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", Utility::SliceModeAsString(mode));
+}
+
+Plugin::AMD::VCESliceMode Plugin::AMD::VCEEncoder::GetSliceMode() {
+	uint32_t mode;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"SliceMode", &mode);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", Utility::SliceModeAsString((VCESliceMode)mode));
+	return (VCESliceMode)mode;
+}
+
+void Plugin::AMD::VCEEncoder::SetMaximumSliceSize(uint32_t size) {
+	size = clamp(size, 1, INT_MAX);
+
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"MaxSliceSize", (uint32_t)size);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, size);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", size);
+}
+
+uint32_t Plugin::AMD::VCEEncoder::GetMaximumSliceSize() {
+	uint32_t size;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"MaxSliceSize", &size);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", size);
+	return size;
+}
+
+void Plugin::AMD::VCEEncoder::SetSliceControlMode(VCESliceControlMode mode) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"SliceControlMode", (uint32_t)mode);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, Utility::SliceControlModeAsString(mode));
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", Utility::SliceControlModeAsString(mode));
+}
+
+Plugin::AMD::VCESliceControlMode Plugin::AMD::VCEEncoder::GetSliceControlMode() {
+	uint32_t mode;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"SliceControlMode", &mode);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", Utility::SliceControlModeAsString((VCESliceControlMode)mode));
+	return (VCESliceControlMode)mode;
+}
+
+void Plugin::AMD::VCEEncoder::SetSliceControlSize(uint32_t size) {
+	// If GetSliceMode() is VCESliceMode_Vertical, then it outputs nothing with the following settings:
+	// - SliceControlMode: VCESliceControlMode_Macroblock
+	// - SliceControlSize: < 3600
+	// If GetSliceMode() is VCESliceMode_Horizontal, then it outputs nothing with the following settings:
+	// - SliceControlMode: VCESliceControlMode_Macroblock
+	// - SliceControlSize: < 32
+
+	// H264 Macroblock = 16*16 = 256
+	switch (GetSliceControlMode()) {
+		case VCESliceControlMode_Off:
+			return;
+		case VCESliceControlMode_Macroblock:
+			size = clamp(size, 0, (uint32_t)(ceil(m_FrameSize.first / 16) * ceil(m_FrameSize.second / 16)));
+			break;
+		case VCESliceControlMode_Macroblock_Row:
+			size = clamp(size, 0, (uint32_t)ceil(m_FrameSize.second / 16));
+			break;
+	}
+	
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"SliceControlSize", (uint32_t)size);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, size);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", size);
+}
+
+uint32_t Plugin::AMD::VCEEncoder::GetSliceControlSize() {
+	uint32_t size;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"SliceControlSize", &size);
+	if (res != AMF_OK) {
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
+	}
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", size);
+	return size;
 }

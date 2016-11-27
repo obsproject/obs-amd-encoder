@@ -140,20 +140,22 @@ namespace Plugin {
 			VCEBFramePattern_Three,
 		};
 
+		// Experimental
+		enum VCESliceMode {
+			VCESliceMode_Horizontal = 1,
+			VCESliceMode_Vertical = 2
+		};
+		enum VCESliceControlMode {
+			VCESliceControlMode_Off,
+			VCESliceControlMode_Macroblock = 1, // AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB
+			VCESliceControlMode_Invalid,
+			VCESliceControlMode_Macroblock_Row = 3 // AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB_ROW
+		};
+
+
+
 		class VCEEncoder {
-			//////////////////////////////////////////////////////////////////////////
-			#pragma region Functions
-			//////////////////////////////////////////////////////////////////////////
-			private:
-			static void InputThreadMain(Plugin::AMD::VCEEncoder* p_this);
-			static void OutputThreadMain(Plugin::AMD::VCEEncoder* p_this);
-
-			#pragma endregion Functions
-			//////////////////////////////////////////////////////////////////////////
-
-			//////////////////////////////////////////////////////////////////////////
 			#pragma region Initializer & Finalizer
-			//////////////////////////////////////////////////////////////////////////
 			public:
 			VCEEncoder(
 				VCEEncoderType p_Type,
@@ -165,72 +167,44 @@ namespace Plugin {
 			~VCEEncoder();
 			#pragma endregion Initializer & Finalizer
 
-			//////////////////////////////////////////////////////////////////////////
-			#pragma region Methods
-			//////////////////////////////////////////////////////////////////////////
 			public:
 			void Start();
 			void Restart();
 			void Stop();
 			bool IsStarted();
+
 			bool SendInput(struct encoder_frame* frame);
 			bool GetOutput(struct encoder_packet* packet, bool* received_packet);
 			bool GetExtraData(uint8_t**& data, size_t*& size);
 			void GetVideoInfo(struct video_scale_info*& vsi);
 
-			// Threading
-			private:
-			void InputThreadLogic();
-			void OutputThreadLogic();
-
-			// Utility
-			inline amf::AMFSurfacePtr CreateSurfaceFromFrame(struct encoder_frame*& frame);
-
+			#pragma region Properties
 			public:
 			void LogProperties();
-			
-			/************************************************************************/
-			/* Static Properties                                                    */
-			/************************************************************************/
 
-			/*	Usage Type
-			*	Sets up the entire encoder to a specific set of properties.
-			*	Must be called first if you want to override properties. */
+			// Static
+
+			#pragma region Startup Properties
+			// Set which Usage preset to use.
+			// Changing this will also change a lot of other properties.
 			void SetUsage(VCEUsage usage);
 			VCEUsage GetUsage();
 
-			/** Quality Preset
-			* Static Property, changes cause a restart. */
+			// Set which Quality Preset AMF should use.
+			// Affects the quality of the output.
 			void SetQualityPreset(VCEQualityPreset preset);
 			VCEQualityPreset GetQualityPreset();
-			
-			/*	H.264 Profile */
+
+			// Set the Profile the output should have.
 			void SetProfile(VCEProfile profile);
 			VCEProfile GetProfile();
 
-			/*	H.264 Profile Level */
+			// Set the Profile Level the output should have.
 			void SetProfileLevel(VCEProfileLevel level);
 			VCEProfileLevel GetProfileLevel();
+			#pragma endregion Startup Properties
 
-			/*	The number of long-term references controlled by the user.
-			 *
-			 *	Remarks:
-			 *  - When == 0, the encoder may or may not use LTRs during encoding.
-			 *	- When >0, the user has control over all LTR.
-			 *	- With user control of LTR, B-Frames and Intra-refresh features are not supported.
-			 *	- The actual maximum number of LTRs allowed depends on H.264 Annex A Table A-1 Level limits, which defines dependencies between the H.264 Level number, encoding resolution, and DPB size. The DPB size limit impacts the maximum number of LTR allowed.
-			 **/
-			void SetMaximumLongTermReferenceFrames(uint32_t maximumLTRFrames);	// Long-Term Reference Frames. If 0, Encoder decides, if non-0 B-Frames and Intra-Refresh are not supported.
-			uint32_t GetMaximumLongTermReferenceFrames();
-
-			/* Coding Type */
-			void SetCodingType(VCECodingType type);
-			VCECodingType GetCodingType();
-
-			/************************************************************************/
-			/* Frame Properties                                                     */
-			/************************************************************************/
-
+			#pragma region Frame Properties
 			// Set which Color Profile the input frame is.
 			void SetColorProfile(VCEColorProfile profile);
 			VCEColorProfile GetColorProfile();
@@ -239,32 +213,31 @@ namespace Plugin {
 			void SetFullColorRangeEnabled(bool enabled);
 			bool IsFullColorRangeEnabled();
 
-			/* Selects progressive or interlaced scan
-			* Static Property, changes cause a restart. */
-			void SetScanType(VCEScanType scanType);
-			VCEScanType GetScanType();
-
-			/*	Output Resolution */
-			void SetFrameSize(uint32_t width, uint32_t height);
+			// Resolution for the input and output.
+			void SetResolution(uint32_t width, uint32_t height);
 			std::pair<uint32_t, uint32_t> GetFrameSize();
 
-			/*	Sets the Frame Rate numerator and denumerator */
+			// Framerate of the input and output.
 			void SetFrameRate(uint32_t num, uint32_t den);
 			std::pair<uint32_t, uint32_t> GetFrameRate();
 
-			/************************************************************************/
-			/* Rate Control Properties                                              */
-			/************************************************************************/
-			
+			// Scanning method for input (and output?).
+			void SetScanType(VCEScanType scanType);
+			VCEScanType GetScanType();
+			#pragma endregion Frame Properties
+
+			// Dynamic
+
+			#pragma region Rate Control
 			/*	Selects the rate control method:
-			*	- CQP - Constrained QP,
-			*	- CBR - Constant Bitrate,
-			*	- VBR - Peak Constrained VBR,
-			*	- VBR_LAT - Latency Constrained VBR
-			*
-			*	Remarks:
-			*	- When SVC encoding is enabled, all Rate-control parameters (with some restrictions) can be configured differently for a particular SVC-layer. An SVC-layer is denoted by an index pair [SVC-Temporal Layer index][SVC-Quality Layer index]. E.g. The bitrate may be configured differently for SVC-layers [0][0] and [1][0].
-			*	- We restrict all SVC layers to have the same Rate Control method. Some RC parameters are not enabled with SVC encoding (e.g. all parameters related to B-Frames).
+			 *	- CQP - Constrained QP,
+			 *	- CBR - Constant Bitrate,
+			 *	- VBR - Peak Constrained VBR,
+			 *	- VBR_LAT - Latency Constrained VBR
+			 *
+			 *	Remarks:
+			 *	- When SVC encoding is enabled, all Rate-control parameters (with some restrictions) can be configured differently for a particular SVC-layer. An SVC-layer is denoted by an index pair [SVC-Temporal Layer index][SVC-Quality Layer index]. E.g. The bitrate may be configured differently for SVC-layers [0][0] and [1][0].
+			 *	- We restrict all SVC layers to have the same Rate Control method. Some RC parameters are not enabled with SVC encoding (e.g. all parameters related to B-Frames).
 			**/
 			void SetRateControlMethod(VCERateControlMethod method);
 			VCERateControlMethod GetRateControlMethod();
@@ -285,42 +258,27 @@ namespace Plugin {
 			void SetMaximumQP(uint8_t qp);
 			uint8_t GetMaximumQP();
 
-			/*	Sets the Constant QP for I-Frames.
-			*
-			*	Remarks:
-			*	- Only available for CQP rate control method.
-			**/
-			void SetIFrameQP(uint8_t qp);
+			// Set the fixed QP value for I-Frames.
+ 			void SetIFrameQP(uint8_t qp);
 			uint8_t GetIFrameQP();
 
-			/*	Sets the Constant QP for P-Frames.
-			*
-			*	Remarks:
-			*	- Only available for CQP rate control method.
-			**/
+			// Set the fixed QP value for P-Frames.
 			void SetPFrameQP(uint8_t qp);
 			uint8_t GetPFrameQP();
 
-			/*	Sets the Constant QP for B-Frames.
-			*
-			*	Remarks:
-			*	- Only available for CQP rate control method.
-			**/
+			// Set the fixed QP value for B-Frames.
 			void SetBFrameQP(uint8_t qp);
 			uint8_t GetBFrameQP();
 
-			/*	Sets the VBV Buffer Size in bits */
+			// Set the Video Buffer Verifier (VBV) size in bits per second (bps).
 			void SetVBVBufferSize(uint32_t size);
+			// Set the Video Buffer Verifier (VBV) size using a strictness constraint.
 			void SetVBVBufferAutomatic(double_t strictness);
 			uint32_t GetVBVBufferSize();
 
 			/*	Sets the initial VBV Buffer Fullness */
 			void SetInitialVBVBufferFullness(double_t fullness);
 			double_t GetInitialVBVBufferFullness();
-
-			/*	Sets Maximum AU Size in bits */
-			void SetMaximumAccessUnitSize(uint32_t size);
-			uint32_t GetMaximumAccessUnitSize();
 
 			/*	Enables/Disables filler data */
 			void SetFillerDataEnabled(bool enabled);
@@ -333,20 +291,15 @@ namespace Plugin {
 			/*	Enables/Disables constraints on QP variation within a picture to meet HRD requirement(s) */
 			void SetEnforceHRDRestrictionsEnabled(bool enforce);
 			bool IsEnforceHRDRestrictionsEnabled();
+			#pragma endregion Rate Control
 
-			/************************************************************************/
-			/* Frame Control Properties                                           */
-			/************************************************************************/
-
-			/*	Sets IDR period. IDRPeriod= 0 turns IDR off */
+			#pragma region Picture Control
+			// Set the Instantaneous-Decoder-Refresh (IDR) Period in frames.
 			void SetIDRPeriod(uint32_t period);
 			uint32_t GetIDRPeriod();
 
-			/*	Sets the headers insertion spacing */
-			void SetHeaderInsertionSpacing(uint32_t spacing); // Similar to IDR Period, spacing (in frames) between headers.
-			uint32_t GetHeaderInsertionSpacing();
-
-			/*	Sets the number of consecutive B-Frames in a GOP. BFramesPattern = 0 indicates that B-Frames are not used */
+			#pragma region B-Frames
+			/*	Sets the number of consecutive B-Frames. BFramesPattern = 0 indicates that B-Frames are not used */
 			void SetBFramePattern(VCEBFramePattern pattern);
 			VCEBFramePattern GetBFramePattern();
 
@@ -361,24 +314,15 @@ namespace Plugin {
 			/* Selects delta QP of reference B-Frames with respect to the last non-B-Frame */
 			void SetBFrameReferenceDeltaQP(int8_t qp);
 			int8_t GetBFrameReferenceDeltaQP();
+			#pragma endregion B-Frames
+			#pragma endregion Picture Control
 
+			#pragma region Miscellaneous
 			/*	Turns on/off the Deblocking Filter */
 			void SetDeblockingFilterEnabled(bool enabled);
 			bool IsDeblockingFilterEnabled();
 
-			/*	Sets the number of slices per frame */
-			void SetSlicesPerFrame(uint32_t slices);
-			uint32_t GetSlicesPerFrame();
-
-			// Macroblocks per Intra-Refresh Slot
-			// Intra-Refresh Coding
-			void SetIntraRefreshMacroblocksPerSlot(uint32_t macroblocks);
-			uint32_t GetIntraRefreshMacroblocksPerSlot();
-
-			/************************************************************************/
-			/* Miscellaneous Control Properties                                     */
-			/************************************************************************/
-			
+			#pragma region Motion Estimation
 			/* Turns on/off half-pixel motion estimation */
 			void SetHalfPixelMotionEstimationEnabled(bool enabled);
 			bool IsHalfPixelMotionEstimationEnabled();
@@ -386,78 +330,122 @@ namespace Plugin {
 			/* Turns on/off quarter-pixel motion estimation */
 			void SetQuarterPixelMotionEstimationEnabled(bool enabled);
 			bool IsQuarterPixelMotionEstimationEnabled();
+			#pragma endregion Motion Estimation
 
-			/************************************************************************/
-			/* Experimental Properties                                              */
-			/************************************************************************/
+			#pragma endregion Miscellaneous
+
+			#pragma region Experimental Properties
+			// Get the maximum amount of MBps the encoder can output.
 			uint32_t GetMaxMBPerSec();
-			
+
+			/* Coding Type */
+			void SetCodingType(VCECodingType type);
+			VCECodingType GetCodingType();
+
 			void SetWaitForTaskEnabled(bool enabled);
 			bool IsWaitForTaskEnabled();
 
+			// Preanalysis Pass is AMDs version of Two-Pass hardware encoding.
 			void SetPreanalysisPassEnabled(bool enabled);
 			bool IsPreanalysisPassEnabled();
 
 			// VBAQ = Variable Bitrate Average Quality?
+			// - EanbleVBAQ (bool)
 			void SetVBAQEnabled(bool enabled);
 			bool IsVBAQEnabled();
 
+			/*	Sets the headers insertion spacing */
+			void SetHeaderInsertionSpacing(uint32_t spacing); // Similar to IDR Period, spacing (in frames) between headers.
+			uint32_t GetHeaderInsertionSpacing();
+
+			/*	The number of long-term references controlled by the user.
+			*
+			*	Remarks:
+			*  - When == 0, the encoder may or may not use LTRs during encoding.
+			*	- When >0, the user has control over all LTR.
+			*	- With user control of LTR, B-Frames and Intra-refresh features are not supported.
+			*	- The actual maximum number of LTRs allowed depends on H.264 Annex A Table A-1 Level limits, which defines dependencies between the H.264 Level number, encoding resolution, and DPB size. The DPB size limit impacts the maximum number of LTR allowed.
+			**/
+			void SetMaximumLongTermReferenceFrames(uint32_t maximumLTRFrames);	// Long-Term Reference Frames. If 0, Encoder decides, if non-0 B-Frames and Intra-Refresh are not supported.
+			uint32_t GetMaximumLongTermReferenceFrames();
+
+			/*	Sets Maximum AU Size in bits */
+			void SetMaximumAccessUnitSize(uint32_t size);
+			uint32_t GetMaximumAccessUnitSize();
+
+			void SetMaximumReferenceFrames(uint32_t frameCount);
+			uint32_t GetMaximumReferenceFrames();
+
+			void SetAspectRatio(uint32_t x, uint32_t y);
+			std::pair<uint32_t, uint32_t> GetAspectRatio();
+
+			#pragma region Group of Pictures
 			void SetGOPSize(uint32_t gopSize);
 			uint32_t GetGOPSize();
 
 			void SetGOPAlignmentEnabled(bool enabled);
 			bool IsGOPAlignementEnabled();
+			#pragma endregion Group of Pictures
 
-			void SetMaximumReferenceFrames(uint32_t frameCount);
-			uint32_t GetMaximumReferenceFrames();
-			
-			void SetAspectRatio(uint32_t x, uint32_t y);
-			std::pair<uint32_t, uint32_t> GetAspectRatio();
+			#pragma region Intra Refresh
+			// Macroblocks per Intra-Refresh Slot
+			// Intra-Refresh Coding
+			void SetIntraRefreshMacroblocksPerSlot(uint32_t macroblocks);
+			uint32_t GetIntraRefreshMacroblocksPerSlot();
+
+			// - IntraRefreshNumOfStripes (0 - INT_MAX)
+			// Intra-Refresh Coding
+			void SetIntraRefreshNumberOfStripes(uint32_t stripes);
+			uint32_t GetIntraRefreshNumberOfStripes();
+			#pragma endregion Intra Refresh
+
+			#pragma region Slicing
+			/*	Sets the number of slices per frame */
+			void SetSlicesPerFrame(uint32_t slices);
+			uint32_t GetSlicesPerFrame();
+
+			// - SliceMode (1 - 2, Default is 1)
+			void SetSliceMode(VCESliceMode mode);
+			VCESliceMode GetSliceMode();
+
+			// - MaxSliceSize (1 - INT_MAX)
+			void SetMaximumSliceSize(uint32_t size);
+			uint32_t GetMaximumSliceSize();
+
+			// - SliceControlMode (0 - 3)
+			void SetSliceControlMode(VCESliceControlMode mode);
+			VCESliceControlMode GetSliceControlMode();
+
+			// - SliceControlSize (0 - INT_MAX)
+			void SetSliceControlSize(uint32_t size);
+			uint32_t GetSliceControlSize();
+			#pragma endregion Slicing
 
 			// More:
 			// - CodecId (H264 = 5, H264SVC = 8, 2xUNKNOWN)
 			// - EngineType (Auto = 0, DX9 = 1, DX11 = 2, XVBA = 3)
 			// - ConstraintSetFlags (0 - 255, 1 byte bitset?)
-			// - EanbleVBAQ (bool)
 			// - LowLatencyInternal (bool)
 			// - CommonLowLatencyInternal (bool)
-			// - SliceControlMode (0 - 3)
-			// - SliceControlSize (0 - INT_MAX)
 			// - UniqueInstance (0 - INT_MAX)
-			// - EncoderMaxInstances (1 - 2)
 			// - MultiInstanceMode (bool)
 			// - MultiInstanceCurrentQueue (0 - 1)
+			// - InstanceId (-1 - [# of Streams - 1])
+			// - EncoderMaxInstances (1 - [# of Instances])
+			#pragma endregion Experimental Properties
 
-			//
-			//void SetInstanceID(uint32_t instanceId);
-			//uint32_t GetInstanceID();
-			//
-			//// Stripe = Slice?
-			//// Intra-Refresh Coding
-			//void SetIntraRefreshNumberOfStripes(uint32_t stripes); // 0 - INT_MAX
-			//uint32_t GetIntraRefreshNumberOfStripes();
+			#pragma endregion Properties
 
-			//void SetSliceMode(uint32_t mode); // 1 or 2 (Horizontal or Vertical?)
-			//uint32_t GetSliceMode();
-
-			//void SetMaximumSliceSize(uint32_t size); // 0 - INT_MAX
-			//uint32_t GetMaximumSliceSize();
-
-			//// - SliceControlMode: AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB_ROW, AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB
-			//void SetSliceControlMode(uint32_t mode); // 0, 1, 2, 3
-			//uint32_t GetSliceControlMode();
-
-			//void SetSliceControlSize(uint32_t size); // 0 - INT_MAX
-			//uint32_t GetSliceControlSize();
-
-			#pragma endregion Methods
-			//////////////////////////////////////////////////////////////////////////
-
-			//////////////////////////////////////////////////////////////////////////
-			#pragma region Members
-			//////////////////////////////////////////////////////////////////////////
+			// Threading
 			private:
+			static void InputThreadMain(Plugin::AMD::VCEEncoder* p_this);
+			void InputThreadLogic();
+			static void OutputThreadMain(Plugin::AMD::VCEEncoder* p_this);
+			void OutputThreadLogic();
+			inline amf::AMFSurfacePtr CreateSurfaceFromFrame(struct encoder_frame*& frame);
 
+			#pragma region Members
+			private:
 			// AMF Data References
 			std::shared_ptr<Plugin::AMD::AMF> m_AMF;
 			amf::AMFFactory* m_AMFFactory;
@@ -511,9 +499,8 @@ namespace Plugin {
 				m_InputQueueLastSize;
 			uint32_t m_TimerPeriod;
 			VCEColorProfile m_ColorProfile;
-			
+
 			#pragma endregion Members
-			//////////////////////////////////////////////////////////////////////////
 		};
 	}
 }
