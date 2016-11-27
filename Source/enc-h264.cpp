@@ -1516,7 +1516,7 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 	#pragma endregion OBS - Enforce Streaming Service Restrictions
 
 	// Dynamic Properties (Can be changed during Encoding)
-	//this->update(data);
+	this->update(data);
 
 	// Initialize (locks static properties)
 	try {
