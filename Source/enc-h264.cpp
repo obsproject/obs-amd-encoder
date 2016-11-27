@@ -1165,7 +1165,6 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		AMF_H264_ENFORCEHRDCOMPATIBILITY,
 		AMF_H264_DEBLOCKINGFILTER,
 		AMF_H264_VIDEOAPI,
-		AMF_H264_VIDEOADAPTER,
 	};
 	for (auto prop : advancedProps) {
 		obs_property_set_visible(obs_properties_get(props, prop), vis_advanced);
@@ -1344,11 +1343,16 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 	}
 	#pragma endregion VBV Buffer
 
+	bool isnothostmode = strcmp(obs_data_get_string(data, AMF_H264_VIDEOAPI), "Host") != 0;
+	/// Video Adapter
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_VIDEOADAPTER), vis_advanced && isnothostmode);
+	if (!vis_advanced || !isnothostmode)
+		obs_data_default_single(props, data, AMF_H264_VIDEOADAPTER);
 	/// OpenCL
-	obs_property_set_visible(obs_properties_get(props, AMF_H264_OPENCL),
-		vis_advanced && (obs_data_get_int(data, AMF_H264_VIDEOAPI) != Plugin::API::APIType_Host));
-	if (!vis_advanced || (obs_data_get_int(data, AMF_H264_VIDEOAPI) == Plugin::API::APIType_Host))
+	obs_property_set_visible(obs_properties_get(props, AMF_H264_OPENCL), vis_advanced && isnothostmode);
+	if (!vis_advanced || !isnothostmode)
 		obs_data_default_single(props, data, AMF_H264_OPENCL);
+
 	#pragma endregion Special Logic
 	#pragma endregion View Mode
 
@@ -1614,7 +1618,7 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	#pragma region Experimental
 	m_VideoEncoder->SetCodingType((VCECodingType)obs_data_get_int(data, AMF_H264_CODINGTYPE));
 	m_VideoEncoder->SetWaitForTaskEnabled(!!obs_data_get_int(data, AMF_H264_WAITFORTASK));
-	m_VideoEncoder->SetPreanalysisPassEnabled(!!obs_data_get_int(data, AMF_H264_PREANALYSISPASS));
+	m_VideoEncoder->SetPreAnalysisPassEnabled(!!obs_data_get_int(data, AMF_H264_PREANALYSISPASS));
 	m_VideoEncoder->SetVBAQEnabled(!!obs_data_get_int(data, AMF_H264_VBAQ));
 
 	m_VideoEncoder->SetHeaderInsertionSpacing((uint32_t)obs_data_get_int(data, AMF_H264_HEADER_INSERTION_SPACING));
