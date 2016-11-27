@@ -242,9 +242,29 @@ namespace Plugin {
 				case VCECodingType_CALVC:
 					return "CALVC";
 				case VCECodingType_Default:
-				default:
 					return "Default";
 			}
+			return "MEMORY CORRUPTION";
+		}
+		inline const char* SliceModeAsString(VCESliceMode mode) {
+			switch (mode) {
+				case VCESliceMode_Horizontal:
+					return "Horizontal";
+				case VCESliceMode_Vertical:
+					return "Vertical";
+			}
+			return "MEMORY CORRUPTION";
+		}
+		inline const char* SliceControlModeAsString(VCESliceControlMode mode) {
+			switch (mode) {
+				case VCESliceControlMode_Off:
+					return "Off";
+				case VCESliceControlMode_Macroblock:
+					return "Macroblock";
+				case VCESliceControlMode_Macroblock_Row:
+					return "Macroblock Row";
+			}
+			return "MEMORY CORRUPTION";
 		}
 	}
 }
