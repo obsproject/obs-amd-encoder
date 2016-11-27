@@ -45,7 +45,7 @@ SOFTWARE.
 #define AMF_H264_PRESET_TWITCH								TEXT_AMF_H264("Preset.Twitch")
 #define AMF_H264_PRESET_YOUTUBE								TEXT_AMF_H264("Preset.YouTube")
 
-// Static Properties
+// Startup Properties
 #define AMF_H264_USAGE										TEXT_AMF_H264("Usage")
 #define AMF_H264_USAGE_DESCRIPTION							TEXT_AMF_H264("Usage.Description")
 #define AMF_H264_USAGE_TRANSCODING							TEXT_AMF_H264("Usage.Transcoding")
@@ -98,19 +98,19 @@ SOFTWARE.
 #define AMF_H264_ENFORCEHRDCOMPATIBILITY					TEXT_AMF_H264("EnforceHRDCompatibility")
 #define AMF_H264_ENFORCEHRDCOMPATIBILITY_DESCRIPTION		TEXT_AMF_H264("EnforceHRDCompatibility.Description")
 
-// Frame Control Properties
+// Picture Control Properties
 #define AMF_H264_KEYFRAME_INTERVAL							TEXT_AMF_H264("KeyframeInterval")
 #define AMF_H264_KEYFRAME_INTERVAL_DESCRIPTION				TEXT_AMF_H264("KeyframeInterval.Description")
 #define AMF_H264_IDR_PERIOD									TEXT_AMF_H264("IDRPeriod")
 #define AMF_H264_IDR_PERIOD_DESCRIPTION						TEXT_AMF_H264("IDRPeriod.Description")
 #define AMF_H264_BFRAME_PATTERN								TEXT_AMF_H264("BFrame.Pattern")
 #define AMF_H264_BFRAME_PATTERN_DESCRIPTION					TEXT_AMF_H264("BFrame.Pattern.Description")
+#define AMF_H264_BFRAME_DELTAQP								TEXT_AMF_H264("BFrame.DeltaQP")
+#define AMF_H264_BFRAME_DELTAQP_DESCRIPTION					TEXT_AMF_H264("BFrame.DeltaQP.Description")
 #define AMF_H264_BFRAME_REFERENCE							TEXT_AMF_H264("BFrame.Reference")
 #define AMF_H264_BFRAME_REFERENCE_DESCRIPTION				TEXT_AMF_H264("BFrame.Reference.Description")
-#define AMF_H264_QP_REFERENCE_BFRAME_DELTA					TEXT_AMF_H264("QP.ReferenceBFrameDelta")
-#define AMF_H264_QP_REFERENCE_BFRAME_DELTA_DESCRIPTION		TEXT_AMF_H264("QP.ReferenceBFrameDelta.Description")
-#define AMF_H264_QP_BFRAME_DELTA							TEXT_AMF_H264("QP.BFrameDelta")
-#define AMF_H264_QP_BFRAME_DELTA_DESCRIPTION				TEXT_AMF_H264("QP.BFrameDelta.Description")
+#define AMF_H264_BFRAME_REFERENCEDELTAQP					TEXT_AMF_H264("BFrame.ReferenceDeltaQP")
+#define AMF_H264_BFRAME_REFERENCEDELTAQP_DESCRIPTION		TEXT_AMF_H264("BFrame.ReferenceDeltaQP.Description")
 #define AMF_H264_DEBLOCKINGFILTER							TEXT_AMF_H264("DeblockingFilter")
 #define AMF_H264_DEBLOCKINGFILTER_DESCRIPTION				TEXT_AMF_H264("DeblockingFilter.Description")
 
@@ -127,18 +127,14 @@ SOFTWARE.
 #define AMF_H264_MOTIONESTIMATION_BOTH						TEXT_AMF_H264("MotionEstimation.Both")
 
 // Experimental Properties
-#define AMF_H264_MAXIMUMLTRFRAMES							TEXT_AMF_H264("MaximumLTRFrames")
-#define AMF_H264_MAXIMUMLTRFRAMES_DESCRIPTION				TEXT_AMF_H264("MaximumLTRFrames.Description")
 #define AMF_H264_CODINGTYPE									TEXT_AMF_H264("CodingType")
 #define AMF_H264_CODINGTYPE_DESCRIPTION						TEXT_AMF_H264("CodingType.Description")
+#define AMF_H264_MAXIMUMLTRFRAMES							TEXT_AMF_H264("MaximumLTRFrames")
+#define AMF_H264_MAXIMUMLTRFRAMES_DESCRIPTION				TEXT_AMF_H264("MaximumLTRFrames.Description")
 #define AMF_H264_MAXIMUMACCESSUNITSIZE						TEXT_AMF_H264("MaximumAccessUnitSize")
 #define AMF_H264_MAXIMUMACCESSUNITSIZE_DESCRIPTION			TEXT_AMF_H264("MaximumAccessUnitSize.Description")
 #define AMF_H264_HEADER_INSERTION_SPACING					TEXT_AMF_H264("HeaderInsertionSpacing")
 #define AMF_H264_HEADER_INSERTION_SPACING_DESCRIPTION		TEXT_AMF_H264("HeaderInsertionSpacing.Description")
-#define AMF_H264_SLICESPERFRAME								TEXT_AMF_H264("SlicesPerFrame")
-#define AMF_H264_SLICESPERFRAME_DESCRIPTION					TEXT_AMF_H264("SlicesPerFrame.Description")
-#define AMF_H264_INTRAREFRESHNUMMBSPERSLOT					TEXT_AMF_H264("IntraRefreshNumMBsPerSlot")
-#define AMF_H264_INTRAREFRESHNUMMBSPERSLOT_DESCRIPTION		TEXT_AMF_H264("IntraRefreshNumMBsPerSlot.Description")
 #define AMF_H264_WAITFORTASK								TEXT_AMF_H264("WaitForTask")
 #define AMF_H264_WAITFORTASK_DESCRIPTION					TEXT_AMF_H264("WaitForTask.Description")
 #define AMF_H264_PREANALYSISPASS							TEXT_AMF_H264("PreanalysisPass")
@@ -151,6 +147,20 @@ SOFTWARE.
 #define AMF_H264_GOPALIGNMENT_DESCRIPTION					TEXT_AMF_H264("GOPAlignment.Description")
 #define AMF_H264_MAXIMUMREFERENCEFRAMES						TEXT_AMF_H264("MaximumReferenceFrames")
 #define AMF_H264_MAXIMUMREFERENCEFRAMES_DESCRIPTION			TEXT_AMF_H264("MaximumReferenceFrames.Description")
+#define AMF_H264_SLICESPERFRAME								TEXT_AMF_H264("SlicesPerFrame")
+#define AMF_H264_SLICESPERFRAME_DESCRIPTION					TEXT_AMF_H264("SlicesPerFrame.Description")
+#define AMF_H264_SLICEMODE									TEXT_AMF_H264("SliceMode")
+#define AMF_H264_SLICEMODE_DESCRIPTION						TEXT_AMF_H264("SliceMode.Description")
+#define AMF_H264_MAXIMUMSLICESIZE							TEXT_AMF_H264("MaximumSliceSize")
+#define AMF_H264_MAXIMUMSLICESIZE_DESCRIPTION				TEXT_AMF_H264("MaximumSliceSize.Description")
+#define AMF_H264_SLICECONTROLMODE							TEXT_AMF_H264("SliceControlMode")
+#define AMF_H264_SLICECONTROLMODE_DESCRIPTION				TEXT_AMF_H264("SliceControlMode.Description")
+#define AMF_H264_SLICECONTROLSIZE							TEXT_AMF_H264("SliceControlSize")
+#define AMF_H264_SLICECONTROLSIZE_DESCRIPTION				TEXT_AMF_H264("SliceControlSize.Description")
+#define AMF_H264_INTRAREFRESH_NUMBEROFSTRIPES				TEXT_AMF_H264("IntraRefresh.NumberOfStripes")
+#define AMF_H264_INTRAREFRESH_NUMBEROFSTRIPES_DESCRIPTION	TEXT_AMF_H264("IntraRefresh.NumberOfStripes.Description")
+#define AMF_H264_INTRAREFRESH_MACROBLOCKSPERSLOT			TEXT_AMF_H264("IntraRefresh.MacroblocksPerSlot")
+#define AMF_H264_INTRAREFRESH_MACROBLOCKSPERSLOT_DESCRIPTION	TEXT_AMF_H264("IntraRefresh.MacroblocksPerSlot.Description")
 
 // System Properties
 #define AMF_H264_VIDEOAPI									TEXT_AMF_H264("VideoAPI")
@@ -177,7 +187,6 @@ namespace Plugin {
 			public:
 			static void encoder_register();
 			static const char* get_name(void* type_data);
-			static const char* get_name_simple(void* type_data);
 			static void get_defaults(obs_data_t *settings);
 			static obs_properties_t* get_properties(void* data);
 			
