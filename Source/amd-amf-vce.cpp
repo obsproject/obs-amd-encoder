@@ -170,7 +170,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(
 ) {
 	#pragma region Assign Default Values
 	m_EncoderType = p_Type;
-	m_SurfaceFormat = p_SurfaceFormat;
+	m_ColorFormat = p_SurfaceFormat;
 	m_OpenCL = p_OpenCL;
 	m_Flag_IsStarted = false;
 	m_Flag_FirstFrameReceived = false;
@@ -235,7 +235,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Unable to create VideoConverter component, error %ls (code %ld).", res);
 	if (m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_MEMORY_TYPE, Utility::MemoryTypeAsAMF(m_MemoryType)) != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Memory Type not supported by VideoConverter component, error %ls (code %ld).", res);
-	if (m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_OUTPUT_FORMAT, Utility::SurfaceFormatAsAMF(m_SurfaceFormat)))
+	if (m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_OUTPUT_FORMAT, Utility::SurfaceFormatAsAMF(m_ColorFormat)))
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Color Format not supported by VideoConverter component, error %ls (code %ld).", res);
 
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Initialized.");
@@ -271,7 +271,7 @@ void Plugin::AMD::VCEEncoder::Start() {
 	}
 
 	// Create Encoder
-	AMF_RESULT res = m_AMFEncoder->Init(Utility::SurfaceFormatAsAMF(m_SurfaceFormat),
+	AMF_RESULT res = m_AMFEncoder->Init(Utility::SurfaceFormatAsAMF(m_ColorFormat),
 		m_FrameSize.first, m_FrameSize.second);
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Encoder initialization failed with error %ls (code %ld).", res);
@@ -279,7 +279,7 @@ void Plugin::AMD::VCEEncoder::Start() {
 	// Create Converter
 	m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE, AMF_VIDEO_CONVERTER_COLOR_PROFILE_709);
 	//m_AMFConverter->SetProperty(L"NominalRange", this->IsFullColorRangeEnabled());
-	res = m_AMFConverter->Init(Utility::SurfaceFormatAsAMF(m_SurfaceFormat), m_FrameSize.first, m_FrameSize.second);
+	res = m_AMFConverter->Init(Utility::SurfaceFormatAsAMF(m_ColorFormat), m_FrameSize.first, m_FrameSize.second);
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Converter initialization failed with error %ls (code %ld).", res);
 
@@ -559,7 +559,7 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 	if (!m_Flag_IsStarted)
 		throw std::exception("<" __FUNCTION_NAME__ "> Called while not encoding.");
 
-	switch (m_SurfaceFormat) {
+	switch (m_ColorFormat) {
 		// 4:2:0 Formats
 		case VCEColorFormat_NV12:
 			vsi->format = VIDEO_FORMAT_NV12;
@@ -729,7 +729,7 @@ inline amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct
 		amf_size l_size1[] = { m_FrameSize.first >> 1, m_FrameSize.second >> 1, 1 };
 
 		res = m_AMFContext->AllocSurface(Utility::MemoryTypeAsAMF(m_MemoryType),
-			Utility::SurfaceFormatAsAMF(m_SurfaceFormat),
+			Utility::SurfaceFormatAsAMF(m_ColorFormat),
 			m_FrameSize.first, m_FrameSize.second, &pSurface);
 		if (res != AMF_OK) // Unable to create Surface
 			ThrowExceptionWithAMFError("AllocSurface failed with error %ls (code %d).", res);
@@ -743,7 +743,7 @@ inline amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct
 		pSurface->Convert(Utility::MemoryTypeAsAMF(m_MemoryType));
 		pSyncPoint->Wait();
 	} else {
-		res = m_AMFContext->AllocSurface(amf::AMF_MEMORY_HOST, Utility::SurfaceFormatAsAMF(m_SurfaceFormat),
+		res = m_AMFContext->AllocSurface(amf::AMF_MEMORY_HOST, Utility::SurfaceFormatAsAMF(m_ColorFormat),
 			m_FrameSize.first, m_FrameSize.second, &pSurface);
 		if (res != AMF_OK) // Unable to create Surface
 			ThrowExceptionWithAMFError("AllocSurface failed with error %ls (code %d).", res);
@@ -778,75 +778,119 @@ inline amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct
 
 void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("-- AMD Advanced Media Framework Encoder --");
-	AMF_LOG_INFO("Initialization Parameters: ");
-	AMF_LOG_INFO("  Memory Type: %s", Utility::MemoryTypeAsString(m_MemoryType));
+
+	// Initialization Properties
+	AMF_LOG_INFO("Initialization Properties: ");
+	AMF_LOG_INFO("  Type: %s", Utility::VCEEncoderTypeAsString(m_EncoderType));
+	AMF_LOG_INFO("  Video API: %s", Utility::MemoryTypeAsString(m_MemoryType));
 	if (m_MemoryType != VCEMemoryType_Host) {
-		AMF_LOG_INFO("  Device: %s", m_APIAdapter.Name.c_str());
+		AMF_LOG_INFO("  Video Adapter: %s", m_APIAdapter.Name.c_str());
 		AMF_LOG_INFO("  OpenCL: %s", m_OpenCL ? "Enabled" : "Disabled");
 	}
-	AMF_LOG_INFO("  Surface Format: %s", Utility::SurfaceFormatAsString(m_SurfaceFormat));
-	try { AMF_LOG_INFO("  Color Profile: %s", this->GetColorProfile() == VCEColorProfile_709 ? "709" : "601"); } catch (...) {}
-	try { AMF_LOG_INFO("  Color Range: %s", this->IsFullColorRangeEnabled() ? "Full" : "Partial"); } catch (...) {}
-	AMF_LOG_INFO("Static Parameters: ");
-	AMF_LOG_INFO("  Usage: %s", Utility::UsageAsString(this->GetUsage()));
-	AMF_LOG_INFO("  Quality Preset: %s", Utility::QualityPresetAsString(this->GetQualityPreset()));
-	AMF_LOG_INFO("  Profile: %s %d.%d", Utility::ProfileAsString(this->GetProfile()), this->GetProfileLevel() / 10, this->GetProfileLevel() % 10);
-	AMF_LOG_INFO("  Frame Size: %dx%d", this->GetFrameSize().first, this->GetFrameSize().second);
-	AMF_LOG_INFO("  Frame Rate: %d/%d", this->GetFrameRate().first, this->GetFrameRate().second);
-	AMF_LOG_INFO("  Scan Type: %s", this->GetScanType() == VCEScanType_Progressive ? "Progressive" : "Interlaced");
-	AMF_LOG_INFO("Rate Control Parameters: ");
-	AMF_LOG_INFO("  Method: %s", Utility::RateControlMethodAsString(this->GetRateControlMethod()));
+	AMF_LOG_INFO("  Color Format: %s", Utility::SurfaceFormatAsString(m_ColorFormat));
+
+	// Startup Properties
+	AMF_LOG_INFO("Startup Properties: ");
+	AMF_LOG_INFO("  Usage: %s", Utility::UsageAsString(GetUsage()));
+	AMF_LOG_INFO("  Quality Preset: %s", Utility::QualityPresetAsString(GetQualityPreset()));
+	AMF_LOG_INFO("  Profile: %s %d.%d", Utility::ProfileAsString(GetProfile()), GetProfileLevel() / 10, this->GetProfileLevel() % 10);
+
+	// Frame Properties
+	AMF_LOG_INFO("Frame Properties: ");
+	try {
+		AMF_LOG_INFO("  Color Profile: %s", GetColorProfile() == VCEColorProfile_709 ? "709" : "601");
+	} catch (...) {
+		AMF_LOG_INFO("  Color Profile: N/A");
+	}
+	try {
+		AMF_LOG_INFO("  Color Range: %s", IsFullColorRangeEnabled() ? "Full" : "Partial");
+	} catch (...) {
+		AMF_LOG_INFO("  Color Range: N/A");
+	}
+	AMF_LOG_INFO("  Resolution: %dx%d", GetResolution().first, GetResolution().second);
+	AMF_LOG_INFO("  Frame Rate: %d/%d", GetFrameRate().first, GetFrameRate().second);
+	AMF_LOG_INFO("  Scan Type: %s", GetScanType() == VCEScanType_Progressive ? "Progressive" : "Interlaced");
+
+	// Rate Control Properties
+	AMF_LOG_INFO("Rate Control Properties: ");
+	AMF_LOG_INFO("  Method: %s", Utility::RateControlMethodAsString(GetRateControlMethod()));
 	AMF_LOG_INFO("  Bitrate: ");
-	AMF_LOG_INFO("    Target: %d bits", this->GetTargetBitrate());
-	AMF_LOG_INFO("    Peak: %d bits", this->GetPeakBitrate());
+	AMF_LOG_INFO("    Target: %d bits", GetTargetBitrate());
+	AMF_LOG_INFO("    Peak: %d bits", GetPeakBitrate());
 	AMF_LOG_INFO("  Quantization Parameter: ");
-	AMF_LOG_INFO("    Minimum: %d", this->GetMinimumQP());
-	AMF_LOG_INFO("    Maximum: %d", this->GetMaximumQP());
-	AMF_LOG_INFO("    I-Frame: %d", this->GetIFrameQP());
-	AMF_LOG_INFO("    P-Frame: %d", this->GetPFrameQP());
+	AMF_LOG_INFO("    Minimum: %d", GetMinimumQP());
+	AMF_LOG_INFO("    Maximum: %d", GetMaximumQP());
+	AMF_LOG_INFO("    I-Frame: %d", GetIFrameQP());
+	AMF_LOG_INFO("    P-Frame: %d", GetPFrameQP());
 	if (VCECapabilities::GetInstance()->GetAdapterCapabilities(m_API, m_APIAdapter, VCEEncoderType_AVC).supportsBFrames) {
-		try { AMF_LOG_INFO("    B-Frame: %d", this->GetBFrameQP()); } catch (...) {}
+		try { AMF_LOG_INFO("    B-Frame: %d", GetBFrameQP()); } catch (...) {}
 	} else {
 		AMF_LOG_INFO("    B-Frame: N/A");
 	}
 	AMF_LOG_INFO("  VBV Buffer: ");
-	AMF_LOG_INFO("    Size: %d bits", this->GetVBVBufferSize());
-	AMF_LOG_INFO("    Initial Fullness: %f%%", this->GetInitialVBVBufferFullness() * 100.0);
+	AMF_LOG_INFO("    Size: %d bits", GetVBVBufferSize());
+	AMF_LOG_INFO("    Initial Fullness: %f%%", GetInitialVBVBufferFullness() * 100.0);
 	AMF_LOG_INFO("  Flags: ");
-	AMF_LOG_INFO("    Filler Data: %s", this->IsFillerDataEnabled() ? "Enabled" : "Disabled");
-	AMF_LOG_INFO("    Frame Skipping: %s", this->IsFrameSkippingEnabled() ? "Enabled" : "Disabled");
-	AMF_LOG_INFO("    Enforce HRD Restrictions: %s", this->IsEnforceHRDRestrictionsEnabled() ? "Enabled" : "Disabled");
-	AMF_LOG_INFO("Frame Control Parameters: ");
-	AMF_LOG_INFO("  IDR Period: %d frames", this->GetIDRPeriod());
-	AMF_LOG_INFO("  Deblocking Filter: %s", this->IsDeblockingFilterEnabled() ? "Enabled" : "Disabled");
+	AMF_LOG_INFO("    Filler Data: %s", IsFillerDataEnabled() ? "Enabled" : "Disabled");
+	AMF_LOG_INFO("    Frame Skipping: %s", IsFrameSkippingEnabled() ? "Enabled" : "Disabled");
+	AMF_LOG_INFO("    Enforce HRD Restrictions: %s", IsEnforceHRDRestrictionsEnabled() ? "Enabled" : "Disabled");
+
+	// Picture Control Properties
+	AMF_LOG_INFO("Picture Control Properties: ");
+	AMF_LOG_INFO("  IDR Period: %d frames", GetIDRPeriod());
 	if (VCECapabilities::GetInstance()->GetAdapterCapabilities(m_API, m_APIAdapter, VCEEncoderType_AVC).supportsBFrames) {
-		AMF_LOG_INFO("  B-Frame Pattern: %d", this->GetBFramePattern());
-		try { AMF_LOG_INFO("  B-Frame Delta QP: %d", this->GetBFrameDeltaQP()); } catch (...) {}
-		AMF_LOG_INFO("  B-Frame Reference: %s", this->IsBFrameReferenceEnabled() ? "Enabled" : "Disabled");
-		try { AMF_LOG_INFO("  B-Frame Reference Delta QP: %d", this->GetBFrameReferenceDeltaQP()); } catch (...) {}
+		AMF_LOG_INFO("  B-Frame Pattern: %d", GetBFramePattern());
+		try {
+			AMF_LOG_INFO("  B-Frame Delta QP: %d", GetBFrameDeltaQP());
+		} catch (...) {
+			AMF_LOG_INFO("  B-Frame Delta QP: N/A");
+		}
+		AMF_LOG_INFO("  B-Frame Reference: %s", IsBFrameReferenceEnabled() ? "Enabled" : "Disabled");
+		try {
+			AMF_LOG_INFO("  B-Frame Reference Delta QP: %d", GetBFrameReferenceDeltaQP());
+		} catch (...) {
+			AMF_LOG_INFO("  B-Frame Reference Delta QP: N/A");
+		}
 	} else {
 		AMF_LOG_INFO("  B-Frame Pattern: N/A");
 		AMF_LOG_INFO("  B-Frame Delta QP: N/A");
 		AMF_LOG_INFO("  B-Frame Reference: N/A");
 		AMF_LOG_INFO("  B-Frame Reference Delta QP: N/A");
 	}
-	AMF_LOG_INFO("Motion Estimation Parameters: ");
-	AMF_LOG_INFO("  Half Pixel: %s", this->IsHalfPixelMotionEstimationEnabled() ? "Enabled" : "Disabled");
-	AMF_LOG_INFO("  Quarter Pixel: %s", this->IsQuarterPixelMotionEstimationEnabled() ? "Enabled" : "Disabled");
-	AMF_LOG_INFO("Experimental Parameters: ");
-	AMF_LOG_INFO("  Maximum Long-Term Reference Frames: %d", this->GetMaximumLongTermReferenceFrames());
-	try { AMF_LOG_INFO("  Coding Type: %s", Utility::CodingTypeAsString(this->GetCodingType())); } catch (...) {}
-	AMF_LOG_INFO("  Maximum Access Unit Size: %d bits", this->GetMaximumAccessUnitSize());
-	AMF_LOG_INFO("  Header Insertion Spacing: %d frames", this->GetHeaderInsertionSpacing());
-	AMF_LOG_INFO("  Slices Per Frame: %d", this->GetSlicesPerFrame());
-	AMF_LOG_INFO("  Intra-Refresh MBs Number per Slot: %d", this->GetIntraRefreshMacroblocksPerSlot());
-	try { AMF_LOG_INFO("  Wait For Task: %s", this->IsWaitForTaskEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
-	try { AMF_LOG_INFO("  Pre-Analysis Pass: %s", this->IsPreAnalysisPassEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
-	try { AMF_LOG_INFO("  VBAQ: %s", this->IsVBAQEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
-	try { AMF_LOG_INFO("  Maximum Reference Frames: %d", this->GetMaximumReferenceFrames()); } catch (...) {}
-	try { AMF_LOG_INFO("  MaxMBPerSec: %d", this->GetMaxMBPerSec()); } catch (...) {}
-	try { AMF_LOG_INFO("  Aspect Ratio: %d:%d", this->GetAspectRatio().first, this->GetAspectRatio().second); } catch (...) {}
-	//try { AMF_LOG_INFO("  Quality Enhancement Mode: %s", Utility::QualityEnhancementModeAsString(this->GetQualityEnhancementMode())); } catch (...) {}
+
+	AMF_LOG_INFO("Miscellaneous Properties: ");
+	AMF_LOG_INFO("  Deblocking Filter: %s", IsDeblockingFilterEnabled() ? "Enabled" : "Disabled");
+	AMF_LOG_INFO("  Motion Estimation: %s",
+		(this->IsHalfPixelMotionEstimationEnabled()
+			? (this->IsQuarterPixelMotionEstimationEnabled()
+				? "Half & Quarter Pixel"
+				: "Half Pixel")
+			: (this->IsQuarterPixelMotionEstimationEnabled()
+				? "Quarter Pixel"
+				: "None")
+			)
+	);
+
+	AMF_LOG_INFO("Experimental Properties: ");
+	try { AMF_LOG_INFO("  Maximum MB/s: %d", GetMaxMBPerSec()); } catch (...) {}
+	try { AMF_LOG_INFO("  Coding Type: %s", Utility::CodingTypeAsString(GetCodingType())); } catch (...) {}
+	try { AMF_LOG_INFO("  Wait For Task: %s", IsWaitForTaskEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
+	try { AMF_LOG_INFO("  Pre-Analyiss Pass: %s", IsPreAnalysisPassEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
+	try { AMF_LOG_INFO("  VBAQ: %s", IsVBAQEnabled() ? "Enabled" : "Disabled"); } catch (...) {}
+	try { AMF_LOG_INFO("  Header Insertion Spacing: %d frames", GetHeaderInsertionSpacing()); } catch (...) {}
+	try { AMF_LOG_INFO("  Maximum Long-Term Reference Frames: %d", GetMaximumLongTermReferenceFrames()); } catch (...) {}
+	try { AMF_LOG_INFO("  Maximum Access Unit Size: %d bits", GetMaximumAccessUnitSize()); } catch (...) {}
+	try { AMF_LOG_INFO("  Maximum Reference Frames: %d", GetMaximumReferenceFrames()); } catch (...) {}
+	try { AMF_LOG_INFO("  Aspect Ratio: %d:%d", GetAspectRatio().first, this->GetAspectRatio().second); } catch (...) {}
+	try { AMF_LOG_INFO("  GOP Size: %d", GetGOPSize()) } catch (...) {}
+	try { AMF_LOG_INFO("  GOP Alignment: %s", IsGOPAlignementEnabled() ? "Enabled" : "Disabled") } catch (...) {}
+	try { AMF_LOG_INFO("  Intra-Refresh Macroblocks Pro Slot: %d", GetIntraRefreshMacroblocksPerSlot()) } catch (...) {}
+	try { AMF_LOG_INFO("  Intra-Refresh Number Of Stripes: %d", GetIntraRefreshNumberOfStripes()) } catch (...) {}
+	try { AMF_LOG_INFO("  Slices Per Frame: %d", GetSlicesPerFrame()); } catch (...) {}
+	try { AMF_LOG_INFO("  Slice Mode: %s", Utility::SliceModeAsString(GetSliceMode())); } catch (...) {}
+	try { AMF_LOG_INFO("  Maximum Slice Size: %d", GetMaximumSliceSize()); } catch (...) {}
+	try { AMF_LOG_INFO("  Slice Control Mode: %s", Utility::SliceControlModeAsString(GetSliceControlMode())); } catch (...) {}
+	try { AMF_LOG_INFO("  Slice Control Size: %d", GetSliceControlSize()); } catch (...) {}
 
 	Plugin::AMD::VCECapabilities::ReportAdapterCapabilities(m_API, m_APIAdapter);
 
@@ -939,7 +983,7 @@ Plugin::AMD::VCEProfile Plugin::AMD::VCEEncoder::GetProfile() {
 void Plugin::AMD::VCEEncoder::SetProfileLevel(VCEProfileLevel level) {
 	// Automatic Detection
 	if (level == VCEProfileLevel_Automatic) {
-		auto frameSize = this->GetFrameSize();
+		auto frameSize = this->GetResolution();
 		auto frameRate = this->GetFrameRate();
 		level = Plugin::Utility::GetMinimumProfileLevel(frameSize, frameRate);
 	}
@@ -1046,7 +1090,7 @@ void Plugin::AMD::VCEEncoder::SetResolution(uint32_t width, uint32_t height) {
 		this->SetProfileLevel(VCEProfileLevel_Automatic);
 }
 
-std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameSize() {
+std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetResolution() {
 	AMFSize frameSize;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, &frameSize);
 	if (res != AMF_OK) {
@@ -1334,11 +1378,11 @@ void Plugin::AMD::VCEEncoder::SetVBVBufferAutomatic(double_t strictness) {
 			// BITRATE = ((1 - (QP / 51)) ^ 2) * ((Width * Height) * 1.5 * (FPSNumerator / FPSDenumerator))
 			// QP = (1 - sqrt(BITRATE / ((Width * Height) * 1.5 * (FPSNumerator / FPSDenumerator)))) * 51
 
-			auto frameSize = this->GetFrameSize();
+			auto frameSize = this->GetResolution();
 			auto frameRate = this->GetFrameRate();
 
 			double_t bitrate = frameSize.first * frameSize.second;
-			switch (this->m_SurfaceFormat) {
+			switch (this->m_ColorFormat) {
 				case VCEColorFormat_NV12:
 				case VCEColorFormat_I420:
 					bitrate *= 1.5;
@@ -1975,7 +2019,7 @@ void Plugin::AMD::VCEEncoder::SetSliceControlSize(uint32_t size) {
 			size = clamp(size, 0, (uint32_t)ceil(m_FrameSize.second / 16));
 			break;
 	}
-	
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"SliceControlSize", (uint32_t)size);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, size);

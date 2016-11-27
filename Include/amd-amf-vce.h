@@ -215,7 +215,7 @@ namespace Plugin {
 
 			// Resolution for the input and output.
 			void SetResolution(uint32_t width, uint32_t height);
-			std::pair<uint32_t, uint32_t> GetFrameSize();
+			std::pair<uint32_t, uint32_t> GetResolution();
 
 			// Framerate of the input and output.
 			void SetFrameRate(uint32_t num, uint32_t den);
@@ -331,7 +331,6 @@ namespace Plugin {
 			void SetQuarterPixelMotionEstimationEnabled(bool enabled);
 			bool IsQuarterPixelMotionEstimationEnabled();
 			#pragma endregion Motion Estimation
-
 			#pragma endregion Miscellaneous
 
 			#pragma region Experimental Properties
@@ -487,7 +486,7 @@ namespace Plugin {
 			VCEEncoderType m_EncoderType;
 			VCEMemoryType m_MemoryType;
 			bool m_OpenCL;
-			VCEColorFormat m_SurfaceFormat;
+			VCEColorFormat m_ColorFormat;
 			bool m_Flag_IsStarted,
 				m_Flag_FirstFrameSubmitted,
 				m_Flag_FirstFrameReceived;
