@@ -65,16 +65,16 @@ void Plugin::Interface::H264Interface::encoder_register() {
 	// Ensure that there is a supported AMD GPU.
 	bool haveAVCsupport = false;
 	for (auto api : Plugin::API::Base::EnumerateAPIs()) {
-		AMF_LOG_INFO("Testing %s...", api->GetName().c_str());
 		for (auto adapter : api->EnumerateAdapters()) {
-			AMF_LOG_INFO("  Adapter %s", adapter.Name.c_str());
 			auto caps = VCECapabilities::GetInstance()->GetAdapterCapabilities(api, adapter, VCEEncoderType_AVC);
 			if (caps.acceleration_type != amf::AMF_ACCEL_NOT_SUPPORTED)
 				haveAVCsupport = true;
 		}
 	}
-	if (!haveAVCsupport)
+	if (!haveAVCsupport) {
+		AMF_LOG_WARNING("No detected GPU supports H264 encoding.");
 		return;
+	}
 
 	// Create structure
 	static std::unique_ptr<obs_encoder_info> encoder_info = std::make_unique<obs_encoder_info>();
