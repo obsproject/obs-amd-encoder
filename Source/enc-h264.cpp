@@ -1334,13 +1334,10 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_VBVBUFFER_STRICTNESS), vbvBufferVisible && (vbvBufferMode == 0));
 	obs_property_set_visible(obs_properties_get(props, AMF_H264_VBVBUFFER_SIZE), vbvBufferVisible && (vbvBufferMode == 1));
-	if (!vbvBufferVisible) {
-		if (vbvBufferMode == 0) {
-			obs_data_default_single(props, data, AMF_H264_VBVBUFFER_SIZE);
-		} else if (vbvBufferMode == 1) {
-			obs_data_default_single(props, data, AMF_H264_VBVBUFFER_STRICTNESS);
-		}
-	}
+	if (!vbvBufferVisible || vbvBufferMode == 0)
+		obs_data_default_single(props, data, AMF_H264_VBVBUFFER_SIZE);
+	if (!vbvBufferVisible || vbvBufferMode == 1)
+		obs_data_default_single(props, data, AMF_H264_VBVBUFFER_STRICTNESS);
 	#pragma endregion VBV Buffer
 
 	bool isnothostmode = strcmp(obs_data_get_string(data, AMF_H264_VIDEOAPI), "Host") != 0;
