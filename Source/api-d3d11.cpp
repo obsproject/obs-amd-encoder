@@ -34,7 +34,6 @@ SOFTWARE.
 #include <mutex>
 
 #include <dxgi.h>
-#include <dxgi1_4.h>
 #include <d3d11.h>
 #include <atlutil.h>
 
@@ -88,42 +87,6 @@ class SingletonDXGI {
 
 		if (pCreateDXGIFactory1) {
 			return pCreateDXGIFactory1(riid, ppFactory);
-		}
-		return S_FALSE;
-	}
-	HRESULT CreateDXGIFactory2(REFIID riid, _Out_ void **ppFactory) {
-		if (hModule == 0)
-			return S_FALSE;
-
-		typedef HRESULT(__stdcall *t_CreateDXGIFactory2)(REFIID, void**);
-		t_CreateDXGIFactory2 pCreateDXGIFactory2 = (t_CreateDXGIFactory2)GetProcAddress(hModule, "CreateDXGIFactory2");
-
-		if (pCreateDXGIFactory2) {
-			return pCreateDXGIFactory2(riid, ppFactory);
-		}
-		return S_FALSE;
-	}
-	HRESULT CreateDXGIFactory3(REFIID riid, _Out_ void **ppFactory) {
-		if (hModule == 0)
-			return S_FALSE;
-
-		typedef HRESULT(__stdcall *t_CreateDXGIFactory3)(REFIID, void**);
-		t_CreateDXGIFactory3 pCreateDXGIFactory3 = (t_CreateDXGIFactory3)GetProcAddress(hModule, "CreateDXGIFactory3");
-
-		if (pCreateDXGIFactory3) {
-			return pCreateDXGIFactory3(riid, ppFactory);
-		}
-		return S_FALSE;
-	}
-	HRESULT CreateDXGIFactory4(REFIID riid, _Out_ void **ppFactory) {
-		if (hModule == 0)
-			return S_FALSE;
-
-		typedef HRESULT(__stdcall *t_CreateDXGIFactory4)(REFIID, void**);
-		t_CreateDXGIFactory4 pCreateDXGIFactory4 = (t_CreateDXGIFactory4)GetProcAddress(hModule, "CreateDXGIFactory4");
-
-		if (pCreateDXGIFactory4) {
-			return pCreateDXGIFactory4(riid, ppFactory);
 		}
 		return S_FALSE;
 	}
@@ -239,7 +202,7 @@ Plugin::API::Adapter Plugin::API::Direct3D11::GetAdapterByName(std::string name)
 }
 
 struct Direct3D11Instance {
-	ATL::CComPtr<IDXGIFactory4> factory;
+	ATL::CComPtr<IDXGIFactory1> factory;
 	ATL::CComPtr<ID3D11Device> device;
 	ATL::CComPtr<ID3D11DeviceContext> context;
 };
@@ -249,8 +212,8 @@ void* Plugin::API::Direct3D11::CreateInstanceOnAdapter(Adapter adapter) {
 
 	auto dxgiInst = SingletonDXGI::GetInstance();
 
-	ATL::CComPtr<IDXGIFactory4> dxgiFactory;
-	hr = dxgiInst->CreateDXGIFactory1(__uuidof(IDXGIFactory4), (void**)&dxgiFactory);
+	ATL::CComPtr<IDXGIFactory1> dxgiFactory;
+	hr = dxgiInst->CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&dxgiFactory);
 	if (FAILED(hr))
 		throw std::exception("<" __FUNCTION_NAME__ "> Failed to enumerate adapters, error code %X.", hr);
 
@@ -259,7 +222,23 @@ void* Plugin::API::Direct3D11::CreateInstanceOnAdapter(Adapter adapter) {
 	adapterLUID.HighPart = adapter.idHigh;
 
 	ATL::CComPtr<IDXGIAdapter> dxgiAdapter;
-	hr = dxgiFactory->EnumAdapterByLuid(adapterLUID, __uuidof(IDXGIAdapter), (void**)&dxgiAdapter);
+	for (size_t adapterIndex = 0;
+		!FAILED(dxgiFactory->EnumAdapters((UINT)adapterIndex, &dxgiAdapter));
+		adapterIndex++) {
+		DXGI_ADAPTER_DESC desc = DXGI_ADAPTER_DESC();
+		dxgiAdapter->GetDesc(&desc);
+
+		if (desc.VendorId != 0x1002 /* AMD */)
+			continue;
+
+		if ((desc.AdapterLuid.HighPart == adapterLUID.HighPart)
+			&& (desc.AdapterLuid.LowPart == adapterLUID.LowPart)) {
+			hr = NOERROR;
+			break;
+		} else {
+			hr = E_INVALIDARG;
+		}
+	}
 	if (FAILED(hr))
 		throw std::invalid_argument("adapter");
 
