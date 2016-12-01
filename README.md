@@ -6,7 +6,90 @@ This is a plugin for OBS Studio that enables almost fully native hardware encodi
 
 Read [CONTRIBUTING.md](https://github.com/Xaymar/obs-studio_amf-encoder-plugin/blob/master/CONTRIBUTING.md) for a guide on how to start.
 
-## MIT License
+# Contributors
+These people have helped (in one way or another) making this project possible. Without them, this project would have most likely not been where it is.
+
+| Who | What |
+| --- | ---- |
+| [Jim](https://github.com/jp9000) | Origin of the Open Broadcaster Software, provided support for development questions. |
+| [jackun](http://github.com/jackun) | The awesome person that started it all with his own Classic and Studio fork.<br>Thanks to him this project even exists today. |
+| [Xaymar](http://github.com/Xaymar) | Just the guy who spent a week staring at his monitors, trying to figure out how to make it work. |
+| GolDAce | CrowdIn integration. |
+| [leporel](https://github.com/leporel) | Provided ru-RU language files (Russian) |
+| [max20091](https://github.com/max20091) | Provided vi-VN language files (Vietnamese) |
+| [M4RK22](https://github.com/M4RK22) | Provided es-ES language files (Spanish) |
+| [niteforce](https://github.com/niteforce) | Provided hu-HU language files (Hungarian) |
+| [nwgat](https://github.com/nwgat) | Provided nb-NO language files (Norwegian) |
+| [wazerstar](https://github.com/wazerstar) | Provided da-DK language files (Danish) |
+| AMD | Providing Media SDK and later providing the AMF SDK. Also for incredibly fast fixing of bugs. |
+
+## The Amazing Supporters
+Special thanks go out to those that have either donated to the project directly or have decided to put some of their spare money into [my Patreon](https://patreon.com/xaymar). You guys rock!
+
+**[Jim](https://github.com/jp9000)**  
+Basically created the entire OBS project, without him it wouldn't even be here.
+
+**Marcos Vidal (Kytos)**  
+Im happy to support a nice recording plugin for AMD users.  
+Patron: 2016 August-November  
+[Website](https://markitos.ovh), [Steam](http://steamcommunity.com/id/markitos22/)  
+
+**nwgat.ninja**  
+nwgat.ninja is proud to support Xaymars Technology Projects.  
+Patron: 2016 August-November  
+[Website](https://nwgat.ninja)
+
+**Markus Wiegand**  
+Patron: 2016 August-November  
+[Twitter](https://twitter.com/Morphy2k/), [GitHub](https://github.com/Morphy2k)  
+
+**Jeremy "razorlikes" Nieth**  
+I like to support this project because it gives me a way to stream without having to sacrifice immense amounts of cpu resources for encoding.  
+Patron: 2016 August-November  
+[Twitch](https://twitch.tv/razorlikes), [GitHub](https://github.com/razorlikes)
+
+**Kristian Kirkes(ae)ther**  
+Patron: 2016 September-November
+
+**vektorDex**  
+Patron: 2016 September-November  
+[Website](http://blog-of-dex.de/), [Twitter](https://twitter.com/vektordex), [Studio](http://digitaldawnstudios.com)
+
+**AJ**  
+Patron: 2016 September-November
+
+**SneakyJoe**  
+Russian streamer and stream teacher, AMD fanboy. Wants to make AMD great again.  
+Patron: 2016 September-November  
+[Website](http://sneakyjoe.ru/), [YouTube](https://www.youtube.com/channel/UCUmRv5GwQcsnxXRzuPCGr-Q)
+
+**Nicholas Kreimeyer**  
+Patron: 2016 October, November
+
+**noext**  
+Patron: 2016 October, November
+
+**Bryan Furia**  
+Patron: 2016 November
+
+**John Difool**   
+John Difool der alte Sack  
+Patron: 2016 October, November  
+[YouTube](https://www.youtube.com/channel/UC5FPsFLQh4ah0-vz-eoZlOA)
+
+**DaOrgest**  
+Currently studying computer and I do YouTube for a hobby  
+Patron: 2016 September-November  
+[Website](http://daorgest.me), [YouTube](http://youtube.com/daorgest)
+
+**Nucu** <!-- Nico Thate -->  
+Thanks AMD and Xaymar to make hardware encoding possible.  
+Patron: 2016 August-November
+
+**Daniel Bagge**  
+Patron: 2016 September-November
+
+# MIT License
 
 Copyright (c) 2016 Michael Fabian Dirks
 
