@@ -111,8 +111,11 @@ struct Direct3D9Instance {
 void* Plugin::API::Direct3D9::CreateInstanceOnAdapter(Adapter adapter) {
 	ATL::CComPtr<IDirect3D9Ex> pD3DEx;
 	HRESULT hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3DEx);
-	if (FAILED(hr))
-		throw std::exception("<" __FUNCTION_NAME__ "> Unable to create Direct3D 9 instance, error code %X.", hr);
+	if (FAILED(hr)) {
+		std::vector<char> buf(1024);
+		std::sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Unable to create Direct3D 9 instance, error code %X.", hr);
+		throw std::exception(buf.data());
+	}
 
 	size_t adapterNum = (size_t)-1;
 	D3DADAPTER_IDENTIFIER9 adapterIdentifier;
@@ -150,8 +153,11 @@ void* Plugin::API::Direct3D9::CreateInstanceOnAdapter(Adapter adapter) {
 	D3DCAPS9    ddCaps;
 	std::memset(&ddCaps, 0, sizeof(ddCaps));
 	hr = pD3DEx->GetDeviceCaps((UINT)adapterNum, D3DDEVTYPE_HAL, &ddCaps);
-	if (FAILED(hr))
-		throw std::runtime_error("Unable to query capabilities for D3D9 adapter.");
+	if (FAILED(hr)) {
+		std::vector<char> buf(1024);
+		std::sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Unable to query capabilities for D3D9 adapter, error code %X.", hr);
+		throw std::exception(buf.data());
+	}
 
 	DWORD       vp = 0;
 	if (ddCaps.DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT) {
@@ -170,8 +176,11 @@ void* Plugin::API::Direct3D9::CreateInstanceOnAdapter(Adapter adapter) {
 		NULL,
 		&pD3DDeviceEx
 	);
-	if (FAILED(hr))
-		throw std::runtime_error("Unable to create D3D9 device.");
+	if (FAILED(hr)) {
+		std::vector<char> buf(1024);
+		std::sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Unable to create D3D9 device, error code %X.", hr);
+		throw std::exception(buf.data());
+	}
 
 	Direct3D9Instance* instance = new Direct3D9Instance();
 	instance->d3d = pD3DEx;
@@ -189,8 +198,11 @@ Plugin::API::Adapter Plugin::API::Direct3D9::GetAdapterForInstance(void* pInstan
 
 	D3DDEVICE_CREATION_PARAMETERS par;
 	HRESULT hr = instance->device->GetCreationParameters(&par);
-	if (FAILED(hr))
-		throw std::runtime_error("Unable to get adapter from D3D9 device.");
+	if (FAILED(hr)) {
+		std::vector<char> buf(1024);
+		std::sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Unable to get adapter from D3D9 device, error code %X.", hr);
+		throw std::exception(buf.data());
+	}
 
 	auto adapters = Direct3D9::EnumerateAdapters();
 	if (par.AdapterOrdinal > adapters.size())
