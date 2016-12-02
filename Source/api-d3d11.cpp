@@ -214,8 +214,11 @@ void* Plugin::API::Direct3D11::CreateInstanceOnAdapter(Adapter adapter) {
 
 	ATL::CComPtr<IDXGIFactory1> dxgiFactory;
 	hr = dxgiInst->CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&dxgiFactory);
-	if (FAILED(hr))
-		throw std::exception("<" __FUNCTION_NAME__ "> Failed to enumerate adapters, error code %X.", hr);
+	if (FAILED(hr)) {
+		std::vector<char> buf(1024);
+		std::sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Failed to enumerate adapters, error code %X.", hr);
+		throw std::exception(buf.data());
+	}
 
 	LUID adapterLUID;
 	adapterLUID.LowPart = adapter.idLow;
@@ -248,25 +251,41 @@ void* Plugin::API::Direct3D11::CreateInstanceOnAdapter(Adapter adapter) {
 		D3D_FEATURE_LEVEL_11_1,
 		D3D_FEATURE_LEVEL_11_0
 	};
-	uint32_t flags =
-		D3D11_CREATE_DEVICE_BGRA_SUPPORT |
-		D3D11_CREATE_DEVICE_VIDEO_SUPPORT;
-
 	ID3D11Device* d3dDevice;
 	ID3D11DeviceContext* d3dContext;
+	for (size_t c = 0; c < 3; c++) {
+		uint32_t flags = 0;
 
-	hr = d3dInst->D3D11CreateDevice(
-		dxgiAdapter,
-		dxgiAdapter == NULL ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN,
-		NULL,
-		flags,
-		featureLevels, _countof(featureLevels),
-		D3D11_SDK_VERSION,
-		&d3dDevice,
-		NULL,
-		&d3dContext);
-	if (FAILED(hr))
-		throw std::exception("<" __FUNCTION_NAME__ "> Unable to create D3D11.1 device.");
+		switch (c) {
+			case 0:
+				flags |= D3D11_CREATE_DEVICE_VIDEO_SUPPORT;
+			case 1:
+				flags |= D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+			case 2:
+				break;
+		}
+
+		hr = d3dInst->D3D11CreateDevice(
+			dxgiAdapter,
+			dxgiAdapter == NULL ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN,
+			NULL,
+			flags,
+			featureLevels + 1, _countof(featureLevels) - 1,
+			D3D11_SDK_VERSION,
+			&d3dDevice,
+			NULL,
+			&d3dContext);
+		if (SUCCEEDED(hr)) {
+			break;
+		} else {
+			AMF_LOG_WARNING("<" __FUNCTION_NAME__ "> Unable to create D3D11 device, error code %X (mode %d).", hr, c);
+		}
+	}
+	if (FAILED(hr)) {
+		std::vector<char> buf(1024);
+		std::sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Unable to create D3D11 device, error code %X.", hr);
+		throw std::exception(buf.data());
+	}
 
 	Direct3D11Instance* instance = new Direct3D11Instance();
 	instance->factory = dxgiFactory;
@@ -287,13 +306,19 @@ Plugin::API::Adapter Plugin::API::Direct3D11::GetAdapterForInstance(void* pInsta
 
 	ATL::CComPtr<IDXGIAdapter> dxgiAdapter;
 	hr = instance->device->QueryInterface(&dxgiAdapter);
-	if (FAILED(hr))
-		throw std::runtime_error("<" __FUNCTION_NAME__ "> Failed to query Adapter from D3D11 device.");
+	if (FAILED(hr)) {
+		std::vector<char> buf(1024);
+		std::sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Failed to query Adapter from D3D11 device, error code %X.", hr);
+		throw std::exception(buf.data());
+	}
 
 	DXGI_ADAPTER_DESC adapterDesc;
 	hr = dxgiAdapter->GetDesc(&adapterDesc);
-	if (FAILED(hr))
-		throw std::runtime_error("<" __FUNCTION_NAME__ "> Failed to get description from DXGI adapter.");
+	if (FAILED(hr)) {
+		std::vector<char> buf(1024);
+		std::sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Failed to get description from DXGI adapter, error code %X.", hr);
+		throw std::exception(buf.data());
+	}
 
 	std::vector<char> descBuf(256);
 	wcstombs(descBuf.data(), adapterDesc.Description, descBuf.size());
