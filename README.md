@@ -29,65 +29,68 @@ Special thanks go out to those that have either donated to the project directly 
 **[Jim](https://github.com/jp9000)**  
 Basically created the entire OBS project, without him it wouldn't even be here.
 
-**Marcos Vidal (Kytos)**  
+**Kytos/M4RK22** <!-- https://www.patreon.com/user?u=3762404 -->
 Im happy to support a nice recording plugin for AMD users.  
 Patron: 2016 August-November  
 [Website](https://markitos.ovh), [Steam](http://steamcommunity.com/id/markitos22/)  
 
-**nwgat.ninja**  
+**nwgat.ninja** <!-- https://www.patreon.com/user?u=2885495 -->  
 nwgat.ninja is proud to support Xaymars Technology Projects.  
 Patron: 2016 August-November  
 [Website](https://nwgat.ninja)
 
-**Markus Wiegand**  
-Patron: 2016 August-November  
+**Mattheus Wiegand**  
+Patron: 2016 August, September  
 [Twitter](https://twitter.com/Morphy2k/), [GitHub](https://github.com/Morphy2k)  
 
-**Jeremy "razorlikes" Nieth**  
+**Jeremy "razorlikes" Nieth** <!-- https://www.patreon.com/user?u=2463662 -->  
 I like to support this project because it gives me a way to stream without having to sacrifice immense amounts of cpu resources for encoding.  
 Patron: 2016 August-November  
 [Twitch](https://twitch.tv/razorlikes), [GitHub](https://github.com/razorlikes)
 
-**Kristian Kirkes(ae)ther**  
+**Kristian Kirkesæther** <!-- https://www.patreon.com/user?u=3963961 -->  
 Patron: 2016 September-November
 
-**vektorDex**  
+**vektorDex** <!-- https://www.patreon.com/vDex -->  
 Patron: 2016 September-November  
 [Website](http://blog-of-dex.de/), [Twitter](https://twitter.com/vektordex), [Studio](http://digitaldawnstudios.com)
 
-**AJ**  
+**AJ** <!-- https://www.patreon.com/user?u=3931856 -->  
 Patron: 2016 September-November
 
-**SneakyJoe**  
+**SneakyJoe** <!-- https://www.patreon.com/sneaky4oe -->  
 Russian streamer and stream teacher, AMD fanboy. Wants to make AMD great again.  
 Patron: 2016 September-November  
 [Website](http://sneakyjoe.ru/), [YouTube](https://www.youtube.com/channel/UCUmRv5GwQcsnxXRzuPCGr-Q)
 
-**Nicholas Kreimeyer**  
+**Nicholas Kreimeyer** <!-- https://www.patreon.com/user?u=280867 -->  
 Patron: 2016 October, November
 
-**noext**  
+**noext** <!-- https://www.patreon.com/user?u=3209509 -->  
 Patron: 2016 October, November
 
-**Bryan Furia**  
+**Bryan Furia** <!-- https://www.patreon.com/user?u=2438143 --> 
 Patron: 2016 November
 
-**John Difool**   
+**John Difool** <!-- https://www.patreon.com/user?u=3972864 -->  
 John Difool der alte Sack  
 Patron: 2016 October, November  
 [YouTube](https://www.youtube.com/channel/UC5FPsFLQh4ah0-vz-eoZlOA)
 
-**DaOrgest**  
+**DaOrgest**  <!-- https://www.patreon.com/daorgest -->
 Currently studying computer and I do YouTube for a hobby  
 Patron: 2016 September-November  
 [Website](http://daorgest.me), [YouTube](http://youtube.com/daorgest)
 
-**Nucu** <!-- Nico Thate -->  
+**Nucu** <!-- https://www.patreon.com/user?u=187366 -->  
 Thanks AMD and Xaymar to make hardware encoding possible.  
 Patron: 2016 August-November
 
-**Daniel Bagge**  
+**Daniel Bagge** <!-- https://www.patreon.com/user?u=2457937 -->  
 Patron: 2016 September-November
+
+**Cihangir Ceviren** <!-- https://www.patreon.com/user?u=4509018 -->  
+Patron: 2016 November
 
 # MIT License
 
