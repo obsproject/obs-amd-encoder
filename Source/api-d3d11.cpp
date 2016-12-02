@@ -173,7 +173,7 @@ std::vector<Adapter> Plugin::API::Direct3D11::EnumerateAdapters() {
 		if (desc.VendorId != 0x1002 /* AMD */)
 			continue;
 
-		std::vector<char> descBuf(sizeof(DXGI_ADAPTER_DESC::Description));
+		std::vector<char> descBuf(256);
 		wcstombs(descBuf.data(), desc.Description, descBuf.size());
 		adapters.push_back(Adapter(
 			desc.AdapterLuid.LowPart,
@@ -295,7 +295,7 @@ Plugin::API::Adapter Plugin::API::Direct3D11::GetAdapterForInstance(void* pInsta
 	if (FAILED(hr))
 		throw std::runtime_error("<" __FUNCTION_NAME__ "> Failed to get description from DXGI adapter.");
 
-	std::vector<char> descBuf(sizeof(DXGI_ADAPTER_DESC::Description));
+	std::vector<char> descBuf(256);
 	wcstombs(descBuf.data(), adapterDesc.Description, descBuf.size());
 
 	return Adapter(
