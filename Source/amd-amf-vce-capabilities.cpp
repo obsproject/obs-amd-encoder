@@ -224,7 +224,18 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 
 	auto APIs = Plugin::API::Base::EnumerateAPIs();
 	for (auto api : APIs) {
-		auto adapters = api->EnumerateAdapters();
+		std::vector<Plugin::API::Adapter> adapters;
+		try {
+			adapters = api->EnumerateAdapters();
+		} catch (std::exception e) {
+			AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Unexpected exception while enumerating adapters for API '%s':", api->GetName());
+			AMF_LOG_ERROR("%s", e.what());
+			continue;
+		} catch (...) {
+			AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Unexpected critical exception while enumerating adapters for API '%s'.", api->GetName());
+			throw;
+		}
+
 		for (auto adapter : adapters) {
 			// Create AMF Instance
 			amf::AMFContextPtr amfContext;
@@ -236,7 +247,17 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 				continue;
 			}
 
-			void* apiInst = api->CreateInstanceOnAdapter(adapter);
+			void* apiInst = nullptr;
+			try {
+				apiInst = api->CreateInstanceOnAdapter(adapter);
+			} catch (std::exception e) {
+				AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Unexpected exception while testing adapter '%s' on API '%s':", adapter.Name, api->GetName());
+				AMF_LOG_ERROR("%s", e.what());
+				continue;
+			} catch (...) {
+				AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Unexpected critical exceptionwhile testing adapter '%s' on API '%s'.", adapter.Name, api->GetName());
+				throw;
+			}
 			switch (api->GetType()) {
 				case Plugin::API::APIType_Direct3D11:
 					res = amfContext->InitDX11(api->GetContextFromInstance(apiInst));
