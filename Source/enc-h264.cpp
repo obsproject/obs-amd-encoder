@@ -1568,7 +1568,7 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 			m_VideoEncoder->SetPFrameQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_PFRAME));
 			try {
 				m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_BFRAME));
-			} catch (...) {}
+			} catch (std::exception e) {} catch (...) {}
 			break;
 	}
 	if (obs_data_get_int(data, AMF_H264_VBVBUFFER) == 0) {
@@ -1594,14 +1594,14 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 		try {
 			m_VideoEncoder->SetBFramePattern((VCEBFramePattern)obs_data_get_int(data, AMF_H264_BFRAME_PATTERN));
 			m_VideoEncoder->SetBFrameReferenceEnabled(!!obs_data_get_int(data, AMF_H264_BFRAME_REFERENCE));
-		} catch (...) {}
+		} catch (std::exception e) {} catch (...) {}
 		try {
 			if (m_VideoEncoder->GetBFramePattern() != VCEBFramePattern_None) {
 				m_VideoEncoder->SetBFrameDeltaQP((int8_t)obs_data_get_int(data, AMF_H264_BFRAME_DELTAQP));
 				if (m_VideoEncoder->IsBFrameReferenceEnabled())
 					m_VideoEncoder->SetBFrameReferenceDeltaQP((int8_t)obs_data_get_int(data, AMF_H264_BFRAME_REFERENCEDELTAQP));
 			}
-		} catch (...) {}
+		} catch (std::exception e) {} catch (...) {}
 	}
 	#pragma endregion B-Frames
 
@@ -1613,26 +1613,26 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	#pragma endregion Motion Estimation
 
 	#pragma region Experimental
-	m_VideoEncoder->SetCodingType((VCECodingType)obs_data_get_int(data, AMF_H264_CODINGTYPE));
-	m_VideoEncoder->SetWaitForTaskEnabled(!!obs_data_get_int(data, AMF_H264_WAITFORTASK));
-	m_VideoEncoder->SetPreAnalysisPassEnabled(!!obs_data_get_int(data, AMF_H264_PREANALYSISPASS));
-	m_VideoEncoder->SetVBAQEnabled(!!obs_data_get_int(data, AMF_H264_VBAQ));
+	try { m_VideoEncoder->SetCodingType((VCECodingType)obs_data_get_int(data, AMF_H264_CODINGTYPE)); } catch (std::exception e) {} catch (...) {}
+	try { m_VideoEncoder->SetWaitForTaskEnabled(!!obs_data_get_int(data, AMF_H264_WAITFORTASK)); } catch (std::exception e) {} catch (...) {}
+	try { m_VideoEncoder->SetPreAnalysisPassEnabled(!!obs_data_get_int(data, AMF_H264_PREANALYSISPASS)); } catch (std::exception e) {} catch (...) {}
+	try { m_VideoEncoder->SetVBAQEnabled(!!obs_data_get_int(data, AMF_H264_VBAQ)); } catch (std::exception e) {} catch (...) {}
 
-	m_VideoEncoder->SetHeaderInsertionSpacing((uint32_t)obs_data_get_int(data, AMF_H264_HEADER_INSERTION_SPACING));
-	m_VideoEncoder->SetMaximumAccessUnitSize((uint32_t)obs_data_get_int(data, AMF_H264_MAXIMUMACCESSUNITSIZE));
-	m_VideoEncoder->SetMaximumReferenceFrames((uint32_t)obs_data_get_int(data, AMF_H264_MAXIMUMREFERENCEFRAMES));
+	try { m_VideoEncoder->SetHeaderInsertionSpacing((uint32_t)obs_data_get_int(data, AMF_H264_HEADER_INSERTION_SPACING)); } catch (std::exception e) {} catch (...) {}
+	try { m_VideoEncoder->SetMaximumAccessUnitSize((uint32_t)obs_data_get_int(data, AMF_H264_MAXIMUMACCESSUNITSIZE)); } catch (std::exception e) {} catch (...) {}
+	try { m_VideoEncoder->SetMaximumReferenceFrames((uint32_t)obs_data_get_int(data, AMF_H264_MAXIMUMREFERENCEFRAMES)); } catch (std::exception e) {} catch (...) {}
 
-	m_VideoEncoder->SetGOPSize((uint32_t)obs_data_get_int(data, AMF_H264_GOPSIZE));
-	m_VideoEncoder->SetGOPAlignmentEnabled(!!obs_data_get_int(data, AMF_H264_GOPALIGNMENT));
+	try { m_VideoEncoder->SetGOPSize((uint32_t)obs_data_get_int(data, AMF_H264_GOPSIZE)); } catch (std::exception e) {} catch (...) {}
+	try { m_VideoEncoder->SetGOPAlignmentEnabled(!!obs_data_get_int(data, AMF_H264_GOPALIGNMENT)); } catch (std::exception e) {} catch (...) {}
 
-	m_VideoEncoder->SetIntraRefreshNumberOfStripes((uint32_t)obs_data_get_int(data, AMF_H264_INTRAREFRESH_NUMBEROFSTRIPES));
-	m_VideoEncoder->SetIntraRefreshMacroblocksPerSlot((uint32_t)obs_data_get_int(data, AMF_H264_INTRAREFRESH_MACROBLOCKSPERSLOT));
+	try { m_VideoEncoder->SetIntraRefreshNumberOfStripes((uint32_t)obs_data_get_int(data, AMF_H264_INTRAREFRESH_NUMBEROFSTRIPES)); } catch (std::exception e) {} catch (...) {}
+	try { m_VideoEncoder->SetIntraRefreshMacroblocksPerSlot((uint32_t)obs_data_get_int(data, AMF_H264_INTRAREFRESH_MACROBLOCKSPERSLOT)); } catch (std::exception e) {} catch (...) {}
 
-	m_VideoEncoder->SetSlicesPerFrame((uint32_t)obs_data_get_int(data, AMF_H264_SLICESPERFRAME));
-	m_VideoEncoder->SetSliceMode((VCESliceMode)obs_data_get_int(data, AMF_H264_SLICEMODE));
-	m_VideoEncoder->SetMaximumSliceSize((uint32_t)obs_data_get_int(data, AMF_H264_MAXIMUMSLICESIZE));
-	m_VideoEncoder->SetSliceControlMode((VCESliceControlMode)obs_data_get_int(data, AMF_H264_SLICECONTROLMODE));
-	m_VideoEncoder->SetSliceControlSize((uint32_t)obs_data_get_int(data, AMF_H264_SLICECONTROLSIZE));
+	try { m_VideoEncoder->SetSlicesPerFrame((uint32_t)obs_data_get_int(data, AMF_H264_SLICESPERFRAME)); } catch (std::exception e) {} catch (...) {}
+	try { m_VideoEncoder->SetSliceMode((VCESliceMode)obs_data_get_int(data, AMF_H264_SLICEMODE)); } catch (std::exception e) {} catch (...) {}
+	try { m_VideoEncoder->SetMaximumSliceSize((uint32_t)obs_data_get_int(data, AMF_H264_MAXIMUMSLICESIZE)); } catch (std::exception e) {} catch (...) {}
+	try { m_VideoEncoder->SetSliceControlMode((VCESliceControlMode)obs_data_get_int(data, AMF_H264_SLICECONTROLMODE)); } catch (std::exception e) {} catch (...) {}
+	try { m_VideoEncoder->SetSliceControlSize((uint32_t)obs_data_get_int(data, AMF_H264_SLICECONTROLSIZE)); } catch (std::exception e) {} catch (...) {}
 	#pragma endregion Experimental
 
 	if (m_VideoEncoder->IsStarted()) {
