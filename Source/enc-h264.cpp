@@ -420,10 +420,10 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	/// Motion Estimation
 	p = obs_properties_add_list(props, AMF_H264_MOTIONESTIMATION, TEXT_T(AMF_H264_MOTIONESTIMATION), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_MOTIONESTIMATION_DESCRIPTION));
-	obs_property_list_add_int(p, TEXT_T(AMF_H264_MOTIONESTIMATION_NONE),	0b00);
-	obs_property_list_add_int(p, TEXT_T(AMF_H264_MOTIONESTIMATION_HALF),	0b01);
-	obs_property_list_add_int(p, TEXT_T(AMF_H264_MOTIONESTIMATION_QUARTER),	0b10);
-	obs_property_list_add_int(p, TEXT_T(AMF_H264_MOTIONESTIMATION_BOTH),	0b11);
+	obs_property_list_add_int(p, TEXT_T(AMF_H264_MOTIONESTIMATION_NONE), 0);
+	obs_property_list_add_int(p, TEXT_T(AMF_H264_MOTIONESTIMATION_HALF), 1);
+	obs_property_list_add_int(p, TEXT_T(AMF_H264_MOTIONESTIMATION_QUARTER),	2);
+	obs_property_list_add_int(p, TEXT_T(AMF_H264_MOTIONESTIMATION_BOTH), 3);
 	#pragma endregion Miscellaneous Control Properties
 
 	#pragma region Experimental Properties
