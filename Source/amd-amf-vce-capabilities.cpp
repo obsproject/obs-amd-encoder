@@ -96,11 +96,12 @@ void Plugin::AMD::VCECapabilities::ReportAdapterCapabilities(std::shared_ptr<Plu
 		VCEEncoderType_AVC,
 		VCEEncoderType_SVC,
 	};
-	for (auto type : types) {
-		AMF_LOG_INFO("Capabilities for Device '%s' on API %s:",
-			adapter.Name.c_str(),
-			api->GetName().c_str());
 
+	AMF_LOG_INFO("Capabilities for Device '%s' on API %s:",
+		adapter.Name.c_str(),
+		api->GetName().c_str());
+
+	for (auto type : types) {
 		ReportAdapterTypeCapabilities(api, adapter, type);
 	}
 }
