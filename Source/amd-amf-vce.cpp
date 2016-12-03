@@ -182,6 +182,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(
 	m_InputQueueLimit = (uint32_t)(m_FrameRateDivisor);
 	m_InputQueueLastSize = 0;
 	m_TimerPeriod = 1;
+	m_LastQueueWarnMessageTime = std::chrono::time_point<std::chrono::high_resolution_clock>(std::chrono::nanoseconds(0));
 	#pragma endregion Assign Default Values
 
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Initializing...");
@@ -363,7 +364,7 @@ void Plugin::AMD::VCEEncoder::Stop() {
 	std::queue<amf::AMFDataPtr>().swap(m_Output.queue);
 	m_PacketDataBuffer.clear();
 	m_ExtraDataBuffer.clear();
-}
+	}
 
 bool Plugin::AMD::VCEEncoder::IsStarted() {
 	return m_Flag_IsStarted;
@@ -417,18 +418,27 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 	} while ((queueSuccessful == false) && (std::chrono::high_resolution_clock::now() - queueStart <= queueDuration));
 
 	// Report status.
-	if (queueSuccessful) {
-		int32_t queueSizeDelta = ((int32_t)m_InputQueueLastSize - (int32_t)queueSize);
-		if (queueSizeDelta < -5) {
-			AMF_LOG_DEBUG("Queue is shrinking.");
-			m_InputQueueLastSize = queueSize;
-		} else if (queueSizeDelta > 5) {
-			AMF_LOG_WARNING("GPU Encoder overloaded, queue is growing... (%ld,%ld,%ld)",
-				m_InputQueueLastSize, queueSizeDelta, queueSize);
-			m_InputQueueLastSize = queueSize;
+	auto timedelta = std::chrono::high_resolution_clock::now() - m_LastQueueWarnMessageTime;
+	if (timedelta >= std::chrono::seconds(1)) { // Only show these messages once per second.
+		if (queueSuccessful) {
+			int32_t queueSizeDelta = ((int32_t)m_InputQueueLastSize - (int32_t)queueSize);
+
+			if (queueSizeDelta >= 5) {
+				AMF_LOG_INFO("GPU Encoder is catching up, queue is shrinking... (%ld,%+ld,%ld)",
+					m_InputQueueLastSize,
+					queueSizeDelta,
+					queueSize);
+				m_InputQueueLastSize = queueSize;
+
+			} else if (queueSizeDelta <= -5) {
+				AMF_LOG_WARNING("GPU Encoder overloaded, queue is growing... (%ld,%+ld,%ld)",
+					m_InputQueueLastSize, queueSizeDelta, queueSize);
+				m_InputQueueLastSize = queueSize;
+			}
+		} else {
+			AMF_LOG_ERROR("GPU Encoder overloaded, dropping frame instead...");
 		}
-	} else {
-		AMF_LOG_ERROR("GPU Encoder overloaded, dropping frame instead...");
+		m_LastQueueWarnMessageTime = std::chrono::high_resolution_clock::now();
 	}
 
 	/// Signal Thread Wakeup
@@ -469,7 +479,7 @@ bool Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 	do {
 		std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
 		if (m_Output.queue.size() != 0)
-			queueSuccessful = true;			
+			queueSuccessful = true;
 
 		// Sleep
 		std::this_thread::sleep_for(queueDuration / 4);

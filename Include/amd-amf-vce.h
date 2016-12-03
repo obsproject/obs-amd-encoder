@@ -498,6 +498,7 @@ namespace Plugin {
 				m_InputQueueLastSize;
 			uint32_t m_TimerPeriod;
 			VCEColorProfile m_ColorProfile;
+			std::chrono::time_point<std::chrono::high_resolution_clock> m_LastQueueWarnMessageTime;
 
 			#pragma endregion Members
 		};
