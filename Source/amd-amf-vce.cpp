@@ -429,7 +429,6 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 					queueSizeDelta,
 					queueSize);
 				m_InputQueueLastSize = queueSize;
-
 			} else if (queueSizeDelta <= -5) {
 				AMF_LOG_WARNING("GPU Encoder overloaded, queue is growing... (%ld,%+ld,%ld)",
 					m_InputQueueLastSize, queueSizeDelta, queueSize);
@@ -454,8 +453,10 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 		} while ((diff <= std::chrono::seconds(5)) && !m_Flag_FirstFrameSubmitted);
 		if (!m_Flag_FirstFrameSubmitted)
 			throw std::exception("Unable to submit first frame, terminating...");
-		else
-			AMF_LOG_INFO("First submission took %d nanoseconds.", diff.count());
+		else {
+			size_t dtime = diff.count();
+			AMF_LOG_INFO("First submission took %ld.%ld seconds.", dtime / 1000000000, dtime % 1000000000);
+		}
 	}
 
 	return true;
