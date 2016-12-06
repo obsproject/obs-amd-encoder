@@ -67,10 +67,7 @@ Patron: 2016 September-November
 Patron: 2016 October, November
 
 **noext** <!-- https://www.patreon.com/user?u=3209509 -->  
-Patron: 2016 October, November
-
-**Bryan Furia** <!-- https://www.patreon.com/user?u=2438143 --> 
-Patron: 2016 November
+Patron: 2016 October
 
 **John Difool** <!-- https://www.patreon.com/user?u=3972864 -->  
 John Difool der alte Sack  
