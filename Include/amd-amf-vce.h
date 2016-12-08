@@ -210,8 +210,8 @@ namespace Plugin {
 			VCEColorProfile GetColorProfile();
 
 			// Set if the input frame is in full color range.
-			void SetFullColorRangeEnabled(bool enabled);
-			bool IsFullColorRangeEnabled();
+			void SetFullRangeColorEnabled(bool enabled);
+			bool IsFullRangeColorEnabled();
 
 			// Resolution for the input and output.
 			void SetResolution(uint32_t width, uint32_t height);

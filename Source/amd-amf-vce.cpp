@@ -283,8 +283,8 @@ void Plugin::AMD::VCEEncoder::Start() {
 
 	// Create Converter
 	m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE, this->GetColorProfile());
-	if (m_AMFConverter->SetProperty(L"FullRangeColor", this->IsFullColorRangeEnabled()) != AMF_OK)
-		m_AMFConverter->SetProperty(L"NominalRange", this->IsFullColorRangeEnabled());
+	if (m_AMFConverter->SetProperty(L"FullRangeColor", this->IsFullRangeColorEnabled()) != AMF_OK)
+		m_AMFConverter->SetProperty(L"NominalRange", this->IsFullRangeColorEnabled());
 
 	res = m_AMFConverter->Init(Utility::SurfaceFormatAsAMF(m_ColorFormat), m_FrameSize.first, m_FrameSize.second);
 	if (res != AMF_OK)
@@ -614,7 +614,7 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 	}
 
 	// AMF requires Partial Range for some reason.
-	if (this->IsFullColorRangeEnabled()) { // Only use Full range if actually enabled.
+	if (this->IsFullRangeColorEnabled()) { // Only use Full range if actually enabled.
 		vsi->range = VIDEO_RANGE_FULL;
 	} else {
 		vsi->range = VIDEO_RANGE_PARTIAL;
@@ -832,7 +832,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 		AMF_LOG_INFO("  Color Profile: N/A");
 	}
 	try {
-		AMF_LOG_INFO("  Color Range: %s", IsFullColorRangeEnabled() ? "Full" : "Partial");
+		AMF_LOG_INFO("  Color Range: %s", IsFullRangeColorEnabled() ? "Full" : "Partial");
 	} catch (...) {
 		AMF_LOG_INFO("  Color Range: N/A");
 	}
@@ -1058,7 +1058,7 @@ Plugin::AMD::VCEColorProfile Plugin::AMD::VCEEncoder::GetColorProfile() {
 	return m_ColorProfile;
 }
 
-void Plugin::AMD::VCEEncoder::SetFullColorRangeEnabled(bool enabled) {
+void Plugin::AMD::VCEEncoder::SetFullRangeColorEnabled(bool enabled) {
 	// Info from Mikhail:
 	// - Name may change in the future
 	// - Use GetProperty or GetPropertyDescription to test for older or newer drivers.
@@ -1081,7 +1081,7 @@ void Plugin::AMD::VCEEncoder::SetFullColorRangeEnabled(bool enabled) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
-bool Plugin::AMD::VCEEncoder::IsFullColorRangeEnabled() {
+bool Plugin::AMD::VCEEncoder::IsFullRangeColorEnabled() {
 	// Info from Mikhail:
 	// - Name may change in the future
 	// - Use GetProperty or GetPropertyDescription to test for older or newer drivers.
