@@ -239,6 +239,10 @@ Plugin::AMD::VCEEncoder::VCEEncoder(
 	if (m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_OUTPUT_FORMAT, Utility::SurfaceFormatAsAMF(m_ColorFormat)))
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Color Format not supported by VideoConverter component, error %ls (code %ld).", res);
 
+	#ifdef _DEBUG
+	printDebugInfo(m_AMFEncoder);
+	#endif
+
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Initialized.");
 }
 
@@ -278,8 +282,10 @@ void Plugin::AMD::VCEEncoder::Start() {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Encoder initialization failed with error %ls (code %ld).", res);
 
 	// Create Converter
-	m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE, AMF_VIDEO_CONVERTER_COLOR_PROFILE_709);
-	//m_AMFConverter->SetProperty(L"NominalRange", this->IsFullColorRangeEnabled());
+	m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE, this->GetColorProfile());
+	if (m_AMFConverter->SetProperty(L"FullRangeColor", this->IsFullColorRangeEnabled()) != AMF_OK)
+		m_AMFConverter->SetProperty(L"NominalRange", this->IsFullColorRangeEnabled());
+
 	res = m_AMFConverter->Init(Utility::SurfaceFormatAsAMF(m_ColorFormat), m_FrameSize.first, m_FrameSize.second);
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Converter initialization failed with error %ls (code %ld).", res);
@@ -289,6 +295,10 @@ void Plugin::AMD::VCEEncoder::Start() {
 	// Threading
 	m_Input.thread = std::thread(&(Plugin::AMD::VCEEncoder::InputThreadMain), this);
 	m_Output.thread = std::thread(&(Plugin::AMD::VCEEncoder::OutputThreadMain), this);
+
+	#ifdef _DEBUG
+	printDebugInfo(m_AMFEncoder);
+	#endif
 }
 
 void Plugin::AMD::VCEEncoder::Restart() {
@@ -454,7 +464,7 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 		if (!m_Flag_FirstFrameSubmitted)
 			throw std::exception("Unable to submit first frame, terminating...");
 		else {
-			size_t dtime = diff.count();
+			uint64_t dtime = (uint64_t)diff.count();
 			AMF_LOG_INFO("First submission took %ld.%ld seconds.", dtime / 1000000000, dtime % 1000000000);
 		}
 	}
@@ -1054,7 +1064,7 @@ void Plugin::AMD::VCEEncoder::SetFullColorRangeEnabled(bool enabled) {
 	// - Use GetProperty or GetPropertyDescription to test for older or newer drivers.
 	const wchar_t* names[] = {
 		L"NominalRange", // 16.11.2 and below.
-		L"FullRange"
+		L"FullRangeColor"
 	};
 
 	bool enabledTest;
@@ -1077,7 +1087,7 @@ bool Plugin::AMD::VCEEncoder::IsFullColorRangeEnabled() {
 	// - Use GetProperty or GetPropertyDescription to test for older or newer drivers.
 	const wchar_t* names[] = {
 		L"NominalRange", // 16.11.2 and below.
-		L"FullRange"
+		L"FullRangeColor"
 	};
 
 	bool enabled;
