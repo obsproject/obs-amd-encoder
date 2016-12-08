@@ -1063,13 +1063,13 @@ void Plugin::AMD::VCEEncoder::SetFullRangeColorEnabled(bool enabled) {
 	// - Name may change in the future
 	// - Use GetProperty or GetPropertyDescription to test for older or newer drivers.
 	const wchar_t* names[] = {
-		L"NominalRange", // 16.11.2 and below.
-		L"FullRangeColor"
+		L"FullRangeColor", // 16.12.1
+		L"NominalRange", // 16.11.5 and below.
 	};
 
 	bool enabledTest;
 	AMF_RESULT res = AMF_INVALID_ARG;
-	for (size_t i = 0; i < 2; i++) {
+	for (size_t i = 0; i < _countof(names); i++) {
 		if (m_AMFEncoder->GetProperty(names[i], &enabledTest) == AMF_OK) {
 			m_AMFConverter->SetProperty(names[i], enabled);
 			res = m_AMFEncoder->SetProperty(names[i], enabled);
@@ -1086,13 +1086,13 @@ bool Plugin::AMD::VCEEncoder::IsFullRangeColorEnabled() {
 	// - Name may change in the future
 	// - Use GetProperty or GetPropertyDescription to test for older or newer drivers.
 	const wchar_t* names[] = {
-		L"NominalRange", // 16.11.2 and below.
-		L"FullRangeColor"
+		L"FullRangeColor", // 16.12.1
+		L"NominalRange", // 16.11.5 and below.
 	};
 
 	bool enabled;
 	AMF_RESULT res = AMF_INVALID_ARG;
-	for (size_t i = 0; i < 2; i++) {
+	for (size_t i = 0; i < _countof(names); i++) {
 		res = m_AMFEncoder->GetProperty(names[i], &enabled);
 		if (res == AMF_OK) {
 			break;
