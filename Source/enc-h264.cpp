@@ -422,7 +422,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_MOTIONESTIMATION_DESCRIPTION));
 	obs_property_list_add_int(p, TEXT_T(AMF_H264_MOTIONESTIMATION_NONE), 0);
 	obs_property_list_add_int(p, TEXT_T(AMF_H264_MOTIONESTIMATION_HALF), 1);
-	obs_property_list_add_int(p, TEXT_T(AMF_H264_MOTIONESTIMATION_QUARTER),	2);
+	obs_property_list_add_int(p, TEXT_T(AMF_H264_MOTIONESTIMATION_QUARTER), 2);
 	obs_property_list_add_int(p, TEXT_T(AMF_H264_MOTIONESTIMATION_BOTH), 3);
 	#pragma endregion Miscellaneous Control Properties
 
@@ -1431,7 +1431,7 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 
 	/// Frame
 	m_VideoEncoder->SetColorProfile(voi->colorspace == VIDEO_CS_709 ? VCEColorProfile_709 : VCEColorProfile_601);
-	m_VideoEncoder->SetFullColorRangeEnabled(voi->range == VIDEO_RANGE_FULL);
+	try { m_VideoEncoder->SetFullRangeColorEnabled(voi->range == VIDEO_RANGE_FULL); } catch (...) {}
 	m_VideoEncoder->SetResolution(m_cfgWidth, m_cfgHeight);
 	m_VideoEncoder->SetFrameRate(m_cfgFPSnum, m_cfgFPSden);
 	m_VideoEncoder->SetScanType((VCEScanType)obs_data_get_int(data, AMF_H264_SCANTYPE)); /// Progressive or Interlaced
