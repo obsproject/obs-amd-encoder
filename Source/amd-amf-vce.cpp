@@ -1818,7 +1818,20 @@ bool Plugin::AMD::VCEEncoder::IsPreAnalysisPassEnabled() {
 }
 
 void Plugin::AMD::VCEEncoder::SetVBAQEnabled(bool enabled) {
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"EanbleVBAQ", enabled); // ToDo: Typo in AMF.
+	const wchar_t* names[] = {
+		L"EnableVBAQ", // 16.12.1
+		L"EanbleVBAQ", // 16.11.5 and below.
+	};
+
+	bool enabledTest;
+	AMF_RESULT res = AMF_INVALID_ARG;
+	for (size_t i = 0; i < _countof(names); i++) {
+		if (m_AMFEncoder->GetProperty(names[i], &enabledTest) == AMF_OK) {
+			m_AMFConverter->SetProperty(names[i], enabled);
+			res = m_AMFEncoder->SetProperty(names[i], enabled);
+			break;
+		}
+	}
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
 	}
@@ -1826,8 +1839,19 @@ void Plugin::AMD::VCEEncoder::SetVBAQEnabled(bool enabled) {
 }
 
 bool Plugin::AMD::VCEEncoder::IsVBAQEnabled() {
+	const wchar_t* names[] = {
+		L"EnableVBAQ", // 16.12.1
+		L"EanbleVBAQ", // 16.11.5 and below.
+	};
+
 	bool enabled;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"EanbleVBAQ", &enabled); // ToDo: Typo in AMF.
+	AMF_RESULT res = AMF_INVALID_ARG;
+	for (size_t i = 0; i < _countof(names); i++) {
+		res = m_AMFEncoder->GetProperty(names[i], &enabled);
+		if (res == AMF_OK) {
+			break;
+		}
+	}
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
 	}
