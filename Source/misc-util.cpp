@@ -29,9 +29,9 @@ SOFTWARE.
 
 // Plugin
 #include "plugin.h"
-#include "amd-amf.h"
-#include "amd-amf-vce.h"
-#include "amd-amf-vce-capabilities.h"
+#include "amf.h"
+#include "amf-capabilities.h"
+#include "amf-h264.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Code

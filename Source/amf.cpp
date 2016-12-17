@@ -28,7 +28,7 @@ SOFTWARE.
 #include <vector>
 #include <mutex>
 
-#include "amd-amf.h"
+#include "amf.h"
 #include "windows.h"
 
 // AMD AMF SDK

@@ -36,7 +36,7 @@ SOFTWARE.
 
 // Plugin
 #include "plugin.h"
-#include "amd-amf.h"
+#include "amf.h"
 #include "api-base.h"
 
 //////////////////////////////////////////////////////////////////////////

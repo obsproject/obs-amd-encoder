@@ -35,7 +35,7 @@ SOFTWARE.
 #include <VersionHelpers.h>
 #endif
 
-#include "amd-amf-vce-capabilities.h"
+#include "amf-capabilities.h"
 #include "api-d3d11.h"
 #include "api-d3d9.h"
 #include "misc-util.cpp"
