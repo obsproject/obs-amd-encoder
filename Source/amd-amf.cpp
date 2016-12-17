@@ -180,14 +180,14 @@ Plugin::AMD::AMF::AMF() {
 
 	// Log success
 	AMF_LOG_INFO("Version " PLUGIN_VERSION_TEXT " loaded (Compiled: %d.%d.%d.%d, Runtime: %d.%d.%d.%d, Library: %.*s).",
-		(uint16_t)((m_AMFVersion_Runtime >> 48ull) & 0xFFFF),
-		(uint16_t)((m_AMFVersion_Runtime >> 32ull) & 0xFFFF),
-		(uint16_t)((m_AMFVersion_Runtime >> 16ull) & 0xFFFF),
-		(uint16_t)((m_AMFVersion_Runtime & 0xFFFF)),
 		(uint16_t)((m_AMFVersion_Compiler >> 48ull) & 0xFFFF),
 		(uint16_t)((m_AMFVersion_Compiler >> 32ull) & 0xFFFF),
 		(uint16_t)((m_AMFVersion_Compiler >> 16ull) & 0xFFFF),
 		(uint16_t)((m_AMFVersion_Compiler & 0xFFFF)),
+		(uint16_t)((m_AMFVersion_Runtime >> 48ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Runtime >> 32ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Runtime >> 16ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Runtime & 0xFFFF)),
 		lProductVersionSize, pProductVersion
 	);
 
