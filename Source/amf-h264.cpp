@@ -182,7 +182,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(
 	m_InputQueueLimit = (uint32_t)(m_FrameRateDivisor);
 	m_InputQueueLastSize = 0;
 	m_TimerPeriod = 1;
-	m_LastQueueWarnMessageTime = std::chrono::time_point<std::chrono::high_resolution_clock>(std::chrono::nanoseconds(0));
+	m_LastQueueWarnMessageTime = std::chrono::high_resolution_clock::time_point(std::chrono::high_resolution_clock::duration(0));
 	#pragma endregion Assign Default Values
 
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Initializing...");
