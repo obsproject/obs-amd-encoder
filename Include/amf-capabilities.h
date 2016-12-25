@@ -85,10 +85,10 @@ namespace Plugin {
 				Plugin::API::Adapter adapter);
 			static void ReportAdapterTypeCapabilities(std::shared_ptr<Plugin::API::Base> api,
 				Plugin::API::Adapter adapter,
-				VCEEncoderType type);
+				H264EncoderType type);
 			static void ReportAdapterTypeIOCapabilities(std::shared_ptr<Plugin::API::Base> api,
 				Plugin::API::Adapter adapter,
-				VCEEncoderType type,
+				H264EncoderType type,
 				bool output);
 
 			//////////////////////////////////////////////////////////////////////////
@@ -99,13 +99,13 @@ namespace Plugin {
 			~VCECapabilities();
 
 			bool Refresh();
-			std::vector<std::pair<VCEEncoderType, VCEDeviceCapabilities>>
+			std::vector<std::pair<H264EncoderType, VCEDeviceCapabilities>>
 				GetAllAdapterCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter);
 			VCEDeviceCapabilities
-				GetAdapterCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter, VCEEncoderType type);
+				GetAdapterCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter, H264EncoderType type);
 
 			private:
-			std::map<std::tuple<std::string, Plugin::API::Adapter, Plugin::AMD::VCEEncoderType>, VCEDeviceCapabilities> capabilityMap;
+			std::map<std::tuple<std::string, Plugin::API::Adapter, Plugin::AMD::H264EncoderType>, VCEDeviceCapabilities> capabilityMap;
 		};
 	}
 }

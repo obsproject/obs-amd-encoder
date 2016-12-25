@@ -161,12 +161,12 @@ static void printDebugInfo(amf::AMFComponentPtr m_AMFEncoder) {
 }
 #endif
 
-Plugin::AMD::VCEEncoder::VCEEncoder(
-	VCEEncoderType p_Type,
+Plugin::AMD::H264Encoder::H264Encoder(
+	H264EncoderType p_Type,
 	std::string p_VideoAPI,
 	uint64_t p_VideoAdapterId,
 	bool p_OpenCL,
-	VCEColorFormat p_SurfaceFormat/* = VCESurfaceFormat_NV12*/
+	H264ColorFormat p_SurfaceFormat/* = VCESurfaceFormat_NV12*/
 ) {
 	#pragma region Assign Default Values
 	m_EncoderType = p_Type;
@@ -200,19 +200,19 @@ Plugin::AMD::VCEEncoder::VCEEncoder(
 	m_APIInstance = m_API->CreateInstanceOnAdapter(m_APIAdapter);
 	switch (m_API->GetType()) {
 		case Plugin::API::APIType_Direct3D11:
-			m_MemoryType = VCEMemoryType_DirectX11;
+			m_MemoryType = H264MemoryType::DirectX11;
 			res = m_AMFContext->InitDX11(m_API->GetContextFromInstance(m_APIInstance));
 			break;
 		case Plugin::API::APIType_Direct3D9:
-			m_MemoryType = VCEMemoryType_DirectX9;
+			m_MemoryType = H264MemoryType::DirectX11;
 			res = m_AMFContext->InitDX9(m_API->GetContextFromInstance(m_APIInstance));
 			break;
 		case Plugin::API::APIType_OpenGL:
-			m_MemoryType = VCEMemoryType_OpenGL;
+			m_MemoryType = H264MemoryType::OpenGL;
 			res = m_AMFContext->InitOpenGL(m_API->GetContextFromInstance(m_APIInstance), GetDesktopWindow(), nullptr);
 			break;
 		case Plugin::API::APIType_Host:
-			m_MemoryType = VCEMemoryType_Host;
+			m_MemoryType = H264MemoryType::Host;
 			m_OpenCL = false;
 			break;
 	}
@@ -246,7 +246,7 @@ Plugin::AMD::VCEEncoder::VCEEncoder(
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Initialized.");
 }
 
-Plugin::AMD::VCEEncoder::~VCEEncoder() {
+Plugin::AMD::H264Encoder::~H264Encoder() {
 	if (m_Flag_IsStarted)
 		Stop();
 
@@ -268,7 +268,7 @@ Plugin::AMD::VCEEncoder::~VCEEncoder() {
 	m_API = nullptr;
 }
 
-void Plugin::AMD::VCEEncoder::Start() {
+void Plugin::AMD::H264Encoder::Start() {
 	// Set proper Timer resolution.
 	m_TimerPeriod = 1;
 	while (timeBeginPeriod(m_TimerPeriod) == TIMERR_NOCANDO) {
@@ -282,7 +282,7 @@ void Plugin::AMD::VCEEncoder::Start() {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Encoder initialization failed with error %ls (code %ld).", res);
 
 	// Create Converter
-	m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE, this->GetColorProfile());
+	m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE, (size_t)this->GetColorProfile());
 	if (m_AMFConverter->SetProperty(L"FullRangeColor", this->IsFullRangeColorEnabled()) != AMF_OK)
 		m_AMFConverter->SetProperty(L"NominalRange", this->IsFullRangeColorEnabled());
 
@@ -293,15 +293,15 @@ void Plugin::AMD::VCEEncoder::Start() {
 	m_Flag_IsStarted = true;
 
 	// Threading
-	m_Input.thread = std::thread(&(Plugin::AMD::VCEEncoder::InputThreadMain), this);
-	m_Output.thread = std::thread(&(Plugin::AMD::VCEEncoder::OutputThreadMain), this);
+	m_Input.thread = std::thread(&(Plugin::AMD::H264Encoder::InputThreadMain), this);
+	m_Output.thread = std::thread(&(Plugin::AMD::H264Encoder::OutputThreadMain), this);
 
 	#ifdef _DEBUG
 	printDebugInfo(m_AMFEncoder);
 	#endif
 }
 
-void Plugin::AMD::VCEEncoder::Restart() {
+void Plugin::AMD::H264Encoder::Restart() {
 	if (!m_Flag_IsStarted)
 		return;
 
@@ -314,7 +314,7 @@ void Plugin::AMD::VCEEncoder::Restart() {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Initialization failed with error %ls (code %ld).", res);
 }
 
-void Plugin::AMD::VCEEncoder::Stop() {
+void Plugin::AMD::H264Encoder::Stop() {
 	// Restore Timer precision.
 	if (m_TimerPeriod != 0) {
 		timeEndPeriod(m_TimerPeriod);
@@ -376,11 +376,11 @@ void Plugin::AMD::VCEEncoder::Stop() {
 	m_ExtraDataBuffer.clear();
 	}
 
-bool Plugin::AMD::VCEEncoder::IsStarted() {
+bool Plugin::AMD::H264Encoder::IsStarted() {
 	return m_Flag_IsStarted;
 }
 
-bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
+bool Plugin::AMD::H264Encoder::SendInput(struct encoder_frame* frame) {
 	// Early-Exception if not encoding.
 	if (!m_Flag_IsStarted) {
 		const char* error = "<" __FUNCTION_NAME__ "> Attempted to send input while not running.";
@@ -472,7 +472,7 @@ bool Plugin::AMD::VCEEncoder::SendInput(struct encoder_frame* frame) {
 	return true;
 }
 
-bool Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* received_packet) {
+bool Plugin::AMD::H264Encoder::GetOutput(struct encoder_packet* packet, bool* received_packet) {
 	// Early-Exception if not encoding.
 	if (!m_Flag_IsStarted) {
 		const char* error = "<" __FUNCTION_NAME__ "> Attempted to send input while not running.";
@@ -559,7 +559,7 @@ bool Plugin::AMD::VCEEncoder::GetOutput(struct encoder_packet* packet, bool* rec
 	return true;
 }
 
-bool Plugin::AMD::VCEEncoder::GetExtraData(uint8_t**& extra_data, size_t*& extra_data_size) {
+bool Plugin::AMD::H264Encoder::GetExtraData(uint8_t**& extra_data, size_t*& extra_data_size) {
 	if (!m_AMFContext || !m_AMFEncoder)
 		throw std::exception("<" __FUNCTION_NAME__ "> Called while not initialized.");
 
@@ -581,7 +581,7 @@ bool Plugin::AMD::VCEEncoder::GetExtraData(uint8_t**& extra_data, size_t*& extra
 	return false;
 }
 
-void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
+void Plugin::AMD::H264Encoder::GetVideoInfo(struct video_scale_info*& vsi) {
 	if (!m_AMFContext || !m_AMFEncoder)
 		throw std::exception("<" __FUNCTION_NAME__ "> Called while not initialized.");
 
@@ -590,25 +590,25 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 
 	switch (m_ColorFormat) {
 		// 4:2:0 Formats
-		case VCEColorFormat_NV12:
+		case H264ColorFormat::NV12:
 			vsi->format = VIDEO_FORMAT_NV12;
 			break;
-		case VCEColorFormat_I420:
+		case H264ColorFormat::I420:
 			vsi->format = VIDEO_FORMAT_I420;
 			break;
 		// 4:2:2 Formats
-		case VCEColorFormat_YUY2:
+		case H264ColorFormat::YUY2:
 			vsi->format = VIDEO_FORMAT_YUY2;
 			break;
 		// Uncompressed
-		case VCEColorFormat_RGBA:
+		case H264ColorFormat::RGBA:
 			vsi->format = VIDEO_FORMAT_RGBA;
 			break;
-		case VCEColorFormat_BGRA:
+		case H264ColorFormat::BGRA:
 			vsi->format = VIDEO_FORMAT_BGRA;
 			break;
 		// Other
-		case VCEColorFormat_GRAY:
+		case H264ColorFormat::GRAY:
 			vsi->format = VIDEO_FORMAT_Y800;
 			break;
 	}
@@ -621,15 +621,15 @@ void Plugin::AMD::VCEEncoder::GetVideoInfo(struct video_scale_info*& vsi) {
 	}
 }
 
-void Plugin::AMD::VCEEncoder::InputThreadMain(Plugin::AMD::VCEEncoder* p_this) {
+void Plugin::AMD::H264Encoder::InputThreadMain(Plugin::AMD::H264Encoder* p_this) {
 	p_this->InputThreadLogic();
 }
 
-void Plugin::AMD::VCEEncoder::OutputThreadMain(Plugin::AMD::VCEEncoder* p_this) {
+void Plugin::AMD::H264Encoder::OutputThreadMain(Plugin::AMD::H264Encoder* p_this) {
 	p_this->OutputThreadLogic();
 }
 
-void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles Surface Submission
+void Plugin::AMD::H264Encoder::InputThreadLogic() {	// Thread Loop that handles Surface Submission
 	// Assign Thread Name
 	static const char* __threadName = "enc-amf Input Thread";
 	SetThreadName(__threadName);
@@ -703,7 +703,7 @@ void Plugin::AMD::VCEEncoder::InputThreadLogic() {	// Thread Loop that handles S
 	} while (m_Flag_IsStarted);
 }
 
-void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles Querying
+void Plugin::AMD::H264Encoder::OutputThreadLogic() {	// Thread Loop that handles Querying
 	// Assign Thread Name
 	static const char* __threadName = "enc-amf Output Thread";
 	SetThreadName(__threadName);
@@ -749,7 +749,7 @@ void Plugin::AMD::VCEEncoder::OutputThreadLogic() {	// Thread Loop that handles 
 	} while (m_Flag_IsStarted);
 }
 
-inline amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct encoder_frame*& frame) {
+inline amf::AMFSurfacePtr Plugin::AMD::H264Encoder::CreateSurfaceFromFrame(struct encoder_frame*& frame) {
 	AMF_RESULT res = AMF_UNEXPECTED;
 	amf::AMFSurfacePtr pSurface = nullptr;
 	if (m_OpenCL) {
@@ -805,14 +805,14 @@ inline amf::AMFSurfacePtr Plugin::AMD::VCEEncoder::CreateSurfaceFromFrame(struct
 // AMF Properties
 //////////////////////////////////////////////////////////////////////////
 
-void Plugin::AMD::VCEEncoder::LogProperties() {
+void Plugin::AMD::H264Encoder::LogProperties() {
 	AMF_LOG_INFO("-- AMD Advanced Media Framework Encoder --");
 
 	// Initialization Properties
 	AMF_LOG_INFO("Initialization Properties: ");
 	AMF_LOG_INFO("  Type: %s", Utility::VCEEncoderTypeAsString(m_EncoderType));
 	AMF_LOG_INFO("  Video API: %s", Utility::MemoryTypeAsString(m_MemoryType));
-	if (m_MemoryType != VCEMemoryType_Host) {
+	if (m_MemoryType != H264MemoryType::Host) {
 		AMF_LOG_INFO("  Video Adapter: %s", m_APIAdapter.Name.c_str());
 		AMF_LOG_INFO("  OpenCL: %s", m_OpenCL ? "Enabled" : "Disabled");
 	}
@@ -822,12 +822,13 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("Startup Properties: ");
 	AMF_LOG_INFO("  Usage: %s", Utility::UsageAsString(GetUsage()));
 	AMF_LOG_INFO("  Quality Preset: %s", Utility::QualityPresetAsString(GetQualityPreset()));
-	AMF_LOG_INFO("  Profile: %s %d.%d", Utility::ProfileAsString(GetProfile()), GetProfileLevel() / 10, this->GetProfileLevel() % 10);
+	uint8_t profileLevel = (uint8_t)this->GetProfileLevel();
+	AMF_LOG_INFO("  Profile: %s %d.%d", Utility::ProfileAsString(GetProfile()), profileLevel / 10, profileLevel % 10);
 
 	// Frame Properties
 	AMF_LOG_INFO("Frame Properties: ");
 	try {
-		AMF_LOG_INFO("  Color Profile: %s", GetColorProfile() == VCEColorProfile_709 ? "709" : "601");
+		AMF_LOG_INFO("  Color Profile: %s", GetColorProfile() == H264ColorProfile::Rec709 ? "709" : "601");
 	} catch (...) {
 		AMF_LOG_INFO("  Color Profile: N/A");
 	}
@@ -838,7 +839,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	}
 	AMF_LOG_INFO("  Resolution: %dx%d", GetResolution().first, GetResolution().second);
 	AMF_LOG_INFO("  Frame Rate: %d/%d", GetFrameRate().first, GetFrameRate().second);
-	AMF_LOG_INFO("  Scan Type: %s", GetScanType() == VCEScanType_Progressive ? "Progressive" : "Interlaced");
+	AMF_LOG_INFO("  Scan Type: %s", GetScanType() == H264ScanType::Progressive ? "Progressive" : "Interlaced");
 
 	// Rate Control Properties
 	AMF_LOG_INFO("Rate Control Properties: ");
@@ -851,7 +852,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("    Maximum: %d", GetMaximumQP());
 	AMF_LOG_INFO("    I-Frame: %d", GetIFrameQP());
 	AMF_LOG_INFO("    P-Frame: %d", GetPFrameQP());
-	if (VCECapabilities::GetInstance()->GetAdapterCapabilities(m_API, m_APIAdapter, VCEEncoderType_AVC).supportsBFrames) {
+	if (VCECapabilities::GetInstance()->GetAdapterCapabilities(m_API, m_APIAdapter, H264EncoderType::AVC).supportsBFrames) {
 		try { AMF_LOG_INFO("    B-Frame: %d", GetBFrameQP()); } catch (...) {}
 	} else {
 		AMF_LOG_INFO("    B-Frame: N/A");
@@ -867,7 +868,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	// Picture Control Properties
 	AMF_LOG_INFO("Picture Control Properties: ");
 	AMF_LOG_INFO("  IDR Period: %d frames", GetIDRPeriod());
-	if (VCECapabilities::GetInstance()->GetAdapterCapabilities(m_API, m_APIAdapter, VCEEncoderType_AVC).supportsBFrames) {
+	if (VCECapabilities::GetInstance()->GetAdapterCapabilities(m_API, m_APIAdapter, H264EncoderType::AVC).supportsBFrames) {
 		AMF_LOG_INFO("  B-Frame Pattern: %d", GetBFramePattern());
 		try {
 			AMF_LOG_INFO("  B-Frame Delta QP: %d", GetBFrameDeltaQP());
@@ -930,7 +931,7 @@ void Plugin::AMD::VCEEncoder::LogProperties() {
 	AMF_LOG_INFO("-- AMD Advanced Media Framework VCE Encoder --");
 }
 
-void Plugin::AMD::VCEEncoder::SetUsage(VCEUsage usage) {
+void Plugin::AMD::H264Encoder::SetUsage(H264Usage usage) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE,
 		(uint32_t)Utility::UsageAsAMF(usage));
 	if (res != AMF_OK) {
@@ -940,7 +941,7 @@ void Plugin::AMD::VCEEncoder::SetUsage(VCEUsage usage) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", Utility::UsageAsString(usage));
 }
 
-Plugin::AMD::VCEUsage Plugin::AMD::VCEEncoder::GetUsage() {
+Plugin::AMD::H264Usage Plugin::AMD::H264Encoder::GetUsage() {
 	uint32_t usage;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_USAGE, &usage);
 	if (res != AMF_OK) {
@@ -951,7 +952,7 @@ Plugin::AMD::VCEUsage Plugin::AMD::VCEEncoder::GetUsage() {
 	return Utility::UsageFromAMF(usage);
 }
 
-void Plugin::AMD::VCEEncoder::SetQualityPreset(VCEQualityPreset preset) {
+void Plugin::AMD::H264Encoder::SetQualityPreset(H264QualityPreset preset) {
 	static AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM CustomToAMF[] = {
 		AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED,
 		AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED,
@@ -963,18 +964,18 @@ void Plugin::AMD::VCEEncoder::SetQualityPreset(VCEQualityPreset preset) {
 		"Quality",
 	};
 
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, (uint32_t)CustomToAMF[preset]);
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, (uint32_t)CustomToAMF[(uint8_t)preset]);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, CustomToName[preset]);
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, CustomToName[(uint8_t)preset]);
 	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", CustomToName[preset]);
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", CustomToName[(uint8_t)preset]);
 }
 
-Plugin::AMD::VCEQualityPreset Plugin::AMD::VCEEncoder::GetQualityPreset() {
-	static VCEQualityPreset AMFToCustom[] = {
-		VCEQualityPreset_Balanced,
-		VCEQualityPreset_Speed,
-		VCEQualityPreset_Quality,
+Plugin::AMD::H264QualityPreset Plugin::AMD::H264Encoder::GetQualityPreset() {
+	static H264QualityPreset AMFToCustom[] = {
+		H264QualityPreset::Balanced,
+		H264QualityPreset::Speed,
+		H264QualityPreset::Quality,
 	};
 	static char* CustomToName[] = {
 		"Speed",
@@ -987,11 +988,11 @@ Plugin::AMD::VCEQualityPreset Plugin::AMD::VCEEncoder::GetQualityPreset() {
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", CustomToName[AMFToCustom[preset]]);
-	return AMFToCustom[preset];
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", CustomToName[(uint8_t)AMFToCustom[(uint8_t)preset]]);
+	return AMFToCustom[(uint8_t)preset];
 }
 
-void Plugin::AMD::VCEEncoder::SetProfile(VCEProfile profile) {
+void Plugin::AMD::H264Encoder::SetProfile(H264Profile profile) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, (uint32_t)profile);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, Utility::ProfileAsString(profile));
@@ -999,19 +1000,19 @@ void Plugin::AMD::VCEEncoder::SetProfile(VCEProfile profile) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", Utility::ProfileAsString(profile));
 }
 
-Plugin::AMD::VCEProfile Plugin::AMD::VCEEncoder::GetProfile() {
+Plugin::AMD::H264Profile Plugin::AMD::H264Encoder::GetProfile() {
 	uint32_t profile;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PROFILE, &profile);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", Utility::ProfileAsString((VCEProfile)profile));
-	return (VCEProfile)profile;
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", Utility::ProfileAsString((H264Profile)profile));
+	return (H264Profile)profile;
 }
 
-void Plugin::AMD::VCEEncoder::SetProfileLevel(VCEProfileLevel level) {
+void Plugin::AMD::H264Encoder::SetProfileLevel(H264ProfileLevel level) {
 	// Automatic Detection
-	if (level == VCEProfileLevel_Automatic) {
+	if (level == H264ProfileLevel::Automatic) {
 		auto frameSize = this->GetResolution();
 		auto frameRate = this->GetFrameRate();
 		level = Plugin::Utility::GetMinimumProfileLevel(frameSize, frameRate);
@@ -1024,17 +1025,17 @@ void Plugin::AMD::VCEEncoder::SetProfileLevel(VCEProfileLevel level) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", level);
 }
 
-Plugin::AMD::VCEProfileLevel Plugin::AMD::VCEEncoder::GetProfileLevel() {
+Plugin::AMD::H264ProfileLevel Plugin::AMD::H264Encoder::GetProfileLevel() {
 	uint32_t profileLevel;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, &profileLevel);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", profileLevel);
-	return (VCEProfileLevel)(profileLevel);
+	return (H264ProfileLevel)(profileLevel);
 }
 
-void Plugin::AMD::VCEEncoder::SetColorProfile(VCEColorProfile profile) {
+void Plugin::AMD::H264Encoder::SetColorProfile(H264ColorProfile profile) {
 	AMF_VIDEO_CONVERTER_COLOR_PROFILE_ENUM pluginToAMF[] = {
 		AMF_VIDEO_CONVERTER_COLOR_PROFILE_601,
 		AMF_VIDEO_CONVERTER_COLOR_PROFILE_709,
@@ -1047,18 +1048,18 @@ void Plugin::AMD::VCEEncoder::SetColorProfile(VCEColorProfile profile) {
 	};
 
 	AMF_RESULT res = m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE,
-		pluginToAMF[profile]);
+		pluginToAMF[(uint8_t)profile]);
 	if (res != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Unable to set Color Profile, error %ls (code %ld).", res);
 	m_ColorProfile = profile;
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", pluginToString[profile]);
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", pluginToString[(uint8_t)profile]);
 }
 
-Plugin::AMD::VCEColorProfile Plugin::AMD::VCEEncoder::GetColorProfile() {
+Plugin::AMD::H264ColorProfile Plugin::AMD::H264Encoder::GetColorProfile() {
 	return m_ColorProfile;
 }
 
-void Plugin::AMD::VCEEncoder::SetFullRangeColorEnabled(bool enabled) {
+void Plugin::AMD::H264Encoder::SetFullRangeColorEnabled(bool enabled) {
 	// Info from Mikhail:
 	// - Name may change in the future
 	// - Use GetProperty or GetPropertyDescription to test for older or newer drivers.
@@ -1081,7 +1082,7 @@ void Plugin::AMD::VCEEncoder::SetFullRangeColorEnabled(bool enabled) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
-bool Plugin::AMD::VCEEncoder::IsFullRangeColorEnabled() {
+bool Plugin::AMD::H264Encoder::IsFullRangeColorEnabled() {
 	// Info from Mikhail:
 	// - Name may change in the future
 	// - Use GetProperty or GetPropertyDescription to test for older or newer drivers.
@@ -1104,7 +1105,7 @@ bool Plugin::AMD::VCEEncoder::IsFullRangeColorEnabled() {
 	return enabled;
 }
 
-void Plugin::AMD::VCEEncoder::SetResolution(uint32_t width, uint32_t height) {
+void Plugin::AMD::H264Encoder::SetResolution(uint32_t width, uint32_t height) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, ::AMFConstructSize(width, height));
 	if (res != AMF_OK) {
 		std::vector<char> msgBuf(128);
@@ -1115,11 +1116,11 @@ void Plugin::AMD::VCEEncoder::SetResolution(uint32_t width, uint32_t height) {
 	m_FrameSize.first = width;
 	m_FrameSize.second = height;
 
-	if (this->GetProfileLevel() == VCEProfileLevel_Automatic)
-		this->SetProfileLevel(VCEProfileLevel_Automatic);
+	if (this->GetProfileLevel() == H264ProfileLevel::Automatic)
+		this->SetProfileLevel(H264ProfileLevel::Automatic);
 }
 
-std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetResolution() {
+std::pair<uint32_t, uint32_t> Plugin::AMD::H264Encoder::GetResolution() {
 	AMFSize frameSize;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, &frameSize);
 	if (res != AMF_OK) {
@@ -1129,13 +1130,13 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetResolution() {
 	m_FrameSize.first = frameSize.width;
 	m_FrameSize.second = frameSize.height;
 
-	if (this->GetProfileLevel() == VCEProfileLevel_Automatic)
-		this->SetProfileLevel(VCEProfileLevel_Automatic);
+	if (this->GetProfileLevel() == H264ProfileLevel::Automatic)
+		this->SetProfileLevel(H264ProfileLevel::Automatic);
 
 	return std::pair<uint32_t, uint32_t>(m_FrameSize);
 }
 
-void Plugin::AMD::VCEEncoder::SetFrameRate(uint32_t num, uint32_t den) {
+void Plugin::AMD::H264Encoder::SetFrameRate(uint32_t num, uint32_t den) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FRAMERATE, ::AMFConstructRate(num, den));
 	if (res != AMF_OK) {
 		std::vector<char> msgBuf;
@@ -1149,11 +1150,11 @@ void Plugin::AMD::VCEEncoder::SetFrameRate(uint32_t num, uint32_t den) {
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor);
 
-	if (this->GetProfileLevel() == VCEProfileLevel_Automatic)
-		this->SetProfileLevel(VCEProfileLevel_Automatic);
+	if (this->GetProfileLevel() == H264ProfileLevel::Automatic)
+		this->SetProfileLevel(H264ProfileLevel::Automatic);
 }
 
-std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameRate() {
+std::pair<uint32_t, uint32_t> Plugin::AMD::H264Encoder::GetFrameRate() {
 	AMFRate frameRate;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FRAMERATE, &frameRate);
 	if (res != AMF_OK) {
@@ -1165,13 +1166,13 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetFrameRate() {
 	m_FrameRateDivisor = (double_t)frameRate.num / (double_t)frameRate.den;
 	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor);
 
-	if (this->GetProfileLevel() == VCEProfileLevel_Automatic)
-		this->SetProfileLevel(VCEProfileLevel_Automatic);
+	if (this->GetProfileLevel() == H264ProfileLevel::Automatic)
+		this->SetProfileLevel(H264ProfileLevel::Automatic);
 
 	return std::pair<uint32_t, uint32_t>(m_FrameRate);
 }
 
-void Plugin::AMD::VCEEncoder::SetScanType(VCEScanType scanType) {
+void Plugin::AMD::H264Encoder::SetScanType(H264ScanType scanType) {
 	static AMF_VIDEO_ENCODER_SCANTYPE_ENUM CustomToAMF[] = {
 		AMF_VIDEO_ENCODER_SCANTYPE_PROGRESSIVE,
 		AMF_VIDEO_ENCODER_SCANTYPE_INTERLACED,
@@ -1181,14 +1182,14 @@ void Plugin::AMD::VCEEncoder::SetScanType(VCEScanType scanType) {
 		"Interlaced",
 	};
 
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SCANTYPE, (uint32_t)CustomToAMF[scanType]);
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SCANTYPE, (uint32_t)CustomToAMF[(uint8_t)scanType]);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, CustomToName[scanType]);
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, CustomToName[(uint8_t)scanType]);
 	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", CustomToName[scanType]);
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", CustomToName[(uint8_t)scanType]);
 }
 
-Plugin::AMD::VCEScanType Plugin::AMD::VCEEncoder::GetScanType() {
+Plugin::AMD::H264ScanType Plugin::AMD::H264Encoder::GetScanType() {
 	static char* CustomToName[] = {
 		"Progressive",
 		"Interlaced",
@@ -1200,10 +1201,10 @@ Plugin::AMD::VCEScanType Plugin::AMD::VCEEncoder::GetScanType() {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", CustomToName[scanType]);
-	return (Plugin::AMD::VCEScanType)scanType;
+	return (Plugin::AMD::H264ScanType)scanType;
 }
 
-void Plugin::AMD::VCEEncoder::SetRateControlMethod(VCERateControlMethod method) {
+void Plugin::AMD::H264Encoder::SetRateControlMethod(H264RateControlMethod method) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD,
 		(uint64_t)Utility::RateControlMethodAsAMF(method));
 	if (res != AMF_OK) {
@@ -1214,7 +1215,7 @@ void Plugin::AMD::VCEEncoder::SetRateControlMethod(VCERateControlMethod method) 
 		Utility::RateControlMethodAsString(method));
 }
 
-Plugin::AMD::VCERateControlMethod Plugin::AMD::VCEEncoder::GetRateControlMethod() {
+Plugin::AMD::H264RateControlMethod Plugin::AMD::H264Encoder::GetRateControlMethod() {
 	uint32_t method;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, &method);
 	if (res != AMF_OK) {
@@ -1225,10 +1226,10 @@ Plugin::AMD::VCERateControlMethod Plugin::AMD::VCEEncoder::GetRateControlMethod(
 	return Utility::RateControlMethodFromAMF(method);
 }
 
-void Plugin::AMD::VCEEncoder::SetTargetBitrate(uint32_t bitrate) {
+void Plugin::AMD::H264Encoder::SetTargetBitrate(uint32_t bitrate) {
 	// Clamp Value
 	bitrate = clamp(bitrate, 10000,
-		Plugin::AMD::VCECapabilities::GetInstance()->GetAdapterCapabilities(m_API, m_APIAdapter, VCEEncoderType_AVC).maxBitrate);
+		Plugin::AMD::VCECapabilities::GetInstance()->GetAdapterCapabilities(m_API, m_APIAdapter, H264EncoderType::AVC).maxBitrate);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, bitrate);
 	if (res != AMF_OK) {
@@ -1237,7 +1238,7 @@ void Plugin::AMD::VCEEncoder::SetTargetBitrate(uint32_t bitrate) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d bits.", bitrate);
 }
 
-uint32_t Plugin::AMD::VCEEncoder::GetTargetBitrate() {
+uint32_t Plugin::AMD::H264Encoder::GetTargetBitrate() {
 	uint32_t bitrate;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, &bitrate);
 	if (res != AMF_OK) {
@@ -1247,10 +1248,10 @@ uint32_t Plugin::AMD::VCEEncoder::GetTargetBitrate() {
 	return bitrate;
 }
 
-void Plugin::AMD::VCEEncoder::SetPeakBitrate(uint32_t bitrate) {
+void Plugin::AMD::H264Encoder::SetPeakBitrate(uint32_t bitrate) {
 	// Clamp Value
 	bitrate = clamp(bitrate, 10000,
-		Plugin::AMD::VCECapabilities::GetInstance()->GetAdapterCapabilities(m_API, m_APIAdapter, VCEEncoderType_AVC).maxBitrate);
+		Plugin::AMD::VCECapabilities::GetInstance()->GetAdapterCapabilities(m_API, m_APIAdapter, H264EncoderType::AVC).maxBitrate);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, (uint32_t)bitrate);
 	if (res != AMF_OK) {
@@ -1259,7 +1260,7 @@ void Plugin::AMD::VCEEncoder::SetPeakBitrate(uint32_t bitrate) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d bits.", bitrate);
 }
 
-uint32_t Plugin::AMD::VCEEncoder::GetPeakBitrate() {
+uint32_t Plugin::AMD::H264Encoder::GetPeakBitrate() {
 	uint32_t bitrate;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, &bitrate);
 	if (res != AMF_OK) {
@@ -1269,7 +1270,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetPeakBitrate() {
 	return bitrate;
 }
 
-void Plugin::AMD::VCEEncoder::SetMinimumQP(uint8_t qp) {
+void Plugin::AMD::H264Encoder::SetMinimumQP(uint8_t qp) {
 	// Clamp Value
 	qp = clamp(qp, 0, 51);
 
@@ -1280,7 +1281,7 @@ void Plugin::AMD::VCEEncoder::SetMinimumQP(uint8_t qp) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", qp);
 }
 
-uint8_t Plugin::AMD::VCEEncoder::GetMinimumQP() {
+uint8_t Plugin::AMD::H264Encoder::GetMinimumQP() {
 	uint32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MIN_QP, &qp);
 	if (res != AMF_OK) {
@@ -1290,7 +1291,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetMinimumQP() {
 	return (uint8_t)qp;
 }
 
-void Plugin::AMD::VCEEncoder::SetMaximumQP(uint8_t qp) {
+void Plugin::AMD::H264Encoder::SetMaximumQP(uint8_t qp) {
 	// Clamp Value
 	qp = clamp(qp, 0, 51);
 
@@ -1301,7 +1302,7 @@ void Plugin::AMD::VCEEncoder::SetMaximumQP(uint8_t qp) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", qp);
 }
 
-uint8_t Plugin::AMD::VCEEncoder::GetMaximumQP() {
+uint8_t Plugin::AMD::H264Encoder::GetMaximumQP() {
 	uint32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_QP, &qp);
 	if (res != AMF_OK) {
@@ -1311,7 +1312,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetMaximumQP() {
 	return (uint8_t)qp;
 }
 
-void Plugin::AMD::VCEEncoder::SetIFrameQP(uint8_t qp) {
+void Plugin::AMD::H264Encoder::SetIFrameQP(uint8_t qp) {
 	// Clamp Value
 	qp = clamp(qp, 0, 51);
 
@@ -1322,7 +1323,7 @@ void Plugin::AMD::VCEEncoder::SetIFrameQP(uint8_t qp) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", qp);
 }
 
-uint8_t Plugin::AMD::VCEEncoder::GetIFrameQP() {
+uint8_t Plugin::AMD::H264Encoder::GetIFrameQP() {
 	uint32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QP_I, &qp);
 	if (res != AMF_OK) {
@@ -1332,7 +1333,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetIFrameQP() {
 	return (uint8_t)qp;
 }
 
-void Plugin::AMD::VCEEncoder::SetPFrameQP(uint8_t qp) {
+void Plugin::AMD::H264Encoder::SetPFrameQP(uint8_t qp) {
 	// Clamp Value
 	qp = clamp(qp, 0, 51);
 
@@ -1343,7 +1344,7 @@ void Plugin::AMD::VCEEncoder::SetPFrameQP(uint8_t qp) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", qp);
 }
 
-uint8_t Plugin::AMD::VCEEncoder::GetPFrameQP() {
+uint8_t Plugin::AMD::H264Encoder::GetPFrameQP() {
 	uint32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QP_P, &qp);
 	if (res != AMF_OK) {
@@ -1353,7 +1354,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetPFrameQP() {
 	return (uint8_t)qp;
 }
 
-void Plugin::AMD::VCEEncoder::SetBFrameQP(uint8_t qp) {
+void Plugin::AMD::H264Encoder::SetBFrameQP(uint8_t qp) {
 	// Clamp Value
 	qp = clamp(qp, 0, 51);
 
@@ -1364,7 +1365,7 @@ void Plugin::AMD::VCEEncoder::SetBFrameQP(uint8_t qp) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", qp);
 }
 
-uint8_t Plugin::AMD::VCEEncoder::GetBFrameQP() {
+uint8_t Plugin::AMD::H264Encoder::GetBFrameQP() {
 	uint32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QP_B, &qp);
 	if (res != AMF_OK) {
@@ -1374,7 +1375,7 @@ uint8_t Plugin::AMD::VCEEncoder::GetBFrameQP() {
 	return (uint8_t)qp;
 }
 
-void Plugin::AMD::VCEEncoder::SetVBVBufferSize(uint32_t size) {
+void Plugin::AMD::H264Encoder::SetVBVBufferSize(uint32_t size) {
 	// Clamp Value
 	size = clamp(size, 1000, 100000000); // 1kbit to 100mbit.
 
@@ -1385,21 +1386,21 @@ void Plugin::AMD::VCEEncoder::SetVBVBufferSize(uint32_t size) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d bits.", size);
 }
 
-void Plugin::AMD::VCEEncoder::SetVBVBufferAutomatic(double_t strictness) {
+void Plugin::AMD::H264Encoder::SetVBVBufferAutomatic(double_t strictness) {
 	uint32_t strictBitrate = 1000, looseBitrate = 100000000;
 
 	// Strict VBV Buffer Size = Bitrate / FPS
 	// Loose VBV Buffer Size = Bitrate
 
 	switch (this->GetRateControlMethod()) {
-		case VCERateControlMethod_ConstantBitrate:
-		case VCERateControlMethod_VariableBitrate_LatencyConstrained:
+		case H264RateControlMethod::ConstantBitrate:
+		case H264RateControlMethod::VariableBitrate_LatencyConstrained:
 			looseBitrate = this->GetTargetBitrate();
 			break;
-		case VCERateControlMethod_VariableBitrate_PeakConstrained:
+		case H264RateControlMethod::VariableBitrate_PeakConstrained:
 			looseBitrate = max(this->GetTargetBitrate(), this->GetPeakBitrate());
 			break;
-		case VCERateControlMethod_ConstantQP:
+		case H264RateControlMethod::ConstantQP:
 			// When using Constant QP, one will have to pick a QP that is decent
 			//  in both quality and bitrate. We can easily calculate both the QP
 			//  required for an average bitrate and the average bitrate itself 
@@ -1412,18 +1413,18 @@ void Plugin::AMD::VCEEncoder::SetVBVBufferAutomatic(double_t strictness) {
 
 			double_t bitrate = frameSize.first * frameSize.second;
 			switch (this->m_ColorFormat) {
-				case VCEColorFormat_NV12:
-				case VCEColorFormat_I420:
+				case H264ColorFormat::NV12:
+				case H264ColorFormat::I420:
 					bitrate *= 1.5;
 					break;
-				case VCEColorFormat_YUY2:
+				case H264ColorFormat::YUY2:
 					bitrate *= 4;
 					break;
-				case VCEColorFormat_BGRA:
-				case VCEColorFormat_RGBA:
+				case H264ColorFormat::BGRA:
+				case H264ColorFormat::RGBA:
 					bitrate *= 3;
 					break;
-				case VCEColorFormat_GRAY:
+				case H264ColorFormat::GRAY:
 					bitrate *= 1;
 					break;
 			}
@@ -1447,7 +1448,7 @@ void Plugin::AMD::VCEEncoder::SetVBVBufferAutomatic(double_t strictness) {
 	this->SetVBVBufferSize(realBitrate);
 }
 
-uint32_t Plugin::AMD::VCEEncoder::GetVBVBufferSize() {
+uint32_t Plugin::AMD::H264Encoder::GetVBVBufferSize() {
 	uint32_t size;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, &size);
 	if (res != AMF_OK) {
@@ -1457,7 +1458,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetVBVBufferSize() {
 	return size;
 }
 
-void Plugin::AMD::VCEEncoder::SetInitialVBVBufferFullness(double_t fullness) {
+void Plugin::AMD::H264Encoder::SetInitialVBVBufferFullness(double_t fullness) {
 	// Clamp Value
 	fullness = max(min(fullness, 1), 0); // 0 to 100 %
 
@@ -1468,7 +1469,7 @@ void Plugin::AMD::VCEEncoder::SetInitialVBVBufferFullness(double_t fullness) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %f%%.", fullness * 100);
 }
 
-double_t Plugin::AMD::VCEEncoder::GetInitialVBVBufferFullness() {
+double_t Plugin::AMD::H264Encoder::GetInitialVBVBufferFullness() {
 	uint32_t vbvBufferFullness;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, &vbvBufferFullness);
 	if (res != AMF_OK) {
@@ -1478,7 +1479,7 @@ double_t Plugin::AMD::VCEEncoder::GetInitialVBVBufferFullness() {
 	return ((double_t)vbvBufferFullness / 64.0);
 }
 
-void Plugin::AMD::VCEEncoder::SetFillerDataEnabled(bool enabled) {
+void Plugin::AMD::H264Encoder::SetFillerDataEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, enabled);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
@@ -1486,7 +1487,7 @@ void Plugin::AMD::VCEEncoder::SetFillerDataEnabled(bool enabled) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
-bool Plugin::AMD::VCEEncoder::IsFillerDataEnabled() {
+bool Plugin::AMD::H264Encoder::IsFillerDataEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, &enabled);
 	if (res != AMF_OK) {
@@ -1496,7 +1497,7 @@ bool Plugin::AMD::VCEEncoder::IsFillerDataEnabled() {
 	return enabled;
 }
 
-void Plugin::AMD::VCEEncoder::SetFrameSkippingEnabled(bool enabled) {
+void Plugin::AMD::H264Encoder::SetFrameSkippingEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, enabled);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
@@ -1504,7 +1505,7 @@ void Plugin::AMD::VCEEncoder::SetFrameSkippingEnabled(bool enabled) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
-bool Plugin::AMD::VCEEncoder::IsFrameSkippingEnabled() {
+bool Plugin::AMD::H264Encoder::IsFrameSkippingEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, &enabled);
 	if (res != AMF_OK) {
@@ -1514,7 +1515,7 @@ bool Plugin::AMD::VCEEncoder::IsFrameSkippingEnabled() {
 	return enabled;
 }
 
-void Plugin::AMD::VCEEncoder::SetEnforceHRDRestrictionsEnabled(bool enabled) {
+void Plugin::AMD::H264Encoder::SetEnforceHRDRestrictionsEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, enabled);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
@@ -1522,7 +1523,7 @@ void Plugin::AMD::VCEEncoder::SetEnforceHRDRestrictionsEnabled(bool enabled) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
-bool Plugin::AMD::VCEEncoder::IsEnforceHRDRestrictionsEnabled() {
+bool Plugin::AMD::H264Encoder::IsEnforceHRDRestrictionsEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, &enabled);
 	if (res != AMF_OK) {
@@ -1532,7 +1533,7 @@ bool Plugin::AMD::VCEEncoder::IsEnforceHRDRestrictionsEnabled() {
 	return enabled;
 }
 
-void Plugin::AMD::VCEEncoder::SetIDRPeriod(uint32_t period) {
+void Plugin::AMD::H264Encoder::SetIDRPeriod(uint32_t period) {
 	// Clamp Value
 	period = max(min(period, 1000), 1); // 1-1000 so that OBS can actually quit.
 
@@ -1543,7 +1544,7 @@ void Plugin::AMD::VCEEncoder::SetIDRPeriod(uint32_t period) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", period);
 }
 
-uint32_t Plugin::AMD::VCEEncoder::GetIDRPeriod() {
+uint32_t Plugin::AMD::H264Encoder::GetIDRPeriod() {
 	int32_t period;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, &period);
 	if (res != AMF_OK) {
@@ -1553,7 +1554,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetIDRPeriod() {
 	return period;
 }
 
-void Plugin::AMD::VCEEncoder::SetBFramePattern(VCEBFramePattern pattern) {
+void Plugin::AMD::H264Encoder::SetBFramePattern(H264BFramePattern pattern) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, (uint32_t)pattern);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, pattern);
@@ -1561,17 +1562,17 @@ void Plugin::AMD::VCEEncoder::SetBFramePattern(VCEBFramePattern pattern) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", pattern);
 }
 
-Plugin::AMD::VCEBFramePattern Plugin::AMD::VCEEncoder::GetBFramePattern() {
+Plugin::AMD::H264BFramePattern Plugin::AMD::H264Encoder::GetBFramePattern() {
 	uint32_t pattern;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, &pattern);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
 	}
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %d.", pattern);
-	return (Plugin::AMD::VCEBFramePattern)pattern;
+	return (Plugin::AMD::H264BFramePattern)pattern;
 }
 
-void Plugin::AMD::VCEEncoder::SetBFrameDeltaQP(int8_t qp) {
+void Plugin::AMD::H264Encoder::SetBFrameDeltaQP(int8_t qp) {
 	// Clamp Value
 	qp = clamp(qp, -10, 10);
 
@@ -1582,7 +1583,7 @@ void Plugin::AMD::VCEEncoder::SetBFrameDeltaQP(int8_t qp) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", qp);
 }
 
-int8_t Plugin::AMD::VCEEncoder::GetBFrameDeltaQP() {
+int8_t Plugin::AMD::H264Encoder::GetBFrameDeltaQP() {
 	int32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, &qp);
 	if (res != AMF_OK) {
@@ -1592,7 +1593,7 @@ int8_t Plugin::AMD::VCEEncoder::GetBFrameDeltaQP() {
 	return (int8_t)qp;
 }
 
-void Plugin::AMD::VCEEncoder::SetBFrameReferenceEnabled(bool enabled) {
+void Plugin::AMD::H264Encoder::SetBFrameReferenceEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, enabled);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
@@ -1600,7 +1601,7 @@ void Plugin::AMD::VCEEncoder::SetBFrameReferenceEnabled(bool enabled) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
-bool Plugin::AMD::VCEEncoder::IsBFrameReferenceEnabled() {
+bool Plugin::AMD::H264Encoder::IsBFrameReferenceEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, &enabled);
 	if (res != AMF_OK) {
@@ -1610,7 +1611,7 @@ bool Plugin::AMD::VCEEncoder::IsBFrameReferenceEnabled() {
 	return enabled;
 }
 
-void Plugin::AMD::VCEEncoder::SetBFrameReferenceDeltaQP(int8_t qp) {
+void Plugin::AMD::H264Encoder::SetBFrameReferenceDeltaQP(int8_t qp) {
 	// Clamp Value
 	qp = clamp(qp, -10, 10);
 
@@ -1621,7 +1622,7 @@ void Plugin::AMD::VCEEncoder::SetBFrameReferenceDeltaQP(int8_t qp) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", qp);
 }
 
-int8_t Plugin::AMD::VCEEncoder::GetBFrameReferenceDeltaQP() {
+int8_t Plugin::AMD::H264Encoder::GetBFrameReferenceDeltaQP() {
 	int32_t qp;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, &qp);
 	if (res != AMF_OK) {
@@ -1631,7 +1632,7 @@ int8_t Plugin::AMD::VCEEncoder::GetBFrameReferenceDeltaQP() {
 	return (int8_t)qp;
 }
 
-void Plugin::AMD::VCEEncoder::SetDeblockingFilterEnabled(bool enabled) {
+void Plugin::AMD::H264Encoder::SetDeblockingFilterEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER, enabled);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
@@ -1639,7 +1640,7 @@ void Plugin::AMD::VCEEncoder::SetDeblockingFilterEnabled(bool enabled) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
-bool Plugin::AMD::VCEEncoder::IsDeblockingFilterEnabled() {
+bool Plugin::AMD::H264Encoder::IsDeblockingFilterEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER, &enabled);
 	if (res != AMF_OK) {
@@ -1649,7 +1650,7 @@ bool Plugin::AMD::VCEEncoder::IsDeblockingFilterEnabled() {
 	return enabled;
 }
 
-void Plugin::AMD::VCEEncoder::SetHalfPixelMotionEstimationEnabled(bool enabled) {
+void Plugin::AMD::H264Encoder::SetHalfPixelMotionEstimationEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, enabled);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
@@ -1657,7 +1658,7 @@ void Plugin::AMD::VCEEncoder::SetHalfPixelMotionEstimationEnabled(bool enabled) 
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
-bool Plugin::AMD::VCEEncoder::IsHalfPixelMotionEstimationEnabled() {
+bool Plugin::AMD::H264Encoder::IsHalfPixelMotionEstimationEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, &enabled);
 	if (res != AMF_OK) {
@@ -1667,7 +1668,7 @@ bool Plugin::AMD::VCEEncoder::IsHalfPixelMotionEstimationEnabled() {
 	return enabled;
 }
 
-void Plugin::AMD::VCEEncoder::SetQuarterPixelMotionEstimationEnabled(bool enabled) {
+void Plugin::AMD::H264Encoder::SetQuarterPixelMotionEstimationEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL, enabled);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
@@ -1675,7 +1676,7 @@ void Plugin::AMD::VCEEncoder::SetQuarterPixelMotionEstimationEnabled(bool enable
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
-bool Plugin::AMD::VCEEncoder::IsQuarterPixelMotionEstimationEnabled() {
+bool Plugin::AMD::H264Encoder::IsQuarterPixelMotionEstimationEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL, &enabled);
 	if (res != AMF_OK) {
@@ -1690,7 +1691,7 @@ bool Plugin::AMD::VCEEncoder::IsQuarterPixelMotionEstimationEnabled() {
 //////////////////////////////////////////////////////////////////////////
 // Their effect may vary from driver to driver, card to card.
 
-uint32_t Plugin::AMD::VCEEncoder::GetMaxMBPerSec() {
+uint32_t Plugin::AMD::H264Encoder::GetMaxMBPerSec() {
 	uint32_t maxMBPerSec;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"MaxMBPerSec", &maxMBPerSec);
 	if (res != AMF_OK) {
@@ -1700,7 +1701,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetMaxMBPerSec() {
 	return maxMBPerSec;
 }
 
-void Plugin::AMD::VCEEncoder::SetHeaderInsertionSpacing(uint32_t spacing) {
+void Plugin::AMD::H264Encoder::SetHeaderInsertionSpacing(uint32_t spacing) {
 	// Clamp Value
 	spacing = max(min(spacing, m_FrameRate.second * 1000), 0);
 
@@ -1711,7 +1712,7 @@ void Plugin::AMD::VCEEncoder::SetHeaderInsertionSpacing(uint32_t spacing) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", spacing);
 }
 
-uint32_t Plugin::AMD::VCEEncoder::GetHeaderInsertionSpacing() {
+uint32_t Plugin::AMD::H264Encoder::GetHeaderInsertionSpacing() {
 	int32_t headerInsertionSpacing;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING, &headerInsertionSpacing);
 	if (res != AMF_OK) {
@@ -1721,7 +1722,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetHeaderInsertionSpacing() {
 	return headerInsertionSpacing;
 }
 
-void Plugin::AMD::VCEEncoder::SetMaximumLongTermReferenceFrames(uint32_t maximumLTRFrames) {
+void Plugin::AMD::H264Encoder::SetMaximumLongTermReferenceFrames(uint32_t maximumLTRFrames) {
 	// Clamp Parameter Value
 	maximumLTRFrames = max(min(maximumLTRFrames, 2), 0);
 
@@ -1732,7 +1733,7 @@ void Plugin::AMD::VCEEncoder::SetMaximumLongTermReferenceFrames(uint32_t maximum
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", maximumLTRFrames);
 }
 
-uint32_t Plugin::AMD::VCEEncoder::GetMaximumLongTermReferenceFrames() {
+uint32_t Plugin::AMD::H264Encoder::GetMaximumLongTermReferenceFrames() {
 	uint32_t maximumLTRFrames;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, &maximumLTRFrames);
 	if (res != AMF_OK) {
@@ -1742,25 +1743,25 @@ uint32_t Plugin::AMD::VCEEncoder::GetMaximumLongTermReferenceFrames() {
 	return maximumLTRFrames;
 }
 
-void Plugin::AMD::VCEEncoder::SetCodingType(VCECodingType type) {
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"CABACEnable", type);
+void Plugin::AMD::H264Encoder::SetCodingType(H264CodingType type) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"CABACEnable", (size_t)type);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, Utility::CodingTypeAsString(type));
 	}
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", Utility::CodingTypeAsString(type));
 }
 
-VCECodingType Plugin::AMD::VCEEncoder::GetCodingType() {
+H264CodingType Plugin::AMD::H264Encoder::GetCodingType() {
 	uint64_t type;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"CABACEnable", &type);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", Utility::CodingTypeAsString((VCECodingType)type));
-	return (VCECodingType)type;
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", Utility::CodingTypeAsString((H264CodingType)type));
+	return (H264CodingType)type;
 }
 
-void Plugin::AMD::VCEEncoder::SetMaximumAccessUnitSize(uint32_t size) {
+void Plugin::AMD::H264Encoder::SetMaximumAccessUnitSize(uint32_t size) {
 	// Clamp Value
 	size = max(min(size, 100000000), 0); // 1kbit to 100mbit.
 
@@ -1771,7 +1772,7 @@ void Plugin::AMD::VCEEncoder::SetMaximumAccessUnitSize(uint32_t size) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d bits.", size);
 }
 
-uint32_t Plugin::AMD::VCEEncoder::GetMaximumAccessUnitSize() {
+uint32_t Plugin::AMD::H264Encoder::GetMaximumAccessUnitSize() {
 	uint32_t size;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, &size);
 	if (res != AMF_OK) {
@@ -1781,7 +1782,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetMaximumAccessUnitSize() {
 	return size;
 }
 
-void Plugin::AMD::VCEEncoder::SetWaitForTaskEnabled(bool enabled) {
+void Plugin::AMD::H264Encoder::SetWaitForTaskEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"WaitForTask", enabled);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
@@ -1789,7 +1790,7 @@ void Plugin::AMD::VCEEncoder::SetWaitForTaskEnabled(bool enabled) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
-bool Plugin::AMD::VCEEncoder::IsWaitForTaskEnabled() {
+bool Plugin::AMD::H264Encoder::IsWaitForTaskEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"WaitForTask", &enabled);
 	if (res != AMF_OK) {
@@ -1799,7 +1800,7 @@ bool Plugin::AMD::VCEEncoder::IsWaitForTaskEnabled() {
 	return enabled;
 }
 
-void Plugin::AMD::VCEEncoder::SetPreAnalysisPassEnabled(bool enabled) {
+void Plugin::AMD::H264Encoder::SetPreAnalysisPassEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"RateControlPreanalysisEnable", enabled);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
@@ -1807,7 +1808,7 @@ void Plugin::AMD::VCEEncoder::SetPreAnalysisPassEnabled(bool enabled) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
-bool Plugin::AMD::VCEEncoder::IsPreAnalysisPassEnabled() {
+bool Plugin::AMD::H264Encoder::IsPreAnalysisPassEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"RateControlPreanalysisEnable", &enabled);
 	if (res != AMF_OK) {
@@ -1817,7 +1818,7 @@ bool Plugin::AMD::VCEEncoder::IsPreAnalysisPassEnabled() {
 	return enabled;
 }
 
-void Plugin::AMD::VCEEncoder::SetVBAQEnabled(bool enabled) {
+void Plugin::AMD::H264Encoder::SetVBAQEnabled(bool enabled) {
 	const wchar_t* names[] = {
 		L"EnableVBAQ", // 16.12.1
 		L"EanbleVBAQ", // 16.11.5 and below.
@@ -1838,7 +1839,7 @@ void Plugin::AMD::VCEEncoder::SetVBAQEnabled(bool enabled) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
-bool Plugin::AMD::VCEEncoder::IsVBAQEnabled() {
+bool Plugin::AMD::H264Encoder::IsVBAQEnabled() {
 	const wchar_t* names[] = {
 		L"EnableVBAQ", // 16.12.1
 		L"EanbleVBAQ", // 16.11.5 and below.
@@ -1859,7 +1860,7 @@ bool Plugin::AMD::VCEEncoder::IsVBAQEnabled() {
 	return enabled;
 }
 
-void Plugin::AMD::VCEEncoder::SetGOPSize(uint32_t size) {
+void Plugin::AMD::H264Encoder::SetGOPSize(uint32_t size) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"GOPSize", (uint32_t)size);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, size);
@@ -1867,7 +1868,7 @@ void Plugin::AMD::VCEEncoder::SetGOPSize(uint32_t size) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", size);
 }
 
-uint32_t Plugin::AMD::VCEEncoder::GetGOPSize() {
+uint32_t Plugin::AMD::H264Encoder::GetGOPSize() {
 	uint32_t size;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"GOPSize", &size);
 	if (res != AMF_OK) {
@@ -1877,7 +1878,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetGOPSize() {
 	return size;
 }
 
-void Plugin::AMD::VCEEncoder::SetGOPAlignmentEnabled(bool enabled) {
+void Plugin::AMD::H264Encoder::SetGOPAlignmentEnabled(bool enabled) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"EnableGOPAlignment", enabled);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, enabled ? "Enabled" : "Disabled");
@@ -1885,7 +1886,7 @@ void Plugin::AMD::VCEEncoder::SetGOPAlignmentEnabled(bool enabled) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", enabled ? "Enabled" : "Disabled");
 }
 
-bool Plugin::AMD::VCEEncoder::IsGOPAlignementEnabled() {
+bool Plugin::AMD::H264Encoder::IsGOPAlignementEnabled() {
 	bool enabled;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"EnableGOPAlignment", &enabled);
 	if (res != AMF_OK) {
@@ -1895,8 +1896,8 @@ bool Plugin::AMD::VCEEncoder::IsGOPAlignementEnabled() {
 	return enabled;
 }
 
-void Plugin::AMD::VCEEncoder::SetMaximumReferenceFrames(uint32_t numFrames) {
-	auto caps = VCECapabilities::GetInstance()->GetAdapterCapabilities(m_API, m_APIAdapter, VCEEncoderType_AVC);
+void Plugin::AMD::H264Encoder::SetMaximumReferenceFrames(uint32_t numFrames) {
+	auto caps = VCECapabilities::GetInstance()->GetAdapterCapabilities(m_API, m_APIAdapter, H264EncoderType::AVC);
 	numFrames = clamp(numFrames,
 		caps.minReferenceFrames,
 		caps.maxReferenceFrames);
@@ -1908,7 +1909,7 @@ void Plugin::AMD::VCEEncoder::SetMaximumReferenceFrames(uint32_t numFrames) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", numFrames);
 }
 
-uint32_t Plugin::AMD::VCEEncoder::GetMaximumReferenceFrames() {
+uint32_t Plugin::AMD::H264Encoder::GetMaximumReferenceFrames() {
 	uint32_t numFrames;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"MaxNumRefFrames", &numFrames);
 	if (res != AMF_OK) {
@@ -1918,7 +1919,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetMaximumReferenceFrames() {
 	return numFrames;
 }
 
-void Plugin::AMD::VCEEncoder::SetAspectRatio(uint32_t num, uint32_t den) {
+void Plugin::AMD::H264Encoder::SetAspectRatio(uint32_t num, uint32_t den) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"AspectRatio", ::AMFConstructRate(num, den));
 	if (res != AMF_OK) {
 		std::vector<char> msgBuf;
@@ -1928,7 +1929,7 @@ void Plugin::AMD::VCEEncoder::SetAspectRatio(uint32_t num, uint32_t den) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d:%d.", num, den);
 }
 
-std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetAspectRatio() {
+std::pair<uint32_t, uint32_t> Plugin::AMD::H264Encoder::GetAspectRatio() {
 	AMFRate aspectRatio;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"AspectRatio", &aspectRatio);
 	if (res != AMF_OK) {
@@ -1938,7 +1939,7 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::VCEEncoder::GetAspectRatio() {
 	return std::pair<uint32_t, uint32_t>(aspectRatio.num, aspectRatio.den);
 }
 
-void Plugin::AMD::VCEEncoder::SetIntraRefreshMacroblocksPerSlot(uint32_t mbs) {
+void Plugin::AMD::H264Encoder::SetIntraRefreshMacroblocksPerSlot(uint32_t mbs) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, (uint32_t)mbs);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %d failed with error %ls (code %d).", res, mbs);
@@ -1946,7 +1947,7 @@ void Plugin::AMD::VCEEncoder::SetIntraRefreshMacroblocksPerSlot(uint32_t mbs) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", mbs);
 }
 
-uint32_t Plugin::AMD::VCEEncoder::GetIntraRefreshMacroblocksPerSlot() {
+uint32_t Plugin::AMD::H264Encoder::GetIntraRefreshMacroblocksPerSlot() {
 	int32_t mbs;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, &mbs);
 	if (res != AMF_OK) {
@@ -1956,7 +1957,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetIntraRefreshMacroblocksPerSlot() {
 	return mbs;
 }
 
-void Plugin::AMD::VCEEncoder::SetIntraRefreshNumberOfStripes(uint32_t stripes) {
+void Plugin::AMD::H264Encoder::SetIntraRefreshNumberOfStripes(uint32_t stripes) {
 	stripes = clamp(stripes, 0, INT_MAX);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"IntraRefreshNumOfStripes", (uint32_t)stripes);
@@ -1967,7 +1968,7 @@ void Plugin::AMD::VCEEncoder::SetIntraRefreshNumberOfStripes(uint32_t stripes) {
 
 }
 
-uint32_t Plugin::AMD::VCEEncoder::GetIntraRefreshNumberOfStripes() {
+uint32_t Plugin::AMD::H264Encoder::GetIntraRefreshNumberOfStripes() {
 	uint32_t stripes;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"IntraRefreshNumOfStripes", &stripes);
 	if (res != AMF_OK) {
@@ -1977,7 +1978,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetIntraRefreshNumberOfStripes() {
 	return stripes;
 }
 
-void Plugin::AMD::VCEEncoder::SetSlicesPerFrame(uint32_t slices) {
+void Plugin::AMD::H264Encoder::SetSlicesPerFrame(uint32_t slices) {
 	slices = max(slices, 1);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, (uint32_t)slices);
@@ -1987,7 +1988,7 @@ void Plugin::AMD::VCEEncoder::SetSlicesPerFrame(uint32_t slices) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", slices);
 }
 
-uint32_t Plugin::AMD::VCEEncoder::GetSlicesPerFrame() {
+uint32_t Plugin::AMD::H264Encoder::GetSlicesPerFrame() {
 	uint32_t slices;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, &slices);
 	if (res != AMF_OK) {
@@ -1997,7 +1998,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetSlicesPerFrame() {
 	return slices;
 }
 
-void Plugin::AMD::VCEEncoder::SetSliceMode(VCESliceMode mode) {
+void Plugin::AMD::H264Encoder::SetSliceMode(H264SliceMode mode) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"SliceMode", (uint32_t)mode);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, Utility::SliceModeAsString(mode));
@@ -2005,17 +2006,17 @@ void Plugin::AMD::VCEEncoder::SetSliceMode(VCESliceMode mode) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", Utility::SliceModeAsString(mode));
 }
 
-Plugin::AMD::VCESliceMode Plugin::AMD::VCEEncoder::GetSliceMode() {
+Plugin::AMD::H264SliceMode Plugin::AMD::H264Encoder::GetSliceMode() {
 	uint32_t mode;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"SliceMode", &mode);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", Utility::SliceModeAsString((VCESliceMode)mode));
-	return (VCESliceMode)mode;
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", Utility::SliceModeAsString((H264SliceMode)mode));
+	return (H264SliceMode)mode;
 }
 
-void Plugin::AMD::VCEEncoder::SetMaximumSliceSize(uint32_t size) {
+void Plugin::AMD::H264Encoder::SetMaximumSliceSize(uint32_t size) {
 	size = clamp(size, 1, INT_MAX);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"MaxSliceSize", (uint32_t)size);
@@ -2025,7 +2026,7 @@ void Plugin::AMD::VCEEncoder::SetMaximumSliceSize(uint32_t size) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", size);
 }
 
-uint32_t Plugin::AMD::VCEEncoder::GetMaximumSliceSize() {
+uint32_t Plugin::AMD::H264Encoder::GetMaximumSliceSize() {
 	uint32_t size;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"MaxSliceSize", &size);
 	if (res != AMF_OK) {
@@ -2035,7 +2036,7 @@ uint32_t Plugin::AMD::VCEEncoder::GetMaximumSliceSize() {
 	return size;
 }
 
-void Plugin::AMD::VCEEncoder::SetSliceControlMode(VCESliceControlMode mode) {
+void Plugin::AMD::H264Encoder::SetSliceControlMode(H264SliceControlMode mode) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"SliceControlMode", (uint32_t)mode);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Setting to %s failed with error %ls (code %d).", res, Utility::SliceControlModeAsString(mode));
@@ -2043,17 +2044,17 @@ void Plugin::AMD::VCEEncoder::SetSliceControlMode(VCESliceControlMode mode) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %s.", Utility::SliceControlModeAsString(mode));
 }
 
-Plugin::AMD::VCESliceControlMode Plugin::AMD::VCEEncoder::GetSliceControlMode() {
+Plugin::AMD::H264SliceControlMode Plugin::AMD::H264Encoder::GetSliceControlMode() {
 	uint32_t mode;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"SliceControlMode", &mode);
 	if (res != AMF_OK) {
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Failed with error %ls (code %d).", res);
 	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", Utility::SliceControlModeAsString((VCESliceControlMode)mode));
-	return (VCESliceControlMode)mode;
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Value is %s.", Utility::SliceControlModeAsString((H264SliceControlMode)mode));
+	return (H264SliceControlMode)mode;
 }
 
-void Plugin::AMD::VCEEncoder::SetSliceControlSize(uint32_t size) {
+void Plugin::AMD::H264Encoder::SetSliceControlSize(uint32_t size) {
 	// If GetSliceMode() is VCESliceMode_Vertical, then it outputs nothing with the following settings:
 	// - SliceControlMode: VCESliceControlMode_Macroblock
 	// - SliceControlSize: < 3600
@@ -2063,12 +2064,12 @@ void Plugin::AMD::VCEEncoder::SetSliceControlSize(uint32_t size) {
 
 	// H264 Macroblock = 16*16 = 256
 	switch (GetSliceControlMode()) {
-		case VCESliceControlMode_Off:
+		case H264SliceControlMode::Off:
 			return;
-		case VCESliceControlMode_Macroblock:
+		case H264SliceControlMode::Macroblock:
 			size = clamp(size, 0, (uint32_t)(ceil(m_FrameSize.first / 16) * ceil(m_FrameSize.second / 16)));
 			break;
-		case VCESliceControlMode_Macroblock_Row:
+		case H264SliceControlMode::Macroblock_Row:
 			size = clamp(size, 0, (uint32_t)ceil(m_FrameSize.second / 16));
 			break;
 	}
@@ -2080,7 +2081,7 @@ void Plugin::AMD::VCEEncoder::SetSliceControlSize(uint32_t size) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Set to %d.", size);
 }
 
-uint32_t Plugin::AMD::VCEEncoder::GetSliceControlSize() {
+uint32_t Plugin::AMD::H264Encoder::GetSliceControlSize() {
 	uint32_t size;
 	AMF_RESULT res = m_AMFEncoder->GetProperty(L"SliceControlSize", &size);
 	if (res != AMF_OK) {

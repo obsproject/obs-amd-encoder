@@ -46,125 +46,120 @@ SOFTWARE.
 namespace Plugin {
 	namespace AMD {
 		// Internal Properties
-		enum VCEEncoderType {
-			VCEEncoderType_AVC,		// Advanced Video Coding
-			VCEEncoderType_SVC,		// Scalable Video Coding
-			VCEEncoderType_HEVC,	// High-Efficiency Video Coding (Discovered in amfrt64.dll)
+		enum class H264EncoderType : uint8_t {
+			AVC,	// Advanced Video Coding
+			SVC,	// Scalable Video Coding
+//			HEVC,	// High-Efficiency Video Coding (Discovered in amfrt64.dll)
 		};
-		enum VCEMemoryType {
-			VCEMemoryType_Host,			// Host-Managed Memory
-			VCEMemoryType_DirectX9,		// DirectX9
-			VCEMemoryType_DirectX11,	// DirectX11
-			VCEMemoryType_OpenGL,		// OpenGL
+		enum class H264MemoryType : uint8_t {
+			Host,			// Host-Managed Memory
+			DirectX9,		// DirectX9
+			DirectX11,	// DirectX11
+			OpenGL,		// OpenGL
 		};
-		enum VCEColorFormat {
+		enum class H264ColorFormat : uint8_t {
 			// 4:2:0 Formats
-			VCEColorFormat_NV12,	// NV12
-			VCEColorFormat_I420,	// YUV 4:2:0
+			NV12,	// NV12
+			I420,	// YUV 4:2:0
 			// 4:2:2 Formats
-			VCEColorFormat_YUY2,
+			YUY2,
 			// Uncompressed
-			VCEColorFormat_BGRA,	// ARGB
-			VCEColorFormat_RGBA,	// RGBA
+			BGRA,	// ARGB
+			RGBA,	// RGBA
 			// Other
-			VCEColorFormat_GRAY,
+			GRAY,
 		};
-		enum VCEColorProfile {
-			VCEColorProfile_601,
-			VCEColorProfile_709,
-			VCEColorProfile_2020, // HDR
+		enum class H264ColorProfile : uint8_t {
+			Rec601,
+			Rec709,
+			Rec2020, // Truer to world color
 		};
 
 		// Static Properties
-		enum VCEUsage {
-			VCEUsage_Transcoding,
-			VCEUsage_UltraLowLatency,
-			VCEUsage_LowLatency,
-			VCEUsage_Webcam,			// For SVC
+		enum class H264Usage : uint8_t {
+			Transcoding,
+			UltraLowLatency,
+			LowLatency,
+			Webcam,			// For SVC
 		};
-		enum VCEQualityPreset {
-			VCEQualityPreset_Speed,
-			VCEQualityPreset_Balanced,
-			VCEQualityPreset_Quality,
+		enum class H264QualityPreset : uint8_t {
+			Speed,
+			Balanced,
+			Quality,
 		};
-		enum VCEProfile {
-			VCEProfile_Baseline = 66,
-			VCEProfile_Main = 77,
-			VCEProfile_High = 100,
-			VCEProfile_ConstrainedBaseline = 256,
-			VCEProfile_ConstrainedHigh = 257
+		enum class H264Profile : uint16_t {
+			Baseline = 66,
+			Main = 77,
+			High = 100,
+			ConstrainedBaseline = 256,
+			ConstrainedHigh = 257
 		};
-		enum VCEProfileLevel {
-			VCEProfileLevel_Automatic = 0,
-			VCEProfileLevel_10 = 10,
-			VCEProfileLevel_11,
-			VCEProfileLevel_12,
-			VCEProfileLevel_13,
-			VCEProfileLevel_20 = 20,
-			VCEProfileLevel_21,
-			VCEProfileLevel_22,
-			VCEProfileLevel_30 = 30,
-			VCEProfileLevel_31,
-			VCEProfileLevel_32,
-			VCEProfileLevel_40 = 40,
-			VCEProfileLevel_41,
-			VCEProfileLevel_42,
-			VCEProfileLevel_50 = 50,
-			VCEProfileLevel_51,
-			VCEProfileLevel_52,
-			VCEProfileLevel_60 = 60,
-			VCEProfileLevel_61,
-			VCEProfileLevel_62,
+		enum class H264ProfileLevel : uint8_t {
+			Automatic = 0,
+			L10 = 10,
+			L11,
+			L12,
+			L13,
+			L20 = 20,
+			L21,
+			L22,
+			L30 = 30,
+			L31,
+			L32,
+			L40 = 40,
+			L41,
+			L42,
+			L50 = 50,
+			L51,
+			L52,
 		};
-		enum VCEScanType {
-			VCEScanType_Progressive,
-			VCEScanType_Interlaced,
+		enum class H264ScanType : uint8_t {
+			Progressive,
+			Interlaced,
 		};
-		enum VCECodingType {
-			VCECodingType_Default = 0,
-			VCECodingType_CABAC = 1,
-			VCECodingType_CALVC = 2,
+		enum class H264CodingType : uint8_t {
+			Default = 0,
+			CABAC = 1,
+			CALVC = 2,
 		};
 
 		// Dynamic Properties
-		enum VCERateControlMethod {
-			VCERateControlMethod_ConstantQP,
-			VCERateControlMethod_ConstantBitrate,
-			VCERateControlMethod_VariableBitrate_PeakConstrained,
-			VCERateControlMethod_VariableBitrate_LatencyConstrained,
+		enum class H264RateControlMethod : uint8_t {
+			ConstantQP,
+			ConstantBitrate,
+			VariableBitrate_PeakConstrained,
+			VariableBitrate_LatencyConstrained,
 		};
-		enum VCEBFramePattern {
-			VCEBFramePattern_None,
-			VCEBFramePattern_One,
-			VCEBFramePattern_Two,
-			VCEBFramePattern_Three,
+		enum class H264BFramePattern : uint8_t {
+			None,
+			One,
+			Two,
+			Three,
 		};
 
 		// Experimental
-		enum VCESliceMode {
-			VCESliceMode_Horizontal = 1,
-			VCESliceMode_Vertical = 2
+		enum class H264SliceMode : uint8_t {
+			Horizontal = 1,
+			Vertical = 2
 		};
-		enum VCESliceControlMode {
-			VCESliceControlMode_Off,
-			VCESliceControlMode_Macroblock = 1, // AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB
-			VCESliceControlMode_Invalid,
-			VCESliceControlMode_Macroblock_Row = 3 // AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB_ROW
+		enum class H264SliceControlMode : uint8_t {
+			Off,
+			Macroblock = 1, // AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB
+			Invalid,
+			Macroblock_Row = 3 // AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB_ROW
 		};
-
-
-
-		class VCEEncoder {
+		
+		class H264Encoder {
 			#pragma region Initializer & Finalizer
 			public:
-			VCEEncoder(
-				VCEEncoderType p_Type,
+			H264Encoder(
+				H264EncoderType p_Type,
 				std::string p_VideoAPI,
 				uint64_t p_VideoAdapterId,
 				bool p_OpenCL,
-				VCEColorFormat p_SurfaceFormat = VCEColorFormat_NV12
+				H264ColorFormat p_SurfaceFormat = H264ColorFormat::NV12
 			);
-			~VCEEncoder();
+			~H264Encoder();
 			#pragma endregion Initializer & Finalizer
 
 			public:
@@ -187,27 +182,27 @@ namespace Plugin {
 			#pragma region Startup Properties
 			// Set which Usage preset to use.
 			// Changing this will also change a lot of other properties.
-			void SetUsage(VCEUsage usage);
-			VCEUsage GetUsage();
+			void SetUsage(H264Usage usage);
+			H264Usage GetUsage();
 
 			// Set which Quality Preset AMF should use.
 			// Affects the quality of the output.
-			void SetQualityPreset(VCEQualityPreset preset);
-			VCEQualityPreset GetQualityPreset();
+			void SetQualityPreset(H264QualityPreset preset);
+			H264QualityPreset GetQualityPreset();
 
 			// Set the Profile the output should have.
-			void SetProfile(VCEProfile profile);
-			VCEProfile GetProfile();
+			void SetProfile(H264Profile profile);
+			H264Profile GetProfile();
 
 			// Set the Profile Level the output should have.
-			void SetProfileLevel(VCEProfileLevel level);
-			VCEProfileLevel GetProfileLevel();
+			void SetProfileLevel(H264ProfileLevel level);
+			H264ProfileLevel GetProfileLevel();
 			#pragma endregion Startup Properties
 
 			#pragma region Frame Properties
 			// Set which Color Profile the input frame is.
-			void SetColorProfile(VCEColorProfile profile);
-			VCEColorProfile GetColorProfile();
+			void SetColorProfile(H264ColorProfile profile);
+			H264ColorProfile GetColorProfile();
 
 			// Set if the input frame is in full color range.
 			void SetFullRangeColorEnabled(bool enabled);
@@ -222,8 +217,8 @@ namespace Plugin {
 			std::pair<uint32_t, uint32_t> GetFrameRate();
 
 			// Scanning method for input (and output?).
-			void SetScanType(VCEScanType scanType);
-			VCEScanType GetScanType();
+			void SetScanType(H264ScanType scanType);
+			H264ScanType GetScanType();
 			#pragma endregion Frame Properties
 
 			// Dynamic
@@ -239,8 +234,8 @@ namespace Plugin {
 			 *	- When SVC encoding is enabled, all Rate-control parameters (with some restrictions) can be configured differently for a particular SVC-layer. An SVC-layer is denoted by an index pair [SVC-Temporal Layer index][SVC-Quality Layer index]. E.g. The bitrate may be configured differently for SVC-layers [0][0] and [1][0].
 			 *	- We restrict all SVC layers to have the same Rate Control method. Some RC parameters are not enabled with SVC encoding (e.g. all parameters related to B-Frames).
 			**/
-			void SetRateControlMethod(VCERateControlMethod method);
-			VCERateControlMethod GetRateControlMethod();
+			void SetRateControlMethod(H264RateControlMethod method);
+			H264RateControlMethod GetRateControlMethod();
 
 			/*	Sets the target bitrate */
 			void SetTargetBitrate(uint32_t bitrate);
@@ -300,8 +295,8 @@ namespace Plugin {
 
 			#pragma region B-Frames
 			/*	Sets the number of consecutive B-Frames. BFramesPattern = 0 indicates that B-Frames are not used */
-			void SetBFramePattern(VCEBFramePattern pattern);
-			VCEBFramePattern GetBFramePattern();
+			void SetBFramePattern(H264BFramePattern pattern);
+			H264BFramePattern GetBFramePattern();
 
 			/* Selects the delta QP of non-reference B-Frames with respect to the last non-B-Frame */
 			void SetBFrameDeltaQP(int8_t qp);
@@ -338,8 +333,8 @@ namespace Plugin {
 			uint32_t GetMaxMBPerSec();
 
 			/* Coding Type */
-			void SetCodingType(VCECodingType type);
-			VCECodingType GetCodingType();
+			void SetCodingType(H264CodingType type);
+			H264CodingType GetCodingType();
 
 			void SetWaitForTaskEnabled(bool enabled);
 			bool IsWaitForTaskEnabled();
@@ -404,16 +399,16 @@ namespace Plugin {
 			uint32_t GetSlicesPerFrame();
 
 			// - SliceMode (1 - 2, Default is 1)
-			void SetSliceMode(VCESliceMode mode);
-			VCESliceMode GetSliceMode();
+			void SetSliceMode(H264SliceMode mode);
+			H264SliceMode GetSliceMode();
 
 			// - MaxSliceSize (1 - INT_MAX)
 			void SetMaximumSliceSize(uint32_t size);
 			uint32_t GetMaximumSliceSize();
 
 			// - SliceControlMode (0 - 3)
-			void SetSliceControlMode(VCESliceControlMode mode);
-			VCESliceControlMode GetSliceControlMode();
+			void SetSliceControlMode(H264SliceControlMode mode);
+			H264SliceControlMode GetSliceControlMode();
 
 			// - SliceControlSize (0 - INT_MAX)
 			void SetSliceControlSize(uint32_t size);
@@ -437,9 +432,9 @@ namespace Plugin {
 
 			// Threading
 			private:
-			static void InputThreadMain(Plugin::AMD::VCEEncoder* p_this);
+			static void InputThreadMain(Plugin::AMD::H264Encoder* p_this);
 			void InputThreadLogic();
-			static void OutputThreadMain(Plugin::AMD::VCEEncoder* p_this);
+			static void OutputThreadMain(Plugin::AMD::H264Encoder* p_this);
 			void OutputThreadLogic();
 			inline amf::AMFSurfacePtr CreateSurfaceFromFrame(struct encoder_frame*& frame);
 
@@ -483,10 +478,10 @@ namespace Plugin {
 			} m_Output;
 
 			// Internal Properties
-			VCEEncoderType m_EncoderType;
-			VCEMemoryType m_MemoryType;
+			H264EncoderType m_EncoderType;
+			H264MemoryType m_MemoryType;
 			bool m_OpenCL;
-			VCEColorFormat m_ColorFormat;
+			H264ColorFormat m_ColorFormat;
 			bool m_Flag_IsStarted,
 				m_Flag_FirstFrameSubmitted,
 				m_Flag_FirstFrameReceived;
@@ -497,7 +492,7 @@ namespace Plugin {
 			size_t m_InputQueueLimit,
 				m_InputQueueLastSize;
 			uint32_t m_TimerPeriod;
-			VCEColorProfile m_ColorProfile;
+			H264ColorProfile m_ColorProfile;
 			std::chrono::time_point<std::chrono::high_resolution_clock> m_LastQueueWarnMessageTime;
 
 			#pragma endregion Members

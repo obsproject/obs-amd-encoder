@@ -216,7 +216,7 @@ namespace Plugin {
 			// Storage
 			//////////////////////////////////////////////////////////////////////////
 			private:
-			Plugin::AMD::VCEEncoder* m_VideoEncoder;
+			Plugin::AMD::H264Encoder* m_VideoEncoder;
 		};
 	}
 }

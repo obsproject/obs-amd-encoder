@@ -40,35 +40,35 @@ using namespace Plugin::AMD;
 
 namespace Plugin {
 	namespace Utility {
-		VCEProfileLevel inline GetMinimumProfileLevel(std::pair<uint32_t, uint32_t> frameSize, std::pair<uint32_t, uint32_t> frameRate) {
+		H264ProfileLevel inline GetMinimumProfileLevel(std::pair<uint32_t, uint32_t> frameSize, std::pair<uint32_t, uint32_t> frameRate) {
 			typedef std::pair<uint32_t, uint32_t> levelRestriction;
-			typedef std::pair<VCEProfileLevel, levelRestriction> level;
+			typedef std::pair<H264ProfileLevel, levelRestriction> level;
 
 			static const level profileLevelLimit[] = { // [Level, [Samples, Samples_Per_Sec]]
-				level(VCEProfileLevel_10, levelRestriction(25344, 380160)),
-				level(VCEProfileLevel_11, levelRestriction(101376, 768000)),
-				level(VCEProfileLevel_12, levelRestriction(101376, 1536000)),
-				level(VCEProfileLevel_13, levelRestriction(101376, 3041280)),
-				level(VCEProfileLevel_20, levelRestriction(101376, 3041280)),
-				level(VCEProfileLevel_21, levelRestriction(202752, 5068800)),
-				level(VCEProfileLevel_22, levelRestriction(414720, 5184000)),
-				level(VCEProfileLevel_30, levelRestriction(414720, 10368000)),
-				level(VCEProfileLevel_31, levelRestriction(921600, 27648000)),
-				level(VCEProfileLevel_32, levelRestriction(1310720, 55296000)),
-				//level(VCEProfileLevel_40, levelRestriction(2097152, 62914560)), // Technically identical to 4.1, but backwards compatible.
-				level(VCEProfileLevel_41, levelRestriction(2097152, 62914560)),
-				level(VCEProfileLevel_42, levelRestriction(2228224, 133693440)),
-				level(VCEProfileLevel_50, levelRestriction(5652480, 150994944)),
-				level(VCEProfileLevel_51, levelRestriction(9437184, 251658240)),
-				level(VCEProfileLevel_52, levelRestriction(9437184, 530841600)),
-				level((VCEProfileLevel)-1, levelRestriction(0, 0))
+				level(H264ProfileLevel::L10, levelRestriction(25344, 380160)),
+				level(H264ProfileLevel::L11, levelRestriction(101376, 768000)),
+				level(H264ProfileLevel::L12, levelRestriction(101376, 1536000)),
+				level(H264ProfileLevel::L13, levelRestriction(101376, 3041280)),
+				level(H264ProfileLevel::L20, levelRestriction(101376, 3041280)),
+				level(H264ProfileLevel::L21, levelRestriction(202752, 5068800)),
+				level(H264ProfileLevel::L22, levelRestriction(414720, 5184000)),
+				level(H264ProfileLevel::L30, levelRestriction(414720, 10368000)),
+				level(H264ProfileLevel::L31, levelRestriction(921600, 27648000)),
+				level(H264ProfileLevel::L32, levelRestriction(1310720, 55296000)),
+				//level(H264ProfileLevel::40, levelRestriction(2097152, 62914560)), // Technically identical to 4.1, but backwards compatible.
+				level(H264ProfileLevel::L41, levelRestriction(2097152, 62914560)),
+				level(H264ProfileLevel::L42, levelRestriction(2228224, 133693440)),
+				level(H264ProfileLevel::L50, levelRestriction(5652480, 150994944)),
+				level(H264ProfileLevel::L51, levelRestriction(9437184, 251658240)),
+				level(H264ProfileLevel::L52, levelRestriction(9437184, 530841600)),
+				level((H264ProfileLevel)-1, levelRestriction(0, 0))
 			};
 
 			uint32_t samples = frameSize.first * frameSize.second;
 			uint32_t samples_sec = (uint32_t)ceil((double_t)samples * ((double_t)frameRate.first / (double_t)frameRate.second));
 
 			level curLevel = profileLevelLimit[0];
-			for (uint32_t index = 0; curLevel.first != -1; index++) {
+			for (uint32_t index = 0; (int32_t)curLevel.first != -1; index++) {
 				curLevel = profileLevelLimit[index];
 
 				if (samples > curLevel.second.first)
@@ -79,49 +79,49 @@ namespace Plugin {
 
 				return curLevel.first;
 			}
-			return VCEProfileLevel_52;
+			return H264ProfileLevel::L52;
 		}
 
 		#pragma region VCEEncoderType
-		inline const char* VCEEncoderTypeAsString(VCEEncoderType type) {
+		inline const char* VCEEncoderTypeAsString(H264EncoderType type) {
 			const char* types[] = {
 				"AVC",
 				"SVC",
 				"HEVC"
 			};
-			return types[type];
+			return types[(uint8_t)type];
 		}
-		inline const wchar_t* VCEEncoderTypeAsAMF(VCEEncoderType type) {
+		inline const wchar_t* VCEEncoderTypeAsAMF(H264EncoderType type) {
 			const wchar_t* types[] = {
 				AMFVideoEncoderVCE_AVC,
 				AMFVideoEncoderVCE_SVC,
 				L"AMFVideoEncoderHW_HEVC"
 			};
-			return types[type];
+			return types[(uint8_t)type];
 		}
 		#pragma endregion VCEEncoderType
 		#pragma region VCEMemoryType
-		inline const char* MemoryTypeAsString(VCEMemoryType memoryType) {
+		inline const char* MemoryTypeAsString(H264MemoryType memoryType) {
 			static const char* memoryTypeToString[] = {
 				"Host",
 				"DirectX9",
 				"DirectX11",
 				"OpenGL"
 			};
-			return memoryTypeToString[memoryType];
+			return memoryTypeToString[(uint8_t)memoryType];
 		}
-		inline amf::AMF_MEMORY_TYPE MemoryTypeAsAMF(VCEMemoryType memoryType) {
+		inline amf::AMF_MEMORY_TYPE MemoryTypeAsAMF(H264MemoryType memoryType) {
 			static amf::AMF_MEMORY_TYPE memoryTypeToAMF[] = {
 				amf::AMF_MEMORY_HOST,
 				amf::AMF_MEMORY_DX9,
 				amf::AMF_MEMORY_DX11,
 				amf::AMF_MEMORY_OPENGL,
 			};
-			return memoryTypeToAMF[memoryType];
+			return memoryTypeToAMF[(uint8_t)memoryType];
 		}
 		#pragma endregion VCEMemoryType
 		#pragma region VCESurfaceFormat
-		inline const char* SurfaceFormatAsString(VCEColorFormat surfaceFormat) {
+		inline const char* SurfaceFormatAsString(H264ColorFormat surfaceFormat) {
 			static const char* surfaceFormatToString[] = {
 				"NV12",
 				"I420",
@@ -130,9 +130,9 @@ namespace Plugin {
 				"RGBA",
 				"GRAY",
 			};
-			return surfaceFormatToString[surfaceFormat];
+			return surfaceFormatToString[(uint8_t)surfaceFormat];
 		}
-		inline amf::AMF_SURFACE_FORMAT SurfaceFormatAsAMF(VCEColorFormat surfaceFormat) {
+		inline amf::AMF_SURFACE_FORMAT SurfaceFormatAsAMF(H264ColorFormat surfaceFormat) {
 			static amf::AMF_SURFACE_FORMAT surfaceFormatToAMF[] = {
 				// 4:2:0 Formats
 				amf::AMF_SURFACE_NV12,
@@ -145,60 +145,60 @@ namespace Plugin {
 				// Other
 				amf::AMF_SURFACE_GRAY8,
 			};
-			return surfaceFormatToAMF[surfaceFormat];
+			return surfaceFormatToAMF[(uint8_t)surfaceFormat];
 		}
 		#pragma endregion VCESurfaceFormat
 		#pragma region VCEUsage
-		inline const char* UsageAsString(VCEUsage usage) {
+		inline const char* UsageAsString(H264Usage usage) {
 			static const char* usageToString[] = {
 				"Transcoding",
 				"Ultra Low Latency",
 				"Low Latency",
 				"Webcam"
 			};
-			return usageToString[usage];
+			return usageToString[(uint8_t)usage];
 		}
-		inline AMF_VIDEO_ENCODER_USAGE_ENUM UsageAsAMF(VCEUsage usage) {
+		inline AMF_VIDEO_ENCODER_USAGE_ENUM UsageAsAMF(H264Usage usage) {
 			static AMF_VIDEO_ENCODER_USAGE_ENUM usageToAMF[] = {
 				AMF_VIDEO_ENCODER_USAGE_TRANSCONDING,
 				AMF_VIDEO_ENCODER_USAGE_ULTRA_LOW_LATENCY,
 				AMF_VIDEO_ENCODER_USAGE_LOW_LATENCY,
 				AMF_VIDEO_ENCODER_USAGE_WEBCAM,
 			};
-			return usageToAMF[usage];
+			return usageToAMF[(uint8_t)usage];
 		}
-		inline VCEUsage UsageFromAMF(uint32_t usage) {
-			static VCEUsage usageFromAMF[] = {
-				VCEUsage_Transcoding,
-				VCEUsage_UltraLowLatency,
-				VCEUsage_LowLatency,
-				VCEUsage_Webcam,
+		inline H264Usage UsageFromAMF(uint32_t usage) {
+			static H264Usage usageFromAMF[] = {
+				H264Usage::Transcoding,
+				H264Usage::UltraLowLatency,
+				H264Usage::LowLatency,
+				H264Usage::Webcam,
 			};
-			return usageFromAMF[usage];
+			return usageFromAMF[(uint8_t)usage];
 		}
 		#pragma endregion VCEUsage
 		#pragma region VCEQualityPreset
-		inline const char* QualityPresetAsString(VCEQualityPreset preset) {
+		inline const char* QualityPresetAsString(H264QualityPreset preset) {
 			static const char* qualityPresetToString[] = {
 				"Speed",
 				"Balanced",
 				"Quality"
 			};
-			return qualityPresetToString[preset];
+			return qualityPresetToString[(uint8_t)preset];
 		}
 		#pragma endregion VCEQualityPreset
 		#pragma region VCEProfile
-		inline const char* ProfileAsString(VCEProfile profile) {
+		inline const char* ProfileAsString(H264Profile profile) {
 			switch (profile) {
-				case VCEProfile_Baseline:
+				case H264Profile::Baseline:
 					return "Baseline";
-				case VCEProfile_Main:
+				case H264Profile::Main:
 					return "Main";
-				case VCEProfile_High:
+				case H264Profile::High:
 					return "High";
-				case VCEProfile_ConstrainedBaseline:
+				case H264Profile::ConstrainedBaseline:
 					return "Constrained Baseline";
-				case VCEProfile_ConstrainedHigh:
+				case H264Profile::ConstrainedHigh:
 					return "Constrained High";
 			}
 
@@ -206,62 +206,62 @@ namespace Plugin {
 		}
 		#pragma endregion VCEProfile
 		#pragma region VCERateControlMethod
-		inline const char* RateControlMethodAsString(VCERateControlMethod method) {
+		inline const char* RateControlMethodAsString(H264RateControlMethod method) {
 			static const char* rateControlMethodToString[] = {
 				"Constant Quantization Parameter (CQP)",
 				"Constant Bitrate (CBR)",
 				"Peak Constrained Variable Bitrate (VBR)",
 				"Latency Constrained Variable Bitrate (VBR_LAT)"
 			};
-			return rateControlMethodToString[method];
+			return rateControlMethodToString[(uint8_t)method];
 		}
-		inline AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM RateControlMethodAsAMF(VCERateControlMethod method) {
+		inline AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM RateControlMethodAsAMF(H264RateControlMethod method) {
 			static AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM CustomToAMF[] = {
 				AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP,
 				AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR,
 				AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR,
 				AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR,
 			};
-			return CustomToAMF[method];
+			return CustomToAMF[(uint8_t)method];
 		}
-		inline VCERateControlMethod RateControlMethodFromAMF(uint32_t method) {
-			static VCERateControlMethod AMFToCustom[] = {
-				VCERateControlMethod_ConstantQP,
-				VCERateControlMethod_ConstantBitrate,
-				VCERateControlMethod_VariableBitrate_PeakConstrained,
-				VCERateControlMethod_VariableBitrate_LatencyConstrained,
+		inline H264RateControlMethod RateControlMethodFromAMF(uint32_t method) {
+			static H264RateControlMethod AMFToCustom[] = {
+				H264RateControlMethod::ConstantQP,
+				H264RateControlMethod::ConstantBitrate,
+				H264RateControlMethod::VariableBitrate_PeakConstrained,
+				H264RateControlMethod::VariableBitrate_LatencyConstrained,
 			};
-			return AMFToCustom[method];
+			return AMFToCustom[(uint8_t)method];
 		}
 		#pragma endregion VCERateControlMethod
 
-		inline const char* CodingTypeAsString(VCECodingType type) {
+		inline const char* CodingTypeAsString(H264CodingType type) {
 			switch (type) {
-				case VCECodingType_CABAC:
+				case H264CodingType::CABAC:
 					return "CABAC";
-				case VCECodingType_CALVC:
+				case H264CodingType::CALVC:
 					return "CALVC";
-				case VCECodingType_Default:
+				case H264CodingType::Default:
 					return "Default";
 			}
 			return "MEMORY CORRUPTION";
 		}
-		inline const char* SliceModeAsString(VCESliceMode mode) {
+		inline const char* SliceModeAsString(H264SliceMode mode) {
 			switch (mode) {
-				case VCESliceMode_Horizontal:
+				case H264SliceMode::Horizontal:
 					return "Horizontal";
-				case VCESliceMode_Vertical:
+				case H264SliceMode::Vertical:
 					return "Vertical";
 			}
 			return "MEMORY CORRUPTION";
 		}
-		inline const char* SliceControlModeAsString(VCESliceControlMode mode) {
+		inline const char* SliceControlModeAsString(H264SliceControlMode mode) {
 			switch (mode) {
-				case VCESliceControlMode_Off:
+				case H264SliceControlMode::Off:
 					return "Off";
-				case VCESliceControlMode_Macroblock:
+				case H264SliceControlMode::Macroblock:
 					return "Macroblock";
-				case VCESliceControlMode_Macroblock_Row:
+				case H264SliceControlMode::Macroblock_Row:
 					return "Macroblock Row";
 			}
 			return "MEMORY CORRUPTION";

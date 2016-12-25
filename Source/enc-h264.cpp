@@ -66,7 +66,7 @@ void Plugin::Interface::H264Interface::encoder_register() {
 	bool haveAVCsupport = false;
 	for (auto api : Plugin::API::Base::EnumerateAPIs()) {
 		for (auto adapter : api->EnumerateAdapters()) {
-			auto caps = VCECapabilities::GetInstance()->GetAdapterCapabilities(api, adapter, VCEEncoderType_AVC);
+			auto caps = VCECapabilities::GetInstance()->GetAdapterCapabilities(api, adapter, H264EncoderType::AVC);
 			if (caps.acceleration_type != amf::AMF_ACCEL_NOT_SUPPORTED)
 				haveAVCsupport = true;
 		}
@@ -171,14 +171,14 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, AMF_H264_PRESET, -1);
 
 	// Static Properties
-	obs_data_set_default_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
-	obs_data_set_default_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Balanced);
-	obs_data_set_default_int(data, AMF_H264_PROFILE, VCEProfile_Main);
-	obs_data_set_default_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
+	obs_data_set_default_int(data, AMF_H264_USAGE, (int32_t)H264Usage::Transcoding);
+	obs_data_set_default_int(data, AMF_H264_QUALITY_PRESET, (int32_t)H264QualityPreset::Balanced);
+	obs_data_set_default_int(data, AMF_H264_PROFILE, (int32_t)H264Profile::Main);
+	obs_data_set_default_int(data, AMF_H264_PROFILELEVEL, (int32_t)H264ProfileLevel::Automatic);
 
 	// Rate Control Properties
 	obs_data_set_int(data, "last" vstr(AMF_H264_RATECONTROLMETHOD), -1);
-	obs_data_set_default_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantBitrate);
+	obs_data_set_default_int(data, AMF_H264_RATECONTROLMETHOD, (int32_t)H264RateControlMethod::ConstantBitrate);
 	obs_data_set_default_int(data, AMF_H264_BITRATE_TARGET, 3500);
 	obs_data_set_default_int(data, AMF_H264_BITRATE_PEAK, 9000);
 	obs_data_set_default_int(data, AMF_H264_QP_MINIMUM, 0);
@@ -200,7 +200,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_double(data, AMF_H264_KEYFRAME_INTERVAL, 2);
 	obs_data_set_default_int(data, AMF_H264_IDR_PERIOD, 60);
 	obs_data_set_int(data, "last" vstr(AMF_H264_BFRAME_PATTERN), -1);
-	obs_data_set_default_int(data, AMF_H264_BFRAME_PATTERN, VCEBFramePattern_None);
+	obs_data_set_default_int(data, AMF_H264_BFRAME_PATTERN, None);
 	obs_data_set_int(data, "last" vstr(AMF_H264_BFRAME_REFERENCE), -1);
 	obs_data_set_default_int(data, AMF_H264_BFRAME_REFERENCE, 0);
 	obs_data_set_default_int(data, AMF_H264_BFRAME_REFERENCEDELTAQP, 2);
@@ -208,17 +208,17 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, AMF_H264_DEBLOCKINGFILTER, 1);
 
 	// Miscellaneous Control Properties
-	obs_data_set_default_int(data, AMF_H264_SCANTYPE, VCEScanType_Progressive);
+	obs_data_set_default_int(data, AMF_H264_SCANTYPE, (int32_t)H264ScanType::Progressive);
 	obs_data_set_default_int(data, AMF_H264_MOTIONESTIMATION, 3);
 
 	// Experimental Properties
 	obs_data_set_default_int(data, AMF_H264_MAXIMUMLTRFRAMES, 0);
-	obs_data_set_default_int(data, AMF_H264_CODINGTYPE, VCECodingType_Default);
+	obs_data_set_default_int(data, AMF_H264_CODINGTYPE, (int32_t)H264CodingType::Default);
 	obs_data_set_default_int(data, AMF_H264_HEADER_INSERTION_SPACING, 0);
 	obs_data_set_default_int(data, AMF_H264_SLICESPERFRAME, 1);
-	obs_data_set_default_int(data, AMF_H264_SLICEMODE, VCESliceMode_Horizontal);
+	obs_data_set_default_int(data, AMF_H264_SLICEMODE, (int32_t)H264SliceMode::Horizontal);
 	obs_data_set_default_int(data, AMF_H264_MAXIMUMSLICESIZE, INT_MAX);
-	obs_data_set_default_int(data, AMF_H264_SLICECONTROLMODE, VCESliceControlMode_Off);
+	obs_data_set_default_int(data, AMF_H264_SLICECONTROLMODE, (int32_t)H264SliceControlMode::Off);
 	obs_data_set_default_int(data, AMF_H264_SLICECONTROLSIZE, 0);
 	obs_data_set_default_int(data, AMF_H264_INTRAREFRESH_NUMBEROFSTRIPES, 0);
 	obs_data_set_default_int(data, AMF_H264_INTRAREFRESH_MACROBLOCKSPERSLOT, 0);
@@ -276,9 +276,9 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	#pragma region Usage
 	p = obs_properties_add_list(props, AMF_H264_USAGE, TEXT_T(AMF_H264_USAGE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_USAGE_DESCRIPTION));
-	obs_property_list_add_int(p, TEXT_T(AMF_H264_USAGE_TRANSCODING), VCEUsage_Transcoding);
-	obs_property_list_add_int(p, TEXT_T(AMF_H264_USAGE_ULTRALOWLATENCY), VCEUsage_UltraLowLatency);
-	obs_property_list_add_int(p, TEXT_T(AMF_H264_USAGE_LOWLATENCY), VCEUsage_LowLatency);
+	obs_property_list_add_int(p, TEXT_T(AMF_H264_USAGE_TRANSCODING), (int32_t)H264Usage::Transcoding);
+	obs_property_list_add_int(p, TEXT_T(AMF_H264_USAGE_ULTRALOWLATENCY), (int32_t)H264Usage::UltraLowLatency);
+	obs_property_list_add_int(p, TEXT_T(AMF_H264_USAGE_LOWLATENCY), (int32_t)H264Usage::LowLatency);
 	// Webcam requires SVC, which is not something OBSs properties API makes easy to support. Nor would it look like anything usable.
 	//obs_property_list_add_int(list, TEXT_T(AMF_H264_USAGE_WEBCAM), VCEUsage_Webcam);
 	#pragma endregion Usage
@@ -286,9 +286,9 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	#pragma region Quality Preset
 	p = obs_properties_add_list(props, AMF_H264_QUALITY_PRESET, TEXT_T(AMF_H264_QUALITY_PRESET), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_QUALITY_PRESET_DESCRIPTION));
-	obs_property_list_add_int(p, TEXT_T(AMF_H264_QUALITY_PRESET_SPEED), VCEQualityPreset_Speed);
-	obs_property_list_add_int(p, TEXT_T(AMF_H264_QUALITY_PRESET_BALANCED), VCEQualityPreset_Balanced);
-	obs_property_list_add_int(p, TEXT_T(AMF_H264_QUALITY_PRESET_QUALITY), VCEQualityPreset_Quality);
+	obs_property_list_add_int(p, TEXT_T(AMF_H264_QUALITY_PRESET_SPEED), (int32_t)H264QualityPreset::Speed);
+	obs_property_list_add_int(p, TEXT_T(AMF_H264_QUALITY_PRESET_BALANCED), (int32_t)H264QualityPreset::Balanced);
+	obs_property_list_add_int(p, TEXT_T(AMF_H264_QUALITY_PRESET_QUALITY), (int32_t)H264QualityPreset::Quality);
 	#pragma endregion Quality Preset
 
 	#pragma region Profile
@@ -306,10 +306,10 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	#pragma region Method
 	p = obs_properties_add_list(props, AMF_H264_RATECONTROLMETHOD, TEXT_T(AMF_H264_RATECONTROLMETHOD), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_RATECONTROLMETHOD_DESCRIPTION));
-	obs_property_list_add_int(p, TEXT_T(AMF_H264_RATECONTROLMETHOD_CQP), VCERateControlMethod_ConstantQP);
-	obs_property_list_add_int(p, TEXT_T(AMF_H264_RATECONTROLMETHOD_CBR), VCERateControlMethod_ConstantBitrate);
-	obs_property_list_add_int(p, TEXT_T(AMF_H264_RATECONTROLMETHOD_VBR), VCERateControlMethod_VariableBitrate_PeakConstrained);
-	obs_property_list_add_int(p, TEXT_T(AMF_H264_RATECONTROLMETHOD_VBR_LAT), VCERateControlMethod_VariableBitrate_LatencyConstrained);
+	obs_property_list_add_int(p, TEXT_T(AMF_H264_RATECONTROLMETHOD_CQP), (int32_t)H264RateControlMethod::ConstantQP);
+	obs_property_list_add_int(p, TEXT_T(AMF_H264_RATECONTROLMETHOD_CBR), (int32_t)H264RateControlMethod::ConstantBitrate);
+	obs_property_list_add_int(p, TEXT_T(AMF_H264_RATECONTROLMETHOD_VBR), (int32_t)H264RateControlMethod::VariableBitrate_PeakConstrained);
+	obs_property_list_add_int(p, TEXT_T(AMF_H264_RATECONTROLMETHOD_VBR_LAT), (int32_t)H264RateControlMethod::VariableBitrate_LatencyConstrained);
 	obs_property_set_modified_callback(p, properties_modified);
 	#pragma endregion Method
 
@@ -387,7 +387,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	#pragma region B-Frames
 	/// B-Frames Pattern
 	p = obs_properties_add_int_slider(props, AMF_H264_BFRAME_PATTERN, TEXT_T(AMF_H264_BFRAME_PATTERN),
-		VCEBFramePattern_None, VCEBFramePattern_Three, 1);
+		(int32_t)H264BFramePattern::None, (int32_t)H264BFramePattern::Three, 1);
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_BFRAME_PATTERN_DESCRIPTION));
 	obs_property_set_modified_callback(p, properties_modified);
 	/// Enable Reference to B-Frames (2nd Generation GCN and newer)
@@ -414,8 +414,8 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	/// Scan Type
 	p = obs_properties_add_list(props, AMF_H264_SCANTYPE, TEXT_T(AMF_H264_SCANTYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_SCANTYPE_DESCRIPTION));
-	obs_property_list_add_int(p, TEXT_T(AMF_H264_SCANTYPE_PROGRESSIVE), VCEScanType_Progressive);
-	obs_property_list_add_int(p, TEXT_T(AMF_H264_SCANTYPE_INTERLACED), VCEScanType_Interlaced);
+	obs_property_list_add_int(p, TEXT_T(AMF_H264_SCANTYPE_PROGRESSIVE), (int32_t)H264ScanType::Progressive);
+	obs_property_list_add_int(p, TEXT_T(AMF_H264_SCANTYPE_INTERLACED), (int32_t)H264ScanType::Interlaced);
 
 	/// Motion Estimation
 	p = obs_properties_add_list(props, AMF_H264_MOTIONESTIMATION, TEXT_T(AMF_H264_MOTIONESTIMATION), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
@@ -430,9 +430,9 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	#pragma region Coding Type
 	p = obs_properties_add_list(props, AMF_H264_CODINGTYPE, TEXT_T(AMF_H264_CODINGTYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_CODINGTYPE_DESCRIPTION));
-	obs_property_list_add_int(p, TEXT_T(AMF_UTIL_DEFAULT), VCECodingType_Default);
-	obs_property_list_add_int(p, "CABAC", VCECodingType_CABAC);
-	obs_property_list_add_int(p, "CALVC", VCECodingType_CALVC);
+	obs_property_list_add_int(p, TEXT_T(AMF_UTIL_DEFAULT), (int32_t)H264CodingType::Default);
+	obs_property_list_add_int(p, "CABAC", (int32_t)H264CodingType::CABAC);
+	obs_property_list_add_int(p, "CALVC", (int32_t)H264CodingType::CALVC);
 	#pragma endregion Coding Type
 
 	#pragma region Long Term Reference Frames
@@ -453,8 +453,8 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	/// Slice Mode
 	p = obs_properties_add_list(props, AMF_H264_SLICEMODE, TEXT_T(AMF_H264_SLICEMODE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_SLICEMODE_DESCRIPTION));
-	obs_property_list_add_int(p, "Horizontal", VCESliceMode_Horizontal);
-	obs_property_list_add_int(p, "Vertical", VCESliceMode_Vertical);
+	obs_property_list_add_int(p, "Horizontal", (int32_t)H264SliceMode::Horizontal);
+	obs_property_list_add_int(p, "Vertical", (int32_t)H264SliceMode::Vertical);
 
 	/// Maximum Slice Size
 	p = obs_properties_add_int_slider(props, AMF_H264_MAXIMUMSLICESIZE, TEXT_T(AMF_H264_MAXIMUMSLICESIZE), 1, INT_MAX, 1);
@@ -463,9 +463,9 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	/// Slice Control Mode
 	p = obs_properties_add_list(props, AMF_H264_SLICECONTROLMODE, TEXT_T(AMF_H264_SLICECONTROLMODE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, TEXT_T(AMF_H264_SLICECONTROLMODE_DESCRIPTION));
-	obs_property_list_add_int(p, Utility::SliceControlModeAsString(VCESliceControlMode_Off), VCESliceControlMode_Off);
-	obs_property_list_add_int(p, Utility::SliceControlModeAsString(VCESliceControlMode_Macroblock), VCESliceControlMode_Macroblock);
-	obs_property_list_add_int(p, Utility::SliceControlModeAsString(VCESliceControlMode_Macroblock_Row), VCESliceControlMode_Macroblock_Row);
+	obs_property_list_add_int(p, Utility::SliceControlModeAsString(H264SliceControlMode::Off), (int32_t)H264SliceControlMode::Off);
+	obs_property_list_add_int(p, Utility::SliceControlModeAsString(H264SliceControlMode::Macroblock), (int32_t)H264SliceControlMode::Macroblock);
+	obs_property_list_add_int(p, Utility::SliceControlModeAsString(H264SliceControlMode::Macroblock_Row), (int32_t)H264SliceControlMode::Macroblock_Row);
 
 	/// Slice Control Size
 	p = obs_properties_add_int_slider(props, AMF_H264_SLICECONTROLSIZE, TEXT_T(AMF_H264_SLICECONTROLSIZE), 0, 34560, 1); // 4096x2160 / 16x16
@@ -660,19 +660,19 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 			#pragma region Recording
 			// Static Properties
 			//obs_data_set_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
-			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
+			obs_data_set_int(data, AMF_H264_PROFILE, (int32_t)H264Profile::High);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILE), false);
-			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
+			obs_data_set_int(data, AMF_H264_PROFILELEVEL, (int32_t)H264ProfileLevel::Automatic);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILELEVEL), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMLTRFRAMES, obs_data_get_default_int(data, AMF_H264_MAXIMUMLTRFRAMES));
 
 			// Rate Control Properties
-			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_VariableBitrate_LatencyConstrained);
+			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, (int32_t)H264RateControlMethod::VariableBitrate_LatencyConstrained);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_RATECONTROLMETHOD), false);
 			if (obs_data_get_int(data, AMF_H264_BITRATE_TARGET) < 10000)
 				obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 10000);
 			obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_TARGET), 10000, 100000, 1);
-			//obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000));
+			//obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(H264EncoderType::AVC)->maxBitrate / (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000));
 			obs_data_set_int(data, AMF_H264_QP_MINIMUM, 0);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_MINIMUM), false);
 			obs_data_set_int(data, AMF_H264_QP_MAXIMUM, 51);
@@ -707,8 +707,8 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 			//obs_data_set_int(data, AMF_H264_INTRAREFRESHNUMMBSPERSLOT, 0);
 
 			// Miscellaneous Properties
-			//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
-			obs_data_set_int(data, AMF_H264_SCANTYPE, VCEScanType_Progressive);
+			//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, H264QualityPreset::Quality);
+			obs_data_set_int(data, AMF_H264_SCANTYPE, (int32_t)H264ScanType::Progressive);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_SCANTYPE), false);
 			obs_data_set_int(data, AMF_H264_MOTIONESTIMATION, 3);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_MOTIONESTIMATION), false);
@@ -719,17 +719,17 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 			#pragma region High Quality
 			// Static Properties
 			//obs_data_set_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
-			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
+			obs_data_set_int(data, AMF_H264_PROFILE, (int32_t)H264Profile::High);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILE), false);
-			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
+			obs_data_set_int(data, AMF_H264_PROFILELEVEL, (int32_t)H264ProfileLevel::Automatic);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILELEVEL), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMLTRFRAMES, obs_data_get_default_int(data, AMF_H264_MAXIMUMLTRFRAMES));
 
 			// Rate Control Properties
-			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantQP);
+			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, (int32_t)H264RateControlMethod::ConstantQP);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_RATECONTROLMETHOD), false);
 			//obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 35000 * (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1000 : 1));
-			//obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000));
+			//obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(H264EncoderType::AVC)->maxBitrate / (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000));
 			/*obs_data_set_int(data, AMF_H264_QP_MINIMUM, 0);
 			obs_data_set_int(data, AMF_H264_QP_MAXIMUM, 51);*/
 			obs_data_set_int(data, AMF_H264_QP_IFRAME, 26);
@@ -764,8 +764,8 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 			//obs_data_set_int(data, AMF_H264_INTRAREFRESHNUMMBSPERSLOT, 0);
 
 			// Miscellaneous Properties
-			//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
-			obs_data_set_int(data, AMF_H264_SCANTYPE, VCEScanType_Progressive);
+			//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, H264QualityPreset::Quality);
+			obs_data_set_int(data, AMF_H264_SCANTYPE, (int32_t)H264ScanType::Progressive);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_SCANTYPE), false);
 			obs_data_set_int(data, AMF_H264_MOTIONESTIMATION, 3);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_MOTIONESTIMATION), false);
@@ -776,17 +776,17 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 			#pragma region Indistinguishable
 			// Static Properties
 			//obs_data_set_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
-			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
+			obs_data_set_int(data, AMF_H264_PROFILE, (int32_t)H264Profile::High);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILE), false);
-			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
+			obs_data_set_int(data, AMF_H264_PROFILELEVEL, (int32_t)H264ProfileLevel::Automatic);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILELEVEL), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMLTRFRAMES, obs_data_get_default_int(data, AMF_H264_MAXIMUMLTRFRAMES));
 
 			// Rate Control Properties
-			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantQP);
+			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, (int32_t)H264RateControlMethod::ConstantQP);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_RATECONTROLMETHOD), false);
 			//obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 35000 * (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1000 : 1));
-			//obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000));
+			//obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(H264EncoderType::AVC)->maxBitrate / (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000));
 			/*obs_data_set_int(data, AMF_H264_QP_MINIMUM, 0);
 			obs_data_set_int(data, AMF_H264_QP_MAXIMUM, 51);*/
 			obs_data_set_int(data, AMF_H264_QP_IFRAME, 21);
@@ -821,8 +821,8 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 			//obs_data_set_int(data, AMF_H264_INTRAREFRESHNUMMBSPERSLOT, 0);
 
 			// Miscellaneous Properties
-			//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
-			obs_data_set_int(data, AMF_H264_SCANTYPE, VCEScanType_Progressive);
+			//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, H264QualityPreset::Quality);
+			obs_data_set_int(data, AMF_H264_SCANTYPE, (int32_t)H264ScanType::Progressive);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_SCANTYPE), false);
 			obs_data_set_int(data, AMF_H264_MOTIONESTIMATION, 3);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_MOTIONESTIMATION), false);
@@ -833,17 +833,17 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 			#pragma region Lossless
 			// Static Properties
 			//obs_data_set_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
-			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_High);
+			obs_data_set_int(data, AMF_H264_PROFILE, (int32_t)H264Profile::High);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILE), false);
-			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
+			obs_data_set_int(data, AMF_H264_PROFILELEVEL, (int32_t)H264ProfileLevel::Automatic);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILELEVEL), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMLTRFRAMES, 0);
 
 			// Rate Control Properties
-			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantQP);
+			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, (int32_t)H264RateControlMethod::ConstantQP);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_RATECONTROLMETHOD), false);
 			//obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 35000 * (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1000 : 1));
-			//obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000));
+			//obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(H264EncoderType::AVC)->maxBitrate / (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000));
 			/*obs_data_set_int(data, AMF_H264_QP_MINIMUM, 0);
 			obs_data_set_int(data, AMF_H264_QP_MAXIMUM, 51);*/
 			obs_data_set_int(data, AMF_H264_QP_IFRAME, 0);
@@ -881,8 +881,8 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 			//obs_data_set_int(data, AMF_H264_INTRAREFRESHNUMMBSPERSLOT, 0);
 
 			// Miscellaneous Properties
-			//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
-			obs_data_set_int(data, AMF_H264_SCANTYPE, VCEScanType_Progressive);
+			//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, H264QualityPreset::Quality);
+			obs_data_set_int(data, AMF_H264_SCANTYPE, (int32_t)H264ScanType::Progressive);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_SCANTYPE), false);
 			obs_data_set_int(data, AMF_H264_MOTIONESTIMATION, 3);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_MOTIONESTIMATION), false);
@@ -892,23 +892,23 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		case Twitch:
 			#pragma region Twitch
 			// Static Properties
-			obs_data_set_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
+			obs_data_set_int(data, AMF_H264_USAGE, (int32_t)H264Usage::Transcoding);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_USAGE), false);
-			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_Main);
+			obs_data_set_int(data, AMF_H264_PROFILE, (int32_t)H264Profile::Main);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILE), false);
-			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
+			obs_data_set_int(data, AMF_H264_PROFILELEVEL, (int32_t)H264ProfileLevel::Automatic);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILELEVEL), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMLTRFRAMES, obs_data_get);
 
 			// Rate Control Properties
-			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantBitrate);
+			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, (int32_t)H264RateControlMethod::ConstantBitrate);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_RATECONTROLMETHOD), false);
 			if (obs_data_get_int(data, AMF_H264_BITRATE_TARGET) < 1000)
 				obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 1000);
 			if (obs_data_get_int(data, AMF_H264_BITRATE_TARGET) > 4000)
 				obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 4000);
 			obs_property_int_set_limits(obs_properties_get(props, AMF_H264_BITRATE_TARGET), 1000, 4000, 1);
-			//obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(VCEEncoderType_AVC)->maxBitrate / (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000));
+			//obs_data_set_int(data, AMF_H264_BITRATE_PEAK, VCECapabilities::GetInstance()->GetEncoderCaps(H264EncoderType::AVC)->maxBitrate / (obs_data_get_bool(data, AMF_H264_UNLOCK_PROPERTIES) ? 1 : 1000));
 			obs_data_set_int(data, AMF_H264_QP_MINIMUM, 0);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_QP_MINIMUM), false);
 			obs_data_set_int(data, AMF_H264_QP_MAXIMUM, 51);
@@ -943,8 +943,8 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 			//obs_data_set_int(data, AMF_H264_INTRAREFRESHNUMMBSPERSLOT, 0);
 
 			// Miscellaneous Properties
-			//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
-			obs_data_set_int(data, AMF_H264_SCANTYPE, VCEScanType_Progressive);
+			//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, H264QualityPreset::Quality);
+			obs_data_set_int(data, AMF_H264_SCANTYPE, (int32_t)H264ScanType::Progressive);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_SCANTYPE), false);
 			obs_data_set_int(data, AMF_H264_MOTIONESTIMATION, 3);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_MOTIONESTIMATION), false);
@@ -954,16 +954,16 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		case YouTube:
 			#pragma region YouTube
 			// Static Properties
-			obs_data_set_int(data, AMF_H264_USAGE, VCEUsage_Transcoding);
+			obs_data_set_int(data, AMF_H264_USAGE, (int32_t)H264Usage::Transcoding);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_USAGE), false);
-			obs_data_set_int(data, AMF_H264_PROFILE, VCEProfile_Main);
+			obs_data_set_int(data, AMF_H264_PROFILE, (int32_t)H264Profile::Main);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILE), false);
-			obs_data_set_int(data, AMF_H264_PROFILELEVEL, VCEProfileLevel_Automatic);
+			obs_data_set_int(data, AMF_H264_PROFILELEVEL, (int32_t)H264ProfileLevel::Automatic);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_PROFILELEVEL), false);
 			//obs_data_set_int(data, AMF_H264_MAXIMUMLTRFRAMES, obs_data_get);
 
 			// Rate Control Properties
-			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, VCERateControlMethod_ConstantBitrate);
+			obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, (int32_t)H264RateControlMethod::ConstantBitrate);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_RATECONTROLMETHOD), false);
 			if (obs_data_get_int(data, AMF_H264_BITRATE_TARGET) < 1000)
 				obs_data_set_int(data, AMF_H264_BITRATE_TARGET, 1000);
@@ -1004,8 +1004,8 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 			//obs_data_set_int(data, AMF_H264_INTRAREFRESHNUMMBSPERSLOT, 0);
 
 			// Miscellaneous Properties
-			//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, VCEQualityPreset_Quality);
-			obs_data_set_int(data, AMF_H264_SCANTYPE, VCEScanType_Progressive);
+			//obs_data_set_int(data, AMF_H264_QUALITY_PRESET, H264QualityPreset::Quality);
+			obs_data_set_int(data, AMF_H264_SCANTYPE, (int32_t)H264ScanType::Progressive);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_SCANTYPE), false);
 			obs_data_set_int(data, AMF_H264_MOTIONESTIMATION, 3);
 			obs_property_set_enabled(obs_properties_get(props, AMF_H264_MOTIONESTIMATION), false);
@@ -1044,7 +1044,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 	{
 		auto api = Plugin::API::Base::GetAPIByName(obs_data_get_string(data, AMF_H264_VIDEOAPI));
 		auto adapter = api->GetAdapterById(curAdapterId & UINT_MAX, (curAdapterId >> 32) & UINT_MAX);
-		devCaps = Plugin::AMD::VCECapabilities::GetInstance()->GetAdapterCapabilities(api, adapter, VCEEncoderType_AVC);
+		devCaps = Plugin::AMD::VCECapabilities::GetInstance()->GetAdapterCapabilities(api, adapter, H264EncoderType::AVC);
 	}
 	if (lastAdapterId != curAdapterId) {
 		obs_data_set_int(data, "last" vstr(AMF_H264_VIDEOADAPTER), curAdapterId);
@@ -1054,13 +1054,13 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		obs_property_list_clear(p);
 		switch (devCaps.maxProfile) {
 			case 100:
-				obs_property_list_add_int(p, "High", VCEProfile_High);
-				obs_property_list_add_int(p, "Constrained High", VCEProfile_ConstrainedHigh);
+				obs_property_list_add_int(p, "High", (int32_t)H264Profile::High);
+				obs_property_list_add_int(p, "Constrained High", (int32_t)H264Profile::ConstrainedHigh);
 			case 77:
-				obs_property_list_add_int(p, "Main", VCEProfile_Main);
+				obs_property_list_add_int(p, "Main", (int32_t)H264Profile::Main);
 			case 66:
-				obs_property_list_add_int(p, "Baseline", VCEProfile_Baseline);
-				obs_property_list_add_int(p, "Constrained Baseline", VCEProfile_ConstrainedBaseline);
+				obs_property_list_add_int(p, "Baseline", (int32_t)H264Profile::Baseline);
+				obs_property_list_add_int(p, "Constrained Baseline", (int32_t)H264Profile::ConstrainedBaseline);
 				break;
 		}
 		#pragma endregion Profile
@@ -1068,47 +1068,41 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		#pragma region Profile Level
 		p = obs_properties_get(props, AMF_H264_PROFILELEVEL);
 		obs_property_list_clear(p);
-		obs_property_list_add_int(p, TEXT_T(AMF_UTIL_AUTOMATIC), VCEProfileLevel_Automatic);
+		obs_property_list_add_int(p, TEXT_T(AMF_UTIL_AUTOMATIC), (int32_t)H264ProfileLevel::Automatic);
 		switch (devCaps.maxProfileLevel) {
-			case 62:
-				obs_property_list_add_int(p, "6.2", VCEProfileLevel_62);
-			case 61:
-				obs_property_list_add_int(p, "6.1", VCEProfileLevel_61);
-			case 60:
-				obs_property_list_add_int(p, "6.0", VCEProfileLevel_60);
 			case 52:
-				obs_property_list_add_int(p, "5.2", VCEProfileLevel_52);
+				obs_property_list_add_int(p, "5.2", (int32_t)H264ProfileLevel::L52);
 			case 51:
-				obs_property_list_add_int(p, "5.1", VCEProfileLevel_51);
+				obs_property_list_add_int(p, "5.1", (int32_t)H264ProfileLevel::L51);
 			case 50:
-				obs_property_list_add_int(p, "5.0", VCEProfileLevel_50);
+				obs_property_list_add_int(p, "5.0", (int32_t)H264ProfileLevel::L50);
 			case 42: // Some VCE 2.0 Cards.
-				obs_property_list_add_int(p, "4.2", VCEProfileLevel_42);
+				obs_property_list_add_int(p, "4.2", (int32_t)H264ProfileLevel::L42);
 			case 41: // Some APUs and VCE 1.0 Cards.
-				obs_property_list_add_int(p, "4.1", VCEProfileLevel_41);
+				obs_property_list_add_int(p, "4.1", (int32_t)H264ProfileLevel::L41);
 			case 40: // These should in theory be supported by all VCE 1.0 devices and APUs.
-				obs_property_list_add_int(p, "4.0", VCEProfileLevel_40);
+				obs_property_list_add_int(p, "4.0", (int32_t)H264ProfileLevel::L40);
 			case 32:
-				obs_property_list_add_int(p, "3.2", VCEProfileLevel_32);
+				obs_property_list_add_int(p, "3.2", (int32_t)H264ProfileLevel::L32);
 			case 31:
-				obs_property_list_add_int(p, "3.1", VCEProfileLevel_31);
+				obs_property_list_add_int(p, "3.1", (int32_t)H264ProfileLevel::L31);
 			case 30:
-				obs_property_list_add_int(p, "3.0", VCEProfileLevel_30);
+				obs_property_list_add_int(p, "3.0", (int32_t)H264ProfileLevel::L30);
 			case 22:
-				obs_property_list_add_int(p, "2.2", VCEProfileLevel_22);
+				obs_property_list_add_int(p, "2.2", (int32_t)H264ProfileLevel::L22);
 			case 21:
-				obs_property_list_add_int(p, "2.1", VCEProfileLevel_21);
+				obs_property_list_add_int(p, "2.1", (int32_t)H264ProfileLevel::L21);
 			case 20:
-				obs_property_list_add_int(p, "2.0", VCEProfileLevel_20);
+				obs_property_list_add_int(p, "2.0", (int32_t)H264ProfileLevel::L20);
 			case 13:
-				obs_property_list_add_int(p, "1.3", VCEProfileLevel_13);
+				obs_property_list_add_int(p, "1.3", (int32_t)H264ProfileLevel::L13);
 			case 12:
-				obs_property_list_add_int(p, "1.2", VCEProfileLevel_12);
+				obs_property_list_add_int(p, "1.2", (int32_t)H264ProfileLevel::L12);
 			case 11:
-				obs_property_list_add_int(p, "1.1", VCEProfileLevel_11);
+				obs_property_list_add_int(p, "1.1", (int32_t)H264ProfileLevel::L11);
 			case 10:
 			default:
-				obs_property_list_add_int(p, "1.0", VCEProfileLevel_10);
+				obs_property_list_add_int(p, "1.0", (int32_t)H264ProfileLevel::L10);
 		}
 		#pragma endregion Profile Level
 
@@ -1264,26 +1258,26 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		vis_rcm_qp_b = false,
 		vis_rcm_fillerdata = false;
 
-	VCERateControlMethod lastRCM = (VCERateControlMethod)obs_data_get_int(data, "last" vstr(AMF_H264_RATECONTROLMETHOD)),
-		curRCM = (VCERateControlMethod)obs_data_get_int(data, AMF_H264_RATECONTROLMETHOD);
+	H264RateControlMethod lastRCM = (H264RateControlMethod)obs_data_get_int(data, "last" vstr(AMF_H264_RATECONTROLMETHOD)),
+		curRCM = (H264RateControlMethod)obs_data_get_int(data, AMF_H264_RATECONTROLMETHOD);
 	if (lastRCM != curRCM) {
-		obs_data_set_int(data, "last" vstr(AMF_H264_RATECONTROLMETHOD), curRCM);
+		obs_data_set_int(data, "last" vstr(AMF_H264_RATECONTROLMETHOD), (int32_t)curRCM);
 		result = true;
 	}
 	switch (curRCM) {
-		case VCERateControlMethod_ConstantBitrate:
+		case H264RateControlMethod::ConstantBitrate:
 			vis_rcm_bitrate_target = true;
 			vis_rcm_fillerdata = true;
 			break;
-		case VCERateControlMethod_VariableBitrate_PeakConstrained:
+		case H264RateControlMethod::VariableBitrate_PeakConstrained:
 			vis_rcm_bitrate_target = true;
 			vis_rcm_bitrate_peak = true;
 			break;
-		case VCERateControlMethod_VariableBitrate_LatencyConstrained:
+		case H264RateControlMethod::VariableBitrate_LatencyConstrained:
 			vis_rcm_bitrate_target = true;
 			vis_rcm_bitrate_peak = true;
 			break;
-		case VCERateControlMethod_ConstantQP:
+		case H264RateControlMethod::ConstantQP:
 			vis_rcm_qp = true;
 			vis_rcm_qp_b = (!usingLTRFrames) && devCaps.supportsBFrames && usingBFrames;
 			break;
@@ -1401,49 +1395,49 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 	bool debug = obs_data_get_bool(data, AMF_H264_DEBUG);
 	Plugin::AMD::AMF::GetInstance()->EnableDebugTrace(debug);
 
-	VCEColorFormat surfFormat = VCEColorFormat_NV12;
+	H264ColorFormat surfFormat = H264ColorFormat::NV12;
 	switch (voi->format) {
 		case VIDEO_FORMAT_NV12:
-			surfFormat = VCEColorFormat_NV12;
+			surfFormat = H264ColorFormat::NV12;
 			break;
 		case VIDEO_FORMAT_I420:
-			surfFormat = VCEColorFormat_I420;
+			surfFormat = H264ColorFormat::I420;
 			break;
 		case VIDEO_FORMAT_YUY2:
-			surfFormat = VCEColorFormat_YUY2;
+			surfFormat = H264ColorFormat::YUY2;
 			break;
 		case VIDEO_FORMAT_RGBA:
-			surfFormat = VCEColorFormat_RGBA;
+			surfFormat = H264ColorFormat::RGBA;
 			break;
 		case VIDEO_FORMAT_BGRA:
-			surfFormat = VCEColorFormat_BGRA;
+			surfFormat = H264ColorFormat::BGRA;
 			break;
 		case VIDEO_FORMAT_Y800:
-			surfFormat = VCEColorFormat_GRAY;
+			surfFormat = H264ColorFormat::GRAY;
 			break;
 	}
-	m_VideoEncoder = new VCEEncoder(VCEEncoderType_AVC, obs_data_get_string(data, AMF_H264_VIDEOAPI),
+	m_VideoEncoder = new H264Encoder(H264EncoderType::AVC, obs_data_get_string(data, AMF_H264_VIDEOAPI),
 		obs_data_get_int(data, AMF_H264_VIDEOADAPTER), !!obs_data_get_int(data, AMF_H264_OPENCL), surfFormat);
 
 	/// Static Properties
-	m_VideoEncoder->SetUsage((VCEUsage)obs_data_get_int(data, AMF_H264_USAGE));
-	m_VideoEncoder->SetQualityPreset((VCEQualityPreset)obs_data_get_int(data, AMF_H264_QUALITY_PRESET));
+	m_VideoEncoder->SetUsage((H264Usage)obs_data_get_int(data, AMF_H264_USAGE));
+	m_VideoEncoder->SetQualityPreset((H264QualityPreset)obs_data_get_int(data, AMF_H264_QUALITY_PRESET));
 
 	/// Frame
-	m_VideoEncoder->SetColorProfile(voi->colorspace == VIDEO_CS_709 ? VCEColorProfile_709 : VCEColorProfile_601);
+	m_VideoEncoder->SetColorProfile(voi->colorspace == VIDEO_CS_709 ? H264ColorProfile::Rec709 : H264ColorProfile::Rec601);
 	try { m_VideoEncoder->SetFullRangeColorEnabled(voi->range == VIDEO_RANGE_FULL); } catch (...) {}
 	m_VideoEncoder->SetResolution(m_cfgWidth, m_cfgHeight);
 	m_VideoEncoder->SetFrameRate(m_cfgFPSnum, m_cfgFPSden);
-	m_VideoEncoder->SetScanType((VCEScanType)obs_data_get_int(data, AMF_H264_SCANTYPE)); /// Progressive or Interlaced
+	m_VideoEncoder->SetScanType((H264ScanType)obs_data_get_int(data, AMF_H264_SCANTYPE)); /// Progressive or Interlaced
 
 	/// Profile & Level
-	m_VideoEncoder->SetProfile((VCEProfile)obs_data_get_int(data, AMF_H264_PROFILE));
-	m_VideoEncoder->SetProfileLevel((VCEProfileLevel)obs_data_get_int(data, AMF_H264_PROFILELEVEL));
+	m_VideoEncoder->SetProfile((H264Profile)obs_data_get_int(data, AMF_H264_PROFILE));
+	m_VideoEncoder->SetProfileLevel((H264ProfileLevel)obs_data_get_int(data, AMF_H264_PROFILELEVEL));
 
 	#pragma region Experimental
 	/// Long Term Reference
 	if ((uint32_t)obs_data_get_int(data, AMF_H264_MAXIMUMLTRFRAMES) > 0)
-		m_VideoEncoder->SetBFramePattern(VCEBFramePattern_None);
+		m_VideoEncoder->SetBFramePattern(H264BFramePattern::None);
 	m_VideoEncoder->SetMaximumLongTermReferenceFrames((uint32_t)obs_data_get_int(data, AMF_H264_MAXIMUMLTRFRAMES));
 
 	#pragma endregion Experimental
@@ -1455,31 +1449,31 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 		const char* p_str = obs_data_get_string(data, "profile");
 		if (strcmp(p_str, "") != 0) {
 			if (strcmp(p_str, "constrained_baseline")) {
-				m_VideoEncoder->SetProfile(VCEProfile_ConstrainedBaseline);
+				m_VideoEncoder->SetProfile(H264Profile::ConstrainedBaseline);
 			} else if (strcmp(p_str, "baseline")) {
-				m_VideoEncoder->SetProfile(VCEProfile_Baseline);
+				m_VideoEncoder->SetProfile(H264Profile::Baseline);
 			} else if (strcmp(p_str, "main")) {
-				m_VideoEncoder->SetProfile(VCEProfile_Main);
+				m_VideoEncoder->SetProfile(H264Profile::Main);
 			} else if (strcmp(p_str, "constrained_high")) {
-				m_VideoEncoder->SetProfile(VCEProfile_ConstrainedHigh);
+				m_VideoEncoder->SetProfile(H264Profile::ConstrainedHigh);
 			} else if (strcmp(p_str, "high")) {
-				m_VideoEncoder->SetProfile(VCEProfile_High);
+				m_VideoEncoder->SetProfile(H264Profile::High);
 			}
 		} else {
 			switch (m_VideoEncoder->GetProfile()) {
-				case VCEProfile_ConstrainedBaseline:
+				case H264Profile::ConstrainedBaseline:
 					obs_data_set_string(data, "profile", "constrained_baseline");
 					break;
-				case VCEProfile_Baseline:
+				case H264Profile::Baseline:
 					obs_data_set_string(data, "profile", "baseline");
 					break;
-				case VCEProfile_Main:
+				case H264Profile::Main:
 					obs_data_set_string(data, "profile", "main");
 					break;
-				case VCEProfile_ConstrainedHigh:
+				case H264Profile::ConstrainedHigh:
 					obs_data_set_string(data, "profile", "constrained_high");
 					break;
-				case VCEProfile_High:
+				case H264Profile::High:
 					obs_data_set_string(data, "profile", "high");
 					break;
 			}
@@ -1489,22 +1483,22 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 		const char* preset = obs_data_get_string(data, "preset");
 		if (strcmp(preset, "") != 0) {
 			if (strcmp(preset, "speed") == 0) {
-				m_VideoEncoder->SetQualityPreset(VCEQualityPreset_Speed);
+				m_VideoEncoder->SetQualityPreset(H264QualityPreset::Speed);
 			} else if (strcmp(preset, "balanced") == 0) {
-				m_VideoEncoder->SetQualityPreset(VCEQualityPreset_Balanced);
+				m_VideoEncoder->SetQualityPreset(H264QualityPreset::Balanced);
 			} else if (strcmp(preset, "quality") == 0) {
-				m_VideoEncoder->SetQualityPreset(VCEQualityPreset_Quality);
+				m_VideoEncoder->SetQualityPreset(H264QualityPreset::Quality);
 			}
-			obs_data_set_int(data, AMF_H264_QUALITY_PRESET, m_VideoEncoder->GetQualityPreset());
+			obs_data_set_int(data, AMF_H264_QUALITY_PRESET, (int32_t)m_VideoEncoder->GetQualityPreset());
 		} else {
 			switch (m_VideoEncoder->GetQualityPreset()) {
-				case VCEQualityPreset_Speed:
+				case H264QualityPreset::Speed:
 					obs_data_set_string(data, "preset", "speed");
 					break;
-				case VCEQualityPreset_Balanced:
+				case H264QualityPreset::Balanced:
 					obs_data_set_string(data, "preset", "balanced");
 					break;
-				case VCEQualityPreset_Quality:
+				case H264QualityPreset::Quality:
 					obs_data_set_string(data, "preset", "quality");
 					break;
 			}
@@ -1542,28 +1536,28 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	auto api = Plugin::API::Base::GetAPIByName(obs_data_get_string(data, AMF_H264_VIDEOAPI));
 	int64_t adapterId = obs_data_get_int(data, AMF_H264_VIDEOADAPTER);
 	auto adapter = api->GetAdapterById(adapterId & UINT_MAX, (adapterId >> 32) & UINT_MAX);
-	auto devCaps = Plugin::AMD::VCECapabilities::GetInstance()->GetAdapterCapabilities(api, adapter, VCEEncoderType_AVC);
+	auto devCaps = Plugin::AMD::VCECapabilities::GetInstance()->GetAdapterCapabilities(api, adapter, H264EncoderType::AVC);
 	#pragma endregion Device Capabilities
 
 	#pragma region Rate Control
 	// Rate Control Properties
-	m_VideoEncoder->SetRateControlMethod((VCERateControlMethod)obs_data_get_int(data, AMF_H264_RATECONTROLMETHOD));
+	m_VideoEncoder->SetRateControlMethod((H264RateControlMethod)obs_data_get_int(data, AMF_H264_RATECONTROLMETHOD));
 	m_VideoEncoder->SetMinimumQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_MINIMUM));
 	m_VideoEncoder->SetMaximumQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_MAXIMUM));
-	switch ((VCERateControlMethod)obs_data_get_int(data, AMF_H264_RATECONTROLMETHOD)) {
-		case VCERateControlMethod_ConstantBitrate:
+	switch ((H264RateControlMethod)obs_data_get_int(data, AMF_H264_RATECONTROLMETHOD)) {
+		case H264RateControlMethod::ConstantBitrate:
 			m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_TARGET) * 1000);
 			m_VideoEncoder->SetPeakBitrate(m_VideoEncoder->GetTargetBitrate());
 			break;
-		case VCERateControlMethod_VariableBitrate_PeakConstrained:
+		case H264RateControlMethod::VariableBitrate_PeakConstrained:
 			m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_TARGET) * 1000);
 			m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_PEAK) * 1000);
 			break;
-		case VCERateControlMethod_VariableBitrate_LatencyConstrained:
+		case H264RateControlMethod::VariableBitrate_LatencyConstrained:
 			m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_TARGET) * 1000);
 			m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_PEAK) * 1000);
 			break;
-		case VCERateControlMethod_ConstantQP:
+		case H264RateControlMethod::ConstantQP:
 			m_VideoEncoder->SetIFrameQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_IFRAME));
 			m_VideoEncoder->SetPFrameQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_PFRAME));
 			try {
@@ -1592,11 +1586,11 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	#pragma region B-Frames
 	if (devCaps.supportsBFrames) {
 		try {
-			m_VideoEncoder->SetBFramePattern((VCEBFramePattern)obs_data_get_int(data, AMF_H264_BFRAME_PATTERN));
+			m_VideoEncoder->SetBFramePattern((H264BFramePattern)obs_data_get_int(data, AMF_H264_BFRAME_PATTERN));
 			m_VideoEncoder->SetBFrameReferenceEnabled(!!obs_data_get_int(data, AMF_H264_BFRAME_REFERENCE));
 		} catch (std::exception e) {} catch (...) {}
 		try {
-			if (m_VideoEncoder->GetBFramePattern() != VCEBFramePattern_None) {
+			if (m_VideoEncoder->GetBFramePattern() != H264BFramePattern::None) {
 				m_VideoEncoder->SetBFrameDeltaQP((int8_t)obs_data_get_int(data, AMF_H264_BFRAME_DELTAQP));
 				if (m_VideoEncoder->IsBFrameReferenceEnabled())
 					m_VideoEncoder->SetBFrameReferenceDeltaQP((int8_t)obs_data_get_int(data, AMF_H264_BFRAME_REFERENCEDELTAQP));
@@ -1613,7 +1607,7 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	#pragma endregion Motion Estimation
 
 	#pragma region Experimental
-	try { m_VideoEncoder->SetCodingType((VCECodingType)obs_data_get_int(data, AMF_H264_CODINGTYPE)); } catch (std::exception e) {} catch (...) {}
+	try { m_VideoEncoder->SetCodingType((H264CodingType)obs_data_get_int(data, AMF_H264_CODINGTYPE)); } catch (std::exception e) {} catch (...) {}
 	try { m_VideoEncoder->SetWaitForTaskEnabled(!!obs_data_get_int(data, AMF_H264_WAITFORTASK)); } catch (std::exception e) {} catch (...) {}
 	try { m_VideoEncoder->SetPreAnalysisPassEnabled(!!obs_data_get_int(data, AMF_H264_PREANALYSISPASS)); } catch (std::exception e) {} catch (...) {}
 	try { m_VideoEncoder->SetVBAQEnabled(!!obs_data_get_int(data, AMF_H264_VBAQ)); } catch (std::exception e) {} catch (...) {}
@@ -1629,9 +1623,9 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	try { m_VideoEncoder->SetIntraRefreshMacroblocksPerSlot((uint32_t)obs_data_get_int(data, AMF_H264_INTRAREFRESH_MACROBLOCKSPERSLOT)); } catch (std::exception e) {} catch (...) {}
 
 	try { m_VideoEncoder->SetSlicesPerFrame((uint32_t)obs_data_get_int(data, AMF_H264_SLICESPERFRAME)); } catch (std::exception e) {} catch (...) {}
-	try { m_VideoEncoder->SetSliceMode((VCESliceMode)obs_data_get_int(data, AMF_H264_SLICEMODE)); } catch (std::exception e) {} catch (...) {}
+	try { m_VideoEncoder->SetSliceMode((H264SliceMode)obs_data_get_int(data, AMF_H264_SLICEMODE)); } catch (std::exception e) {} catch (...) {}
 	try { m_VideoEncoder->SetMaximumSliceSize((uint32_t)obs_data_get_int(data, AMF_H264_MAXIMUMSLICESIZE)); } catch (std::exception e) {} catch (...) {}
-	try { m_VideoEncoder->SetSliceControlMode((VCESliceControlMode)obs_data_get_int(data, AMF_H264_SLICECONTROLMODE)); } catch (std::exception e) {} catch (...) {}
+	try { m_VideoEncoder->SetSliceControlMode((H264SliceControlMode)obs_data_get_int(data, AMF_H264_SLICECONTROLMODE)); } catch (std::exception e) {} catch (...) {}
 	try { m_VideoEncoder->SetSliceControlSize((uint32_t)obs_data_get_int(data, AMF_H264_SLICECONTROLSIZE)); } catch (std::exception e) {} catch (...) {}
 	#pragma endregion Experimental
 
@@ -1643,29 +1637,29 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 			const char* t_str = obs_data_get_string(data, "rate_control");
 			if (strcmp(t_str, "") != 0) {
 				if (strcmp(t_str, "CBR") == 0) {
-					m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_ConstantBitrate);
+					m_VideoEncoder->SetRateControlMethod(H264RateControlMethod::ConstantBitrate);
 					m_VideoEncoder->SetFillerDataEnabled(true);
 				} else if (strcmp(t_str, "VBR") == 0) {
-					m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_VariableBitrate_PeakConstrained);
+					m_VideoEncoder->SetRateControlMethod(H264RateControlMethod::VariableBitrate_PeakConstrained);
 				} else if (strcmp(t_str, "VBR_LAT") == 0) {
-					m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_VariableBitrate_LatencyConstrained);
+					m_VideoEncoder->SetRateControlMethod(H264RateControlMethod::VariableBitrate_LatencyConstrained);
 				} else if (strcmp(t_str, "CQP") == 0) {
-					m_VideoEncoder->SetRateControlMethod(VCERateControlMethod_ConstantQP);
+					m_VideoEncoder->SetRateControlMethod(H264RateControlMethod::ConstantQP);
 				}
 
-				obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, m_VideoEncoder->GetRateControlMethod());
+				obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, (int32_t)m_VideoEncoder->GetRateControlMethod());
 			} else {
 				switch (m_VideoEncoder->GetRateControlMethod()) {
-					case VCERateControlMethod_ConstantBitrate:
+					case H264RateControlMethod::ConstantBitrate:
 						obs_data_set_string(data, "rate_control", "CBR");
 						break;
-					case VCERateControlMethod_VariableBitrate_PeakConstrained:
+					case H264RateControlMethod::VariableBitrate_PeakConstrained:
 						obs_data_set_string(data, "rate_control", "VBR");
 						break;
-					case VCERateControlMethod_VariableBitrate_LatencyConstrained:
+					case H264RateControlMethod::VariableBitrate_LatencyConstrained:
 						obs_data_set_string(data, "rate_control", "VBR_LAT");
 						break;
-					case VCERateControlMethod_ConstantQP:
+					case H264RateControlMethod::ConstantQP:
 						obs_data_set_string(data, "rate_control", "CQP");
 						break;
 				}

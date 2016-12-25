@@ -92,9 +92,9 @@ void Plugin::AMD::VCECapabilities::ReportCapabilities(std::shared_ptr<Plugin::AP
 
 void Plugin::AMD::VCECapabilities::ReportAdapterCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter) {
 	auto inst = GetInstance();
-	VCEEncoderType types[] = {
-		VCEEncoderType_AVC,
-		VCEEncoderType_SVC,
+	H264EncoderType types[] = {
+		H264EncoderType::AVC,
+		H264EncoderType::SVC,
 	};
 
 	AMF_LOG_INFO("Capabilities for Device '%s' on API %s:",
@@ -106,12 +106,12 @@ void Plugin::AMD::VCECapabilities::ReportAdapterCapabilities(std::shared_ptr<Plu
 	}
 }
 
-void Plugin::AMD::VCECapabilities::ReportAdapterTypeCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter, VCEEncoderType type) {
+void Plugin::AMD::VCECapabilities::ReportAdapterTypeCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter, H264EncoderType type) {
 	auto inst = GetInstance();
 	auto caps = inst->GetAdapterCapabilities(api, adapter, type);
 
 	AMF_LOG_INFO("  %s (Acceleration: %s)",
-		(type == VCEEncoderType_AVC ? "AVC" : (type == VCEEncoderType_SVC ? "SVC" : (type == VCEEncoderType_HEVC ? "HEVC" : "Unknown"))),
+		(type == H264EncoderType::AVC ? "AVC" : (type == H264EncoderType::SVC ? "SVC" : "Unknown")),
 		(caps.acceleration_type == amf::AMF_ACCEL_SOFTWARE ? "Software" : (caps.acceleration_type == amf::AMF_ACCEL_GPU ? "GPU" : (caps.acceleration_type == amf::AMF_ACCEL_HARDWARE ? "Hardware" : "None")))
 	);
 
@@ -119,11 +119,11 @@ void Plugin::AMD::VCECapabilities::ReportAdapterTypeCapabilities(std::shared_ptr
 		return;
 
 	AMF_LOG_INFO("    Limits");
-	AMF_LOG_INFO("      Profile: %s", Plugin::Utility::ProfileAsString((VCEProfile)caps.maxProfile));
+	AMF_LOG_INFO("      Profile: %s", Plugin::Utility::ProfileAsString((H264Profile)caps.maxProfile));
 	AMF_LOG_INFO("      Profile Level: %ld.%ld", caps.maxProfileLevel / 10, caps.maxProfileLevel % 10);
 	AMF_LOG_INFO("      Bitrate: %ld", caps.maxBitrate);
 	AMF_LOG_INFO("      Reference Frames: %ld (min) - %ld (max)", caps.minReferenceFrames, caps.maxReferenceFrames);
-	if (type == VCEEncoderType_SVC)
+	if (type == H264EncoderType::SVC)
 		AMF_LOG_INFO("      Temporal Layers: %ld", caps.maxTemporalLayers);
 	AMF_LOG_INFO("    Features");
 	AMF_LOG_INFO("      B-Frames: %s", caps.supportsBFrames ? "Supported" : "Not Supported");
@@ -137,7 +137,7 @@ void Plugin::AMD::VCECapabilities::ReportAdapterTypeCapabilities(std::shared_ptr
 	ReportAdapterTypeIOCapabilities(api, adapter, type, true);
 }
 
-void Plugin::AMD::VCECapabilities::ReportAdapterTypeIOCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter, VCEEncoderType type, bool output) {
+void Plugin::AMD::VCECapabilities::ReportAdapterTypeIOCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter, H264EncoderType type, bool output) {
 	auto amf = Plugin::AMD::AMF::GetInstance();
 
 	auto inst = GetInstance();
@@ -281,9 +281,9 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 				continue;
 			}
 
-			VCEEncoderType types[] = {
-				VCEEncoderType_AVC,
-				VCEEncoderType_SVC
+			H264EncoderType types[] = {
+				H264EncoderType::AVC,
+				H264EncoderType::SVC
 			};
 			for (auto type : types) {
 				VCEDeviceCapabilities devCaps = VCEDeviceCapabilities();
@@ -353,8 +353,8 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 	return true;
 }
 
-std::vector<std::pair<VCEEncoderType, VCEDeviceCapabilities>> Plugin::AMD::VCECapabilities::GetAllAdapterCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter) {
-	std::vector<std::pair<VCEEncoderType, VCEDeviceCapabilities>> caps;
+std::vector<std::pair<H264EncoderType, VCEDeviceCapabilities>> Plugin::AMD::VCECapabilities::GetAllAdapterCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter) {
+	std::vector<std::pair<H264EncoderType, VCEDeviceCapabilities>> caps;
 	for (auto kv : capabilityMap) {
 		auto apiName = std::get<0>(kv.first);
 		auto adapter = std::get<1>(kv.first);
@@ -370,7 +370,7 @@ std::vector<std::pair<VCEEncoderType, VCEDeviceCapabilities>> Plugin::AMD::VCECa
 	return caps;
 }
 
-Plugin::AMD::VCEDeviceCapabilities Plugin::AMD::VCECapabilities::GetAdapterCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter, VCEEncoderType type) {
+Plugin::AMD::VCEDeviceCapabilities Plugin::AMD::VCECapabilities::GetAdapterCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter, H264EncoderType type) {
 	auto key = std::make_tuple(api->GetName(), adapter, type);
 
 	if (capabilityMap.count(key) == 0)
