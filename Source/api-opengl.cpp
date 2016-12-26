@@ -81,6 +81,6 @@ void* Plugin::API::OpenGL::GetContextFromInstance(void* instance) {
 	return nullptr;
 }
 
-Plugin::API::APIType Plugin::API::OpenGL::GetType() {
-	return APIType_OpenGL;
+Plugin::API::Type Plugin::API::OpenGL::GetType() {
+	return Type::OpenGL;
 }

@@ -36,8 +36,8 @@ std::string Plugin::API::Host::GetName() {
 	return "Host";
 }
 
-Plugin::API::APIType Plugin::API::Host::GetType() {
-	return APIType_Host;
+Plugin::API::Type Plugin::API::Host::GetType() {
+	return Type::Host;
 }
 
 std::vector<Adapter> Plugin::API::Host::EnumerateAdapters() {

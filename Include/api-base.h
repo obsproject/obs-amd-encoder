@@ -36,11 +36,11 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 namespace Plugin {
 	namespace API {
-		enum APIType {
-			APIType_Host,
-			APIType_Direct3D9,
-			APIType_Direct3D11,
-			APIType_OpenGL,
+		enum class Type {
+			Host,
+			Direct3D9,
+			Direct3D11,
+			OpenGL,
 		};
 
 		struct Adapter {
@@ -78,7 +78,7 @@ namespace Plugin {
 			//////////////////////////////////////////////////////////////////////////
 			public:
 			virtual std::string GetName() = 0;
-			virtual APIType GetType() = 0;
+			virtual Type GetType() = 0;
 
 			virtual std::vector<Adapter> EnumerateAdapters() = 0;
 			virtual Adapter GetAdapterById(uint32_t idLow, uint32_t idHigh) = 0;

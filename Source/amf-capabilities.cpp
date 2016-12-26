@@ -260,13 +260,13 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 				throw;
 			}
 			switch (api->GetType()) {
-				case Plugin::API::APIType_Direct3D11:
+				case Plugin::API::Type::Direct3D11:
 					res = amfContext->InitDX11(api->GetContextFromInstance(apiInst));
 					break;
-				case Plugin::API::APIType_Direct3D9:
+				case Plugin::API::Type::Direct3D9:
 					res = amfContext->InitDX9(api->GetContextFromInstance(apiInst));
 					break;
-				case Plugin::API::APIType_OpenGL:
+				case Plugin::API::Type::OpenGL:
 					res = amfContext->InitOpenGL(api->GetContextFromInstance(apiInst), nullptr, nullptr);
 					break;
 				default:

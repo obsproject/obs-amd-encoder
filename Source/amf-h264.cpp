@@ -199,19 +199,19 @@ Plugin::AMD::H264Encoder::H264Encoder(
 	m_APIAdapter = m_API->GetAdapterById(p_VideoAdapterId & UINT_MAX, (p_VideoAdapterId >> 32) & UINT_MAX);
 	m_APIInstance = m_API->CreateInstanceOnAdapter(m_APIAdapter);
 	switch (m_API->GetType()) {
-		case Plugin::API::APIType_Direct3D11:
+		case Plugin::API::Type::Direct3D11:
 			m_MemoryType = H264MemoryType::DirectX11;
 			res = m_AMFContext->InitDX11(m_API->GetContextFromInstance(m_APIInstance));
 			break;
-		case Plugin::API::APIType_Direct3D9:
+		case Plugin::API::Type::Direct3D9:
 			m_MemoryType = H264MemoryType::DirectX11;
 			res = m_AMFContext->InitDX9(m_API->GetContextFromInstance(m_APIInstance));
 			break;
-		case Plugin::API::APIType_OpenGL:
+		case Plugin::API::Type::OpenGL:
 			m_MemoryType = H264MemoryType::OpenGL;
 			res = m_AMFContext->InitOpenGL(m_API->GetContextFromInstance(m_APIInstance), GetDesktopWindow(), nullptr);
 			break;
-		case Plugin::API::APIType_Host:
+		case Plugin::API::Type::Host:
 			m_MemoryType = H264MemoryType::Host;
 			m_OpenCL = false;
 			break;

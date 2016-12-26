@@ -352,6 +352,6 @@ void Plugin::API::Direct3D11::DestroyInstance(void* pInstance) {
 	delete instance;
 }
 
-Plugin::API::APIType Plugin::API::Direct3D11::GetType() {
-	return APIType_Direct3D11;
+Plugin::API::Type Plugin::API::Direct3D11::GetType() {
+	return Type::Direct3D11;
 }

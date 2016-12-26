@@ -49,7 +49,7 @@ namespace Plugin {
 		enum class H264EncoderType : uint8_t {
 			AVC,	// Advanced Video Coding
 			SVC,	// Scalable Video Coding
-//			HEVC,	// High-Efficiency Video Coding (Discovered in amfrt64.dll)
+			HEVC,	// High-Efficiency Video Coding (Discovered in amfrt64.dll)
 		};
 		enum class H264MemoryType : uint8_t {
 			Host,			// Host-Managed Memory
