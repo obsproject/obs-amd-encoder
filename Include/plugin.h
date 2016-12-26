@@ -26,7 +26,15 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Includes
 //////////////////////////////////////////////////////////////////////////
-#include <stdint.h>
+
+// Microsoft as always does not follow the standard and declares safe functions unsafe.
+// Or even straight up marks them as deprecated, what the fuck Microsoft?
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#pragma warning(disable : 4996)
+#endif
+
+#include <cstdint>
 #include <inttypes.h>
 #include <exception>
 #include <stdexcept>
