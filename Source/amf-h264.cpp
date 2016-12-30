@@ -236,7 +236,7 @@ Plugin::AMD::H264Encoder::H264Encoder(
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Unable to create VideoConverter component, error %ls (code %ld).", res);
 	if (m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_MEMORY_TYPE, Utility::MemoryTypeAsAMF(m_MemoryType)) != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Memory Type not supported by VideoConverter component, error %ls (code %ld).", res);
-	if (m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_OUTPUT_FORMAT, Utility::SurfaceFormatAsAMF(m_ColorFormat)))
+	if (m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_OUTPUT_FORMAT, amf::AMF_SURFACE_NV12))
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Color Format not supported by VideoConverter component, error %ls (code %ld).", res);
 
 	#ifdef _DEBUG
