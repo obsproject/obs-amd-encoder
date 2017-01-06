@@ -43,25 +43,18 @@ using namespace Plugin::AMD;
 
 class CustomWriter : public amf::AMFTraceWriter {
 	public:
+
 	virtual void Write(const wchar_t* scope, const wchar_t* message) override {
 		const wchar_t* realmsg = &(message[(33 + wcslen(scope) + 2)]); // Skip Time & Scope
 		size_t msgLen = wcslen(realmsg) - (sizeof(wchar_t));
 
-		blog(LOG_INFO, "[AMF Encoder] [%.*ls][%ls] %.*ls", 
+		blog(LOG_INFO, "[AMF Encoder] [%.*ls][%ls] %.*ls",
 			12, &(message[11]),
-			scope, 
+			scope,
 			msgLen, realmsg);
 	}
 
 	virtual void Flush() override {}
-
-	static std::shared_ptr<CustomWriter> GetInstance() {
-		static std::shared_ptr<CustomWriter> __instance = std::make_shared<CustomWriter>();
-		static std::mutex __mutex;
-
-		const std::lock_guard<std::mutex> lock(__mutex);
-		return __instance;
-	}
 };
 
 std::shared_ptr<Plugin::AMD::AMF> Plugin::AMD::AMF::GetInstance() {
@@ -171,8 +164,9 @@ Plugin::AMD::AMF::AMF() {
 		throw std::exception("", res);
 	}
 
-	/// Register Custom Trace Writer and disable Debug Tracing.
-	m_AMFTrace->RegisterWriter(L"OBSWriter", CustomWriter::GetInstance().get(), true);
+	/// Register Trace Writer and disable Debug Tracing.
+	m_TraceWriter = new CustomWriter();
+	m_AMFTrace->RegisterWriter(L"OBSWriter", m_TraceWriter, true);
 	this->EnableDebugTrace(false);
 
 	// Log success
@@ -194,9 +188,10 @@ Plugin::AMD::AMF::AMF() {
 Plugin::AMD::AMF::~AMF() {
 	AMF_LOG_DEBUG(__FUNCTION_NAME__ " Finalizing.");
 
-	/// Unregister Writer
-	if (m_AMFTrace)
-		m_AMFTrace->UnregisterWriter(L"OBSWriter");
+	/// Unregister Trace Writer
+	m_AMFTrace->UnregisterWriter(L"OBSWriter");
+	delete m_TraceWriter;
+	m_TraceWriter = nullptr;
 
 	// Free Library again
 	if (m_AMFModule)

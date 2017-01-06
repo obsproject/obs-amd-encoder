@@ -79,6 +79,7 @@ namespace Plugin {
 			amf::AMFFactory* m_AMFFactory;
 			amf::AMFTrace* m_AMFTrace;
 			amf::AMFDebug* m_AMFDebug;
+			amf::AMFTraceWriter* m_TraceWriter;
 		};
 	}
 }
