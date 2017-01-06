@@ -229,11 +229,13 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 		try {
 			adapters = api->EnumerateAdapters();
 		} catch (std::exception e) {
-			AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Unexpected exception while enumerating adapters for API '%s':", api->GetName());
-			AMF_LOG_ERROR("%s", e.what());
+			AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Exception while enumerating %s adapters: %s.",
+				api->GetName(),
+				e.what());
 			continue;
 		} catch (...) {
-			AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Unexpected critical exception while enumerating adapters for API '%s'.", api->GetName());
+			AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Critical exception while enumerating %s adapters.",
+				api->GetName());
 			throw;
 		}
 
@@ -241,7 +243,8 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 			// Create AMF Instance
 			amf::AMFContextPtr amfContext;
 			if (amfFactory->CreateContext(&amfContext) != AMF_OK) {
-				AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> CreateContext failed for device '%s', error %ls (code %d).",
+				AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Unable to create context on %s adapter '%s', error %ls (code %lld).",
+					api->GetName().c_str(),
 					adapter.Name.c_str(),
 					amfInstance->GetTrace()->GetResultText(res),
 					res);
@@ -252,11 +255,15 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 			try {
 				apiInst = api->CreateInstanceOnAdapter(adapter);
 			} catch (std::exception e) {
-				AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Unexpected exception while testing adapter '%s' on API '%s':", adapter.Name, api->GetName());
-				AMF_LOG_ERROR("%s", e.what());
+				AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Exception while intializing %s adapter '%s': %s.",
+					api->GetName(),
+					adapter.Name,
+					e.what());
 				continue;
 			} catch (...) {
-				AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Unexpected critical exceptionwhile testing adapter '%s' on API '%s'.", adapter.Name, api->GetName());
+				AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Critical exception while intializing %s adapter '%s'.",
+					api->GetName(),
+					adapter.Name);
 				throw;
 			}
 			switch (api->GetType()) {
@@ -274,7 +281,8 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 					break;
 			}
 			if (res != AMF_OK) {
-				AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Init failed for device '%s', error %ls (code %d).",
+				AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Initialization failed for %s adapter '%s', error %ls (code %lld).",
+					api->GetName(),
 					adapter.Name.c_str(),
 					amfInstance->GetTrace()->GetResultText(res),
 					res);
@@ -292,7 +300,8 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 				if (amfFactory->CreateComponent(amfContext,
 					Plugin::Utility::VCEEncoderTypeAsAMF(type),
 					&amfComponent) != AMF_OK) {
-					AMF_LOG_ERROR("CreateComponent failed for device '%s' with codec '%s', error %ls (code %d).",
+					AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Unable to create component for %s adapter '%s' with codec '%s', error %ls (code %lld).",
+						api->GetName(),
 						adapter.Name.c_str(),
 						Plugin::Utility::VCEEncoderTypeAsString(type),
 						amfInstance->GetTrace()->GetResultText(res),
@@ -303,7 +312,8 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 				amf::AMFCapsPtr amfCaps;
 				res = amfComponent->GetCaps(&amfCaps);
 				if (res != AMF_OK) {
-					AMF_LOG_ERROR("GetCaps failed for device '%s' with codec '%s', error %ls (code %d).",
+					AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Unable to query capabilities for %s adapter '%s' with codec '%s', error %ls (code %lld).",
+						api->GetName(),
 						adapter.Name.c_str(),
 						Plugin::Utility::VCEEncoderTypeAsString(type),
 						amfInstance->GetTrace()->GetResultText(res),
@@ -326,13 +336,15 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 					amfCaps->GetProperty(AMF_VIDEO_ENCODER_CAP_NUM_OF_HW_INSTANCES, &(devCaps.maxNumOfHwInstances));
 
 					if (GetIOCapability(false, amfCaps, &(devCaps.input)) != AMF_OK)
-						AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> GetInputCaps failed for device '%s' with codec '%ls', error %ls (code %d).",
+						AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Unable to query input capabilities for %s adapter '%s' with codec '%s', error %ls (code %lld).",
+							api->GetName(),
 							adapter.Name.c_str(),
 							Plugin::Utility::VCEEncoderTypeAsString(type),
 							amfInstance->GetTrace()->GetResultText(res), res);
 
 					if (GetIOCapability(true, amfCaps, &(devCaps.output)) != AMF_OK)
-						AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> GetOutputCaps failed capabilities for device '%s' with codec '%ls', error %ls (code %d).",
+						AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Unable to query output capabilities for %s adapter '%s' with codec '%s', error %ls (code %lld).",
+							api->GetName(),
 							adapter.Name.c_str(),
 							Plugin::Utility::VCEEncoderTypeAsString(type),
 							amfInstance->GetTrace()->GetResultText(res), res);
