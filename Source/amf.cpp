@@ -69,7 +69,7 @@ Plugin::AMD::AMF::AMF() {
 	AMF_RESULT res = AMF_OK;
 
 	// Initialize AMF Library
-	AMF_LOG_DEBUG(__FUNCTION_NAME__ " Initializing...");
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Initializing...");
 
 	#pragma region Null Class Members
 	m_TimerPeriod = 0;
@@ -92,7 +92,7 @@ Plugin::AMD::AMF::AMF() {
 		sprintf(buf.data(), "Unable to load '%ls', error code %ld.", AMF_DLL_NAME, error);
 		throw std::exception(buf.data());
 	}
-	AMF_LOG_DEBUG(__FUNCTION_NAME__ " Loaded '%ls'.", AMF_DLL_NAME);
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Loaded '%ls'.", AMF_DLL_NAME);
 	#ifdef _WIN32 // Windows: Get Product Version
 	std::vector<char> verbuf(GetFileVersionInfoSizeW(AMF_DLL_NAME, nullptr));
 	GetFileVersionInfoW(AMF_DLL_NAME, 0, (DWORD)verbuf.size(), verbuf.data());
@@ -127,14 +127,14 @@ Plugin::AMD::AMF::AMF() {
 	if (!AMFQueryVersion) {
 		DWORD error = GetLastError();
 		std::vector<char> buf(1024);
-		sprintf(buf.data(), __FUNCTION_NAME__ " Finding Address of Function '%s' failed with error code %ld.", AMF_QUERY_VERSION_FUNCTION_NAME, error);
+		sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Finding Address of Function '%s' failed with error code %ld.", AMF_QUERY_VERSION_FUNCTION_NAME, error);
 		throw std::exception(buf.data());
 	}
 	/// Query Runtime Version
 	m_AMFVersion_Compiler = AMF_FULL_VERSION;
 	res = AMFQueryVersion(&m_AMFVersion_Runtime);
 	if (res != AMF_OK)
-		ThrowExceptionWithAMFError(__FUNCTION_NAME__ " Querying Version failed with error %ls (code %ld).", res);
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Querying Version failed with error %ls (code %ld).", res);
 	#pragma endregion Query AMF Runtime Version
 
 		/// Find Function for Initializing AMF.
@@ -142,25 +142,25 @@ Plugin::AMD::AMF::AMF() {
 	if (!AMFInit) {
 		DWORD error = GetLastError();
 		std::vector<char> buf(1024);
-		sprintf(buf.data(), __FUNCTION_NAME__ " Finding Address of Function '%s' failed with error code %ld.", AMF_INIT_FUNCTION_NAME, error);
+		sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Finding Address of Function '%s' failed with error code %ld.", AMF_INIT_FUNCTION_NAME, error);
 		throw std::exception(buf.data(), error);
 	} else {
 		res = AMFInit(m_AMFVersion_Runtime, &m_AMFFactory);
 		if (res != AMF_OK)
-			ThrowExceptionWithAMFError(__FUNCTION_NAME__ " Initializing AMF Library failed with error %ls (code %ld).", res);
+			ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Initializing AMF Library failed with error %ls (code %ld).", res);
 	}
-	AMF_LOG_DEBUG(__FUNCTION_NAME__ " AMF Library initialized.");
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> AMF Library initialized.");
 
 	/// Retrieve Trace Object.
 	res = m_AMFFactory->GetTrace(&m_AMFTrace);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError(__FUNCTION_NAME__ " Retrieving Trace object failed with error %ls (code %ld).", res);
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Retrieving Trace object failed with error %ls (code %ld).", res);
 	}
 
 	/// Retrieve Debug Object.
 	res = m_AMFFactory->GetDebug(&m_AMFDebug);
 	if (res != AMF_OK) {
-		AMF_LOG_ERROR(__FUNCTION_NAME__ " Retrieving Debug object failed with error code %ls (code %ld).", res);
+		AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Retrieving Debug object failed with error code %ls (code %ld).", res);
 		throw std::exception("", res);
 	}
 
@@ -182,11 +182,11 @@ Plugin::AMD::AMF::AMF() {
 		lProductVersionSize, pProductVersion
 	);
 
-	AMF_LOG_DEBUG(__FUNCTION_NAME__ " Initialized.");
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Initialized.");
 }
 
 Plugin::AMD::AMF::~AMF() {
-	AMF_LOG_DEBUG(__FUNCTION_NAME__ " Finalizing.");
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Finalizing.");
 
 	/// Unregister Trace Writer
 	m_AMFTrace->UnregisterWriter(L"OBSWriter");
@@ -210,7 +210,7 @@ Plugin::AMD::AMF::~AMF() {
 	AMFInit = nullptr;
 	#pragma endregion Null Class Members
 
-	AMF_LOG_DEBUG(__FUNCTION_NAME__ " Finalized.");
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Finalized.");
 }
 
 amf::AMFFactory* Plugin::AMD::AMF::GetFactory() {
@@ -227,9 +227,9 @@ amf::AMFDebug* Plugin::AMD::AMF::GetDebug() {
 
 void Plugin::AMD::AMF::EnableDebugTrace(bool enable) {
 	if (!m_AMFTrace)
-		throw std::exception(__FUNCTION_NAME__ " called without a AMFTrace object!");
+		throw std::exception("<" __FUNCTION_NAME__ "> called without a AMFTrace object!");
 	if (!m_AMFDebug)
-		throw std::exception(__FUNCTION_NAME__ " called without a AMFDebug object!");
+		throw std::exception("<" __FUNCTION_NAME__ "> called without a AMFDebug object!");
 
 	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, false);
 	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_CONSOLE, AMF_TRACE_ERROR);
