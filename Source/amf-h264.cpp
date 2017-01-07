@@ -590,7 +590,7 @@ bool Plugin::AMD::H264Encoder::GetOutput(struct encoder_packet* packet, bool* re
 		/// Frame DTS() PTS() Duration() Type() TimeCreate() TimeConvert(SUBMIT,QUERY,TOTAL) TimeEncode(SUBMIT,ENCODE,QUERY,TOTAL) TimeSendToRetrieve()
 		m_AMF->GetTrace()->TraceW(
 			fileName.data(), __LINE__,
-			AMF_TRACE_TRACE, L"", 9,
+			AMF_TRACE_TRACE, L"Performance Tracking", 9,
 			L"Frame DTS(%8lld) PTS(%8lld) Duration(%8lld) Type(%1lld) Size(%8lld) TimeCreate(%8lld) TimeConvert(%8lld) TimeEncode(%8lld) TimeSendToRetrieve(%8lld)",
 			(uint64_t)debugDTS,
 			(uint64_t)debugPTS,
