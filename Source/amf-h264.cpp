@@ -240,10 +240,6 @@ Plugin::AMD::H264Encoder::H264Encoder(
 	/// Create the AMF Converter component.
 	if (m_AMFFactory->CreateComponent(m_AMFContext, AMFVideoConverter, &m_AMFConverter) != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Unable to create VideoConverter component, error %ls (code %ld).", res);
-	if (m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_MEMORY_TYPE, Utility::MemoryTypeAsAMF(m_MemoryType)) != AMF_OK)
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Memory Type not supported by VideoConverter component, error %ls (code %ld).", res);
-	if (m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_OUTPUT_FORMAT, amf::AMF_SURFACE_NV12))
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Color Format not supported by VideoConverter component, error %ls (code %ld).", res);
 
 	#ifdef _DEBUG
 	printDebugInfo(m_AMFEncoder);
@@ -275,26 +271,31 @@ Plugin::AMD::H264Encoder::~H264Encoder() {
 }
 
 void Plugin::AMD::H264Encoder::Start() {
+	AMF_RESULT res = AMF_UNEXPECTED;
+
 	// Set proper Timer resolution.
 	m_TimerPeriod = 1;
 	while (timeBeginPeriod(m_TimerPeriod) == TIMERR_NOCANDO) {
 		++m_TimerPeriod;
 	}
 
-	// Create Encoder
-	AMF_RESULT res = m_AMFEncoder->Init(Utility::SurfaceFormatAsAMF(m_ColorFormat),
-		m_FrameSize.first, m_FrameSize.second);
+	// Initialize Converter
+	res = m_AMFConverter->Init(Utility::SurfaceFormatAsAMF(m_ColorFormat), m_FrameSize.first, m_FrameSize.second);
 	if (res != AMF_OK)
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Encoder initialization failed with error %ls (code %ld).", res);
-
-	// Create Converter
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Converter initialization failed with error %ls (code %ld).", res);
+	if (m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_MEMORY_TYPE, Utility::MemoryTypeAsAMF(m_MemoryType)) != AMF_OK)
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Memory Type not supported by VideoConverter component, error %ls (code %ld).", res);
+	if (m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_OUTPUT_FORMAT, amf::AMF_SURFACE_NV12))
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Color Format not supported by VideoConverter component, error %ls (code %ld).", res);
 	m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE, (size_t)this->GetColorProfile());
 	if (m_AMFConverter->SetProperty(L"FullRangeColor", this->IsFullRangeColorEnabled()) != AMF_OK)
 		m_AMFConverter->SetProperty(L"NominalRange", this->IsFullRangeColorEnabled());
 
-	res = m_AMFConverter->Init(Utility::SurfaceFormatAsAMF(m_ColorFormat), m_FrameSize.first, m_FrameSize.second);
+	// Initialize Encoder
+	res = m_AMFEncoder->Init(amf::AMF_SURFACE_NV12,
+		m_FrameSize.first, m_FrameSize.second);
 	if (res != AMF_OK)
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Converter initialization failed with error %ls (code %ld).", res);
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Encoder initialization failed with error %ls (code %ld).", res);
 
 	m_Flag_IsStarted = true;
 
@@ -684,6 +685,8 @@ void Plugin::AMD::H264Encoder::InputThreadLogic() {	// Thread Loop that handles 
 	std::unique_lock<std::mutex> lock(m_Input.mutex);
 	uint32_t repeatSurfaceSubmission = 0;
 	do {
+		m_Input.condvar.wait(lock);
+
 		// Assign Thread Name
 		static const char* __threadName = "enc-amf Input Thread";
 		SetThreadName(__threadName);
@@ -731,14 +734,11 @@ void Plugin::AMD::H264Encoder::InputThreadLogic() {	// Thread Loop that handles 
 
 			// Continue with next Surface.
 			m_Input.condvar.notify_all();
-			// Signal output thread to query.
-			m_Output.condvar.notify_all();
 		} else if (res == AMF_INPUT_FULL) {
-			m_Output.condvar.notify_all();
 			if (repeatSurfaceSubmission < 5) {
 				repeatSurfaceSubmission++;
 				m_Input.condvar.notify_all();
-				std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
+				m_Output.condvar.notify_all();
 			}
 		} else if (res == AMF_EOF) {
 			// This should never happen, but on the off-chance that it does, just straight up leave the loop.
@@ -750,7 +750,7 @@ void Plugin::AMD::H264Encoder::InputThreadLogic() {	// Thread Loop that handles 
 			AMF_LOG_WARNING("<" __FUNCTION_NAME__ "> SubmitInput failed with error %s.", msgBuf.data());
 		}
 
-		m_Input.condvar.wait(lock);
+		std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
 	} while (m_Flag_IsStarted);
 }
 
@@ -762,6 +762,8 @@ void Plugin::AMD::H264Encoder::OutputThreadLogic() {	// Thread Loop that handles
 	// Core Loop
 	std::unique_lock<std::mutex> lock(m_Output.mutex);
 	do {
+		m_Output.condvar.wait(lock);
+
 		// Assign Thread Name
 		static const char* __threadName = "enc-amf Output Thread";
 		SetThreadName(__threadName);
@@ -792,8 +794,6 @@ void Plugin::AMD::H264Encoder::OutputThreadLogic() {	// Thread Loop that handles
 			m_Output.condvar.notify_all();
 		} else if (res == AMF_REPEAT) {
 			m_Input.condvar.notify_all();
-			std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
-			m_Output.condvar.notify_all();
 		} else if (res == AMF_EOF) {
 			// This should never happen, but on the off-chance that it does, just straight up leave the loop.
 			break;
@@ -803,8 +803,8 @@ void Plugin::AMD::H264Encoder::OutputThreadLogic() {	// Thread Loop that handles
 			FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
 			AMF_LOG_WARNING("<" __FUNCTION_NAME__ "> QueryOutput failed with error %s.", msgBuf.data());
 		}
-
-		m_Output.condvar.wait(lock);
+		
+		std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
 	} while (m_Flag_IsStarted);
 }
 
