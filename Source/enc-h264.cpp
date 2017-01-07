@@ -118,7 +118,7 @@ void* Plugin::Interface::H264Interface::create(obs_data_t* settings, obs_encoder
 		AMF_LOG_ERROR("%s", e->what());
 		delete e;
 	} catch (...) {
-		AMF_LOG_ERROR("Unknown Exception during start up.");
+		AMF_LOG_ERROR("Unknown Exception.");
 	}
 	if (enc)
 		delete enc;
@@ -136,7 +136,7 @@ void Plugin::Interface::H264Interface::destroy(void* data) {
 		AMF_LOG_ERROR("%s", e->what());
 		delete e;
 	} catch (...) {
-		AMF_LOG_ERROR("Unknown Exception during shut down.");
+		AMF_LOG_ERROR("Unknown Exception.");
 	}
 	data = nullptr;
 }
@@ -145,12 +145,15 @@ bool Plugin::Interface::H264Interface::encode(void *data, struct encoder_frame *
 	try {
 		return static_cast<Plugin::Interface::H264Interface*>(data)->encode(frame, packet, received_packet);
 	} catch (std::exception e) {
-		AMF_LOG_ERROR("Exception: %s", e.what());
-		AMF_LOG_ERROR("Unable to encode, see log for more information.");
-		return false;
+		AMF_LOG_ERROR("%s", e.what());
+	} catch (std::exception* e) {
+		AMF_LOG_ERROR("%s", e->what());
+		delete e;
 	} catch (...) {
+		AMF_LOG_ERROR("Unknown Exception.");
 		throw;
 	}
+	return false;
 }
 
 void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
@@ -1353,27 +1356,43 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 bool Plugin::Interface::H264Interface::update(void *data, obs_data_t *settings) {
 	try {
 		return static_cast<Plugin::Interface::H264Interface*>(data)->update(settings);
+	} catch (std::exception e) {
+		AMF_LOG_ERROR("%s", e.what());
+	} catch (std::exception* e) {
+		AMF_LOG_ERROR("%s", e->what());
+		delete e;
 	} catch (...) {
-		AMF_LOG_ERROR("Unable to update Encoder, see log for more information.");
-		return false;
+		AMF_LOG_ERROR("Unknown Exception.");
 	}
+	return false;
 }
 
 void Plugin::Interface::H264Interface::get_video_info(void *data, struct video_scale_info *info) {
 	try {
 		return static_cast<Plugin::Interface::H264Interface*>(data)->get_video_info(info);
+	} catch (std::exception e) {
+		AMF_LOG_ERROR("%s", e.what());
+	} catch (std::exception* e) {
+		AMF_LOG_ERROR("%s", e->what());
+		delete e;
 	} catch (...) {
-		AMF_LOG_ERROR("Unable to get video info, see log for more information.");
+		AMF_LOG_ERROR("Unknown Exception.");
+		return;
 	}
 }
 
 bool Plugin::Interface::H264Interface::get_extra_data(void *data, uint8_t** extra_data, size_t* size) {
 	try {
 		return static_cast<Plugin::Interface::H264Interface*>(data)->get_extra_data(extra_data, size);
+	} catch (std::exception e) {
+		AMF_LOG_ERROR("%s", e.what());
+	} catch (std::exception* e) {
+		AMF_LOG_ERROR("%s", e->what());
+		delete e;
 	} catch (...) {
-		AMF_LOG_ERROR("Unable to get extra data, see log for more information.");
-		return false;
+		AMF_LOG_ERROR("Unknown Exception.");
 	}
+	return false;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1541,38 +1560,50 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 
 	#pragma region Rate Control
 	// Rate Control Properties
-	m_VideoEncoder->SetRateControlMethod((H264RateControlMethod)obs_data_get_int(data, AMF_H264_RATECONTROLMETHOD));
-	m_VideoEncoder->SetMinimumQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_MINIMUM));
-	m_VideoEncoder->SetMaximumQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_MAXIMUM));
-	switch ((H264RateControlMethod)obs_data_get_int(data, AMF_H264_RATECONTROLMETHOD)) {
-		case H264RateControlMethod::ConstantBitrate:
-			m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_TARGET) * 1000);
-			m_VideoEncoder->SetPeakBitrate(m_VideoEncoder->GetTargetBitrate());
-			break;
-		case H264RateControlMethod::VariableBitrate_PeakConstrained:
-			m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_TARGET) * 1000);
-			m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_PEAK) * 1000);
-			break;
-		case H264RateControlMethod::VariableBitrate_LatencyConstrained:
-			m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_TARGET) * 1000);
-			m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_PEAK) * 1000);
-			break;
-		case H264RateControlMethod::ConstantQP:
-			m_VideoEncoder->SetIFrameQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_IFRAME));
-			m_VideoEncoder->SetPFrameQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_PFRAME));
-			try {
-				m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_BFRAME));
-			} catch (std::exception e) {} catch (...) {}
-			break;
-	}
-	if (obs_data_get_int(data, AMF_H264_VBVBUFFER) == 0) {
-		m_VideoEncoder->SetVBVBufferAutomatic(obs_data_get_double(data, AMF_H264_VBVBUFFER_STRICTNESS) / 100.0);
+	if (m_VideoEncoder->GetUsage() != H264Usage::UltraLowLatency) {
+		m_VideoEncoder->SetRateControlMethod((H264RateControlMethod)obs_data_get_int(data, AMF_H264_RATECONTROLMETHOD));
+		m_VideoEncoder->SetMinimumQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_MINIMUM));
+		m_VideoEncoder->SetMaximumQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_MAXIMUM));
+		switch ((H264RateControlMethod)obs_data_get_int(data, AMF_H264_RATECONTROLMETHOD)) {
+			case H264RateControlMethod::ConstantBitrate:
+				m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_TARGET) * 1000);
+				m_VideoEncoder->SetPeakBitrate(m_VideoEncoder->GetTargetBitrate());
+				break;
+			case H264RateControlMethod::VariableBitrate_PeakConstrained:
+				m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_TARGET) * 1000);
+				m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_PEAK) * 1000);
+				break;
+			case H264RateControlMethod::VariableBitrate_LatencyConstrained:
+				m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_TARGET) * 1000);
+				m_VideoEncoder->SetPeakBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_PEAK) * 1000);
+				break;
+			case H264RateControlMethod::ConstantQP:
+				m_VideoEncoder->SetIFrameQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_IFRAME));
+				m_VideoEncoder->SetPFrameQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_PFRAME));
+				try { m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_BFRAME)); } catch (...) {}
+				break;
+		}
+		if (obs_data_get_int(data, AMF_H264_VBVBUFFER) == 0) {
+			m_VideoEncoder->SetVBVBufferAutomatic(obs_data_get_double(data, AMF_H264_VBVBUFFER_STRICTNESS) / 100.0);
+		} else {
+			m_VideoEncoder->SetVBVBufferSize((uint32_t)obs_data_get_int(data, AMF_H264_VBVBUFFER_SIZE) * 1000);
+		}
+		m_VideoEncoder->SetInitialVBVBufferFullness(obs_data_get_double(data, AMF_H264_VBVBUFFER_FULLNESS) / 100.0);
+		m_VideoEncoder->SetFillerDataEnabled(obs_data_get_int(data, AMF_H264_FILLERDATA) == 1);
+		m_VideoEncoder->SetFrameSkippingEnabled(obs_data_get_int(data, AMF_H264_FRAMESKIPPING) == 1);
 	} else {
-		m_VideoEncoder->SetVBVBufferSize((uint32_t)obs_data_get_int(data, AMF_H264_VBVBUFFER_SIZE) * 1000);
+		m_VideoEncoder->SetMinimumQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_MINIMUM));
+		m_VideoEncoder->SetMaximumQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_MAXIMUM));
+		m_VideoEncoder->SetTargetBitrate((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_TARGET) * 1000);
+		m_VideoEncoder->SetIFrameQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_IFRAME));
+		m_VideoEncoder->SetPFrameQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_PFRAME));
+		try { m_VideoEncoder->SetBFrameQP((uint8_t)obs_data_get_int(data, AMF_H264_QP_BFRAME)); } catch (...) {}
+		if (obs_data_get_int(data, AMF_H264_VBVBUFFER) == 0) {
+			m_VideoEncoder->SetVBVBufferSize((uint32_t)obs_data_get_int(data, AMF_H264_BITRATE_TARGET) * 1000);
+		} else {
+			m_VideoEncoder->SetVBVBufferSize((uint32_t)obs_data_get_int(data, AMF_H264_VBVBUFFER_SIZE) * 1000);
+		}
 	}
-	m_VideoEncoder->SetInitialVBVBufferFullness(obs_data_get_double(data, AMF_H264_VBVBUFFER_FULLNESS) / 100.0);
-	m_VideoEncoder->SetFillerDataEnabled(obs_data_get_int(data, AMF_H264_FILLERDATA) == 1);
-	m_VideoEncoder->SetFrameSkippingEnabled(obs_data_get_int(data, AMF_H264_FRAMESKIPPING) == 1);
 	m_VideoEncoder->SetEnforceHRDRestrictionsEnabled(obs_data_get_int(data, AMF_H264_ENFORCEHRDCOMPATIBILITY) == 1);
 	#pragma endregion Rate Control
 
@@ -1587,19 +1618,22 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	if (devCaps.supportsBFrames) {
 		try {
 			m_VideoEncoder->SetBFramePattern((H264BFramePattern)obs_data_get_int(data, AMF_H264_BFRAME_PATTERN));
-			m_VideoEncoder->SetBFrameReferenceEnabled(!!obs_data_get_int(data, AMF_H264_BFRAME_REFERENCE));
+			if (m_VideoEncoder->GetUsage() == H264Usage::Transcoding)
+				m_VideoEncoder->SetBFrameReferenceEnabled(!!obs_data_get_int(data, AMF_H264_BFRAME_REFERENCE));
 		} catch (std::exception e) {} catch (...) {}
 		try {
 			if (m_VideoEncoder->GetBFramePattern() != H264BFramePattern::None) {
 				m_VideoEncoder->SetBFrameDeltaQP((int8_t)obs_data_get_int(data, AMF_H264_BFRAME_DELTAQP));
-				if (m_VideoEncoder->IsBFrameReferenceEnabled())
-					m_VideoEncoder->SetBFrameReferenceDeltaQP((int8_t)obs_data_get_int(data, AMF_H264_BFRAME_REFERENCEDELTAQP));
+				if (m_VideoEncoder->GetUsage() == H264Usage::Transcoding)
+					if (m_VideoEncoder->IsBFrameReferenceEnabled())
+						m_VideoEncoder->SetBFrameReferenceDeltaQP((int8_t)obs_data_get_int(data, AMF_H264_BFRAME_REFERENCEDELTAQP));
 			}
 		} catch (std::exception e) {} catch (...) {}
 	}
 	#pragma endregion B-Frames
 
-	m_VideoEncoder->SetDeblockingFilterEnabled(!!obs_data_get_int(data, AMF_H264_DEBLOCKINGFILTER));
+	if (m_VideoEncoder->GetUsage() == H264Usage::Transcoding)
+		m_VideoEncoder->SetDeblockingFilterEnabled(!!obs_data_get_int(data, AMF_H264_DEBLOCKINGFILTER));
 
 	#pragma region Motion Estimation
 	m_VideoEncoder->SetHalfPixelMotionEstimationEnabled(!!(obs_data_get_int(data, AMF_H264_MOTIONESTIMATION) & 1));
@@ -1649,20 +1683,21 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 
 				obs_data_set_int(data, AMF_H264_RATECONTROLMETHOD, (int32_t)m_VideoEncoder->GetRateControlMethod());
 			} else {
-				switch (m_VideoEncoder->GetRateControlMethod()) {
-					case H264RateControlMethod::ConstantBitrate:
-						obs_data_set_string(data, "rate_control", "CBR");
-						break;
-					case H264RateControlMethod::VariableBitrate_PeakConstrained:
-						obs_data_set_string(data, "rate_control", "VBR");
-						break;
-					case H264RateControlMethod::VariableBitrate_LatencyConstrained:
-						obs_data_set_string(data, "rate_control", "VBR_LAT");
-						break;
-					case H264RateControlMethod::ConstantQP:
-						obs_data_set_string(data, "rate_control", "CQP");
-						break;
-				}
+				if (m_VideoEncoder->GetUsage() != H264Usage::UltraLowLatency)
+					switch (m_VideoEncoder->GetRateControlMethod()) {
+						case H264RateControlMethod::ConstantBitrate:
+							obs_data_set_string(data, "rate_control", "CBR");
+							break;
+						case H264RateControlMethod::VariableBitrate_PeakConstrained:
+							obs_data_set_string(data, "rate_control", "VBR");
+							break;
+						case H264RateControlMethod::VariableBitrate_LatencyConstrained:
+							obs_data_set_string(data, "rate_control", "VBR_LAT");
+							break;
+						case H264RateControlMethod::ConstantQP:
+							obs_data_set_string(data, "rate_control", "CQP");
+							break;
+					}
 			}
 
 			// Bitrate
@@ -1671,13 +1706,15 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 				if (m_VideoEncoder->GetTargetBitrate() > bitrateOvr)
 					m_VideoEncoder->SetTargetBitrate((uint32_t)bitrateOvr);
 
-				if (m_VideoEncoder->GetPeakBitrate() > bitrateOvr)
-					m_VideoEncoder->SetPeakBitrate((uint32_t)bitrateOvr);
+				if (m_VideoEncoder->GetUsage() != H264Usage::UltraLowLatency)
+					if (m_VideoEncoder->GetPeakBitrate() > bitrateOvr)
+						m_VideoEncoder->SetPeakBitrate((uint32_t)bitrateOvr);
 
 				obs_data_set_int(data, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
 
 				obs_data_set_int(data, AMF_H264_BITRATE_TARGET, m_VideoEncoder->GetTargetBitrate() / 1000);
-				obs_data_set_int(data, AMF_H264_BITRATE_PEAK, m_VideoEncoder->GetPeakBitrate() / 1000);
+				if (m_VideoEncoder->GetUsage() != H264Usage::UltraLowLatency)
+					obs_data_set_int(data, AMF_H264_BITRATE_PEAK, m_VideoEncoder->GetPeakBitrate() / 1000);
 			} else {
 				obs_data_set_int(data, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
 			}

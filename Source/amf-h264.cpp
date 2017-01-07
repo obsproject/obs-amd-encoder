@@ -374,7 +374,7 @@ void Plugin::AMD::H264Encoder::Stop() {
 	std::queue<amf::AMFDataPtr>().swap(m_Output.queue);
 	m_PacketDataBuffer.clear();
 	m_ExtraDataBuffer.clear();
-	}
+}
 
 bool Plugin::AMD::H264Encoder::IsStarted() {
 	return m_Flag_IsStarted;
@@ -843,10 +843,18 @@ void Plugin::AMD::H264Encoder::LogProperties() {
 
 	// Rate Control Properties
 	AMF_LOG_INFO("Rate Control Properties: ");
-	AMF_LOG_INFO("  Method: %s", Utility::RateControlMethodAsString(GetRateControlMethod()));
+	if (GetUsage() != H264Usage::UltraLowLatency) {
+		AMF_LOG_INFO("  Method: %s", Utility::RateControlMethodAsString(GetRateControlMethod()));
+	} else {
+		AMF_LOG_INFO("  Method: Ultra Low Latency");
+	}
 	AMF_LOG_INFO("  Bitrate: ");
 	AMF_LOG_INFO("    Target: %d bits", GetTargetBitrate());
-	AMF_LOG_INFO("    Peak: %d bits", GetPeakBitrate());
+	if (GetUsage() != H264Usage::UltraLowLatency) {
+		AMF_LOG_INFO("    Peak: %d bits", GetPeakBitrate());
+	} else {
+		AMF_LOG_INFO("    Peak: Ultra Low Latency");
+	}
 	AMF_LOG_INFO("  Quantization Parameter: ");
 	AMF_LOG_INFO("    Minimum: %d", GetMinimumQP());
 	AMF_LOG_INFO("    Maximum: %d", GetMaximumQP());
@@ -859,11 +867,21 @@ void Plugin::AMD::H264Encoder::LogProperties() {
 	}
 	AMF_LOG_INFO("  VBV Buffer: ");
 	AMF_LOG_INFO("    Size: %d bits", GetVBVBufferSize());
-	AMF_LOG_INFO("    Initial Fullness: %f%%", GetInitialVBVBufferFullness() * 100.0);
+	if (GetUsage() != H264Usage::UltraLowLatency) {
+		AMF_LOG_INFO("    Initial Fullness: %f%%", GetInitialVBVBufferFullness() * 100.0);
+	} else {
+		AMF_LOG_INFO("    Initial Fullness: Ultra Low Latency");
+	}
 	AMF_LOG_INFO("  Flags: ");
-	AMF_LOG_INFO("    Filler Data: %s", IsFillerDataEnabled() ? "Enabled" : "Disabled");
-	AMF_LOG_INFO("    Frame Skipping: %s", IsFrameSkippingEnabled() ? "Enabled" : "Disabled");
-	AMF_LOG_INFO("    Enforce HRD Restrictions: %s", IsEnforceHRDRestrictionsEnabled() ? "Enabled" : "Disabled");
+	if (GetUsage() != H264Usage::UltraLowLatency) {
+		AMF_LOG_INFO("    Filler Data: %s", IsFillerDataEnabled() ? "Enabled" : "Disabled");
+		AMF_LOG_INFO("    Frame Skipping: %s", IsFrameSkippingEnabled() ? "Enabled" : "Disabled");
+		AMF_LOG_INFO("    Enforce HRD Restrictions: %s", IsEnforceHRDRestrictionsEnabled() ? "Enabled" : "Disabled");
+	} else {
+		AMF_LOG_INFO("    Filler Data: Ultra Low Latency");
+		AMF_LOG_INFO("    Frame Skipping: Ultra Low Latency");
+		AMF_LOG_INFO("    Enforce HRD Restrictions: Ultra Low Latency");
+	}
 
 	// Picture Control Properties
 	AMF_LOG_INFO("Picture Control Properties: ");
@@ -875,11 +893,16 @@ void Plugin::AMD::H264Encoder::LogProperties() {
 		} catch (...) {
 			AMF_LOG_INFO("  B-Frame Delta QP: N/A");
 		}
-		AMF_LOG_INFO("  B-Frame Reference: %s", IsBFrameReferenceEnabled() ? "Enabled" : "Disabled");
-		try {
-			AMF_LOG_INFO("  B-Frame Reference Delta QP: %d", GetBFrameReferenceDeltaQP());
-		} catch (...) {
-			AMF_LOG_INFO("  B-Frame Reference Delta QP: N/A");
+		if (GetUsage() == H264Usage::Transcoding) {
+			AMF_LOG_INFO("  B-Frame Reference: %s", IsBFrameReferenceEnabled() ? "Enabled" : "Disabled");
+			try {
+				AMF_LOG_INFO("  B-Frame Reference Delta QP: %d", GetBFrameReferenceDeltaQP());
+			} catch (...) {
+				AMF_LOG_INFO("  B-Frame Reference Delta QP: N/A");
+			}
+		} else {
+			AMF_LOG_INFO("  B-Frame Reference: Low Latency Mode");
+			AMF_LOG_INFO("  B-Frame Reference Delta QP: Low Latency Mode");
 		}
 	} else {
 		AMF_LOG_INFO("  B-Frame Pattern: N/A");
@@ -889,7 +912,11 @@ void Plugin::AMD::H264Encoder::LogProperties() {
 	}
 
 	AMF_LOG_INFO("Miscellaneous Properties: ");
-	AMF_LOG_INFO("  Deblocking Filter: %s", IsDeblockingFilterEnabled() ? "Enabled" : "Disabled");
+	if (GetUsage() == H264Usage::Transcoding) {
+		AMF_LOG_INFO("  Deblocking Filter: %s", IsDeblockingFilterEnabled() ? "Enabled" : "Disabled");
+	} else {
+		AMF_LOG_INFO("  Deblocking Filter: Low Latency Mode");
+	}
 	AMF_LOG_INFO("  Motion Estimation: %s",
 		(this->IsHalfPixelMotionEstimationEnabled()
 			? (this->IsQuarterPixelMotionEstimationEnabled()
@@ -1392,53 +1419,57 @@ void Plugin::AMD::H264Encoder::SetVBVBufferAutomatic(double_t strictness) {
 	// Strict VBV Buffer Size = Bitrate / FPS
 	// Loose VBV Buffer Size = Bitrate
 
-	switch (this->GetRateControlMethod()) {
-		case H264RateControlMethod::ConstantBitrate:
-		case H264RateControlMethod::VariableBitrate_LatencyConstrained:
-			looseBitrate = this->GetTargetBitrate();
-			break;
-		case H264RateControlMethod::VariableBitrate_PeakConstrained:
-			looseBitrate = max(this->GetTargetBitrate(), this->GetPeakBitrate());
-			break;
-		case H264RateControlMethod::ConstantQP:
-			// When using Constant QP, one will have to pick a QP that is decent
-			//  in both quality and bitrate. We can easily calculate both the QP
-			//  required for an average bitrate and the average bitrate itself 
-			//  with these formulas:
-			// BITRATE = ((1 - (QP / 51)) ^ 2) * ((Width * Height) * 1.5 * (FPSNumerator / FPSDenumerator))
-			// QP = (1 - sqrt(BITRATE / ((Width * Height) * 1.5 * (FPSNumerator / FPSDenumerator)))) * 51
+	if (GetUsage() == H264Usage::UltraLowLatency) {
+		looseBitrate = GetTargetBitrate();
+	} else {
+		switch (this->GetRateControlMethod()) {
+			case H264RateControlMethod::ConstantBitrate:
+			case H264RateControlMethod::VariableBitrate_LatencyConstrained:
+				looseBitrate = this->GetTargetBitrate();
+				break;
+			case H264RateControlMethod::VariableBitrate_PeakConstrained:
+				looseBitrate = max(this->GetTargetBitrate(), this->GetPeakBitrate());
+				break;
+			case H264RateControlMethod::ConstantQP:
+				// When using Constant QP, one will have to pick a QP that is decent
+				//  in both quality and bitrate. We can easily calculate both the QP
+				//  required for an average bitrate and the average bitrate itself 
+				//  with these formulas:
+				// BITRATE = ((1 - (QP / 51)) ^ 2) * ((Width * Height) * 1.5 * (FPSNumerator / FPSDenumerator))
+				// QP = (1 - sqrt(BITRATE / ((Width * Height) * 1.5 * (FPSNumerator / FPSDenumerator)))) * 51
 
-			auto frameSize = this->GetResolution();
-			auto frameRate = this->GetFrameRate();
+				auto frameSize = this->GetResolution();
+				auto frameRate = this->GetFrameRate();
 
-			double_t bitrate = frameSize.first * frameSize.second;
-			switch (this->m_ColorFormat) {
-				case H264ColorFormat::NV12:
-				case H264ColorFormat::I420:
-					bitrate *= 1.5;
-					break;
-				case H264ColorFormat::YUY2:
-					bitrate *= 4;
-					break;
-				case H264ColorFormat::BGRA:
-				case H264ColorFormat::RGBA:
-					bitrate *= 3;
-					break;
-				case H264ColorFormat::GRAY:
-					bitrate *= 1;
-					break;
-			}
-			bitrate *= frameRate.first / frameRate.second;
+				double_t bitrate = frameSize.first * frameSize.second;
+				switch (this->m_ColorFormat) {
+					case H264ColorFormat::NV12:
+					case H264ColorFormat::I420:
+						bitrate *= 1.5;
+						break;
+					case H264ColorFormat::YUY2:
+						bitrate *= 4;
+						break;
+					case H264ColorFormat::BGRA:
+					case H264ColorFormat::RGBA:
+						bitrate *= 3;
+						break;
+					case H264ColorFormat::GRAY:
+						bitrate *= 1;
+						break;
+				}
+				bitrate *= frameRate.first / frameRate.second;
 
-			uint8_t qp_i, qp_p, qp_b;
-			qp_i = this->GetIFrameQP();
-			qp_p = this->GetPFrameQP();
-			try { qp_b = this->GetBFrameQP(); } catch (...) { qp_b = 51; }
-			double_t qp = 1 - ((double_t)(min(min(qp_i, qp_p), qp_b)) / 51.0);
-			qp = max(qp * qp, 0.001); // Needs to be at least 0.001.
+				uint8_t qp_i, qp_p, qp_b;
+				qp_i = this->GetIFrameQP();
+				qp_p = this->GetPFrameQP();
+				try { qp_b = this->GetBFrameQP(); } catch (...) { qp_b = 51; }
+				double_t qp = 1 - ((double_t)(min(min(qp_i, qp_p), qp_b)) / 51.0);
+				qp = max(qp * qp, 0.001); // Needs to be at least 0.001.
 
-			looseBitrate = static_cast<uint32_t>(bitrate * qp);
-			break;
+				looseBitrate = static_cast<uint32_t>(bitrate * qp);
+				break;
+		}
 	}
 	strictBitrate = static_cast<uint32_t>(looseBitrate * m_FrameRateReverseDivisor);
 
