@@ -40,6 +40,12 @@ SOFTWARE.
 // Code
 //////////////////////////////////////////////////////////////////////////
 
+#define AMF_PROPERTY_FRAME L"Frame"
+#define AMF_PROPERTY_TIME_SENDINPUT L"TimeSendInput"
+#define AMF_PROPERTY_TIME_CREATESURFACE L"TimeCreateSurface"
+#define AMF_PROPERTY_TIME_CONVERT L"TimeConvert"
+#define AMF_PROPERTY_TIME_ENCODE L"TimeEncode"
+
 // Logging and Exception Helpers
 static void FormatTextWithAMFError(std::vector<char>* buffer, const char* format, AMF_RESULT res) {
 	sprintf(buffer->data(), format, Plugin::AMD::AMF::GetInstance()->GetTrace()->GetResultText(res), res);
@@ -179,7 +185,7 @@ Plugin::AMD::H264Encoder::H264Encoder(
 	m_FrameRate.first = 30; m_FrameRate.second = 1;
 	m_FrameRateDivisor = ((double_t)m_FrameRate.first / (double_t)m_FrameRate.second);
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
-	m_InputQueueLimit = (uint32_t)(m_FrameRateDivisor);
+	m_InputQueueLimit = (uint32_t)(m_FrameRateDivisor * 3);
 	m_InputQueueLastSize = 0;
 	m_TimerPeriod = 1;
 	m_LastQueueWarnMessageTime = std::chrono::high_resolution_clock::time_point(std::chrono::high_resolution_clock::duration(0));
@@ -388,6 +394,8 @@ bool Plugin::AMD::H264Encoder::SendInput(struct encoder_frame* frame) {
 		throw std::exception(error);
 	}
 
+	/* Performance Monitoring */ std::chrono::high_resolution_clock::time_point tpSend = std::chrono::high_resolution_clock::now();
+
 	// Attempt to queue for 1 second (forces "Encoding overloaded" message to appear).
 	bool queueSuccessful = false;
 	auto queueStart = std::chrono::high_resolution_clock::now();
@@ -404,14 +412,20 @@ bool Plugin::AMD::H264Encoder::SendInput(struct encoder_frame* frame) {
 
 		// Push into queue if it has room.
 		if (queueSize < m_InputQueueLimit) {
+			/* Performance Monitoring */ std::chrono::high_resolution_clock::time_point tpCreateSurface = std::chrono::high_resolution_clock::now();
 			amf::AMFSurfacePtr pAMFSurface = CreateSurfaceFromFrame(frame);
+			/* Performance Monitoring */ auto timeCreate = std::chrono::high_resolution_clock::now() - tpCreateSurface;
 			if (!pAMFSurface) {
 				AMF_LOG_ERROR("Unable copy frame for submission, terminating...");
 				return false;
 			} else {
 				pAMFSurface->SetPts(frame->pts / m_FrameRate.second);
-				pAMFSurface->SetProperty(L"Frame", frame->pts);
 				pAMFSurface->SetDuration((uint64_t)ceil(m_FrameRateReverseDivisor * AMF_SECOND));
+				pAMFSurface->SetProperty(AMF_PROPERTY_FRAME, frame->pts);
+				/* Performance Monitoring */ pAMFSurface->SetProperty(AMF_PROPERTY_TIME_SENDINPUT, std::chrono::nanoseconds(tpSend.time_since_epoch()).count());
+				/* Performance Monitoring */ pAMFSurface->SetProperty(AMF_PROPERTY_TIME_CREATESURFACE, std::chrono::nanoseconds(timeCreate).count());
+				/* Performance Monitoring */ pAMFSurface->SetProperty(AMF_PROPERTY_TIME_CONVERT, 0);
+				/* Performance Monitoring */ pAMFSurface->SetProperty(AMF_PROPERTY_TIME_ENCODE, 0);
 			}
 
 			{
@@ -479,6 +493,8 @@ bool Plugin::AMD::H264Encoder::GetOutput(struct encoder_packet* packet, bool* re
 		AMF_LOG_ERROR("%s", error);
 		throw std::exception(error);
 	}
+
+	/* Performance Monitoring */ std::chrono::high_resolution_clock::time_point tpRetrieve = std::chrono::high_resolution_clock::now();
 
 	// Signal Output Thread to wake up.
 	m_Output.condvar.notify_all();
@@ -549,11 +565,41 @@ bool Plugin::AMD::H264Encoder::GetOutput(struct encoder_packet* packet, bool* re
 		*received_packet = true;
 
 		// Debug: Packet Information
-		std::vector<wchar_t> fileName(128);
+			/// Convert File Name and Function Name
+		static std::vector<wchar_t> fileName(2048);
 		mbstowcs(fileName.data(), __FILE__, fileName.size());
-		std::vector<wchar_t> functionName(128);
-		mbstowcs(functionName.data(), __FUNCTION__, functionName.size());
-		m_AMF->GetTrace()->TraceW(fileName.data(), __LINE__, AMF_TRACE_TRACE, L"Plugin::GetOutput", 4, L"Packet: Type(%lld), PTS(%4lld), DTS(%4lld), Size(%8lld)", (int64_t)packet->priority, (int64_t)packet->pts, (int64_t)packet->dts, (int64_t)packet->size);
+
+		/// Timing Information
+		uint64_t debugPacketType, debugDTS, debugPTS, debugDuration,
+			debugTimeSend,
+			debugTimeCreate,
+			debugTimeConvert,
+			debugTimeEncode;
+		pAMFData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &debugPacketType);
+		debugDTS = pAMFData->GetPts();
+		pAMFData->GetProperty(AMF_PROPERTY_FRAME, &debugPTS);
+		debugDuration = pAMFData->GetDuration();
+		pAMFData->GetProperty(AMF_PROPERTY_TIME_SENDINPUT, &debugTimeSend);
+		pAMFData->GetProperty(AMF_PROPERTY_TIME_CREATESURFACE, &debugTimeCreate);
+		pAMFData->GetProperty(AMF_PROPERTY_TIME_CONVERT, &debugTimeConvert);
+		pAMFData->GetProperty(AMF_PROPERTY_TIME_ENCODE, &debugTimeEncode);
+		uint64_t totalTimeSendRetrieve = std::chrono::nanoseconds(tpRetrieve.time_since_epoch()).count() - debugTimeSend;
+
+		/// All times are in nanoseconds.
+		/// Frame DTS() PTS() Duration() Type() TimeCreate() TimeConvert(SUBMIT,QUERY,TOTAL) TimeEncode(SUBMIT,ENCODE,QUERY,TOTAL) TimeSendToRetrieve()
+		m_AMF->GetTrace()->TraceW(
+			fileName.data(), __LINE__,
+			AMF_TRACE_TRACE, L"", 9,
+			L"Frame DTS(%8lld) PTS(%8lld) Duration(%8lld) Type(%1lld) Size(%8lld) TimeCreate(%8lld) TimeConvert(%8lld) TimeEncode(%8lld) TimeSendToRetrieve(%8lld)",
+			(uint64_t)debugDTS,
+			(uint64_t)debugPTS,
+			(uint64_t)debugDuration,
+			(uint64_t)debugPacketType,
+			(uint64_t)packet->size,
+			(uint64_t)debugTimeCreate,
+			(uint64_t)debugTimeConvert,
+			(uint64_t)debugTimeEncode,
+			(uint64_t)totalTimeSendRetrieve);
 	}
 
 	return true;
@@ -638,8 +684,6 @@ void Plugin::AMD::H264Encoder::InputThreadLogic() {	// Thread Loop that handles 
 	std::unique_lock<std::mutex> lock(m_Input.mutex);
 	uint32_t repeatSurfaceSubmission = 0;
 	do {
-		m_Input.condvar.wait(lock);
-
 		// Assign Thread Name
 		static const char* __threadName = "enc-amf Input Thread";
 		SetThreadName(__threadName);
@@ -661,14 +705,18 @@ void Plugin::AMD::H264Encoder::InputThreadLogic() {	// Thread Loop that handles 
 		AMF_RESULT res;
 		amf::AMFDataPtr outbuf;
 
+		/* Performance Monitoring */ std::chrono::high_resolution_clock::time_point tpConvert = std::chrono::high_resolution_clock::now();
 		res = m_AMFConverter->SubmitInput(surface);
 		if (res != AMF_OK)
 			ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Unable to submit Frame to Converter, error %ls (code %ld).", res);
 		res = m_AMFConverter->QueryOutput(&outbuf);
 		if (res != AMF_OK)
 			ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Unable to retrieve Frame from Converter, error %ls (code %ld).", res);
+		/* Performance Monitoring */ outbuf->SetProperty(AMF_PROPERTY_TIME_CONVERT,
+			std::chrono::nanoseconds(std::chrono::high_resolution_clock::now() - tpConvert).count());
 
 		/// Submit to AMF
+		/* Performance Monitoring */ outbuf->SetProperty(AMF_PROPERTY_TIME_ENCODE, std::chrono::nanoseconds(std::chrono::high_resolution_clock::now().time_since_epoch()).count());
 		res = m_AMFEncoder->SubmitInput(outbuf);
 		if (res == AMF_OK) {
 			m_Flag_FirstFrameSubmitted = true;
@@ -683,11 +731,14 @@ void Plugin::AMD::H264Encoder::InputThreadLogic() {	// Thread Loop that handles 
 
 			// Continue with next Surface.
 			m_Input.condvar.notify_all();
+			// Signal output thread to query.
+			m_Output.condvar.notify_all();
 		} else if (res == AMF_INPUT_FULL) {
 			m_Output.condvar.notify_all();
 			if (repeatSurfaceSubmission < 5) {
 				repeatSurfaceSubmission++;
 				m_Input.condvar.notify_all();
+				std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
 			}
 		} else if (res == AMF_EOF) {
 			// This should never happen, but on the off-chance that it does, just straight up leave the loop.
@@ -699,7 +750,7 @@ void Plugin::AMD::H264Encoder::InputThreadLogic() {	// Thread Loop that handles 
 			AMF_LOG_WARNING("<" __FUNCTION_NAME__ "> SubmitInput failed with error %s.", msgBuf.data());
 		}
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
+		m_Input.condvar.wait(lock);
 	} while (m_Flag_IsStarted);
 }
 
@@ -711,8 +762,6 @@ void Plugin::AMD::H264Encoder::OutputThreadLogic() {	// Thread Loop that handles
 	// Core Loop
 	std::unique_lock<std::mutex> lock(m_Output.mutex);
 	do {
-		m_Output.condvar.wait(lock);
-
 		// Assign Thread Name
 		static const char* __threadName = "enc-amf Output Thread";
 		SetThreadName(__threadName);
@@ -726,6 +775,14 @@ void Plugin::AMD::H264Encoder::OutputThreadLogic() {	// Thread Loop that handles
 		if (res == AMF_OK) {
 			m_Flag_FirstFrameReceived = true;
 
+			uint64_t debugTimeEncode = 0;
+			pData->GetProperty(AMF_PROPERTY_TIME_ENCODE, &debugTimeEncode);
+			/* Performance Monitoring */ pData->SetProperty(AMF_PROPERTY_TIME_ENCODE,
+				(uint64_t)std::chrono::nanoseconds(
+					std::chrono::high_resolution_clock::now() -
+					std::chrono::high_resolution_clock::time_point(std::chrono::nanoseconds(debugTimeEncode))
+				).count());
+
 			{ // Queue
 				std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
 				m_Output.queue.push(pData);
@@ -735,6 +792,8 @@ void Plugin::AMD::H264Encoder::OutputThreadLogic() {	// Thread Loop that handles
 			m_Output.condvar.notify_all();
 		} else if (res == AMF_REPEAT) {
 			m_Input.condvar.notify_all();
+			std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
+			m_Output.condvar.notify_all();
 		} else if (res == AMF_EOF) {
 			// This should never happen, but on the off-chance that it does, just straight up leave the loop.
 			break;
@@ -745,7 +804,7 @@ void Plugin::AMD::H264Encoder::OutputThreadLogic() {	// Thread Loop that handles
 			AMF_LOG_WARNING("<" __FUNCTION_NAME__ "> QueryOutput failed with error %s.", msgBuf.data());
 		}
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
+		m_Output.condvar.wait(lock);
 	} while (m_Flag_IsStarted);
 }
 
@@ -1175,7 +1234,7 @@ void Plugin::AMD::H264Encoder::SetFrameRate(uint32_t num, uint32_t den) {
 	m_FrameRate.second = den;
 	m_FrameRateDivisor = (double_t)m_FrameRate.first / (double_t)m_FrameRate.second;
 	m_FrameRateReverseDivisor = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
-	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor);
+	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor * 3);
 
 	if (this->GetProfileLevel() == H264ProfileLevel::Automatic)
 		this->SetProfileLevel(H264ProfileLevel::Automatic);
@@ -1191,7 +1250,7 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::H264Encoder::GetFrameRate() {
 	m_FrameRate.first = frameRate.num;
 	m_FrameRate.second = frameRate.den;
 	m_FrameRateDivisor = (double_t)frameRate.num / (double_t)frameRate.den;
-	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor);
+	m_InputQueueLimit = (uint32_t)ceil(m_FrameRateDivisor * 3);
 
 	if (this->GetProfileLevel() == H264ProfileLevel::Automatic)
 		this->SetProfileLevel(H264ProfileLevel::Automatic);
