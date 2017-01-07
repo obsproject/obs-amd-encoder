@@ -687,10 +687,6 @@ void Plugin::AMD::H264Encoder::InputThreadLogic() {	// Thread Loop that handles 
 	do {
 		m_Input.condvar.wait(lock);
 
-		// Assign Thread Name
-		static const char* __threadName = "enc-amf Input Thread";
-		SetThreadName(__threadName);
-
 		// Skip to check if isStarted is false.
 		if (!m_Flag_IsStarted)
 			continue;
@@ -764,10 +760,6 @@ void Plugin::AMD::H264Encoder::OutputThreadLogic() {	// Thread Loop that handles
 	do {
 		m_Output.condvar.wait(lock);
 
-		// Assign Thread Name
-		static const char* __threadName = "enc-amf Output Thread";
-		SetThreadName(__threadName);
-
 		// Skip to check if isStarted is false.
 		if (!m_Flag_IsStarted)
 			continue;
@@ -803,7 +795,7 @@ void Plugin::AMD::H264Encoder::OutputThreadLogic() {	// Thread Loop that handles
 			FormatTextWithAMFError(&msgBuf, "%s (code %d)", res);
 			AMF_LOG_WARNING("<" __FUNCTION_NAME__ "> QueryOutput failed with error %s.", msgBuf.data());
 		}
-		
+
 		std::this_thread::sleep_for(std::chrono::milliseconds(m_TimerPeriod));
 	} while (m_Flag_IsStarted);
 }
