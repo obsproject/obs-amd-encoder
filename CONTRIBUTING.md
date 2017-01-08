@@ -40,13 +40,14 @@ Version Control plays a large role in managing things and keeping in touch with 
 The plugin itself is made up of several sub-modules:
 
 * AMF: amf.cpp, amf.h, amf-capabilities.cpp, amf-capabilities.h
+* Encoder: amf-encoder.cpp, amf-encoder.h
 * H264: amf-h264.cpp, amf-h264.h, enc-h264.cpp, enc-h264.h
-* H265: amf-h265.cpp, amf-h265.h, enc-h265.cpp, enc-h265.h
 * API: api-base.cpp, api-base.h
-* API-OGL: api-opengl.cpp, api-opengl.h
-* API-D3D9: api-d3d9.cpp, api-d3d9.h
-* API-D3D11: api-d3d11.cpp, api-d3d11.h
+* API-OpenGL: api-opengl.cpp, api-opengl.h
+* API-Direct3D9: api-d3d9.cpp, api-d3d9.h
+* API-Direct3D11: api-d3d11.cpp, api-d3d11.h
 * API-Host: api-host.cpp, api-host.h
+* Plugin: plugin.cpp, plugin.h, CMakeLists.txt
 * Utilities: misc-util.cpp
 * Locale: Any locale files
 * Resources: Any resource files
