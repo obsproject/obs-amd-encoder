@@ -772,10 +772,10 @@ void Plugin::AMD::H264Encoder::OutputThreadLogic() {	// Thread Loop that handles
 			uint64_t debugTimeEncode = 0;
 			pData->GetProperty(AMF_PROPERTY_TIME_ENCODE, &debugTimeEncode);
 			/* Performance Monitoring */ pData->SetProperty(AMF_PROPERTY_TIME_ENCODE,
-				(uint64_t)std::chrono::nanoseconds(
-					std::chrono::high_resolution_clock::now() -
-					std::chrono::high_resolution_clock::time_point(std::chrono::nanoseconds(debugTimeEncode))
-				).count());
+				(uint64_t)(
+					std::chrono::high_resolution_clock::now().time_since_epoch().count() -
+					debugTimeEncode
+				));
 
 			{ // Queue
 				std::unique_lock<std::mutex> qlock(m_Output.queuemutex);
