@@ -280,9 +280,6 @@ void Plugin::AMD::H264Encoder::Start() {
 	}
 
 	// Initialize Converter
-	res = m_AMFConverter->Init(Utility::SurfaceFormatAsAMF(m_ColorFormat), m_FrameSize.first, m_FrameSize.second);
-	if (res != AMF_OK)
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Converter initialization failed with error %ls (code %ld).", res);
 	if (m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_MEMORY_TYPE, Utility::MemoryTypeAsAMF(m_MemoryType)) != AMF_OK)
 		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Memory Type not supported by VideoConverter component, error %ls (code %ld).", res);
 	if (m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_OUTPUT_FORMAT, amf::AMF_SURFACE_NV12))
@@ -290,6 +287,9 @@ void Plugin::AMD::H264Encoder::Start() {
 	m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE, (size_t)this->GetColorProfile());
 	if (m_AMFConverter->SetProperty(L"FullRangeColor", this->IsFullRangeColorEnabled()) != AMF_OK)
 		m_AMFConverter->SetProperty(L"NominalRange", this->IsFullRangeColorEnabled());
+	res = m_AMFConverter->Init(Utility::SurfaceFormatAsAMF(m_ColorFormat), m_FrameSize.first, m_FrameSize.second);
+	if (res != AMF_OK)
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Converter initialization failed with error %ls (code %ld).", res);
 
 	// Initialize Encoder
 	res = m_AMFEncoder->Init(amf::AMF_SURFACE_NV12,
