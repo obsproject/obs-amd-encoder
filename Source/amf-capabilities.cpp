@@ -97,9 +97,9 @@ void Plugin::AMD::VCECapabilities::ReportAdapterCapabilities(std::shared_ptr<Plu
 		H264EncoderType::SVC,
 	};
 
-	AMF_LOG_INFO("Capabilities for Device '%s' on API %s:",
-		adapter.Name.c_str(),
-		api->GetName().c_str());
+	AMF_LOG_INFO("Capabilities for %s adapter '%s':",
+		api->GetName().c_str(),
+		adapter.Name.c_str());
 
 	for (auto type : types) {
 		ReportAdapterTypeCapabilities(api, adapter, type);
@@ -242,7 +242,8 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 		for (auto adapter : adapters) {
 			// Create AMF Instance
 			amf::AMFContextPtr amfContext;
-			if (amfFactory->CreateContext(&amfContext) != AMF_OK) {
+			res = amfFactory->CreateContext(&amfContext);
+			if (res != AMF_OK) {
 				AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Unable to create context on %s adapter '%s', error %ls (code %lld).",
 					api->GetName().c_str(),
 					adapter.Name.c_str(),
@@ -297,15 +298,15 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 				VCEDeviceCapabilities devCaps = VCEDeviceCapabilities();
 
 				amf::AMFComponentPtr amfComponent;
-				if (amfFactory->CreateComponent(amfContext,
+				res = amfFactory->CreateComponent(amfContext,
 					Plugin::Utility::VCEEncoderTypeAsAMF(type),
-					&amfComponent) != AMF_OK) {
+					&amfComponent);
+				if (res != AMF_OK) {
 					AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Unable to create component for %s adapter '%s' with codec '%s', error %ls (code %lld).",
 						api->GetName(),
 						adapter.Name.c_str(),
 						Plugin::Utility::VCEEncoderTypeAsString(type),
-						amfInstance->GetTrace()->GetResultText(res),
-						res);
+						amfInstance->GetTrace()->GetResultText(res), res);
 					continue;
 				}
 
@@ -316,8 +317,7 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 						api->GetName(),
 						adapter.Name.c_str(),
 						Plugin::Utility::VCEEncoderTypeAsString(type),
-						amfInstance->GetTrace()->GetResultText(res),
-						res);
+						amfInstance->GetTrace()->GetResultText(res), res);
 					amfComponent->Terminate();
 					continue;
 				}
@@ -335,14 +335,16 @@ bool Plugin::AMD::VCECapabilities::Refresh() {
 					amfCaps->GetProperty(AMF_VIDEO_ENCODER_CAP_FIXED_SLICE_MODE, &(devCaps.supportsFixedSliceMode));
 					amfCaps->GetProperty(AMF_VIDEO_ENCODER_CAP_NUM_OF_HW_INSTANCES, &(devCaps.maxNumOfHwInstances));
 
-					if (GetIOCapability(false, amfCaps, &(devCaps.input)) != AMF_OK)
+					res = GetIOCapability(false, amfCaps, &(devCaps.input));
+					if (res != AMF_OK)
 						AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Unable to query input capabilities for %s adapter '%s' with codec '%s', error %ls (code %lld).",
 							api->GetName(),
 							adapter.Name.c_str(),
 							Plugin::Utility::VCEEncoderTypeAsString(type),
 							amfInstance->GetTrace()->GetResultText(res), res);
 
-					if (GetIOCapability(true, amfCaps, &(devCaps.output)) != AMF_OK)
+					res = GetIOCapability(true, amfCaps, &(devCaps.output));
+					if (res != AMF_OK)
 						AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Unable to query output capabilities for %s adapter '%s' with codec '%s', error %ls (code %lld).",
 							api->GetName(),
 							adapter.Name.c_str(),
