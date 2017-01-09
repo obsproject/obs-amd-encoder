@@ -184,7 +184,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, AMF_H264_RATECONTROLMETHOD, (int32_t)H264RateControlMethod::ConstantBitrate);
 	obs_data_set_default_int(data, AMF_H264_BITRATE_TARGET, 3500);
 	obs_data_set_default_int(data, AMF_H264_BITRATE_PEAK, 9000);
-	obs_data_set_default_int(data, AMF_H264_QP_MINIMUM, 0);
+	obs_data_set_default_int(data, AMF_H264_QP_MINIMUM, 11);
 	obs_data_set_default_int(data, AMF_H264_QP_MAXIMUM, 51);
 	obs_data_set_default_int(data, AMF_H264_QP_IFRAME, 22);
 	obs_data_set_default_int(data, AMF_H264_QP_PFRAME, 22);
