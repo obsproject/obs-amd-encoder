@@ -241,7 +241,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_int(data, "last" vstr(AMF_H264_VIEW), -1);
 	obs_data_set_default_int(data, AMF_H264_VIEW, ViewMode::Basic);
 	obs_data_set_default_bool(data, AMF_H264_DEBUG, false);
-	obs_data_set_default_int(data, AMF_H264_VERSION, (PLUGIN_VERSION_FULL - 1));
+	obs_data_set_default_int(data, AMF_H264_VERSION, 0x0001000400030005ull);
 }
 
 static void fill_api_list(obs_property_t* p) {
@@ -598,10 +598,7 @@ static void obs_data_default_single(obs_properties_t *props, obs_data_t *data, c
 	}
 }
 
-bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data) {
-	bool result = false;
-	obs_property_t* p;
-
+static void obs_data_transfer_settings(obs_data_t * data) {
 	#pragma region Version Differences
 	uint64_t version = obs_data_get_int(data, AMF_H264_VERSION);
 	switch (version) {
@@ -612,6 +609,13 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 			break;
 	}
 	#pragma endregion Version Differences
+}
+
+bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data) {
+	bool result = false;
+	obs_property_t* p;
+
+	obs_data_transfer_settings(data);
 
 	#pragma region Presets
 	Presets lastPreset = (Presets)obs_data_get_int(data, "last" vstr(AMF_H264_PRESET)),
@@ -1273,6 +1277,8 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 	const struct video_output_info *voi = video_output_get_info(video);
 	uint32_t m_cfgFPSnum = voi->fps_num;
 	uint32_t m_cfgFPSden = voi->fps_den;
+
+	obs_data_transfer_settings(data);
 
 	//////////////////////////////////////////////////////////////////////////
 	/// Initialize Encoder
