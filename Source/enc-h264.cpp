@@ -192,7 +192,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_int(data, "last" vstr(AMF_H264_VBVBUFFER), -1);
 	obs_data_set_default_int(data, AMF_H264_VBVBUFFER, 0);
 	obs_data_set_default_int(data, AMF_H264_VBVBUFFER_SIZE, 3500);
-	obs_data_set_default_double(data, AMF_H264_VBVBUFFER_STRICTNESS, 0);
+	obs_data_set_default_double(data, AMF_H264_VBVBUFFER_STRICTNESS, 50);
 	obs_data_set_default_double(data, AMF_H264_VBVBUFFER_FULLNESS, 100);
 	obs_data_set_default_int(data, AMF_H264_MAXIMUMACCESSUNITSIZE, 0);
 	obs_data_set_default_int(data, AMF_H264_FILLERDATA, 1);

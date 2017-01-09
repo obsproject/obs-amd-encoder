@@ -1524,10 +1524,16 @@ void Plugin::AMD::H264Encoder::SetVBVBufferAutomatic(double_t strictness) {
 	}
 	strictBitrate = static_cast<uint32_t>(looseBitrate * m_FrameRateReverseDivisor);
 
-	#define PI 3.14159265
-	double_t interpVal = (sin(max(min(strictness, 1.0), 0.0) * 90 * (PI / 180))); // sin curve?
-	uint32_t realBitrate = static_cast<uint32_t>(ceil((strictBitrate * interpVal) + (looseBitrate * (1.0 - interpVal))));
-	this->SetVBVBufferSize(realBitrate);
+	// 0% = 100000, 50% = looseBitrate, 100% = strictBitrate
+	strictness = min(max(strictness, 0.0), 1.0);
+	double_t aAB = min(strictness * 2.0, 1.0f);
+	double_t bAB = max(strictness * 2.0 - 1.0, 0.0);
+
+	double_t aFade = (looseBitrate * aAB) + (100000 * (1.0 - aAB));
+	double_t bFade = (strictness * bAB) + (aFade * (1.0 - bAB));
+
+	uint32_t vbvBufferSize = static_cast<uint32_t>(round(bFade));
+	this->SetVBVBufferSize(vbvBufferSize);
 }
 
 uint32_t Plugin::AMD::H264Encoder::GetVBVBufferSize() {
