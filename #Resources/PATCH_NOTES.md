@@ -1,13 +1,13 @@
-# 1.4.3.5 - Performance Tracking, Translation Update & Minor Fixes
-A new feature is added in this version to the Debug checkbox: Performance Tracking! Performance Tracking allows you to figure out which frames took too long to create, convert or encode - without needing to touch an IDE at all. Simply check the Debug checkbox and the information will be printed into the log file!
-Performance Tracking outputs all times in nanosecond precision, so even the slightest delay will be visible. But be careful when trying to figure out why something took so long - it can't work faster than what the internal OBS frame timer ticks at.
+# 1.4.3.6 - Settings Transfer, Automatic VBV Buffer adjustment and Fixes
+Another day, another new feature: this time it is transferring settings between versions, so that you will no longer use settings when a change to a setting is made. Since it only just now started tracking the config version, it will only work with settings created between 1.4.3.0 and 1.4.3.5, any other version might end up with broken settings.
 
-This update also fixes a rare crash when quitting OBS, makes the Usage modes 'Low Latency' and 'Ultra Low Latency' work again and allows the encoder to start properly with other color formats than NV12 again. Additionally the locale files have been updated to the latest ones again.
+Another change has been done to the Automatic VBV Buffer Size, which will now behave much more predictable. A value of 0% is completely unrestricted, 50% matches the calculated bitrate and 100% matches the calculated strict bitrate.
+
+Presets will also now use the proper minimum and maximum QP values and the minimum QP default value has been increased to 11.
 
 ## Changelog
-* Fixed: Encoder can now work with other color formats than NV12.
-* Fixed: Usage 'Low Latency' and 'Ultra Low Latency' should now work properly.
-* Fixed: Occasional rare crash on OBS exit due to memory deallocation happening too early.
-* Changed: Log messages for library loading.
-* Changed: Locale files have been updated to match CrowdIn again.
-* Added: Performance Tracking ability with Debug checked.
+* Added: Version-specific setting transfer code which should reduce the lost settings between updates.
+* Changed: VBV Buffer Strictness is now linear with three steps: 100000 (0%), Target Bitrate (50%) and Strict Target Bitrate (100%).
+* Changed: Default for Minimum QP is now 11.
+* Fixed: Presets not using the proper QP Minimum and Maximum.
+* Fixed: Startup log messages not showing proper error codes.
