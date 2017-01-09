@@ -177,6 +177,7 @@ SOFTWARE.
 #define AMF_H264_VIEW_MASTER								TEXT_AMF_H264("View.Master")
 #define AMF_H264_DEBUG										TEXT_AMF_H264("Debug")
 #define AMF_H264_DEBUG_DESCRIPTION							TEXT_AMF_H264("Debug.Description")
+#define AMF_H264_VERSION									TEXT_AMF_H264("Version")
 
 //////////////////////////////////////////////////////////////////////////
 // Code
