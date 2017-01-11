@@ -47,43 +47,43 @@ namespace Plugin {
 	namespace AMD {
 		// Internal Properties
 		enum class H264EncoderType : uint8_t {
-			AVC,	// Advanced Video Coding
-			SVC,	// Scalable Video Coding
-			HEVC,	// High-Efficiency Video Coding (Discovered in amfrt64.dll)
+			AVC = 0,	// Advanced Video Coding
+			SVC,		// Scalable Video Coding
+			HEVC,		// High-Efficiency Video Coding (Discovered in amfrt64.dll)
 		};
 		enum class H264MemoryType : uint8_t {
-			Host,			// Host-Managed Memory
-			DirectX9,		// DirectX9
+			Host = 0,	// Host-Managed Memory
+			DirectX9,	// DirectX9
 			DirectX11,	// DirectX11
 			OpenGL,		// OpenGL
 		};
 		enum class H264ColorFormat : uint8_t {
 			// 4:2:0 Formats
-			NV12,	// NV12
-			I420,	// YUV 4:2:0
+			NV12 = 0,	// NV12
+			I420,		// YUV 4:2:0
 			// 4:2:2 Formats
 			YUY2,
 			// Uncompressed
-			BGRA,	// ARGB
-			RGBA,	// RGBA
+			BGRA,		// ARGB
+			RGBA,		// RGBA
 			// Other
-			GRAY,
+			GRAY,		// Y 4:0:0
 		};
 		enum class H264ColorProfile : uint8_t {
-			Rec601,
+			Rec601 = 0,
 			Rec709,
-			Rec2020, // Truer to world color
+			Rec2020, // Truer to world color, used for HDR
 		};
 
 		// Static Properties
 		enum class H264Usage : uint8_t {
-			Transcoding,
-			UltraLowLatency,
-			LowLatency,
-			Webcam,			// For SVC
+			Transcoding = 0,	// Only one capable of streaming to services.
+			UltraLowLatency,	// Low Latency Recording or Network Streaming
+			LowLatency,			// Low Latency Recording or Network Streaming
+			Webcam,				// For SVC Recording and Streaming
 		};
 		enum class H264QualityPreset : uint8_t {
-			Speed,
+			Speed = 0,
 			Balanced,
 			Quality,
 		};
@@ -114,7 +114,7 @@ namespace Plugin {
 			L52,
 		};
 		enum class H264ScanType : uint8_t {
-			Progressive,
+			Progressive = 0,
 			Interlaced,
 		};
 		enum class H264CodingType : uint8_t {
@@ -125,13 +125,13 @@ namespace Plugin {
 
 		// Dynamic Properties
 		enum class H264RateControlMethod : uint8_t {
-			ConstantQP,
+			ConstantQP = 0,
 			ConstantBitrate,
 			VariableBitrate_PeakConstrained,
-			VariableBitrate_LatencyConstrained,
+			VariableBitrate_LatencyConstrained = 3,
 		};
 		enum class H264BFramePattern : uint8_t {
-			None,
+			None = 0,
 			One,
 			Two,
 			Three,
@@ -143,7 +143,7 @@ namespace Plugin {
 			Vertical = 2
 		};
 		enum class H264SliceControlMode : uint8_t {
-			Off,
+			Off = 0,
 			Macroblock = 1, // AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB
 			Invalid,
 			Macroblock_Row = 3 // AMF_VIDEO_ENCODER_SLICE_CTRL_MODE_MB_ROW
