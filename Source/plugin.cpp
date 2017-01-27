@@ -36,6 +36,11 @@ SOFTWARE.
 #include "amf.h"
 #include "amf-capabilities.h"
 #include "enc-h264.h"
+#include "components/VideoEncoderVCE.h"
+#include "components/VideoEncoderHEVC.h"
+
+using namespace Plugin;
+using namespace Plugin::AMD;
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -48,6 +53,127 @@ OBS_DECLARE_MODULE();
 OBS_MODULE_AUTHOR("Michael Fabian Dirks");
 OBS_MODULE_USE_DEFAULT_LOCALE("enc-amf", "en-US");
 
+#ifdef _DEBUG
+static std::string fastPrintVariant(const char* text, amf::AMFVariantStruct variant) {
+	std::vector<char> buf(1024);
+	switch (variant.type) {
+		case amf::AMF_VARIANT_EMPTY:
+			sprintf(buf.data(), "%s%s", text, "Empty");
+			break;
+		case amf::AMF_VARIANT_BOOL:
+			sprintf(buf.data(), "%s%s", text, variant.boolValue ? "true" : "false");
+			break;
+		case amf::AMF_VARIANT_INT64:
+			sprintf(buf.data(), "%s%lld", text, variant.int64Value);
+			break;
+		case amf::AMF_VARIANT_DOUBLE:
+			sprintf(buf.data(), "%s%f", text, variant.doubleValue);
+			break;
+		case amf::AMF_VARIANT_RECT:
+			sprintf(buf.data(), "%s[%ld,%ld,%ld,%ld]", text,
+				variant.rectValue.top, variant.rectValue.left,
+				variant.rectValue.bottom, variant.rectValue.right);
+			break;
+		case amf::AMF_VARIANT_SIZE:
+			sprintf(buf.data(), "%s%ldx%ld", text,
+				variant.sizeValue.width, variant.sizeValue.height);
+			break;
+		case amf::AMF_VARIANT_POINT:
+			sprintf(buf.data(), "%s[%ld,%ld]", text,
+				variant.pointValue.x, variant.pointValue.y);
+			break;
+		case amf::AMF_VARIANT_RATE:
+			sprintf(buf.data(), "%s%ld/%ld", text,
+				variant.rateValue.num, variant.rateValue.den);
+			break;
+		case amf::AMF_VARIANT_RATIO:
+			sprintf(buf.data(), "%s%ld:%ld", text,
+				variant.ratioValue.num, variant.ratioValue.den);
+			break;
+		case amf::AMF_VARIANT_COLOR:
+			sprintf(buf.data(), "%s(%d,%d,%d,%d)", text,
+				variant.colorValue.r,
+				variant.colorValue.g,
+				variant.colorValue.b,
+				variant.colorValue.a);
+			break;
+		case amf::AMF_VARIANT_STRING:
+			sprintf(buf.data(), "%s'%s'", text,
+				variant.stringValue);
+			break;
+		case amf::AMF_VARIANT_WSTRING:
+			sprintf(buf.data(), "%s'%ls'", text,
+				variant.wstringValue);
+			break;
+	}
+	return std::string(buf.data());
+};
+
+static void printDebugInfo(amf::AMFComponentPtr m_AMFEncoder) {
+	amf::AMFPropertyInfo* pInfo;
+	size_t propCount = m_AMFEncoder->GetPropertyCount();
+	AMF_LOG_INFO("-- Internal AMF Encoder Properties --");
+	for (size_t propIndex = 0; propIndex < propCount; propIndex++) {
+		static const char* typeToString[] = {
+			"Empty",
+			"Boolean",
+			"Int64",
+			"Double",
+			"Rect",
+			"Size",
+			"Point",
+			"Rate",
+			"Ratio",
+			"Color",
+			"String",
+			"WString",
+			"Interface"
+		};
+
+		AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(propIndex, (const amf::AMFPropertyInfo**) &pInfo);
+		if (res != AMF_OK)
+			continue;
+
+		amf::AMFVariantStruct curStruct = amf::AMFVariantStruct();
+		m_AMFEncoder->GetProperty(pInfo->name, &curStruct);
+
+		auto vcur = fastPrintVariant("Current: ", curStruct);
+		auto vdef = fastPrintVariant("Default: ", pInfo->defaultValue);
+		auto vmin = fastPrintVariant("Minimum: ", pInfo->minValue);
+		auto vmax = fastPrintVariant("Maximum: ", pInfo->maxValue);
+		std::stringstream venum;
+		if (pInfo->pEnumDescription) {
+			const amf::AMFEnumDescriptionEntry* pEnumEntry = pInfo->pEnumDescription;
+			while (pEnumEntry->name != nullptr) {
+				QUICK_FORMAT_MESSAGE(tmp, "%ls[%ld]", pEnumEntry->name, pEnumEntry->value);
+				venum << tmp.data() << "; ";				
+				pEnumEntry++;
+			}
+		}
+		
+		AMF_LOG_INFO("%ls(\
+Description: %ls, \
+Type: %s, \
+Index %d, \
+Content Type: %d, \
+Access: %s%s%s, \
+Values: {%s, %s, %s, %s%s%s})",
+			pInfo->name,
+			pInfo->desc,
+			typeToString[pInfo->type],
+			propIndex,
+			pInfo->contentType,
+			(pInfo->accessType & amf::AMF_PROPERTY_ACCESS_READ) ? "R" : "",
+			(pInfo->accessType & amf::AMF_PROPERTY_ACCESS_WRITE) ? "W" : "",
+			(pInfo->accessType & amf::AMF_PROPERTY_ACCESS_WRITE_RUNTIME) ? "X" : "",
+			vcur.c_str(), vdef.c_str(), vmin.c_str(), vmax.c_str(),
+			(venum.str().length() > 0) ? ", Enum: " : "", venum.str().c_str()
+		);
+	}
+}
+#endif
+
+
 /**
 * Required: Called when the module is loaded.  Use this function to load all
 * the sources/encoders/outputs/services for your module, or anything else that
@@ -59,19 +185,20 @@ OBS_MODULE_USE_DEFAULT_LOCALE("enc-amf", "en-US");
 MODULE_EXPORT bool obs_module_load(void) {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Loading...");
 
-	// Attempt to load AMF Runtime
+	// AMF
 	try {
-		Plugin::AMD::AMF::GetInstance();
+		Plugin::AMD::AMF::Initialize();
 	} catch (std::exception& e) {
 		AMF_LOG_ERROR("%s", e.what());
-		return true;
-	} catch (std::exception* e) {
-		AMF_LOG_ERROR("%s", e->what());
-		delete e;
-		return true;
-	} catch (...) {
-		AMF_LOG_ERROR("Unknown Exception.");
-		return true;
+		return false;
+	}
+
+	// AMF Capabilities
+	try {
+		Plugin::AMD::CapabilityManager::Initialize();
+	} catch (std::exception& e) {
+		AMF_LOG_ERROR("%s", e.what());
+		return false;
 	}
 
 	// Initialize Graphics APIs
@@ -80,17 +207,10 @@ MODULE_EXPORT bool obs_module_load(void) {
 	} catch (std::exception& e) {
 		AMF_LOG_ERROR("%s", e.what());
 		return true;
-	} catch (std::exception* e) {
-		AMF_LOG_ERROR("%s", e->what());
-		delete e;
-		return true;
-	} catch (...) {
-		AMF_LOG_ERROR("Unknown Exception.");
-		return true;
 	}
 
 	// Register Encoder
-	try {
+	/*try {
 		Plugin::Interface::H264Interface::encoder_register();
 	} catch (std::exception& e) {
 		AMF_LOG_ERROR("%s", e.what());
@@ -102,14 +222,73 @@ MODULE_EXPORT bool obs_module_load(void) {
 	} catch (...) {
 		AMF_LOG_ERROR("Unknown Exception.");
 		return true;
+	}*/
+
+
+	#ifdef _DEBUG
+	{
+		AMF_LOG_INFO("Dumping Parameter Information...");
+		const wchar_t* encoders[] = {
+			AMFVideoEncoderVCE_AVC,
+			AMFVideoEncoder_HEVC
+		};
+		auto m_AMF = AMF::GetInstance();
+		auto m_AMFFactory = m_AMF->GetFactory();
+		amf::AMFTrace* m_AMFTrace;
+		m_AMFFactory->GetTrace(&m_AMFTrace);
+		amf::AMFDebug* m_AMFDebug;
+		m_AMFFactory->GetDebug(&m_AMFDebug);
+		m_AMFDebug->AssertsEnable(true);
+		m_AMFDebug->EnablePerformanceMonitor(true);
+		m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_FILE, true);
+		m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, true);
+		m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_FILE, 99);
+		m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, 99);
+		m_AMFTrace->SetPath(L"C:\\AMFTrace.log");
+		m_AMFTrace->TraceEnableAsync(true);
+		m_AMFTrace->SetGlobalLevel(99);
+		for (auto enc : encoders) {
+			amf::AMFContextPtr m_AMFContext;
+			if (m_AMFFactory->CreateContext(&m_AMFContext) == AMF_OK) {
+				m_AMFContext->InitDX11(nullptr);
+				amf::AMFComponentPtr m_AMFComponent;
+				if (m_AMFFactory->CreateComponent(m_AMFContext, enc, &m_AMFComponent) == AMF_OK) {
+					AMF_LOG_INFO("-- %ls --", enc);
+					printDebugInfo(m_AMFComponent);
+					m_AMFComponent->Terminate();
+				}
+				m_AMFContext->Terminate();
+			}
+		}
 	}
+	#endif
 
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Complete.");
 	return true;
 }
 
 /** Optional: Called when the module is unloaded.  */
-MODULE_EXPORT void obs_module_unload(void) {}
+MODULE_EXPORT void obs_module_unload(void) {
+
+
+
+	// AMF Capabilities
+	try {
+		Plugin::AMD::CapabilityManager::Finalize();
+	} catch (std::exception& e) {
+		AMF_LOG_ERROR("%s", e.what());
+	}
+
+	// AMF
+	try {
+		Plugin::AMD::AMF::Finalize();
+	} catch (std::exception& e) {
+		AMF_LOG_ERROR("%s", e.what());
+	}
+}
+
+
+
 
 /** Optional: Returns the full name of the module */
 MODULE_EXPORT const char* obs_module_name() {

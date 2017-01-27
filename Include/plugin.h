@@ -60,12 +60,15 @@ MODULE_EXTERN const char *obs_module_text_multi(const char *val, uint8_t depth =
 #define PLUGIN_VERSION_FULL				(((uint64_t)PLUGIN_VERSION_MAJOR << 48ull) | ((uint64_t)PLUGIN_VERSION_MINOR << 32ull) | ((uint64_t)PLUGIN_VERSION_PATCH) | ((uint64_t)PLUGIN_VERSION_BUILD))
 #define PLUGIN_VERSION_TEXT				vstr(PLUGIN_VERSION_MAJOR) "." vstr(PLUGIN_VERSION_MINOR) "." vstr(PLUGIN_VERSION_PATCH) "." vstr(PLUGIN_VERSION_BUILD)
 
-#define AMF_LOG(level, format, ...)		blog(level, "[AMF Encoder] " format, ##__VA_ARGS__);
-#define AMF_LOG_ERROR(format, ...)		AMF_LOG(LOG_ERROR,   format, ##__VA_ARGS__)
-#define AMF_LOG_WARNING(format, ...)	AMF_LOG(LOG_WARNING, format, ##__VA_ARGS__)
-#define AMF_LOG_INFO(format, ...)		AMF_LOG(LOG_INFO,    format, ##__VA_ARGS__)
-#define AMF_LOG_CONFIG(format, ...)		AMF_LOG(350,         format, ##__VA_ARGS__)
-#define AMF_LOG_DEBUG(format, ...)		AMF_LOG(LOG_DEBUG,   format, ##__VA_ARGS__)
+#define AMF_LOG(level, ...)		blog(level, "[AMF] " __VA_ARGS__);
+#define AMF_LOG_ERROR(...)		AMF_LOG(LOG_ERROR,   __VA_ARGS__)
+#define AMF_LOG_WARNING(...)	AMF_LOG(LOG_WARNING, __VA_ARGS__)
+#define AMF_LOG_INFO(...)		AMF_LOG(LOG_INFO,    __VA_ARGS__)
+#define AMF_LOG_CONFIG(...)		AMF_LOG(350,         __VA_ARGS__)
+#define AMF_LOG_DEBUG(...)		AMF_LOG(LOG_DEBUG,   __VA_ARGS__)
+
+#define QUICK_FORMAT_MESSAGE(var, ...) std::vector<char> var(1024); \
+	sprintf_s(var.data(), var.size(), __VA_ARGS__);
 
 #define ThrowExceptionWithAMFError(format, res, ...) {\
 	std::vector<char> _throwexceptionwithamferror_buf(8192);\
@@ -112,3 +115,4 @@ void SetThreadName(std::thread* thread, const char* threadName);
 void SetThreadName(const char* threadName);
 
 #endif
+
