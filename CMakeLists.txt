@@ -5,6 +5,9 @@ PROJECT(enc-amf)
 SET(enc-amf_HEADERS
 	"Include/amf.h"
 	"Include/amf-capabilities.h"
+	"Include/amf-encoder.h"
+	"Include/amf-encoder-h264.h"
+	"Include/amf-encoder-h265.h"
 	"Include/amf-h264.h"
 	"Include/api-base.h"
 	"Include/api-d3d9.h"
@@ -18,6 +21,9 @@ SET(enc-amf_HEADERS
 SET(enc-amf_SOURCES
 	"Source/amf.cpp"
 	"Source/amf-capabilities.cpp"
+	"Source/amf-encoder.cpp"
+	"Source/amf-encoder-h264.cpp"
+	"Source/amf-encoder-h265.cpp"
 	"Source/amf-h264.cpp"
 	"Source/api-base.cpp"
 	"Source/api-host.cpp"
