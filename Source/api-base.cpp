@@ -137,6 +137,16 @@ std::shared_ptr<Base> Plugin::API::Base::GetAPIByName(std::string name) {
 	return *s_APIInstances.begin();
 }
 
+std::shared_ptr<Base> Plugin::API::Base::GetAPIByType(Type type) {
+	for (auto api : s_APIInstances) {
+		if (type == api->GetType()) {
+			return api;
+		}
+	}
+	// If none was found, return the first one.
+	return *s_APIInstances.begin();
+}
+
 std::vector<std::shared_ptr<Base>> Plugin::API::Base::EnumerateAPIs() {
 	return std::vector<std::shared_ptr<Base>>(s_APIInstances);
 }

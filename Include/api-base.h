@@ -70,6 +70,7 @@ namespace Plugin {
 			static std::shared_ptr<Base> GetAPIInstance(size_t index);
 			static std::string GetAPIName(size_t index);
 			static std::shared_ptr<Base> GetAPIByName(std::string name);
+			static std::shared_ptr<Base> GetAPIByType(Type type);
 			static std::vector<std::shared_ptr<Base>> EnumerateAPIs();
 			static std::vector<std::string> EnumerateAPINames();
 
