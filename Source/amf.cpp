@@ -57,13 +57,25 @@ class CustomWriter : public amf::AMFTraceWriter {
 	virtual void Flush() override {}
 };
 
-std::shared_ptr<Plugin::AMD::AMF> Plugin::AMD::AMF::GetInstance() {
-	static std::shared_ptr<AMF> __instance = std::make_shared<AMF>();
-	static std::mutex __mutex;
+#pragma region Singleton
+static AMF* __instance;
+static std::mutex __instance_mutex;
+void Plugin::AMD::AMF::Initialize() {
+	const std::lock_guard<std::mutex> lock(__instance_mutex);
+	__instance = new AMF();
+}
 
-	const std::lock_guard<std::mutex> lock(__mutex);
+AMF* Plugin::AMD::AMF::GetInstance() {
+	const std::lock_guard<std::mutex> lock(__instance_mutex);
 	return __instance;
 }
+
+void Plugin::AMD::AMF::Finalize() {
+	const std::lock_guard<std::mutex> lock(__instance_mutex);
+	delete __instance;
+	__instance == nullptr;
+}
+#pragma endregion Singleton
 
 Plugin::AMD::AMF::AMF() {
 	AMF_RESULT res = AMF_OK;

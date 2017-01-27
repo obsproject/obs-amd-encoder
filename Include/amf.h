@@ -50,13 +50,20 @@ namespace Plugin {
 		class AMF {
 			#pragma region Singleton
 			public:
-			static std::shared_ptr<Plugin::AMD::AMF> GetInstance();
-			#pragma endregion Singleton
+			static void Initialize();
+			static AMF* GetInstance();
+			static void Finalize();
 
-			public:
+			private: // Private Initializer & Finalizer
 			AMF();
 			~AMF();
 
+			public: // Remove all Copy operators
+			AMF(AMF const&) = delete;
+			void operator=(AMF const&) = delete;
+			#pragma endregion Singleton
+			
+			public:
 			amf::AMFFactory* GetFactory();
 			amf::AMFTrace* GetTrace();
 			amf::AMFDebug* GetDebug();
