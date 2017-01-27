@@ -36,7 +36,9 @@ SOFTWARE.
 // Plugin
 #include "plugin.h"
 #include "amf.h"
-#include "amf-h264.h"
+#include "amf-encoder.h"
+#include "amf-encoder-h264.h"
+#include "amf-encoder-h265.h"
 #include "api-base.h"
 
 // AMF
@@ -48,64 +50,33 @@ SOFTWARE.
 
 namespace Plugin {
 	namespace AMD {
-		volatile struct VCEDeviceCapabilities {
-			amf::AMF_ACCELERATION_TYPE acceleration_type;
-			uint32_t maxProfile;
-			uint32_t maxProfileLevel;
-			uint32_t maxBitrate;
-			uint32_t minReferenceFrames;
-			uint32_t maxReferenceFrames;
-			bool supportsBFrames;
-			bool supportsFixedSliceMode;
-			uint32_t maxTemporalLayers;
-			uint32_t maxNumOfStreams;
-			uint32_t maxNumOfHwInstances;
-
-			struct IOCaps {
-				int32_t minWidth, maxWidth;
-				int32_t minHeight, maxHeight;
-				bool supportsInterlaced;
-				uint32_t verticalAlignment;
-
-				std::vector<std::pair<amf::AMF_SURFACE_FORMAT, bool>> formats;
-				std::vector<std::pair<amf::AMF_MEMORY_TYPE, bool>> memoryTypes;
-			} input, output;
-
-			Plugin::AMD::VCEDeviceCapabilities::VCEDeviceCapabilities();
-		};
-
-		class VCECapabilities {
-			//////////////////////////////////////////////////////////////////////////
-			// Singleton
-			//////////////////////////////////////////////////////////////////////////
+		class CapabilityManager {
+			#pragma region Singleton
 			public:
-			static std::shared_ptr<Plugin::AMD::VCECapabilities> GetInstance();
-			static void ReportCapabilities(std::shared_ptr<Plugin::API::Base> api);
-			static void ReportAdapterCapabilities(std::shared_ptr<Plugin::API::Base> api,
-				Plugin::API::Adapter adapter);
-			static void ReportAdapterTypeCapabilities(std::shared_ptr<Plugin::API::Base> api,
-				Plugin::API::Adapter adapter,
-				H264EncoderType type);
-			static void ReportAdapterTypeIOCapabilities(std::shared_ptr<Plugin::API::Base> api,
-				Plugin::API::Adapter adapter,
-				H264EncoderType type,
-				bool output);
+			static void Initialize();
+			static CapabilityManager* Instance();
+			static void Finalize();
 
-			//////////////////////////////////////////////////////////////////////////
-			// Class
-			//////////////////////////////////////////////////////////////////////////
-			public:
-			VCECapabilities();
-			~VCECapabilities();
+			private: // Private Initializer & Finalizer
+			CapabilityManager();
+			~CapabilityManager();
 
-			bool Refresh();
-			std::vector<std::pair<H264EncoderType, VCEDeviceCapabilities>>
-				GetAllAdapterCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter);
-			VCEDeviceCapabilities
-				GetAdapterCapabilities(std::shared_ptr<Plugin::API::Base> api, Plugin::API::Adapter adapter, H264EncoderType type);
+			public: // Remove all Copy operators
+			CapabilityManager(CapabilityManager const&) = delete;
+			void operator=(CapabilityManager const&) = delete;
+			#pragma endregion Singleton
+
+			void RefreshCapabilities();
+
+			bool IsCodecSupportedByAPI(API::Type api);
+			bool IsCodecSupportedByAdapter(API::Adapter adapter);
+			bool IsCodecSupported(AMD::Codec codec);
 
 			private:
-			std::map<std::tuple<std::string, Plugin::API::Adapter, Plugin::AMD::H264EncoderType>, VCEDeviceCapabilities> capabilityMap;
+			std::map<
+				std::tuple<API::Type, API::Adapter, AMD::Codec>,
+				bool> m_CapabilityMap;
+
 		};
 	}
 }
