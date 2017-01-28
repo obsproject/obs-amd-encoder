@@ -82,3 +82,24 @@ void Plugin::AMD::CapabilityManager::RefreshCapabilities() {
 		}
 	}
 }
+
+bool Plugin::AMD::CapabilityManager::IsCodecSupported(AMD::Codec codec) {
+	for (auto api : API::Base::EnumerateAPIs()) {
+		if (IsCodecSupportedByAPI(codec, api->GetType()))
+			return true;
+	}
+	return false;
+}
+
+bool Plugin::AMD::CapabilityManager::IsCodecSupportedByAPI(AMD::Codec codec, API::Type type) {
+	auto api = API::Base::GetAPIByType(type);
+	for (auto adapter : api->EnumerateAdapters()) {
+		if (IsCodecSupportedByAPIAdapter(codec, type, adapter) == true)
+			return true;
+	}
+	return false;
+}
+
+bool Plugin::AMD::CapabilityManager::IsCodecSupportedByAPIAdapter(AMD::Codec codec, API::Type api, API::Adapter adapter) {
+	return m_CapabilityMap[std::make_tuple(api, adapter, codec)];
+}

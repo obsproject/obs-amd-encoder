@@ -68,9 +68,9 @@ namespace Plugin {
 
 			void RefreshCapabilities();
 
-			bool IsCodecSupportedByAPI(API::Type api);
-			bool IsCodecSupportedByAdapter(API::Adapter adapter);
 			bool IsCodecSupported(AMD::Codec codec);
+			bool IsCodecSupportedByAPI(AMD::Codec codec, API::Type api);
+			bool IsCodecSupportedByAPIAdapter(AMD::Codec codec, API::Type api, API::Adapter adapter);
 
 			private:
 			std::map<
