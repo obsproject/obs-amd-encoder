@@ -23,16 +23,6 @@ SOFTWARE.
 */
 
 #pragma once
-//////////////////////////////////////////////////////////////////////////
-// Includes
-//////////////////////////////////////////////////////////////////////////
-
-// Microsoft as always does not follow the standard and declares safe functions unsafe.
-// Or even straight up marks them as deprecated, what the fuck Microsoft?
-#ifdef _MSC_VER
-#define _CRT_SECURE_NO_WARNINGS
-#pragma warning(disable : 4996)
-#endif
 
 #include <cstdint>
 #include <inttypes.h>
@@ -40,13 +30,11 @@ SOFTWARE.
 #include <stdexcept>
 #include <thread>
 #include <memory>
+#include "Version.h"
 
 // Open Broadcaster Software
-#pragma warning( disable: 4201 )
 #include "libobs/obs-module.h"
 #include "libobs/obs-encoder.h"
-
-MODULE_EXTERN const char *obs_module_text_multi(const char *val, uint8_t depth = (uint8_t)1);
 
 //////////////////////////////////////////////////////////////////////////
 // Defines
@@ -56,9 +44,9 @@ MODULE_EXTERN const char *obs_module_text_multi(const char *val, uint8_t depth =
 #define dstr(s) #s
 #define clamp(val,low,high) (val > high ? high : (val < low ? low : val))
 
-#include "Version.h"
-#define PLUGIN_VERSION_FULL				(((uint64_t)PLUGIN_VERSION_MAJOR << 48ull) | ((uint64_t)PLUGIN_VERSION_MINOR << 32ull) | ((uint64_t)PLUGIN_VERSION_PATCH) | ((uint64_t)PLUGIN_VERSION_BUILD))
-#define PLUGIN_VERSION_TEXT				vstr(PLUGIN_VERSION_MAJOR) "." vstr(PLUGIN_VERSION_MINOR) "." vstr(PLUGIN_VERSION_PATCH) "." vstr(PLUGIN_VERSION_BUILD)
+#define PLUGIN_NAME_AMF				"AMD Advanced Media Framework"
+#define PLUGIN_VERSION_FULL		(((uint64_t)PLUGIN_VERSION_MAJOR << 48ull) | ((uint64_t)PLUGIN_VERSION_MINOR << 32ull) | ((uint64_t)PLUGIN_VERSION_PATCH) | ((uint64_t)PLUGIN_VERSION_BUILD))
+#define PLUGIN_VERSION_TEXT		vstr(PLUGIN_VERSION_MAJOR) "." vstr(PLUGIN_VERSION_MINOR) "." vstr(PLUGIN_VERSION_PATCH) "." vstr(PLUGIN_VERSION_BUILD)
 
 #define AMF_LOG(level, ...)		blog(level, "[AMF] " __VA_ARGS__);
 #define AMF_LOG_ERROR(...)		AMF_LOG(LOG_ERROR,   __VA_ARGS__)
@@ -85,25 +73,25 @@ MODULE_EXTERN const char *obs_module_text_multi(const char *val, uint8_t depth =
 #endif
 #endif
 
-//////////////////////////////////////////////////////////////////////////
 // Defines - Translation Strings
-//////////////////////////////////////////////////////////////////////////
-
 #define TEXT_T(x)						obs_module_text_multi(x)
 #define TEXT_AMF(x)						("AMF." ## x)
 #define TEXT_AMF_H264(x)				(TEXT_AMF("H264." ## x))
+#define TEXT_AMF_H265(x)				(TEXT_AMF("H265." ## x))
 #define TEXT_AMF_UTIL(x)				(TEXT_AMF("Util." ## x))
 
 // Utility
-#define AMF_UTIL_DEFAULT									TEXT_AMF_UTIL("Default")
-#define AMF_UTIL_AUTOMATIC									TEXT_AMF_UTIL("Automatic")
-#define AMF_UTIL_MANUAL										TEXT_AMF_UTIL("Manual")
-#define AMF_UTIL_TOGGLE_DISABLED							TEXT_AMF_UTIL("Toggle.Disabled")
-#define AMF_UTIL_TOGGLE_ENABLED								TEXT_AMF_UTIL("Toggle.Enabled")
+#define AMF_UTIL_DEFAULT				TEXT_AMF_UTIL("Default")
+#define AMF_UTIL_AUTOMATIC				TEXT_AMF_UTIL("Automatic")
+#define AMF_UTIL_MANUAL					TEXT_AMF_UTIL("Manual")
+#define AMF_UTIL_TOGGLE_DISABLED		TEXT_AMF_UTIL("Toggle.Disabled")
+#define AMF_UTIL_TOGGLE_ENABLED			TEXT_AMF_UTIL("Toggle.Enabled")
 
 //////////////////////////////////////////////////////////////////////////
-// Threading Specific
+// Code
 //////////////////////////////////////////////////////////////////////////
+
+MODULE_EXTERN const char *obs_module_text_multi(const char *val, uint8_t depth = (uint8_t)1);
 
 #if (defined _WIN32) || (defined _WIN64)
 void SetThreadName(uint32_t dwThreadID, const char* threadName);
