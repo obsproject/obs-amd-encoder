@@ -71,7 +71,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	// Initialize Advanced Media Framework
 	m_AMF = AMF::GetInstance();
 	/// Retrieve Factory
-	m_AMFFactory = m_AMF.lock()->GetFactory();
+	m_AMFFactory = m_AMF->GetFactory();
 
 	// Create Context for Conversion and Encoding
 	AMF_RESULT res = m_AMFFactory->CreateContext(&m_AMFContext);
