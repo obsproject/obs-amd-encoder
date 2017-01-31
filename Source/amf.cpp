@@ -62,30 +62,29 @@ static AMF* __instance;
 static std::mutex __instance_mutex;
 void Plugin::AMD::AMF::Initialize() {
 	const std::lock_guard<std::mutex> lock(__instance_mutex);
-	__instance = new AMF();
+	if (!__instance)
+		__instance = new AMF();
 }
 
-AMF* Plugin::AMD::AMF::GetInstance() {
+AMF* Plugin::AMD::AMF::Instance() {
 	const std::lock_guard<std::mutex> lock(__instance_mutex);
 	return __instance;
 }
 
 void Plugin::AMD::AMF::Finalize() {
 	const std::lock_guard<std::mutex> lock(__instance_mutex);
-	delete __instance;
-	__instance == nullptr;
+	if (__instance)
+		delete __instance;
+	__instance = nullptr;
 }
 #pragma endregion Singleton
 
 Plugin::AMD::AMF::AMF() {
 	AMF_RESULT res = AMF_OK;
 
-	// Initialize AMF Library
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Initializing...");
-
 	#pragma region Null Class Members
 	m_TimerPeriod = 0;
-	m_AMFVersion_Compiler = 0;
+	m_AMFVersion_Plugin = AMF_FULL_VERSION;
 	m_AMFVersion_Runtime = 0;
 	m_AMFModule = 0;
 
@@ -96,84 +95,101 @@ Plugin::AMD::AMF::AMF() {
 	AMFInit = nullptr;
 	#pragma endregion Null Class Members
 
-	/// Load AMF Runtime into Memory.
+	#ifdef _WIN32
+	void* pProductVersion = nullptr;
+	uint32_t lProductVersionSize = 0;
+	#endif
+
+	// Initialize AMF Library
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Initializing...");
+
+	// Load AMF Runtime Library
 	m_AMFModule = LoadLibraryW(AMF_DLL_NAME);
 	if (!m_AMFModule) {
-		DWORD error = GetLastError();
-		std::vector<char> buf(1024);
-		sprintf(buf.data(), "Unable to load '%ls', error code %ld.", AMF_DLL_NAME, error);
-		throw std::exception(buf.data());
+		QUICK_FORMAT_MESSAGE(msg, "Unable to load '%ls', error code %ld.",
+			AMF_DLL_NAME,
+			GetLastError());
+		throw std::exception(msg.data());
+	} else {
+		AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Loaded '%ls'.", AMF_DLL_NAME);
 	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Loaded '%ls'.", AMF_DLL_NAME);
-	#ifdef _WIN32 // Windows: Get Product Version
-	std::vector<char> verbuf(GetFileVersionInfoSizeW(AMF_DLL_NAME, nullptr));
-	GetFileVersionInfoW(AMF_DLL_NAME, 0, (DWORD)verbuf.size(), verbuf.data());
 
-	void* pBlock = verbuf.data();
+	// Windows: Get Product Version for Driver Matching
+	#ifdef _WIN32 
+	{
+		std::vector<char> verbuf(GetFileVersionInfoSizeW(AMF_DLL_NAME, nullptr));
+		GetFileVersionInfoW(AMF_DLL_NAME, 0, (DWORD)verbuf.size(), verbuf.data());
 
-	// Read the list of languages and code pages.
-	struct LANGANDCODEPAGE {
-		WORD wLanguage;
-		WORD wCodePage;
-	} *lpTranslate;
-	UINT cbTranslate = sizeof(LANGANDCODEPAGE);
+		void* pBlock = verbuf.data();
 
-	VerQueryValueA(pBlock, "\\VarFileInfo\\Translation", (LPVOID*)&lpTranslate, &cbTranslate);
+		// Read the list of languages and code pages.
+		struct LANGANDCODEPAGE {
+			WORD wLanguage;
+			WORD wCodePage;
+		} *lpTranslate;
+		UINT cbTranslate = sizeof(LANGANDCODEPAGE);
 
-	std::vector<char> buf(1024);
-	sprintf(buf.data(), "%s%04x%04x%s",
-		"\\StringFileInfo\\",
-		lpTranslate[0].wLanguage,
-		lpTranslate[0].wCodePage,
-		"\\ProductVersion");
+		VerQueryValueA(pBlock, "\\VarFileInfo\\Translation", (LPVOID*)&lpTranslate, &cbTranslate);
 
-	// Retrieve file description for language and code page "i". 
-	void* pProductVersion;
-	uint32_t lProductVersionSize;
-	VerQueryValueA(pBlock, buf.data(), &pProductVersion, &lProductVersionSize);
-	#endif _WIN32 // Windows: Get Product Version
+		std::vector<char> buf(1024);
+		sprintf(buf.data(), "%s%04x%04x%s",
+			"\\StringFileInfo\\",
+			lpTranslate[0].wLanguage,
+			lpTranslate[0].wCodePage,
+			"\\ProductVersion");
 
-	/// Find Function for Querying AMF Version.
-	#pragma region Query AMF Runtime Version
+		// Retrieve file description for language and code page "i". 
+		VerQueryValueA(pBlock, buf.data(), &pProductVersion, &lProductVersionSize);
+	}
+	#endif _WIN32
+
+	// Query Runtime Version
 	AMFQueryVersion = (AMFQueryVersion_Fn)GetProcAddress(m_AMFModule, AMF_QUERY_VERSION_FUNCTION_NAME);
 	if (!AMFQueryVersion) {
-		DWORD error = GetLastError();
-		std::vector<char> buf(1024);
-		sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Finding Address of Function '%s' failed with error code %ld.", AMF_QUERY_VERSION_FUNCTION_NAME, error);
-		throw std::exception(buf.data());
+		QUICK_FORMAT_MESSAGE(msg, "Incompatible AMF Runtime (could not find '%s'), error code %ld.",
+			AMF_QUERY_VERSION_FUNCTION_NAME,
+			GetLastError());
+		throw std::exception(msg.data());
+	} else {
+		AMF_RESULT res = AMFQueryVersion(&m_AMFVersion_Runtime);
+		if (res != AMF_OK) {
+			QUICK_FORMAT_MESSAGE(msg, "Querying Version failed, error code %ld.",
+				res);
+			throw std::exception(msg.data());
+		}
 	}
-	/// Query Runtime Version
-	m_AMFVersion_Compiler = AMF_FULL_VERSION;
-	res = AMFQueryVersion(&m_AMFVersion_Runtime);
-	if (res != AMF_OK)
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Querying Version failed with error %ls (code %ld).", res);
-	#pragma endregion Query AMF Runtime Version
 
-		/// Find Function for Initializing AMF.
+	/// Initialize AMF
 	AMFInit = (AMFInit_Fn)GetProcAddress(m_AMFModule, AMF_INIT_FUNCTION_NAME);
 	if (!AMFInit) {
-		DWORD error = GetLastError();
-		std::vector<char> buf(1024);
-		sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Finding Address of Function '%s' failed with error code %ld.", AMF_INIT_FUNCTION_NAME, error);
-		throw std::exception(buf.data(), error);
+		QUICK_FORMAT_MESSAGE(msg, "Incompatible AMF Runtime (could not find '%s'), error code %ld.",
+			AMF_QUERY_VERSION_FUNCTION_NAME,
+			GetLastError());
+		throw std::exception(msg.data());
 	} else {
-		res = AMFInit(m_AMFVersion_Runtime, &m_AMFFactory);
-		if (res != AMF_OK)
-			ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Initializing AMF Library failed with error %ls (code %ld).", res);
+		AMF_RESULT res = AMFInit(m_AMFVersion_Runtime, &m_AMFFactory);
+		if (res != AMF_OK) {
+			QUICK_FORMAT_MESSAGE(msg, "Initializing AMF Library failed, error code %ld.",
+				res);
+			throw std::exception(msg.data());
+		}
 	}
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> AMF Library initialized.");
 
 	/// Retrieve Trace Object.
 	res = m_AMFFactory->GetTrace(&m_AMFTrace);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Retrieving Trace object failed with error %ls (code %ld).", res);
+		QUICK_FORMAT_MESSAGE(msg, "Retrieving AMF Trace class failed, error code %ld.",
+			res);
+		throw std::exception(msg.data());
 	}
 
 	/// Retrieve Debug Object.
 	res = m_AMFFactory->GetDebug(&m_AMFDebug);
 	if (res != AMF_OK) {
-		AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Retrieving Debug object failed with error code %ls (code %ld).", res);
-		throw std::exception("", res);
+		QUICK_FORMAT_MESSAGE(msg, "Retrieving AMF Debug class failed, error code %ld.",
+			res);
+		throw std::exception(msg.data());
 	}
 
 	/// Register Trace Writer and disable Debug Tracing.
@@ -183,10 +199,10 @@ Plugin::AMD::AMF::AMF() {
 
 	// Log success
 	AMF_LOG_INFO("Version " PLUGIN_VERSION_TEXT " loaded (Compiled: %d.%d.%d.%d, Runtime: %d.%d.%d.%d, Library: %.*s).",
-		(uint16_t)((m_AMFVersion_Compiler >> 48ull) & 0xFFFF),
-		(uint16_t)((m_AMFVersion_Compiler >> 32ull) & 0xFFFF),
-		(uint16_t)((m_AMFVersion_Compiler >> 16ull) & 0xFFFF),
-		(uint16_t)((m_AMFVersion_Compiler & 0xFFFF)),
+		(uint16_t)((m_AMFVersion_Plugin >> 48ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Plugin >> 32ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Plugin >> 16ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Plugin & 0xFFFF)),
 		(uint16_t)((m_AMFVersion_Runtime >> 48ull) & 0xFFFF),
 		(uint16_t)((m_AMFVersion_Runtime >> 32ull) & 0xFFFF),
 		(uint16_t)((m_AMFVersion_Runtime >> 16ull) & 0xFFFF),
@@ -199,19 +215,19 @@ Plugin::AMD::AMF::AMF() {
 
 Plugin::AMD::AMF::~AMF() {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Finalizing.");
+	if (m_TraceWriter) {
+		m_AMFTrace->UnregisterWriter(L"OBSWriter");
+		delete m_TraceWriter;
+		m_TraceWriter = nullptr;
+	}
 
-	/// Unregister Trace Writer
-	m_AMFTrace->UnregisterWriter(L"OBSWriter");
-	delete m_TraceWriter;
-	m_TraceWriter = nullptr;
-
-	// Free Library again
 	if (m_AMFModule)
 		FreeLibrary(m_AMFModule);
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Finalized.");
 
 	#pragma region Null Class Members
 	m_TimerPeriod = 0;
-	m_AMFVersion_Compiler = 0;
+	m_AMFVersion_Plugin = 0;
 	m_AMFVersion_Runtime = 0;
 	m_AMFModule = 0;
 
@@ -221,8 +237,6 @@ Plugin::AMD::AMF::~AMF() {
 	AMFQueryVersion = nullptr;
 	AMFInit = nullptr;
 	#pragma endregion Null Class Members
-
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Finalized.");
 }
 
 amf::AMFFactory* Plugin::AMD::AMF::GetFactory() {

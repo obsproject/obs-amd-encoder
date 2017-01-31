@@ -51,7 +51,7 @@ namespace Plugin {
 			#pragma region Singleton
 			public:
 			static void Initialize();
-			static AMF* GetInstance();
+			static AMF* Instance();
 			static void Finalize();
 
 			private: // Private Initializer & Finalizer
@@ -62,7 +62,7 @@ namespace Plugin {
 			AMF(AMF const&) = delete;
 			void operator=(AMF const&) = delete;
 			#pragma endregion Singleton
-			
+
 			public:
 			amf::AMFFactory* GetFactory();
 			amf::AMFTrace* GetTrace();
@@ -75,7 +75,7 @@ namespace Plugin {
 			
 			/// AMF Values
 			HMODULE m_AMFModule;
-			uint64_t m_AMFVersion_Compiler;
+			uint64_t m_AMFVersion_Plugin;
 			uint64_t m_AMFVersion_Runtime;
 
 			/// AMF Functions
