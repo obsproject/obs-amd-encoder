@@ -40,6 +40,8 @@ SOFTWARE.
 // Defines
 //////////////////////////////////////////////////////////////////////////
 
+#pragma warning (disable : 4996)
+
 #define vstr(s) dstr(s)
 #define dstr(s) #s
 #define clamp(val,low,high) (val > high ? high : (val < low ? low : val))
@@ -103,4 +105,3 @@ void SetThreadName(std::thread* thread, const char* threadName);
 void SetThreadName(const char* threadName);
 
 #endif
-

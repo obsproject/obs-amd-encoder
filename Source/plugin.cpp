@@ -146,18 +146,12 @@ static void printDebugInfo(amf::AMFComponentPtr m_AMFEncoder) {
 			const amf::AMFEnumDescriptionEntry* pEnumEntry = pInfo->pEnumDescription;
 			while (pEnumEntry->name != nullptr) {
 				QUICK_FORMAT_MESSAGE(tmp, "%ls[%ld]", pEnumEntry->name, pEnumEntry->value);
-				venum << tmp.data() << "; ";				
+				venum << tmp.data() << "; ";
 				pEnumEntry++;
 			}
 		}
-		
-		AMF_LOG_INFO("%ls(\
-Description: %ls, \
-Type: %s, \
-Index %d, \
-Content Type: %d, \
-Access: %s%s%s, \
-Values: {%s, %s, %s, %s%s%s})",
+
+		AMF_LOG_INFO("%ls(Description: %ls, Type: %s, Index %d, Content Type: %d, Access: %s%s%s, Values: {%s, %s, %s, %s%s%s})",
 			pInfo->name,
 			pInfo->desc,
 			typeToString[pInfo->type],
@@ -172,7 +166,6 @@ Values: {%s, %s, %s, %s%s%s})",
 	}
 }
 #endif
-
 
 /**
 * Required: Called when the module is loaded.  Use this function to load all
@@ -189,41 +182,29 @@ MODULE_EXPORT bool obs_module_load(void) {
 	try {
 		Plugin::AMD::AMF::Initialize();
 	} catch (std::exception& e) {
-		AMF_LOG_ERROR("%s", e.what());
+		AMF_LOG_ERROR("Encountered Exception during AMF initialization: %s", e.what());
+		return false;
+	} catch (...) {
+		AMF_LOG_ERROR("Unexpected Exception during AMF initialization.");
 		return false;
 	}
+
+	// Initialize Graphics APIs
+	Plugin::API::Base::Initialize();
 
 	// AMF Capabilities
 	try {
 		Plugin::AMD::CapabilityManager::Initialize();
 	} catch (std::exception& e) {
-		AMF_LOG_ERROR("%s", e.what());
+		AMF_LOG_ERROR("Encountered Exception during Capability Manager initialization: %s", e.what());
+		return false;
+	} catch (...) {
+		AMF_LOG_ERROR("Unexpected Exception during Capability Manager initialization.");
 		return false;
 	}
 
-	// Initialize Graphics APIs
-	try {
-		Plugin::API::Base::Initialize();
-	} catch (std::exception& e) {
-		AMF_LOG_ERROR("%s", e.what());
-		return true;
-	}
-
-	// Register Encoder
-	/*try {
-		Plugin::Interface::H264Interface::encoder_register();
-	} catch (std::exception& e) {
-		AMF_LOG_ERROR("%s", e.what());
-		return true;
-	} catch (std::exception* e) {
-		AMF_LOG_ERROR("%s", e->what());
-		delete e;
-		return true;
-	} catch (...) {
-		AMF_LOG_ERROR("Unknown Exception.");
-		return true;
-	}*/
-
+	// Register Encoders
+	Plugin::Interface::H264Interface::encoder_register();
 
 	#ifdef _DEBUG
 	{
@@ -232,7 +213,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 			AMFVideoEncoderVCE_AVC,
 			AMFVideoEncoder_HEVC
 		};
-		auto m_AMF = AMF::GetInstance();
+		auto m_AMF = AMF::Instance();
 		auto m_AMFFactory = m_AMF->GetFactory();
 		amf::AMFTrace* m_AMFTrace;
 		m_AMFFactory->GetTrace(&m_AMFTrace);
@@ -263,32 +244,15 @@ MODULE_EXPORT bool obs_module_load(void) {
 	}
 	#endif
 
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Complete.");
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Loaded.");
 	return true;
 }
 
 /** Optional: Called when the module is unloaded.  */
 MODULE_EXPORT void obs_module_unload(void) {
-
-
-
-	// AMF Capabilities
-	try {
-		Plugin::AMD::CapabilityManager::Finalize();
-	} catch (std::exception& e) {
-		AMF_LOG_ERROR("%s", e.what());
-	}
-
-	// AMF
-	try {
-		Plugin::AMD::AMF::Finalize();
-	} catch (std::exception& e) {
-		AMF_LOG_ERROR("%s", e.what());
-	}
+	Plugin::AMD::CapabilityManager::Finalize();
+	Plugin::AMD::AMF::Finalize();
 }
-
-
-
 
 /** Optional: Returns the full name of the module */
 MODULE_EXPORT const char* obs_module_name() {
