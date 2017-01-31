@@ -25,6 +25,7 @@ SOFTWARE.
 #pragma once
 
 #include "amf-capabilities.h"
+#include "misc-util.cpp"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -37,9 +38,11 @@ using namespace Plugin::AMD;
 #pragma region Singleton
 static CapabilityManager* __instance;
 static std::mutex __instance_mutex;
-void Plugin::AMD::CapabilityManager::Initialize() {
+void Plugin::AMD::CapabilityManager::Initialize()
+{
 	const std::lock_guard<std::mutex> lock(__instance_mutex);
-	__instance = new CapabilityManager();
+	if (!__instance)
+		__instance = new CapabilityManager();
 }
 
 CapabilityManager* Plugin::AMD::CapabilityManager::Instance() {
@@ -49,39 +52,42 @@ CapabilityManager* Plugin::AMD::CapabilityManager::Instance() {
 
 void Plugin::AMD::CapabilityManager::Finalize() {
 	const std::lock_guard<std::mutex> lock(__instance_mutex);
-	delete __instance;
+	if (__instance)
+		delete __instance;
 	__instance = nullptr;
 }
 #pragma endregion Singleton
 
 Plugin::AMD::CapabilityManager::CapabilityManager() {
-	RefreshCapabilities();
-}
-
-Plugin::AMD::CapabilityManager::~CapabilityManager() {}
-
-void Plugin::AMD::CapabilityManager::RefreshCapabilities() {
 	// Key order: API, Adapter, Codec
 	for (auto api : API::Base::EnumerateAPIs()) {
 		for (auto adapter : api->EnumerateAdapters()) {
 			for (auto codec : { Codec::H264AVC/*, Codec::H264SVC*/, Codec::HEVC }) {
+				AMF_LOG_DEBUG("[Capability Manager] Testing %s Adapter '%s' with codec %s...",
+					api->GetName(), adapter.Name.c_str(), Utility::CodecToString(codec));
+
 				bool isSupported = false;
 				try {
 					AMD::Encoder* enc = nullptr;
 					if (codec == Codec::H264AVC || codec == Codec::H264SVC) {
-						enc = (AMD::Encoder*)new AMD::EncoderH264(api->GetName(), ((int64_t)adapter.idHigh << 32ul) + adapter.idLow, false, ColorFormat::NV12, ColorSpace::BT701, false);
+						enc = (AMD::Encoder*)new AMD::EncoderH264(api, api->GetAdapterById(adapter.idLow, adapter.idHigh),
+							false, ColorFormat::NV12, ColorSpace::BT701, false);
 					} else {
 						//enc = (AMD::Encoder*)new AMD::EncoderH265(api->GetName(), adapter.idHigh << 32ul + adapter.idLow, false, ColorFormat::NV12, ColorSpace::BT701, false);
 					}
 					delete enc;
 					isSupported = true;
-				} catch (...) {}
+				} catch (std::exception& e) {
+					AMF_LOG_WARNING("%s", e.what());
+				}
 
 				m_CapabilityMap[std::make_tuple(api->GetType(), adapter, codec)] = isSupported;
 			}
 		}
 	}
 }
+
+Plugin::AMD::CapabilityManager::~CapabilityManager() {}
 
 bool Plugin::AMD::CapabilityManager::IsCodecSupported(AMD::Codec codec) {
 	for (auto api : API::Base::EnumerateAPIs()) {

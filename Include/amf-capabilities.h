@@ -65,9 +65,7 @@ namespace Plugin {
 			CapabilityManager(CapabilityManager const&) = delete;
 			void operator=(CapabilityManager const&) = delete;
 			#pragma endregion Singleton
-
-			void RefreshCapabilities();
-
+			
 			bool IsCodecSupported(AMD::Codec codec);
 			bool IsCodecSupportedByAPI(AMD::Codec codec, API::Type api);
 			bool IsCodecSupportedByAPIAdapter(AMD::Codec codec, API::Type api, API::Adapter adapter);
