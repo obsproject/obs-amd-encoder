@@ -31,7 +31,7 @@ namespace Plugin {
 	namespace AMD {
 		class EncoderH264 : Encoder {
 			public:
-			EncoderH264(std::string videoAPI, uint64_t videoAdapterId, bool useOpenCL,
+			EncoderH264(std::shared_ptr<API::Base> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
 				ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor);
 			virtual ~EncoderH264();
 

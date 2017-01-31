@@ -155,7 +155,7 @@ namespace Plugin {
 		class Encoder {
 			protected:
 			Encoder(Codec codec,
-				std::string videoAPI, uint64_t videoAdapterId, bool useOpenCL,
+				std::shared_ptr<API::Base> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
 				ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor);
 			public:
 			virtual ~Encoder();

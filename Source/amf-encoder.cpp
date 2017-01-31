@@ -34,7 +34,7 @@ static const wchar_t* fullColorParams[] = {
 };
 
 Plugin::AMD::Encoder::Encoder(Codec codec,
-	std::string videoAPI, uint64_t videoAdapterId, bool useOpenCL,
+	std::shared_ptr<API::Base> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
 	ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor) {
 	#pragma region Null Values
 	m_UniqueId = Utility::GetUniqueIdentifier();
@@ -64,12 +64,12 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	#pragma endregion Null Values
 
 	// Initialize selected API on Video Adapter
-	m_API = API::Base::GetAPIByName(videoAPI);
-	m_APIAdapter = m_API->GetAdapterById(videoAdapterId & UINT_MAX, (videoAdapterId >> 32) & UINT_MAX);
+	m_API = videoAPI;
+	m_APIAdapter = videoAdapter;
 	m_APIDevice = m_API->CreateInstanceOnAdapter(m_APIAdapter);
 
 	// Initialize Advanced Media Framework
-	m_AMF = AMF::GetInstance();
+	m_AMF = AMF::Instance();
 	/// Retrieve Factory
 	m_AMFFactory = m_AMF->GetFactory();
 
@@ -172,27 +172,6 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 			m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.data());
 	}
-	for (const wchar_t* par : fullColorParams) {
-		res = m_AMFConverter->SetProperty(par, m_FullColorRange);
-		if (res == AMF_OK)
-			break;
-	}
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg,
-			"<Id: %lld> Unable to set converter color range, error %ls (code %d)",
-			m_UniqueId,
-			m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.data());
-	}
-	res = m_AMFConverter->Init(amf::AMF_SURFACE_NV12, 0, 0);
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg,
-			"<Id: %lld> Unable to intialize converter, error %ls (code %d)",
-			m_UniqueId,
-			m_AMF->GetTrace()->GetResultText(res),
-			res);
-		throw std::exception(errMsg.data());
-	}
 
 	// Create Encoder
 	res = m_AMFFactory->CreateComponent(m_AMFContext, Utility::CodecToAMF(codec), &m_AMFEncoder);
@@ -205,8 +184,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 			res);
 		throw std::exception(errMsg.data());
 	}
-
-	// Full Range Color Stuff
+	/// Full Range Color Stuff
 	for (const wchar_t* par : fullColorParams) {
 		res = m_AMFEncoder->SetProperty(par, m_FullColorRange);
 		if (res == AMF_OK)
@@ -273,7 +251,19 @@ void Plugin::AMD::Encoder::UpdateFrameRateValues() {
 }
 
 void Plugin::AMD::Encoder::Start() {
-	AMF_RESULT res = m_AMFEncoder->Init(Utility::ColorFormatToAMF(m_ColorFormat), m_Resolution.first, m_Resolution.second);
+	AMF_RESULT res;
+
+	res = m_AMFConverter->Init(Utility::ColorFormatToAMF(m_ColorFormat), 0, 0);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg,
+			"<Id: %lld> Unable to initalize converter, error %ls (code %d)",
+			m_UniqueId,
+			m_AMF->GetTrace()->GetResultText(res),
+			res);
+		throw std::exception(errMsg.data());
+	}
+
+	res = m_AMFEncoder->Init(amf::AMF_SURFACE_NV12, m_Resolution.first, m_Resolution.second);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg,
 			"<Id: %lld> Failed to initialize encoder, error %ls (code %d)",

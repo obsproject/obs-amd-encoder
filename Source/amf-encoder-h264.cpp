@@ -34,15 +34,15 @@ SOFTWARE.
 		m_AMF->GetTrace()->GetResultText(res), res); \
 	throw std::exception(errMsg.data()); \
 }
-//QUICK_THROW_ERROR(" <%s: '%s'> Failed to set to %s, error %ls (code %d)",
+//QUICK_THROW_ERROR(" <Id: %lld> Failed to set to %s, error %ls (code %d)",
 //	Utility::UsageToString(v));
 
 using namespace Plugin;
 using namespace Plugin::AMD;
 
-Plugin::AMD::EncoderH264::EncoderH264(std::string videoAPI, uint64_t videoAdapterId, bool useOpenCL,
+Plugin::AMD::EncoderH264::EncoderH264(std::shared_ptr<API::Base> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
 	ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor)
-	: Encoder(Codec::H264AVC, videoAPI, videoAdapterId, useOpenCL, colorFormat, colorSpace, fullRangeColor) {}
+	: Encoder(Codec::H264AVC, videoAPI, videoAdapter, useOpenCL, colorFormat, colorSpace, fullRangeColor) {}
 
 Plugin::AMD::EncoderH264::~EncoderH264() {}
 
@@ -225,7 +225,7 @@ uint64_t Plugin::AMD::EncoderH264::GetMaximumReferenceFrames() {
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_NUM_REFRAMES, &e);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, __FUNCTION_NAME__ "<%s: '%s'> Failed to retrieve value, error %ls (code %d)",
+		QUICK_FORMAT_MESSAGE(errMsg, __FUNCTION_NAME__ "<Id: %lld> Failed to retrieve value, error %ls (code %d)",
 			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.data());
 	}
