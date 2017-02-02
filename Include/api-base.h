@@ -23,26 +23,24 @@ SOFTWARE.
 */
 
 #pragma once
-//////////////////////////////////////////////////////////////////////////
-// Includes
-//////////////////////////////////////////////////////////////////////////
 #include "plugin.h"
-
 #include <vector>
 #include <map>
+#include <string.h>
 
-//////////////////////////////////////////////////////////////////////////
-// Code
-//////////////////////////////////////////////////////////////////////////
 namespace Plugin {
 	namespace API {
-		enum class Type {
+		/** 
+		 *
+		 */
+		enum class Type : uint8_t {
 			Host,
 			Direct3D9,
 			Direct3D11,
 			OpenGL,
 		};
 
+		// An Adapter on an API
 		struct Adapter {
 			int32_t idLow, idHigh;
 			std::string Name;
@@ -59,36 +57,40 @@ namespace Plugin {
 			friend bool operator!=(const Plugin::API::Adapter& left, const Plugin::API::Adapter& right);
 		};
 
-		class Base {
-			//////////////////////////////////////////////////////////////////////////
-			// API Index
-			//////////////////////////////////////////////////////////////////////////
+		// Instance of an API Adapter
+		struct Instance {
 			public:
-			static void Initialize();
+			Instance();
+			virtual ~Instance();
 
-			static size_t GetAPICount();
-			static std::shared_ptr<Base> GetAPIInstance(size_t index);
-			static std::string GetAPIName(size_t index);
-			static std::shared_ptr<Base> GetAPIByName(std::string name);
-			static std::shared_ptr<Base> GetAPIByType(Type type);
-			static std::vector<std::shared_ptr<Base>> EnumerateAPIs();
-			static std::vector<std::string> EnumerateAPINames();
+			virtual Adapter GetAdapter() = 0;
+			virtual void* GetContext() = 0;
+		};
 
-			//////////////////////////////////////////////////////////////////////////
-			// API
-			//////////////////////////////////////////////////////////////////////////
+		// API Interface
+		class IAPI {
 			public:
+			IAPI();
+			virtual ~IAPI();
+
 			virtual std::string GetName() = 0;
 			virtual Type GetType() = 0;
 
 			virtual std::vector<Adapter> EnumerateAdapters() = 0;
-			virtual Adapter GetAdapterById(uint32_t idLow, uint32_t idHigh) = 0;
-			virtual Adapter GetAdapterByName(std::string name) = 0;
+			Adapter GetAdapterById(uint32_t idLow, uint32_t idHigh);
+			Adapter GetAdapterByName(std::string name);
 
-			virtual void* CreateInstanceOnAdapter(Adapter adapter) = 0;
-			virtual Adapter GetAdapterForInstance(void* instance) = 0;
-			virtual void* GetContextFromInstance(void* instance) = 0;
-			virtual void DestroyInstance(void* instance) = 0;
+			virtual std::shared_ptr<Instance> CreateInstance(Adapter adapter) = 0;
 		};
+
+		// Static API Stuff
+		void InitializeAPIs();
+		size_t CountAPIs();
+		std::string GetAPIName(size_t index);
+		std::shared_ptr<IAPI> GetAPI(size_t index);
+		std::shared_ptr<IAPI> GetAPI(std::string name);
+		std::shared_ptr<IAPI> GetAPI(Type type);
+		std::vector<std::shared_ptr<IAPI>> EnumerateAPIs();
+		std::vector<std::string> EnumerateAPINames();
 	}
 }

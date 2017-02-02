@@ -22,14 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-//////////////////////////////////////////////////////////////////////////
-// Includes
-//////////////////////////////////////////////////////////////////////////
 #include "api-host.h"
 
-//////////////////////////////////////////////////////////////////////////
-// Code
-//////////////////////////////////////////////////////////////////////////
 using namespace Plugin::API;
 
 std::string Plugin::API::Host::GetName() {
@@ -46,24 +40,14 @@ std::vector<Adapter> Plugin::API::Host::EnumerateAdapters() {
 	return list;
 }
 
-Plugin::API::Adapter Plugin::API::Host::GetAdapterById(uint32_t idLow, uint32_t idHigh) {
+std::shared_ptr<Instance> Plugin::API::Host::CreateInstance(Adapter adapter) {
+	return std::make_unique<HostInstance>();
+}
+
+Plugin::API::Adapter Plugin::API::HostInstance::GetAdapter() {
 	return Adapter(0, 0, TEXT_T(AMF_UTIL_DEFAULT));
 }
 
-Plugin::API::Adapter Plugin::API::Host::GetAdapterByName(std::string name) {
-	return Adapter(0, 0, TEXT_T(AMF_UTIL_DEFAULT));
-}
-
-void* Plugin::API::Host::CreateInstanceOnAdapter(Adapter adapter) {
+void* Plugin::API::HostInstance::GetContext() {
 	return nullptr;
 }
-
-Plugin::API::Adapter Plugin::API::Host::GetAdapterForInstance(void* pInstance) {
-	return Adapter(0, 0, TEXT_T(AMF_UTIL_DEFAULT));
-}
-
-void* Plugin::API::Host::GetContextFromInstance(void* pInstance) {
-	throw std::exception("Host API does not have a Context.");
-}
-
-void Plugin::API::Host::DestroyInstance(void* pInstance) {}

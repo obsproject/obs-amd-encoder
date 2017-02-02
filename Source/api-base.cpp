@@ -23,11 +23,7 @@ SOFTWARE.
 */
 
 #pragma once
-//////////////////////////////////////////////////////////////////////////
-// Includes
-//////////////////////////////////////////////////////////////////////////
 #include "api-base.h"
-
 #include "api-d3d9.h"
 #include "api-d3d11.h"
 #include "api-host.h"
@@ -38,11 +34,10 @@ SOFTWARE.
 #include <VersionHelpers.h>
 #endif
 
-//////////////////////////////////////////////////////////////////////////
-// Code
-//////////////////////////////////////////////////////////////////////////
 using namespace Plugin::API;
 
+
+// An Adapter on an API
 bool Plugin::API::operator<(const Plugin::API::Adapter & left, const Plugin::API::Adapter & right) {
 	if (left == right)
 		return left.Name < right.Name;
@@ -70,12 +65,35 @@ bool Plugin::API::operator!=(const Plugin::API::Adapter & left, const Plugin::AP
 	return !(left == right);
 }
 
-//////////////////////////////////////////////////////////////////////////
-// API Index
-//////////////////////////////////////////////////////////////////////////
-static std::vector<std::shared_ptr<Base>> s_APIInstances;
+// Instance of an API Adapter
+Plugin::API::Instance::Instance() {}
 
-void Plugin::API::Base::Initialize() {
+Plugin::API::Instance::~Instance() {}
+
+// API Interface
+Plugin::API::IAPI::IAPI() {}
+
+Plugin::API::IAPI::~IAPI() {}
+
+Plugin::API::Adapter Plugin::API::IAPI::GetAdapterById(uint32_t idLow, uint32_t idHigh) {
+	for (auto adapter : EnumerateAdapters()) {
+		if ((adapter.idLow == idLow) && (adapter.idHigh == idHigh))
+			return adapter;
+	}
+	return *(EnumerateAdapters().begin());
+}
+
+Plugin::API::Adapter Plugin::API::IAPI::GetAdapterByName(std::string name) {
+	for (auto adapter : EnumerateAdapters()) {
+		if (adapter.Name == name)
+			return adapter;
+	}
+	return *(EnumerateAdapters().begin());
+}
+
+// Static API Stuff
+static std::vector<std::shared_ptr<IAPI>> s_APIInstances;
+void Plugin::API::InitializeAPIs() {
 	// DirectX 11
 	#ifdef _WIN32
 	if (IsWindows8OrGreater()) {
@@ -101,22 +119,11 @@ void Plugin::API::Base::Initialize() {
 	}
 }
 
-size_t Plugin::API::Base::GetAPICount() {
+size_t Plugin::API::CountAPIs() {
 	return s_APIInstances.size();
 }
 
-std::shared_ptr<Base> Plugin::API::Base::GetAPIInstance(size_t index) {
-	auto indAPI = s_APIInstances.begin();
-	for (size_t n = 0; n < index; n++)
-		indAPI++;
-
-	if (indAPI == s_APIInstances.end())
-		throw std::exception("Invalid API Index");
-
-	return *indAPI;
-}
-
-std::string Plugin::API::Base::GetAPIName(size_t index) {
+std::string Plugin::API::GetAPIName(size_t index) {
 	auto indAPI = s_APIInstances.begin();
 	indAPI + index; // Advanced by x elements.
 
@@ -126,8 +133,17 @@ std::string Plugin::API::Base::GetAPIName(size_t index) {
 	return indAPI->get()->GetName();
 }
 
+std::shared_ptr<IAPI> Plugin::API::GetAPI(size_t index) {
+	auto indAPI = s_APIInstances.begin();
+	indAPI + index; // Advanced by x elements.
 
-std::shared_ptr<Base> Plugin::API::Base::GetAPIByName(std::string name) {
+	if (indAPI == s_APIInstances.end())
+		throw std::exception("Invalid API Index");
+
+	return *indAPI;
+}
+
+std::shared_ptr<IAPI> Plugin::API::GetAPI(std::string name) {
 	for (auto api : s_APIInstances) {
 		if (name == api->GetName()) {
 			return api;
@@ -137,7 +153,7 @@ std::shared_ptr<Base> Plugin::API::Base::GetAPIByName(std::string name) {
 	return *s_APIInstances.begin();
 }
 
-std::shared_ptr<Base> Plugin::API::Base::GetAPIByType(Type type) {
+std::shared_ptr<IAPI> Plugin::API::GetAPI(Type type) {
 	for (auto api : s_APIInstances) {
 		if (type == api->GetType()) {
 			return api;
@@ -147,11 +163,11 @@ std::shared_ptr<Base> Plugin::API::Base::GetAPIByType(Type type) {
 	return *s_APIInstances.begin();
 }
 
-std::vector<std::shared_ptr<Base>> Plugin::API::Base::EnumerateAPIs() {
-	return std::vector<std::shared_ptr<Base>>(s_APIInstances);
+std::vector<std::shared_ptr<IAPI>> Plugin::API::EnumerateAPIs() {
+	return std::vector<std::shared_ptr<IAPI>>(s_APIInstances);
 }
 
-std::vector<std::string> Plugin::API::Base::EnumerateAPINames() {
+std::vector<std::string> Plugin::API::EnumerateAPINames() {
 	std::vector<std::string> names;
 	for (auto api : s_APIInstances) {
 		names.push_back(api->GetName());

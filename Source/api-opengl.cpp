@@ -22,25 +22,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-//////////////////////////////////////////////////////////////////////////
-// Includes
-//////////////////////////////////////////////////////////////////////////
 #include "api-opengl.h"
-
 #include <vector>
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-#include <gl/GL.h>
-
-//////////////////////////////////////////////////////////////////////////
-// Code
-//////////////////////////////////////////////////////////////////////////
 using namespace Plugin::API;
+
+Plugin::API::OpenGL::OpenGL() {
+	// ToDo: Adapter enumeration needs to go by Display/Desktop.
+	// - Nvidia is the only one that has GPU Affinity extension.
+	// - Intel perhaps too since they used Nvidia technology. (Until recently at least)
+}
+
+Plugin::API::OpenGL::~OpenGL() {
+
+}
 
 std::string Plugin::API::OpenGL::GetName() {
 	return std::string("OpenGL");
+}
+
+Plugin::API::Type Plugin::API::OpenGL::GetType() {
+	return Type::OpenGL;
 }
 
 std::vector<Adapter> Plugin::API::OpenGL::EnumerateAdapters() {
@@ -49,38 +51,23 @@ std::vector<Adapter> Plugin::API::OpenGL::EnumerateAdapters() {
 	return adapters;
 }
 
-Plugin::API::Adapter Plugin::API::OpenGL::GetAdapterById(uint32_t idLow, uint32_t idHigh) {
-	for (auto adapter : EnumerateAdapters()) {
-		if ((adapter.idLow == idLow) && (adapter.idHigh == idHigh))
-			return adapter;
-	}
-	return *(EnumerateAdapters().begin());
+std::shared_ptr<Instance> Plugin::API::OpenGL::CreateInstance(Adapter adapter) {
+	// ToDo: Actually create a hidden window and OpenGL context. Not that it is going to be useful.
+	return std::make_unique<OpenGLInstance>();
 }
 
-Plugin::API::Adapter Plugin::API::OpenGL::GetAdapterByName(std::string name) {
-	for (auto adapter : EnumerateAdapters()) {
-		if (adapter.Name == name)
-			return adapter;
-	}
-	return *(EnumerateAdapters().begin());
+Plugin::API::OpenGLInstance::OpenGLInstance() {
+
 }
 
-void* Plugin::API::OpenGL::CreateInstanceOnAdapter(Adapter adapter) {
+Plugin::API::OpenGLInstance::~OpenGLInstance() {
+
+}
+
+Plugin::API::Adapter Plugin::API::OpenGLInstance::GetAdapter() {
+	return Adapter(0, 0, TEXT_T(AMF_UTIL_DEFAULT));
+}
+
+void* Plugin::API::OpenGLInstance::GetContext() {
 	return nullptr;
-}
-
-void Plugin::API::OpenGL::DestroyInstance(void* instance) {
-	return;
-}
-
-Plugin::API::Adapter Plugin::API::OpenGL::GetAdapterForInstance(void* instance) {
-	return *(EnumerateAdapters().begin());
-}
-
-void* Plugin::API::OpenGL::GetContextFromInstance(void* instance) {
-	return nullptr;
-}
-
-Plugin::API::Type Plugin::API::OpenGL::GetType() {
-	return Type::OpenGL;
 }

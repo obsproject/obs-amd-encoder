@@ -23,30 +23,48 @@ SOFTWARE.
 */
 
 #pragma once
-
-//////////////////////////////////////////////////////////////////////////
-// Includes
-//////////////////////////////////////////////////////////////////////////
 #include "api-base.h"
-
-//////////////////////////////////////////////////////////////////////////
-// Code
-//////////////////////////////////////////////////////////////////////////
+#include <vector>
+#include <map>
+#include <dxgi.h>
+#include <d3d11.h>
+#include <atlutil.h>
 
 namespace Plugin {
 	namespace API {
-		class Direct3D11 : public Base {
+		class Direct3D11 : public IAPI {
+			friend class Direct3D11Instance;
+			public:
+
+			Direct3D11();
+			~Direct3D11();
+
 			virtual std::string GetName() override;
 			virtual Type GetType() override;
-
 			virtual std::vector<Adapter> EnumerateAdapters() override;
-			virtual Adapter GetAdapterById(uint32_t idLow, uint32_t idHigh) override;
-			virtual Adapter GetAdapterByName(std::string name) override;
+			virtual std::shared_ptr<Instance> CreateInstance(Adapter adapter) override;
 
-			virtual void* CreateInstanceOnAdapter(Adapter adapter) override;
-			virtual Adapter GetAdapterForInstance(void* pInstance) override;
-			virtual void* GetContextFromInstance(void* pInstance) override;
-			virtual void DestroyInstance(void* pInstance) override;
+			protected:
+			ATL::CComPtr<IDXGIFactory1> m_DXGIFactory;
+			std::map<Adapter, std::shared_ptr<Instance>> m_InstanceMap;
+
+			private:
+			std::vector<Adapter> m_AdapterList;
+		};
+
+		class Direct3D11Instance : public Instance {
+			public:
+			Direct3D11Instance(Direct3D11* api, Adapter adapter);
+			~Direct3D11Instance();
+
+			virtual Adapter GetAdapter() override;
+			virtual void* GetContext() override;
+
+			private:
+			Direct3D11* m_API;
+			Adapter m_Adapter;
+			ID3D11DeviceContext* m_DeviceContext;
+			ID3D11Device* m_Device;
 		};
 	}
 }

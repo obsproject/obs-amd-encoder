@@ -23,30 +23,36 @@ SOFTWARE.
 */
 
 #pragma once
-
-//////////////////////////////////////////////////////////////////////////
-// Includes
-//////////////////////////////////////////////////////////////////////////
 #include "api-base.h"
 
-//////////////////////////////////////////////////////////////////////////
-// Code
-//////////////////////////////////////////////////////////////////////////
+#ifdef _WIN32
+#include <windows.h>
+#endif
+#include <gl/GL.h>
 
 namespace Plugin {
 	namespace API {
-		class OpenGL : public Base {
+		class OpenGL : public IAPI {
+			public:
+			OpenGL();
+			~OpenGL();
+
 			virtual std::string GetName() override;
 			virtual Type GetType() override;
-
 			virtual std::vector<Adapter> EnumerateAdapters() override;
-			virtual Adapter GetAdapterById(uint32_t idLow, uint32_t idHigh);
-			virtual Adapter GetAdapterByName(std::string name);
+			virtual std::shared_ptr<Instance> CreateInstance(Adapter adapter) override;
+		};
 
-			virtual void* CreateInstanceOnAdapter(Adapter adapter) override;
-			virtual Adapter GetAdapterForInstance(void* instance) override;
-			virtual void* GetContextFromInstance(void* instance) override;
-			virtual void DestroyInstance(void* instance) override;
+		class OpenGLInstance : public Instance {
+			public:
+			OpenGLInstance();
+			~OpenGLInstance();
+
+			virtual Adapter GetAdapter() override;
+			virtual void* GetContext() override;
+
+			private:
+			Adapter adapter;
 		};
 	}
 }

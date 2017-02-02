@@ -23,30 +23,22 @@ SOFTWARE.
 */
 
 #pragma once
-
-//////////////////////////////////////////////////////////////////////////
-// Includes
-//////////////////////////////////////////////////////////////////////////
 #include "api-base.h"
-
-//////////////////////////////////////////////////////////////////////////
-// Code
-//////////////////////////////////////////////////////////////////////////
 
 namespace Plugin {
 	namespace API {
-		class Host : public Base {
+		class Host : public IAPI {
+			public:
 			virtual std::string GetName() override;
 			virtual Type GetType() override;
-
 			virtual std::vector<Adapter> EnumerateAdapters() override;
-			virtual Adapter GetAdapterById(uint32_t idLow, uint32_t idHigh);
-			virtual Adapter GetAdapterByName(std::string name);
+			virtual std::shared_ptr<Instance> CreateInstance(Adapter adapter) override;
+		};
 
-			virtual void* CreateInstanceOnAdapter(Adapter adapter) override;
-			virtual Adapter GetAdapterForInstance(void* pInstance) override;
-			virtual void* GetContextFromInstance(void* pInstance) override;
-			virtual void DestroyInstance(void* pInstance) override;
+		class HostInstance : public Instance {
+			public:
+			virtual Adapter GetAdapter() override;
+			virtual void* GetContext() override;
 		};
 	}
 }

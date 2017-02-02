@@ -22,24 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-//////////////////////////////////////////////////////////////////////////
-// Includes
-//////////////////////////////////////////////////////////////////////////
 #include "api-d3d11.h"
-
-#include <vector>
-#include <string>
 #include <sstream>
 #include <stdlib.h>
 #include <mutex>
 
-#include <dxgi.h>
-#include <d3d11.h>
-#include <atlutil.h>
-
-//////////////////////////////////////////////////////////////////////////
-// Code
-//////////////////////////////////////////////////////////////////////////
 using namespace Plugin::API;
 
 class SingletonDXGI {
@@ -150,22 +137,16 @@ class SingletonD3D11 {
 	HMODULE hModule;
 };
 
-std::string Plugin::API::Direct3D11::GetName() {
-	return std::string("Direct3D 11");
-}
-
-std::vector<Adapter> Plugin::API::Direct3D11::EnumerateAdapters() {
+Plugin::API::Direct3D11::Direct3D11() {
 	auto dxgiInst = SingletonDXGI::GetInstance();
-
-	ATL::CComPtr<IDXGIFactory1> dxgiFactory;
-	HRESULT hr = dxgiInst->CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&dxgiFactory);
+	HRESULT hr = dxgiInst->CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&m_DXGIFactory);
 	if (FAILED(hr))
-		throw std::exception("<" __FUNCTION_NAME__ "> Failed to enumerate adapters, error code %X.", hr);
+		throw std::exception("<" __FUNCTION_NAME__ "> Unable to create DXGI, error code %X.", hr);
 
-	std::vector<Adapter> adapters;
+	// Enumerate Adapters
 	IDXGIAdapter1* dxgiAdapter = nullptr;
 	for (size_t adapterIndex = 0;
-		!FAILED(dxgiFactory->EnumAdapters1((UINT)adapterIndex, &dxgiAdapter));
+		!FAILED(m_DXGIFactory->EnumAdapters1((UINT)adapterIndex, &dxgiAdapter));
 		adapterIndex++) {
 		DXGI_ADAPTER_DESC1 desc = DXGI_ADAPTER_DESC1();
 		dxgiAdapter->GetDesc1(&desc);
@@ -175,58 +156,55 @@ std::vector<Adapter> Plugin::API::Direct3D11::EnumerateAdapters() {
 
 		std::vector<char> descBuf(256);
 		wcstombs(descBuf.data(), desc.Description, descBuf.size());
-		adapters.push_back(Adapter(
-			desc.AdapterLuid.LowPart,
-			desc.AdapterLuid.HighPart,
-			std::string(descBuf.data())
-		));
+		m_AdapterList.push_back(
+			Adapter(
+				desc.AdapterLuid.LowPart,
+				desc.AdapterLuid.HighPart,
+				std::string(descBuf.data())
+			)
+		);
 	}
-
-	return adapters;
 }
 
-Plugin::API::Adapter Plugin::API::Direct3D11::GetAdapterById(uint32_t idLow, uint32_t idHigh) {
-	for (auto adapter : EnumerateAdapters()) {
-		if ((adapter.idLow == idLow) && (adapter.idHigh == idHigh))
-			return adapter;
-	}
-	return *(EnumerateAdapters().begin());
+Plugin::API::Direct3D11::~Direct3D11() {
+	m_InstanceMap.clear();
 }
 
-Plugin::API::Adapter Plugin::API::Direct3D11::GetAdapterByName(std::string name) {
-	for (auto adapter : EnumerateAdapters()) {
-		if (adapter.Name == name)
-			return adapter;
-	}
-	return *(EnumerateAdapters().begin());
+std::string Plugin::API::Direct3D11::GetName() {
+	return std::string("Direct3D 11");
 }
 
-struct Direct3D11Instance {
-	ATL::CComPtr<IDXGIFactory1> factory;
-	ATL::CComPtr<ID3D11Device> device;
-	ATL::CComPtr<ID3D11DeviceContext> context;
-};
+std::vector<Adapter> Plugin::API::Direct3D11::EnumerateAdapters() {
+	// We shouldn't expect HW to change during Runtime, at least not in a normal System.
+	return m_AdapterList;
+}
 
-void* Plugin::API::Direct3D11::CreateInstanceOnAdapter(Adapter adapter) {
-	HRESULT hr;
+std::shared_ptr<Instance> Plugin::API::Direct3D11::CreateInstance(Adapter adapter) {
+	auto inst = m_InstanceMap.find(adapter);
+	if (inst != m_InstanceMap.end())
+		return (*inst).second;
 
-	auto dxgiInst = SingletonDXGI::GetInstance();
+	auto inst2 = std::make_shared<Direct3D11Instance>(this, adapter);
+	m_InstanceMap.insert_or_assign(adapter, inst2);
+	return inst2;
+}
 
-	ATL::CComPtr<IDXGIFactory1> dxgiFactory;
-	hr = dxgiInst->CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&dxgiFactory);
-	if (FAILED(hr)) {
-		std::vector<char> buf(1024);
-		std::sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Failed to enumerate adapters, error code %X.", hr);
-		throw std::exception(buf.data());
-	}
+Plugin::API::Type Plugin::API::Direct3D11::GetType() {
+	return Type::Direct3D11;
+}
+
+Plugin::API::Direct3D11Instance::Direct3D11Instance(Direct3D11* api, Adapter adapter) {
+	m_API = api;
+	m_Adapter = adapter;
 
 	LUID adapterLUID;
 	adapterLUID.LowPart = adapter.idLow;
 	adapterLUID.HighPart = adapter.idHigh;
 
+	HRESULT hr;
 	ATL::CComPtr<IDXGIAdapter> dxgiAdapter;
 	for (size_t adapterIndex = 0;
-		!FAILED(dxgiFactory->EnumAdapters((UINT)adapterIndex, &dxgiAdapter));
+		!FAILED(api->m_DXGIFactory->EnumAdapters((UINT)adapterIndex, &dxgiAdapter));
 		adapterIndex++) {
 		DXGI_ADAPTER_DESC desc = DXGI_ADAPTER_DESC();
 		dxgiAdapter->GetDesc(&desc);
@@ -251,8 +229,6 @@ void* Plugin::API::Direct3D11::CreateInstanceOnAdapter(Adapter adapter) {
 		D3D_FEATURE_LEVEL_11_1,
 		D3D_FEATURE_LEVEL_11_0
 	};
-	ID3D11Device* d3dDevice;
-	ID3D11DeviceContext* d3dContext;
 	for (size_t c = 0; c < 3; c++) {
 		uint32_t flags = 0;
 
@@ -272,9 +248,9 @@ void* Plugin::API::Direct3D11::CreateInstanceOnAdapter(Adapter adapter) {
 			flags,
 			featureLevels + 1, _countof(featureLevels) - 1,
 			D3D11_SDK_VERSION,
-			&d3dDevice,
+			&m_Device,
 			NULL,
-			&d3dContext);
+			&m_DeviceContext);
 		if (SUCCEEDED(hr)) {
 			break;
 		} else {
@@ -286,26 +262,17 @@ void* Plugin::API::Direct3D11::CreateInstanceOnAdapter(Adapter adapter) {
 		std::sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Unable to create D3D11 device, error code %X.", hr);
 		throw std::exception(buf.data());
 	}
-
-	Direct3D11Instance* instance = new Direct3D11Instance();
-	instance->factory = dxgiFactory;
-	instance->device = d3dDevice;
-	instance->context = d3dContext;
-	return instance;
 }
 
-Plugin::API::Adapter Plugin::API::Direct3D11::GetAdapterForInstance(void* pInstance) {
+Plugin::API::Direct3D11Instance::~Direct3D11Instance() {
+	m_API->m_InstanceMap.erase(m_Adapter);
+	m_Device->Release();
+}
+
+Plugin::API::Adapter Plugin::API::Direct3D11Instance::GetAdapter() {
 	HRESULT hr;
-
-	if (pInstance == nullptr)
-		throw std::invalid_argument("instance");
-
-	Direct3D11Instance* instance = static_cast<Direct3D11Instance*>(pInstance);
-	if (instance == nullptr)
-		throw std::invalid_argument("instance");
-
 	ATL::CComPtr<IDXGIAdapter> dxgiAdapter;
-	hr = instance->device->QueryInterface(&dxgiAdapter);
+	hr = this->m_Device->QueryInterface(&dxgiAdapter);
 	if (FAILED(hr)) {
 		std::vector<char> buf(1024);
 		std::sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Failed to query Adapter from D3D11 device, error code %X.", hr);
@@ -330,28 +297,6 @@ Plugin::API::Adapter Plugin::API::Direct3D11::GetAdapterForInstance(void* pInsta
 	);
 }
 
-void* Plugin::API::Direct3D11::GetContextFromInstance(void* pInstance) {
-	if (pInstance == nullptr)
-		throw std::invalid_argument("instance");
-
-	Direct3D11Instance* instance = static_cast<Direct3D11Instance*>(pInstance);
-	if (instance == nullptr)
-		throw std::invalid_argument("instance");
-
-	return instance->device;
-}
-
-void Plugin::API::Direct3D11::DestroyInstance(void* pInstance) {
-	if (pInstance == nullptr)
-		throw std::invalid_argument("instance");
-
-	Direct3D11Instance* instance = static_cast<Direct3D11Instance*>(pInstance);
-	if (instance == nullptr)
-		throw std::invalid_argument("instance");
-
-	delete instance;
-}
-
-Plugin::API::Type Plugin::API::Direct3D11::GetType() {
-	return Type::Direct3D11;
+void* Plugin::API::Direct3D11Instance::GetContext() {
+	return m_Device;
 }
