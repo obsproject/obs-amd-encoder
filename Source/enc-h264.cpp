@@ -208,7 +208,7 @@ static void fill_api_list(obs_property_t* p) {
 	obs_property_list_clear(p);
 	auto cm = CapabilityManager::Instance();
 
-	for (auto api : Plugin::API::Base::EnumerateAPIs()) {
+	for (auto api : Plugin::API::EnumerateAPIs()) {
 		if (cm->IsCodecSupportedByAPI(Codec::H264AVC, api->GetType()))
 			obs_property_list_add_string(p, api->GetName().c_str(), api->GetName().c_str());
 	}
@@ -218,7 +218,7 @@ static void fill_device_list(obs_property_t* p, const char* apiname) {
 	obs_property_list_clear(p);
 
 	auto cm = CapabilityManager::Instance();
-	auto api = Plugin::API::Base::GetAPIByName(std::string(apiname));
+	auto api = Plugin::API::GetAPI(std::string(apiname));
 	for (auto adapter : api->EnumerateAdapters()) {
 		if (cm->IsCodecSupportedByAPIAdapter(Codec::H264AVC, api->GetType(), adapter))
 			obs_property_list_add_int(p, adapter.Name.c_str(), ((int64_t)adapter.idHigh << 32) + (int64_t)adapter.idLow);
@@ -264,7 +264,8 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	// Adv: B-Frame Reference Delta QP (if supported, not CQP)
 	// Exp: Deblocking Filter
 	// Exp: Motion Estimation (Dropdown)
-	// ----------- Intra-Refresh (Master mode only? Not yet supported anyway)
+	// ----------- Intra-Refresh
+	// ToDo: Master Mode only?
 	// ----------- System
 	// Adv: API
 	// Adv: Adapter
@@ -273,7 +274,6 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 
 	// 1.4.3.8 -> 2.0.0.0
 	// PreAnalysisPass -> PrePass
-	//
 
 	#pragma region Preset
 	p = obs_properties_add_list(props, AMF_H264_PRESET, TEXT_T(AMF_H264_PRESET), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
@@ -366,8 +366,8 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	#pragma endregion Rate Control Method
 
 	#pragma region Pre-Pass
-	p = obs_properties_add_list(props, AMF_H264_RATECONTROLMETHOD, TEXT_T(AMF_H264_RATECONTROLMETHOD), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_set_long_description(p, TEXT_T(AMF_H264_RATECONTROLMETHOD_DESCRIPTION));
+	p = obs_properties_add_list(props, AMF_H264_PREPASS, TEXT_T(AMF_H264_PREPASS), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_set_long_description(p, TEXT_T(AMF_H264_PREPASS_DESCRIPTION));
 	obs_property_list_add_int(p, TEXT_T(AMF_UTIL_TOGGLE_DISABLED), static_cast<int32_t>(PrePassMode::Disabled));
 	obs_property_list_add_int(p, TEXT_T(AMF_H264_PREPASS_QUARTERSCALE), static_cast<int32_t>(PrePassMode::EnabledAtQuarterScale));
 	obs_property_list_add_int(p, TEXT_T(AMF_H264_PREPASS_HALFSCALE), static_cast<int32_t>(PrePassMode::EnabledAtHalfScale));
@@ -631,38 +631,38 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		obs_data_set_int(data, "last" vstr(AMF_H264_VIDEOADAPTER), videoAdapter_cur);
 		result = true;
 
-		auto api = Plugin::API::Base::GetAPIByName(obs_data_get_string(data, AMF_H264_VIDEOAPI));
+		auto api = Plugin::API::GetAPI(obs_data_get_string(data, AMF_H264_VIDEOAPI));
 		auto adapter = api->GetAdapterById(videoAdapter_cur & UINT_MAX, (videoAdapter_cur >> 32) & UINT_MAX);
 		try {
 			auto enc = EncoderH264(api, adapter, false, ColorFormat::NV12, ColorSpace::BT609, false);
 
-			#define TEMP_LIMIT_DROPDOWN(func, enum, prop) { \
-				auto p = obs_properties_get(props, prop); \
-				auto l = enc.func(); \
-				enum s = static_cast<enum>(obs_data_get_int(data, obs_property_name(p))); \
-				for (size_t idx = 0; idx < obs_property_list_item_count(p); idx++) { \
+			#define TEMP_LIMIT_DROPDOWN(func, enm, prop) { \
+				auto tmp_p = obs_properties_get(props, prop); \
+				auto tmp_l = enc.func(); \
+				enm tmp_s = static_cast<enm>(obs_data_get_int(data, obs_property_name(tmp_p))); \
+				for (size_t idx = 0; idx < obs_property_list_item_count(tmp_p); idx++) { \
 					bool enabled = false; \
-					enum v = static_cast<enum>(obs_property_list_item_int(p, idx)); \
-					for (auto k : l) { \
-						if (k == v) { \
+					enm tmp_v = static_cast<enm>(obs_property_list_item_int(tmp_p, idx)); \
+					for (auto tmp_k : tmp_l) { \
+						if (tmp_k == tmp_v) { \
 							enabled = true; \
 							break; \
 						} \
 					} \
-					obs_property_list_item_disable(p, idx, !enabled); \
-					if ((enabled == false) && (s == v)) \
-						obs_data_default_single(props, data, obs_property_name(p)); \
+					obs_property_list_item_disable(tmp_p, idx, !enabled); \
+					if ((enabled == false) && (tmp_s == tmp_v)) \
+						obs_data_default_single(props, data, obs_property_name(tmp_p)); \
 				} \
 			}
 			#define TEMP_LIMIT_SLIDER(func, prop) { \
-				auto p = obs_properties_get(props, prop); \
-				auto l = enc.func(); \
-				obs_property_int_set_limits(p, (int)l.first, (int)l.second, 1); \
+				auto tmp_p = obs_properties_get(props, prop); \
+				auto tmp_l = enc.func(); \
+				obs_property_int_set_limits(tmp_p, (int)tmp_l.first, (int)tmp_l.second, 1); \
 			}
 			#define TEMP_LIMIT_SLIDER_BITRATE(func, prop) { \
-				auto p = obs_properties_get(props, prop); \
-				auto l = enc.func(); \
-				obs_property_int_set_limits(p, (int)l.first / 1000, (int)l.second / 1000, 1); \
+				auto tmp_p = obs_properties_get(props, prop); \
+				auto tmp_l = enc.func(); \
+				obs_property_int_set_limits(tmp_p, (int)tmp_l.first / 1000, (int)tmp_l.second / 1000, 1); \
 			}
 
 			TEMP_LIMIT_DROPDOWN(CapsUsage, AMD::Usage, AMF_H264_USAGE);
