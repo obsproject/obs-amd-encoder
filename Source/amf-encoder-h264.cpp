@@ -40,7 +40,7 @@ SOFTWARE.
 using namespace Plugin;
 using namespace Plugin::AMD;
 
-Plugin::AMD::EncoderH264::EncoderH264(std::shared_ptr<API::Base> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
+Plugin::AMD::EncoderH264::EncoderH264(std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
 	ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor)
 	: Encoder(Codec::H264AVC, videoAPI, videoAdapter, useOpenCL, colorFormat, colorSpace, fullRangeColor) {}
 
@@ -57,7 +57,7 @@ std::vector<Usage> Plugin::AMD::EncoderH264::CapsUsage() {
 	}
 
 	std::vector<Usage> ret;
-	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm != nullptr; enm++) {
+	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
 		ret.push_back(Utility::UsageFromAMFH264((AMF_VIDEO_ENCODER_USAGE_ENUM)enm->value));
 	}
 	return ret;
@@ -87,7 +87,7 @@ Plugin::AMD::Usage Plugin::AMD::EncoderH264::GetUsage() {
 // Properties - Static
 std::vector<QualityPreset> Plugin::AMD::EncoderH264::CapsQualityPreset() {
 	const amf::AMFPropertyInfo* var;
-	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_USAGE, &var);
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_QUALITY_PRESET, &var);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Querying capabilities failed, error %ls (code %d)",
 			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
@@ -95,7 +95,7 @@ std::vector<QualityPreset> Plugin::AMD::EncoderH264::CapsQualityPreset() {
 	}
 
 	std::vector<QualityPreset> ret;
-	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm != nullptr; enm++) {
+	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
 		ret.push_back(Utility::QualityPresetFromAMFH264((AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM)enm->value));
 	}
 	return ret;
@@ -133,7 +133,7 @@ std::vector<Profile> Plugin::AMD::EncoderH264::CapsProfile() {
 	}
 
 	std::vector<Profile> ret;
-	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm != nullptr; enm++) {
+	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
 		ret.push_back(Utility::ProfileFromAMFH264((AMF_VIDEO_ENCODER_PROFILE_ENUM)enm->value));
 	}
 	return ret;
@@ -171,7 +171,7 @@ std::vector<ProfileLevel> Plugin::AMD::EncoderH264::CapsProfileLevel() {
 	}
 
 	std::vector<ProfileLevel> ret;
-	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm != nullptr; enm++) {
+	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
 		ret.push_back((ProfileLevel)enm->value);
 	}
 	return ret;
@@ -328,7 +328,7 @@ std::vector<CodingType> Plugin::AMD::EncoderH264::CapsCodingType() {
 	}
 
 	std::vector<CodingType> ret;
-	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm != nullptr; enm++) {
+	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
 		ret.push_back(Utility::CodingTypeFromAMFH264((AMF_VIDEO_ENCODER_CODING_ENUM)enm->value));
 	}
 	return ret;
@@ -366,7 +366,7 @@ std::vector<RateControlMethod> Plugin::AMD::EncoderH264::CapsRateControlMethod()
 	}
 
 	std::vector<RateControlMethod> ret;
-	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm != nullptr; enm++) {
+	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
 		ret.push_back(Utility::RateControlMethodFromAMFH264((AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM)enm->value));
 	}
 	return ret;
@@ -403,7 +403,7 @@ std::vector<PrePassMode> Plugin::AMD::EncoderH264::CapsPrePassMode() {
 	}
 
 	std::vector<PrePassMode> ret;
-	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm != nullptr; enm++) {
+	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
 		ret.push_back(Utility::PrePassModeFromAMFH264((AMF_VIDEO_ENCODER_PREENCODE_MODE_ENUM)enm->value));
 	}
 	return ret;
