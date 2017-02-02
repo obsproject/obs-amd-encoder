@@ -216,7 +216,7 @@ Plugin::AMD::AMF::AMF() {
 Plugin::AMD::AMF::~AMF() {
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Finalizing.");
 	if (m_TraceWriter) {
-		m_AMFTrace->UnregisterWriter(L"OBSWriter");
+		//m_AMFTrace->UnregisterWriter(L"OBSWriter");
 		delete m_TraceWriter;
 		m_TraceWriter = nullptr;
 	}
