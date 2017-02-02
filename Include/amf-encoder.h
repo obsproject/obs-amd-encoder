@@ -35,9 +35,7 @@ SOFTWARE.
 #include "amf.h"
 #include "api-base.h"
 
-#include "components/VideoConverter.h"
-#include "components/VideoEncoderVCE.h"
-#include "components/VideoEncoderHEVC.h"
+#include "components/Component.h"
 
 #define AMF_PRESENT_TIMESTAMP L"PTS"
 #define AMF_SUBMIT_TIMESTAMP L"STS"
@@ -155,7 +153,7 @@ namespace Plugin {
 		class Encoder {
 			protected:
 			Encoder(Codec codec,
-				std::shared_ptr<API::Base> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
+				std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
 				ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor);
 			public:
 			virtual ~Encoder();
@@ -283,9 +281,9 @@ namespace Plugin {
 			std::vector<uint8_t> m_PacketDataBuffer;
 
 			// API Related
-			std::shared_ptr<API::Base> m_API;
+			std::shared_ptr<API::IAPI> m_API;
 			API::Adapter m_APIAdapter;
-			void* m_APIDevice;
+			std::shared_ptr<API::Instance> m_APIDevice;
 
 			// Properties
 			Codec m_Codec;

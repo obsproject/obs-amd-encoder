@@ -24,6 +24,10 @@ SOFTWARE.
 
 #include "amf-encoder.h"
 #include "misc-util.cpp"
+#include "components/VideoConverter.h"
+#ifdef WITH_HEVC
+#include "components/VideoEncoderHEVC.h"
+#endif
 
 using namespace Plugin;
 using namespace Plugin::AMD;
@@ -34,7 +38,7 @@ static const wchar_t* fullColorParams[] = {
 };
 
 Plugin::AMD::Encoder::Encoder(Codec codec,
-	std::shared_ptr<API::Base> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
+	std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
 	ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor) {
 	#pragma region Null Values
 	m_UniqueId = Utility::GetUniqueIdentifier();
@@ -66,7 +70,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	// Initialize selected API on Video Adapter
 	m_API = videoAPI;
 	m_APIAdapter = videoAdapter;
-	m_APIDevice = m_API->CreateInstanceOnAdapter(m_APIAdapter);
+	m_APIDevice = m_API->CreateInstance(m_APIAdapter);
 
 	// Initialize Advanced Media Framework
 	m_AMF = AMF::Instance();
@@ -91,15 +95,15 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 			break;
 		case API::Type::OpenGL:
 			m_AMFMemoryType = amf::AMF_MEMORY_OPENGL;
-			res = m_AMFContext->InitOpenGL(m_API->GetContextFromInstance(m_APIDevice), 0, 0);
+			res = m_AMFContext->InitOpenGL(m_APIDevice->GetContext(), 0, 0);
 			break;
 		case API::Type::Direct3D9:
 			m_AMFMemoryType = amf::AMF_MEMORY_DX9;
-			res = m_AMFContext->InitDX9(m_API->GetContextFromInstance(m_APIDevice));
+			res = m_AMFContext->InitDX9(m_APIDevice->GetContext());
 			break;
 		case API::Type::Direct3D11:
 			m_AMFMemoryType = amf::AMF_MEMORY_DX11;
-			res = m_AMFContext->InitDX11(m_API->GetContextFromInstance(m_APIDevice));
+			res = m_AMFContext->InitDX11(m_APIDevice->GetContext());
 			break;
 	}
 	if (res != AMF_OK) {
@@ -226,7 +230,6 @@ Plugin::AMD::Encoder::~Encoder() {
 
 	// Destroy API
 	if (m_API) {
-		m_API->DestroyInstance(m_APIDevice);
 		m_APIDevice = nullptr;
 		m_API = nullptr;
 	}
@@ -460,7 +463,9 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 
 					{
 						uint64_t pktType;
+						#ifdef WITH_HEVC
 						if (m_Codec != Codec::HEVC) {
+						#endif
 							pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &pktType);
 							switch ((AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)pktType) {
 								case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR:
@@ -475,6 +480,7 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 									packet->priority = 0;
 									break;
 							}
+						#ifdef WITH_HEVC
 						} else {
 							pData->GetProperty(AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE, &pktType);
 							switch ((AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_ENUM)pktType) {
@@ -487,6 +493,7 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 									break;
 							}
 						}
+						#endif
 					}
 
 					*received_packet = true;
