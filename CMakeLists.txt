@@ -1,41 +1,5 @@
 cmake_minimum_required(VERSION 2.8.12)
-
-# Shared (OBS Studio & Standalone)
 PROJECT(enc-amf)
-SET(enc-amf_HEADERS
-	"Include/amf.h"
-	"Include/amf-capabilities.h"
-	"Include/amf-encoder.h"
-	"Include/amf-encoder-h264.h"
-	"Include/amf-encoder-h265.h"
-	"Include/api-base.h"
-	"Include/api-d3d9.h"
-	"Include/api-d3d11.h"
-	"Include/api-host.h"
-	"Include/api-opengl.h"
-	"Include/enc-h264.h"
-	"Include/plugin.h"
-	"${PROJECT_BINARY_DIR}/Include/Version.h"
-)
-SET(enc-amf_SOURCES
-	"Source/amf.cpp"
-	"Source/amf-capabilities.cpp"
-	"Source/amf-encoder.cpp"
-	"Source/amf-encoder-h264.cpp"
-	"Source/amf-encoder-h265.cpp"
-	"Source/api-base.cpp"
-	"Source/api-host.cpp"
-	"Source/api-d3d9.cpp"
-	"Source/api-d3d11.cpp"
-	"Source/api-opengl.cpp"
-	"Source/enc-h264.cpp"
-	"Source/misc-util.cpp"
-	"Source/plugin.cpp"
-)
-SET(enc-amf_LIBRARIES
-	version
-	winmm
-)
 
 # Version
 SET(enc-amf_VERSION_MAJOR 1)
@@ -54,6 +18,49 @@ configure_file(
 	"${PROJECT_SOURCE_DIR}/Include/Version.h.in"
 	"${PROJECT_BINARY_DIR}/Include/Version.h"
 )
+
+# Code Stuff
+SET(enc-amf_HEADERS
+	"Include/amf.h"
+	"Include/amf-capabilities.h"
+	"Include/amf-encoder.h"
+	"Include/amf-encoder-h264.h"
+	"Include/api-base.h"
+	"Include/api-host.h"
+	"Include/api-opengl.h"
+	"Include/enc-h264.h"
+	"Include/plugin.h"
+	"${PROJECT_BINARY_DIR}/Include/Version.h"
+)
+SET(enc-amf_SOURCES
+	"Source/amf.cpp"
+	"Source/amf-capabilities.cpp"
+	"Source/amf-encoder.cpp"
+	"Source/amf-encoder-h264.cpp"
+	"Source/api-base.cpp"
+	"Source/api-host.cpp"
+	"Source/api-opengl.cpp"
+	"Source/enc-h264.cpp"
+	"Source/misc-util.cpp"
+	"Source/plugin.cpp"
+)
+SET(enc-amf_LIBRARIES
+	version
+	winmm
+)
+
+if (WIN32)
+	# Direct3D support should only be compiled for Windows
+	LIST(APPEND enc-amf_HEADERS
+		"Include/api-d3d9.h"
+		"Include/api-d3d11.h"
+	)
+	LIST(APPEND enc-amf_SOURCES
+		"Source/api-d3d9.cpp"
+		"Source/api-d3d11.cpp"
+	)
+endif()
+
 
 # OBS Studio Specific
 if(BUILD_AMF_ENCODER)
@@ -92,7 +99,6 @@ else()
 	# Variables
 	SET(PATH_AMDAMFSDK "" CACHE PATH "AMD Advanced Media Framework SDK Directory")
 	SET(PATH_OBSStudio "" CACHE PATH "OBS Studio Source Code Directory")
-	#SET(PATH_libobs "" CACHE PATH "Path to obs.lib from OBS Studio")
 	
 	if(PATH_AMDAMFSDK STREQUAL "")
 		message(STATUS "PATH_AMDAMFSDK not set!")
@@ -113,6 +119,17 @@ else()
 		message(STATUS "PATH_OBSStudio invalid!")
 		return()
 	endif()
+	
+	# Safety Check: HEVC is only built in Standalone
+	add_definitions(-DWITH_HEVC)
+	LIST(APPEND enc-amf_HEADERS
+		"Include/amf-encoder-h265.h"
+		"Include/enc-h265.h"
+	)
+	LIST(APPEND enc-amf_SOURCES
+		"Source/amf-encoder-h265.cpp"
+		"Source/enc-h265.cpp"
+	)
 	
 	# Stuff
 	SET(obsPath "${PATH_OBSStudio}")
