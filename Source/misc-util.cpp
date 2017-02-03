@@ -32,6 +32,12 @@ SOFTWARE.
 #include "amf.h"
 #include "amf-encoder.h"
 
+#include "components/VideoConverter.h"
+#include "components/VideoEncoderVCE.h"
+#ifdef WITH_HEVC
+#include "components/VideoEncoderHEVC.h"
+#endif
+
 //////////////////////////////////////////////////////////////////////////
 // Code
 //////////////////////////////////////////////////////////////////////////
@@ -53,8 +59,10 @@ namespace Utility {
 				return "H264/AVC";
 			case Codec::H264SVC:
 				return "H264/SVC";
+				#ifdef WITH_HEVC
 			case Codec::HEVC:
 				return "H265/HEVC";
+				#endif
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
@@ -64,8 +72,10 @@ namespace Utility {
 				return AMFVideoEncoderVCE_AVC;
 			case Codec::H264SVC:
 				return AMFVideoEncoderVCE_SVC;
+				#ifdef WITH_HEVC
 			case Codec::HEVC:
 				return AMFVideoEncoder_HEVC;
+				#endif
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
@@ -109,10 +119,10 @@ namespace Utility {
 	// Color Space
 	inline const char* ColorSpaceToString(Plugin::AMD::ColorSpace v) {
 		switch (v) {
-			case ColorSpace::BT609:
-				return "609";
-			case ColorSpace::BT701:
-				return "701";
+			case ColorSpace::BT601:
+				return "601";
+			case ColorSpace::BT709:
+				return "709";
 			case ColorSpace::BT2020:
 				return "2020";
 		}
@@ -120,16 +130,16 @@ namespace Utility {
 	}
 	inline AMF_VIDEO_CONVERTER_COLOR_PROFILE_ENUM ColorSpaceToAMFConverter(Plugin::AMD::ColorSpace v) {
 		switch (v) {
-			case ColorSpace::BT609:
+			case ColorSpace::BT601:
 				return AMF_VIDEO_CONVERTER_COLOR_PROFILE_601;
-			case ColorSpace::BT701:
+			case ColorSpace::BT709:
 				return AMF_VIDEO_CONVERTER_COLOR_PROFILE_709;
 			case ColorSpace::BT2020:
 				return AMF_VIDEO_CONVERTER_COLOR_PROFILE_2020;
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
-	
+
 	// Usage
 	inline const char* UsageToString(Plugin::AMD::Usage v) {
 		switch (v) {
@@ -170,19 +180,6 @@ namespace Utility {
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
-	inline AMF_VIDEO_ENCODER_HEVC_USAGE_ENUM UsageToAMFH265(Plugin::AMD::Usage v) {
-		switch (v) {
-			case Usage::Transcoding:
-				return AMF_VIDEO_ENCODER_HEVC_USAGE_TRANSCONDING;
-			case Usage::UltraLowLatency:
-				return AMF_VIDEO_ENCODER_HEVC_USAGE_ULTRA_LOW_LATENCY;
-			case Usage::LowLatency:
-				return AMF_VIDEO_ENCODER_HEVC_USAGE_LOW_LATENCY;
-			case Usage::Webcam:
-				return AMF_VIDEO_ENCODER_HEVC_USAGE_WEBCAM;
-		}
-		throw std::runtime_error("Invalid Parameter");
-	}
 
 	// Quality Preset
 	inline const char* QualityPresetToString(Plugin::AMD::QualityPreset v) {
@@ -214,28 +211,6 @@ namespace Utility {
 			case AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED:
 				return QualityPreset::Balanced;
 			case AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY:
-				return QualityPreset::Quality;
-		}
-		throw std::runtime_error("Invalid Parameter");
-	}
-	inline AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_ENUM QualityPresetToAMFH265(Plugin::AMD::QualityPreset v) {
-		switch (v) {
-			case QualityPreset::Speed:
-				return AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_SPEED;
-			case QualityPreset::Balanced:
-				return AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_BALANCED;
-			case QualityPreset::Quality:
-				return AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_QUALITY;
-		}
-		throw std::runtime_error("Invalid Parameter");
-	}
-	inline Plugin::AMD::QualityPreset QualityPresetFromAMFH265(AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_ENUM v) {
-		switch (v) {
-			case AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_SPEED:
-				return QualityPreset::Speed;
-			case AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_BALANCED:
-				return QualityPreset::Balanced;
-			case AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_QUALITY:
 				return QualityPreset::Quality;
 		}
 		throw std::runtime_error("Invalid Parameter");
@@ -274,24 +249,18 @@ namespace Utility {
 	}
 	inline Plugin::AMD::Profile ProfileFromAMFH264(AMF_VIDEO_ENCODER_PROFILE_ENUM v) {
 		switch (v) {
-			case 0:
+			case 256:
 				return Profile::ConstrainedBaseline;
 			case AMF_VIDEO_ENCODER_PROFILE_BASELINE:
 				return Profile::Baseline;
 			case AMF_VIDEO_ENCODER_PROFILE_MAIN:
 				return Profile::Main;
-			case 1:
+			case 257:
 				return Profile::ConstrainedHigh;
 			case AMF_VIDEO_ENCODER_PROFILE_HIGH:
 				return Profile::High;
 		}
 		throw std::runtime_error("Invalid Parameter");
-	}
-	inline AMF_VIDEO_ENCODER_HEVC_PROFILE_ENUM ProfileToAMFH265(Plugin::AMD::Profile v) {
-		throw std::logic_error("The method or operation is not implemented.");
-	}
-	inline Plugin::AMD::Profile ProfileFromAMFH265(AMF_VIDEO_ENCODER_HEVC_PROFILE_ENUM v) {
-		throw std::logic_error("The method or operation is not implemented.");
 	}
 
 	// Coding Type
@@ -324,24 +293,6 @@ namespace Utility {
 			case AMF_VIDEO_ENCODER_CALV:
 				return CodingType::CALVC;
 			case AMF_VIDEO_ENCODER_CABAC:
-				return CodingType::CABAC;
-		}
-		throw std::runtime_error("Invalid Parameter");
-	}
-	inline int64_t CodingTypeToAMFH265(Plugin::AMD::CodingType v) {
-		switch (v) {
-			case CodingType::Automatic:
-				return 0;
-			case CodingType::CABAC:
-				return 1;
-		}
-		throw std::runtime_error("Invalid Parameter");
-	}
-	inline Plugin::AMD::CodingType CodingTypeFromAMFH265(int64_t v) {
-		switch (v) {
-			case 0:
-				return CodingType::Automatic;
-			case 1:
 				return CodingType::CABAC;
 		}
 		throw std::runtime_error("Invalid Parameter");
@@ -428,6 +379,75 @@ namespace Utility {
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
+
+
+	#ifdef WITH_HEVC
+	inline AMF_VIDEO_ENCODER_HEVC_USAGE_ENUM UsageToAMFH265(Plugin::AMD::Usage v) {
+		switch (v) {
+			case Usage::Transcoding:
+				return AMF_VIDEO_ENCODER_HEVC_USAGE_TRANSCONDING;
+			case Usage::UltraLowLatency:
+				return AMF_VIDEO_ENCODER_HEVC_USAGE_ULTRA_LOW_LATENCY;
+			case Usage::LowLatency:
+				return AMF_VIDEO_ENCODER_HEVC_USAGE_LOW_LATENCY;
+			case Usage::Webcam:
+				return AMF_VIDEO_ENCODER_HEVC_USAGE_WEBCAM;
+		}
+		throw std::runtime_error("Invalid Parameter");
+	}
+
+	inline AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_ENUM QualityPresetToAMFH265(Plugin::AMD::QualityPreset v) {
+		switch (v) {
+			case QualityPreset::Speed:
+				return AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_SPEED;
+			case QualityPreset::Balanced:
+				return AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_BALANCED;
+			case QualityPreset::Quality:
+				return AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_QUALITY;
+		}
+		throw std::runtime_error("Invalid Parameter");
+	}
+	inline Plugin::AMD::QualityPreset QualityPresetFromAMFH265(AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_ENUM v) {
+		switch (v) {
+			case AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_SPEED:
+				return QualityPreset::Speed;
+			case AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_BALANCED:
+				return QualityPreset::Balanced;
+			case AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_QUALITY:
+				return QualityPreset::Quality;
+		}
+		throw std::runtime_error("Invalid Parameter");
+	}
+
+	inline AMF_VIDEO_ENCODER_HEVC_PROFILE_ENUM ProfileToAMFH265(Plugin::AMD::Profile v) {
+		throw std::logic_error("The method or operation is not implemented.");
+	}
+	inline Plugin::AMD::Profile ProfileFromAMFH265(AMF_VIDEO_ENCODER_HEVC_PROFILE_ENUM v) {
+		throw std::logic_error("The method or operation is not implemented.");
+	}
+
+	inline int64_t CodingTypeToAMFH265(Plugin::AMD::CodingType v) {
+		switch (v) {
+			case CodingType::Automatic:
+				return 0;
+			case CodingType::CABAC:
+				return 1;
+		}
+		throw std::runtime_error("Invalid Parameter");
+	}
+	inline Plugin::AMD::CodingType CodingTypeFromAMFH265(int64_t v) {
+		switch (v) {
+			case 0:
+				return CodingType::Automatic;
+			case 1:
+				return CodingType::CABAC;
+		}
+		throw std::runtime_error("Invalid Parameter");
+	}
+
+	#endif
+
+
 
 
 
