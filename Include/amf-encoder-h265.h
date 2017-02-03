@@ -26,12 +26,13 @@ SOFTWARE.
 
 #include "plugin.h"
 #include "amf-encoder.h"
+#include "components/VideoEncoderHEVC.h"
 
 namespace Plugin {
 	namespace AMD {
 		class EncoderH265 : Encoder {
 			public:
-			EncoderH265(std::shared_ptr<API::Base> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
+			EncoderH265(std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
 				ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor);
 			virtual ~EncoderH265();
 
