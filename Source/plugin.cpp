@@ -36,8 +36,9 @@ SOFTWARE.
 #include "amf.h"
 #include "amf-capabilities.h"
 #include "enc-h264.h"
-#include "components/VideoEncoderVCE.h"
-#include "components/VideoEncoderHEVC.h"
+#ifdef WITH_HEVC
+#include "enc-h265.h"
+#endif
 
 using namespace Plugin;
 using namespace Plugin::AMD;
@@ -54,6 +55,9 @@ OBS_MODULE_AUTHOR("Michael Fabian Dirks");
 OBS_MODULE_USE_DEFAULT_LOCALE("enc-amf", "en-US");
 
 #ifdef _DEBUG
+#include "components/VideoEncoderVCE.h"
+#include "components/VideoEncoderHEVC.h"
+
 static std::string fastPrintVariant(const char* text, amf::AMFVariantStruct variant) {
 	std::vector<char> buf(1024);
 	switch (variant.type) {
@@ -190,7 +194,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 	}
 
 	// Initialize Graphics APIs
-	Plugin::API::Base::Initialize();
+	Plugin::API::InitializeAPIs();
 
 	// AMF Capabilities
 	try {
