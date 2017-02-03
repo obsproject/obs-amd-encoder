@@ -60,7 +60,7 @@ void Plugin::AMD::CapabilityManager::Finalize() {
 
 Plugin::AMD::CapabilityManager::CapabilityManager() {
 	// Key order: API, Adapter, Codec
-	for (auto api : API::Base::EnumerateAPIs()) {
+	for (auto api : API::EnumerateAPIs()) {
 		for (auto adapter : api->EnumerateAdapters()) {
 			for (auto codec : { Codec::H264AVC/*, Codec::H264SVC*/, Codec::HEVC }) {
 				AMF_LOG_DEBUG("[Capability Manager] Testing %s Adapter '%s' with codec %s...",
@@ -71,7 +71,7 @@ Plugin::AMD::CapabilityManager::CapabilityManager() {
 					AMD::Encoder* enc = nullptr;
 					if (codec == Codec::H264AVC || codec == Codec::H264SVC) {
 						enc = (AMD::Encoder*)new AMD::EncoderH264(api, api->GetAdapterById(adapter.idLow, adapter.idHigh),
-							false, ColorFormat::NV12, ColorSpace::BT701, false);
+							false, ColorFormat::NV12, ColorSpace::BT709, false);
 					} else {
 						//enc = (AMD::Encoder*)new AMD::EncoderH265(api->GetName(), adapter.idHigh << 32ul + adapter.idLow, false, ColorFormat::NV12, ColorSpace::BT701, false);
 					}
@@ -90,7 +90,7 @@ Plugin::AMD::CapabilityManager::CapabilityManager() {
 Plugin::AMD::CapabilityManager::~CapabilityManager() {}
 
 bool Plugin::AMD::CapabilityManager::IsCodecSupported(AMD::Codec codec) {
-	for (auto api : API::Base::EnumerateAPIs()) {
+	for (auto api : API::EnumerateAPIs()) {
 		if (IsCodecSupportedByAPI(codec, api->GetType()))
 			return true;
 	}
@@ -98,7 +98,7 @@ bool Plugin::AMD::CapabilityManager::IsCodecSupported(AMD::Codec codec) {
 }
 
 bool Plugin::AMD::CapabilityManager::IsCodecSupportedByAPI(AMD::Codec codec, API::Type type) {
-	auto api = API::Base::GetAPIByType(type);
+	auto api = API::GetAPI(type);
 	for (auto adapter : api->EnumerateAdapters()) {
 		if (IsCodecSupportedByAPIAdapter(codec, type, adapter) == true)
 			return true;
