@@ -86,8 +86,8 @@ namespace Plugin {
 			GRAY,
 		};
 		enum class ColorSpace : uint8_t {
-			BT609,
-			BT701,
+			BT601,
+			BT709,
 			BT2020,
 		};
 
