@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace Plugin {
 	namespace AMD {
-		class EncoderH264 : Encoder {
+		class EncoderH264 : public Encoder {
 			public:
 			EncoderH264(std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
 				ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor);
@@ -90,11 +90,14 @@ namespace Plugin {
 			virtual void SetEnforceHRDEnabled(bool v) override;
 			virtual bool IsEnforceHRDEnabled() override;
 
-			virtual void SetQPMinimum(uint8_t v);
-			virtual uint8_t GetQPMinimum();
+			virtual void SetFillerDataEnabled(bool v) override;
+			virtual bool IsFillerDataEnabled() override;
 
-			virtual void SetQPMaximum(uint8_t v);
-			virtual uint8_t GetQPMaximum();
+			void SetQPMinimum(uint8_t v);
+			uint8_t GetQPMinimum();
+
+			void SetQPMaximum(uint8_t v);
+			uint8_t GetQPMaximum();
 
 			virtual std::pair<uint64_t, uint64_t> CapsTargetBitrate() override;
 			virtual void SetTargetBitrate(uint64_t v) override;
@@ -134,7 +137,7 @@ namespace Plugin {
 			virtual void SetBFrameDeltaQP(int8_t v);
 			virtual int8_t GetBFrameDeltaQP();
 			
-			virtual void SetBFrameReference(bool v);
+			virtual void SetBFrameReferenceEnabled(bool v);
 			virtual bool GetBFrameReference();
 
 			virtual void SetBFrameReferenceDeltaQP(int8_t v);

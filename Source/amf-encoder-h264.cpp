@@ -493,6 +493,27 @@ bool Plugin::AMD::EncoderH264::IsEnforceHRDEnabled() {
 	return e;
 }
 
+void Plugin::AMD::EncoderH264::SetFillerDataEnabled(bool v) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, v);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Failed to set to %s, error %ls (code %d)",
+			m_UniqueId, v ? "Enabled" : "Disabled", m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+}
+
+bool Plugin::AMD::EncoderH264::IsFillerDataEnabled() {
+	bool e;
+
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return e;
+}
+
 void Plugin::AMD::EncoderH264::SetQPMinimum(uint8_t v) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MIN_QP, (int64_t)v);
 	if (res != AMF_OK) {
@@ -815,7 +836,7 @@ int8_t Plugin::AMD::EncoderH264::GetBFrameDeltaQP() {
 	return (int8_t)e;
 }
 
-void Plugin::AMD::EncoderH264::SetBFrameReference(bool v) {
+void Plugin::AMD::EncoderH264::SetBFrameReferenceEnabled(bool v) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Failed to set to %s, error %ls (code %d)",
