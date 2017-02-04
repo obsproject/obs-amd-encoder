@@ -177,8 +177,8 @@ void SetThreadName(const char* threadName);
 #define AMF_H264_FRAMESKIPPING_DESCRIPTION					TEXT_AMF_H264("FrameSkipping.Description")
 #define AMF_H264_VBAQ										TEXT_AMF_H264("VBAQ")
 #define AMF_H264_VBAQ_DESCRIPTION							TEXT_AMF_H264("VBAQ.Description")
-#define AMF_H264_ENFORCEHRDCOMPATIBILITY					TEXT_AMF_H264("EnforceHRDCompatibility")
-#define AMF_H264_ENFORCEHRDCOMPATIBILITY_DESCRIPTION		TEXT_AMF_H264("EnforceHRDCompatibility.Description")
+#define AMF_H264_ENFORCEHRD									TEXT_AMF_H264("EnforceHRDCompatibility")
+#define AMF_H264_ENFORCEHRD_DESCRIPTION						TEXT_AMF_H264("EnforceHRDCompatibility.Description")
 
 /// VBV Buffer
 #define AMF_H264_VBVBUFFER									TEXT_AMF_H264("VBVBuffer")
