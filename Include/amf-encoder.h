@@ -170,18 +170,6 @@ namespace Plugin {
 			virtual void SetQualityPreset(QualityPreset v) = 0;
 			virtual QualityPreset GetQualityPreset() = 0;
 
-			virtual std::vector<Profile> CapsProfile() = 0;
-			virtual void SetProfile(Profile v) = 0;
-			virtual Profile GetProfile() = 0;
-
-			virtual std::vector<ProfileLevel> CapsProfileLevel() = 0;
-			virtual void SetProfileLevel(ProfileLevel v) = 0;
-			virtual ProfileLevel GetProfileLevel() = 0;
-			
-			virtual std::pair<uint64_t, uint64_t> CapsMaximumReferenceFrames() = 0;
-			virtual void SetMaximumReferenceFrames(uint64_t v) = 0;
-			virtual uint64_t GetMaximumReferenceFrames() = 0;
-
 			virtual std::pair<std::pair<uint32_t, uint32_t>, std::pair<uint32_t, uint32_t>> CapsResolution() = 0;
 			virtual void SetResolution(std::pair<uint32_t, uint32_t> v) = 0;
 			virtual std::pair<uint32_t, uint32_t> GetResolution() = 0;
@@ -195,6 +183,18 @@ namespace Plugin {
 			void UpdateFrameRateValues();
 			public:
 
+			virtual std::vector<Profile> CapsProfile() = 0;
+			virtual void SetProfile(Profile v) = 0;
+			virtual Profile GetProfile() = 0;
+
+			virtual std::vector<ProfileLevel> CapsProfileLevel() = 0;
+			virtual void SetProfileLevel(ProfileLevel v) = 0;
+			virtual ProfileLevel GetProfileLevel() = 0;
+			
+			virtual std::pair<uint64_t, uint64_t> CapsMaximumReferenceFrames() = 0;
+			virtual void SetMaximumReferenceFrames(uint64_t v) = 0;
+			virtual uint64_t GetMaximumReferenceFrames() = 0;
+			
 			virtual std::vector<CodingType> CapsCodingType() = 0;
 			virtual void SetCodingType(CodingType v) = 0;
 			virtual CodingType GetCodingType() = 0;
@@ -217,6 +217,9 @@ namespace Plugin {
 			/// Enforce Hypothethical Reference Decoder Restrictions
 			virtual void SetEnforceHRDEnabled(bool v) = 0;
 			virtual bool IsEnforceHRDEnabled() = 0;
+
+			virtual void SetFillerDataEnabled(bool v) = 0;
+			virtual bool IsFillerDataEnabled();
 
 			virtual std::pair<uint64_t, uint64_t> CapsTargetBitrate() = 0;
 			virtual void SetTargetBitrate(uint64_t v) = 0;
@@ -260,11 +263,14 @@ namespace Plugin {
 			// ConstraintSetFlags (H264 only?)
 
 			// Control
+			public:
 			void Start();
 			void Restart();
 			void Stop();
 
 			bool Encode(struct encoder_frame* f, struct encoder_packet* p, bool* b);
+			void GetVideoInfo(struct video_scale_info* info);
+			bool GetExtraData(uint8_t** extra_data, size_t* size);
 
 			protected:
 			uint64_t m_UniqueId;
