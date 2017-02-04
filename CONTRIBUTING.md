@@ -41,7 +41,8 @@ The plugin itself is made up of several sub-modules:
 
 * AMF: amf.cpp, amf.h, amf-capabilities.cpp, amf-capabilities.h
 * Encoder: amf-encoder.cpp, amf-encoder.h
-* H264: amf-h264.cpp, amf-h264.h, enc-h264.cpp, enc-h264.h
+* H264: amf-encoder-h264.cpp, amf-encoder-h264.h, enc-h264.cpp, enc-h264.h
+* H265: amf-encoder-h265.cpp, amf-encoder-h265.h, enc-h265.cpp, enc-h265.h
 * API: api-base.cpp, api-base.h
 * API-OpenGL: api-opengl.cpp, api-opengl.h
 * API-Direct3D9: api-d3d9.cpp, api-d3d9.h
