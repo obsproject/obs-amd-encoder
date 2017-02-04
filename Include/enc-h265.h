@@ -25,26 +25,5 @@ SOFTWARE.
 #pragma once
 
 #include "plugin.h"
-#include "amf-encoder.h"
-#include "components/VideoEncoderHEVC.h"
-
-namespace Plugin {
-	namespace AMD {
-		class EncoderH265 : public Encoder {
-			public:
-			EncoderH265(std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
-				ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor);
-			virtual ~EncoderH265();
-
-
-
-			// HEVC only:
-			// Min/Max QP I/P-Frame (H265 Exclusive)
-			// GOP Size (H265 Exclusive)
-			// GOP Alignment (H264 Exclusive)
-			// GOPs Per IDR (H265 Exclusive)
-			// GOP Mode? (H265 Exclusive)
-			// Tier
-		};
-	}
-}
+#include "amf-capabilities.h"
+#include "amf-encoder-h265.h"
