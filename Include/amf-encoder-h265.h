@@ -146,16 +146,31 @@ namespace Plugin {
 			virtual void SetDeblockingFilterEnabled(bool v) override;
 			virtual bool IsDeblockingFilterEnabled() override;
 
+			std::vector<HEVC::GOPType> CapsGOPType();
+			void SetGOPType(HEVC::GOPType v);
+			HEVC::GOPType GetGOPType();
+
+			void SetGOPSize(uint32_t v);
+			uint32_t GetGOPSize();
+
+			void SetGOPSizeMin(uint32_t v);
+			uint32_t GetGOPSizeMin();
+
+			void SetGOPSizeMax(uint32_t v);
+			uint32_t GetGOPSizeMax();
+
+			void GOPsPerIDR(uint32_t v); // Essentially IDR Period, except in GOPs
+			uint32_t GetGOPsPerIDR();
+
 			// Properties - Motion Estimation
 			virtual void SetMotionEstimationQuarterPixelEnabled(bool v) override;
 			virtual bool IsMotionEstimationQuarterPixelEnabled() override;
 			virtual void SetMotionEstimationHalfPixelEnabled(bool v) override;
 			virtual bool IsMotionEstimationHalfPixelEnabled() override;
 
-
-
-			void SetGOPAlignment();
-			void GetGOPAlignment();
+			// Properties - Experimental
+			void SetGOPAlignmentEnabled(bool v);
+			bool GetGOPAlignmentEnabled();
 
 			void SetQPCBOffset(uint8_t v);
 			uint8_t GetQPCBOffset();
@@ -163,28 +178,24 @@ namespace Plugin {
 			void SetQPCROffset(uint8_t v);
 			uint8_t GetQPCROffset();
 
-			void SetGOPType(HEVC::GOPType v);
-			HEVC::GOPType GetGOPType();
+			virtual void PacketPriorityAndKeyframe(amf::AMFDataPtr d, struct encoder_packet* p) override;
 
-			void SetGOPSize(uint32_t v);
-			uint32_t GetGOPSize();
+			virtual AMF_RESULT GetExtraDataInternal(amf::AMFVariant* p) override;
 
-			void SetGOPSizeMin(uint8_t v);
-			uint8_t GetGOPSizeMin();
-
-			void SetGOPSizeMax(uint8_t v);
-			uint8_t GetGOPSizeMax();
-
-			void GOPsPerIDR(uint32_t v);
-			uint32_t GetGOPsPerIDR();
-
-			// HEVC only:
-			// Min/Max QP I/P-Frame (H265 Exclusive)
-			// GOP Size (H265 Exclusive)
-			// GOP Alignment (H264 Exclusive)
-			// GOPs Per IDR (H265 Exclusive)
-			// GOP Mode? (H265 Exclusive)
-			// Tier
+			// HevcInputQueueSize
+			// HevcIntraRefreshFrameNum
+			// HevcMaxNumOfTemporalLayers/HevcNumOfTemporalLayers/HevcTemporalLayerSelect
+			// - Only supports QP_I/P?
+			// SliceControlMode, not an enum just 0-1 range (Horz, Vert? Vert, Horz?)
+			// SliceControlSize
+			// HevcHeaderInsertionMode
+			// HevcMaxAUSize
+			// HevcSlicesPerFrame
+			// LowLatencyInternal 
+			// CommonLowLatencyInternal 
+			// HevcMaxOfLTRFrames
+			// IntraRefreshMode
+			// BPicturesPattern (doesn't HEVC have merge mode as a replacement for these)
 		};
 	}
 }

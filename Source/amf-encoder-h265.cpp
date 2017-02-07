@@ -769,6 +769,122 @@ bool Plugin::AMD::EncoderH265::IsDeblockingFilterEnabled() {
 	return e;
 }
 
+std::vector<HEVC::GOPType> Plugin::AMD::EncoderH265::CapsGOPType() {
+	const amf::AMFPropertyInfo* var;
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(L"GOPType", &var);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+
+	std::vector<HEVC::GOPType> ret;
+	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
+		ret.push_back(Utility::GOPTypeFromAMFH265(enm->value));
+	}
+	return ret;
+}
+
+void Plugin::AMD::EncoderH265::SetGOPType(HEVC::GOPType v) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"GOPType", Utility::GOPTypeToAMFH265(v));
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set mode to %s, error %ls (code %d)",
+			m_UniqueId, Utility::GOPTypeToString(v), m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+}
+
+Plugin::AMD::HEVC::GOPType Plugin::AMD::EncoderH265::GetGOPType() {
+	int64_t e;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"GOPType", &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return Utility::GOPTypeFromAMFH265(e);
+}
+
+void Plugin::AMD::EncoderH265::SetGOPSize(uint32_t v) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_GOP_SIZE, (int64_t)v);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
+			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+}
+
+uint32_t Plugin::AMD::EncoderH265::GetGOPSize() {
+	int64_t e;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_HEVC_GOP_SIZE, &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return (uint32_t)e;
+}
+
+void Plugin::AMD::EncoderH265::SetGOPSizeMin(uint32_t v) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"GOPSizeMin", (int64_t)v);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
+			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+}
+
+uint32_t Plugin::AMD::EncoderH265::GetGOPSizeMin() {
+	int64_t e;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"GOPSizeMin", &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return (uint32_t)e;
+}
+
+void Plugin::AMD::EncoderH265::SetGOPSizeMax(uint32_t v) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"GOPSizeMax", (int64_t)v);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
+			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+}
+
+uint32_t Plugin::AMD::EncoderH265::GetGOPSizeMax() {
+	int64_t e;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"GOPSizeMax", &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return (uint32_t)e;
+}
+
+void Plugin::AMD::EncoderH265::GOPsPerIDR(uint32_t v) {
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_NUM_GOPS_PER_IDR, (int64_t)v);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
+			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+}
+
+uint32_t Plugin::AMD::EncoderH265::GetGOPsPerIDR() {
+	int64_t e;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_HEVC_NUM_GOPS_PER_IDR, &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return (uint32_t)e;
+}
+
 void Plugin::AMD::EncoderH265::SetMotionEstimationQuarterPixelEnabled(bool v) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_MOTION_QUARTERPIXEL, v);
 	if (res != AMF_OK) {
@@ -809,4 +925,22 @@ bool Plugin::AMD::EncoderH265::IsMotionEstimationHalfPixelEnabled() {
 		throw std::exception(errMsg.data());
 	}
 	return e;
+}
+
+void Plugin::AMD::EncoderH265::PacketPriorityAndKeyframe(amf::AMFDataPtr pData, struct encoder_packet* packet) {
+	uint64_t pktType;
+	pData->GetProperty(AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE, &pktType);
+	switch ((AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_ENUM)pktType) {
+		case AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_I:
+			packet->keyframe = true;
+			packet->priority = 3;
+			break;
+		case AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_P:
+			packet->priority = 1;
+			break;
+	}
+}
+
+AMF_RESULT Plugin::AMD::EncoderH265::GetExtraDataInternal(amf::AMFVariant* p) {
+	return m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_HEVC_EXTRADATA, p);
 }
