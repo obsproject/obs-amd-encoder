@@ -920,3 +920,25 @@ bool Plugin::AMD::EncoderH264::IsMotionEstimationHalfPixelEnabled() {
 	}
 	return e;
 }
+
+void Plugin::AMD::EncoderH264::PacketPriorityAndKeyframe(amf::AMFDataPtr pData, struct encoder_packet* packet) {
+	uint64_t pktType;
+	pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &pktType);
+	switch ((AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)pktType) {
+		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR:
+		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_I:
+			packet->keyframe = true;
+			packet->priority = 3;
+			break;
+		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_P:
+			packet->priority = 2;
+			break;
+		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_B:
+			packet->priority = 0;
+			break;
+	}
+}
+
+AMF_RESULT Plugin::AMD::EncoderH264::GetExtraDataInternal(amf::AMFVariant* p) {
+	return m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_EXTRADATA, p);
+}

@@ -150,6 +150,10 @@ namespace Plugin {
 			virtual void SetMotionEstimationHalfPixelEnabled(bool v) override;
 			virtual bool IsMotionEstimationHalfPixelEnabled() override;
 
+			virtual void PacketPriorityAndKeyframe(amf::AMFDataPtr d, struct encoder_packet* p) override;
+
+			virtual AMF_RESULT GetExtraDataInternal(amf::AMFVariant* p) override;
+
 
 			// Properties - Exclusive
 			// TODO: Wait For Task (H264 Exclusive, Unknown effect)
