@@ -882,7 +882,7 @@ int8_t Plugin::AMD::EncoderH264::GetBFrameReferenceDeltaQP() {
 void Plugin::AMD::EncoderH264::SetMotionEstimationQuarterPixelEnabled(bool v) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, v);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Failed to set mode to %s, error %ls (code %d)",
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set mode to %s, error %ls (code %d)",
 			m_UniqueId, v ? "Enabled" : "Disabled", m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.data());
 	}
@@ -903,7 +903,7 @@ bool Plugin::AMD::EncoderH264::IsMotionEstimationQuarterPixelEnabled() {
 void Plugin::AMD::EncoderH264::SetMotionEstimationHalfPixelEnabled(bool v) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL, v);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Failed to set mode to %s, error %ls (code %d)",
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set mode to %s, error %ls (code %d)",
 			m_UniqueId, v ? "Enabled" : "Disabled", m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.data());
 	}
