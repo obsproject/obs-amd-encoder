@@ -124,8 +124,8 @@ namespace Plugin {
 			virtual float GetInitialVBVBufferFullness() override;
 
 			// Properties - Picture Control
-			virtual void SetIDRPeriod(uint64_t v) override;
-			virtual uint64_t GetIDRPeriod() override;
+			void SetIDRPeriod(uint64_t v);
+			uint64_t GetIDRPeriod();
 
 			virtual void SetDeblockingFilterEnabled(bool v) override;
 			virtual bool IsDeblockingFilterEnabled() override;
@@ -138,22 +138,23 @@ namespace Plugin {
 			virtual int8_t GetBFrameDeltaQP();
 			
 			virtual void SetBFrameReferenceEnabled(bool v);
-			virtual bool GetBFrameReference();
+			virtual bool IsBFrameReferenceEnabled();
 
 			virtual void SetBFrameReferenceDeltaQP(int8_t v);
 			virtual int8_t GetBFrameReferenceDeltaQP();
 
 			// Properties - Motion Estimation
 			virtual void SetMotionEstimationQuarterPixelEnabled(bool v) override;
-			virtual bool GetMotionEstimationQuarterPixelEnabled() override;
+			virtual bool IsMotionEstimationQuarterPixelEnabled() override;
 
 			virtual void SetMotionEstimationHalfPixelEnabled(bool v) override;
-			virtual bool GetMotionEstimationHalfPixelEnabled() override;
+			virtual bool IsMotionEstimationHalfPixelEnabled() override;
 
 
 			// Properties - Exclusive
 			// TODO: Wait For Task (H264 Exclusive, Unknown effect)
 			// TODO: Scan Type (Do we really want to expose this? OBS has no interlaced modes...)
+			// TODO: Intra-Refresh
 		};
 	}
 }
