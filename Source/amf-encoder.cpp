@@ -643,11 +643,15 @@ bool Plugin::AMD::Encoder::GetExtraData(uint8_t** extra_data, size_t* size) {
 
 	amf::AMFVariant var;
 	AMF_RESULT res;
+	#ifdef WITH_HEVC
 	if (m_Codec == Codec::HEVC) {
-		res = m_AMFEncoder->GetProperty(L"HevcExtraData", &var); // AMD, WHY?
+		res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_HEVC_EXTRADATA, &var); // AMD, WHY?
 	} else {
-		res = m_AMFEncoder->GetProperty(L"ExtraData", &var);
+		#endif
+		res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_EXTRADATA, &var);
+		#ifdef WITH_HEVC
 	}
+	#endif
 	if (res == AMF_OK && var.type == amf::AMF_VARIANT_INTERFACE) {
 		amf::AMFBufferPtr buf(var.pInterface);
 
