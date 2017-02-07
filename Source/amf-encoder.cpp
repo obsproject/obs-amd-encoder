@@ -642,7 +642,12 @@ bool Plugin::AMD::Encoder::GetExtraData(uint8_t** extra_data, size_t* size) {
 		throw std::exception("<" __FUNCTION_NAME__ "> Called while not initialized.");
 
 	amf::AMFVariant var;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_EXTRADATA, &var);
+	AMF_RESULT res;
+	if (m_Codec == Codec::HEVC) {
+		res = m_AMFEncoder->GetProperty(L"HevcExtraData", &var); // AMD, WHY?
+	} else {
+		res = m_AMFEncoder->GetProperty(L"ExtraData", &var);
+	}
 	if (res == AMF_OK && var.type == amf::AMF_VARIANT_INTERFACE) {
 		amf::AMFBufferPtr buf(var.pInterface);
 
