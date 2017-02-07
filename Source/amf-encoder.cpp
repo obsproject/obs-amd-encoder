@@ -546,6 +546,7 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 					std::memcpy(packet->data, pBuffer->GetNative(), packet->size); // ToDo: Can we make this threaded?
 					packet->dts = (pData->GetPts() / m_FrameRateTimeStepAMF) - 2; // B-Picture support
 					pData->GetProperty(AMF_PRESENT_TIMESTAMP, &(packet->pts));
+					PacketPriorityAndKeyframe(pData, packet);
 
 					//AMF_LOG_DEBUG("QueryOutput: Size(%lld) PTS(%lld) DTS(%lld) Timestamp(%lld)",
 					//	packet->size,
@@ -553,40 +554,6 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 					//	packet->dts,
 					//	pData->GetPts());
 
-					{
-						uint64_t pktType;
-						#ifdef WITH_HEVC
-						if (m_Codec != Codec::HEVC) {
-							#endif
-							pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &pktType);
-							switch ((AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)pktType) {
-								case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR:
-								case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_I:
-									packet->keyframe = true;
-									packet->priority = 3;
-									break;
-								case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_P:
-									packet->priority = 2;
-									break;
-								case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_B:
-									packet->priority = 0;
-									break;
-							}
-							#ifdef WITH_HEVC
-						} else {
-							pData->GetProperty(AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE, &pktType);
-							switch ((AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_ENUM)pktType) {
-								case AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_I:
-									packet->keyframe = true;
-									packet->priority = 3;
-									break;
-								case AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_P:
-									packet->priority = 1;
-									break;
-							}
-						}
-						#endif
-					}
 
 					*received_packet = true;
 				}
@@ -642,16 +609,7 @@ bool Plugin::AMD::Encoder::GetExtraData(uint8_t** extra_data, size_t* size) {
 		throw std::exception("<" __FUNCTION_NAME__ "> Called while not initialized.");
 
 	amf::AMFVariant var;
-	AMF_RESULT res;
-	#ifdef WITH_HEVC
-	if (m_Codec == Codec::HEVC) {
-		res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_HEVC_EXTRADATA, &var); // AMD, WHY?
-	} else {
-		#endif
-		res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_EXTRADATA, &var);
-		#ifdef WITH_HEVC
-	}
-	#endif
+	AMF_RESULT res = GetExtraDataInternal(&var);
 	if (res == AMF_OK && var.type == amf::AMF_VARIANT_INTERFACE) {
 		amf::AMFBufferPtr buf(var.pInterface);
 
@@ -664,4 +622,3 @@ bool Plugin::AMD::Encoder::GetExtraData(uint8_t** extra_data, size_t* size) {
 	}
 	return false;
 }
-

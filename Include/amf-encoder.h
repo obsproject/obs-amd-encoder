@@ -200,15 +200,15 @@ namespace Plugin {
 			virtual std::vector<ProfileLevel> CapsProfileLevel() = 0;
 			virtual void SetProfileLevel(ProfileLevel v) = 0;
 			virtual ProfileLevel GetProfileLevel() = 0;
-			
+
 			virtual std::pair<uint64_t, uint64_t> CapsMaximumReferenceFrames() = 0;
 			virtual void SetMaximumReferenceFrames(uint64_t v) = 0;
 			virtual uint64_t GetMaximumReferenceFrames() = 0;
-			
+
 			virtual std::vector<CodingType> CapsCodingType() = 0;
 			virtual void SetCodingType(CodingType v) = 0;
 			virtual CodingType GetCodingType() = 0;
-			
+
 			// Properties - Dynamic
 			virtual std::vector<RateControlMethod> CapsRateControlMethod() = 0;
 			virtual void SetRateControlMethod(RateControlMethod v) = 0;
@@ -278,6 +278,10 @@ namespace Plugin {
 			bool Encode(struct encoder_frame* f, struct encoder_packet* p, bool* b);
 			void GetVideoInfo(struct video_scale_info* info);
 			bool GetExtraData(uint8_t** extra_data, size_t* size);
+
+			private:
+			virtual void PacketPriorityAndKeyframe(amf::AMFDataPtr d, struct encoder_packet* p) = 0;
+			virtual AMF_RESULT GetExtraDataInternal(amf::AMFVariant* p) = 0;
 
 			protected:
 			uint64_t m_UniqueId;
