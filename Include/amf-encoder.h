@@ -104,11 +104,11 @@ namespace Plugin {
 			Quality,
 		};
 		enum class Profile : uint16_t {
-			ConstrainedBaseline,
-			Baseline,
-			Main,
-			ConstrainedHigh,
-			High,
+			ConstrainedBaseline = 256,
+			Baseline = 66,
+			Main = 77,
+			ConstrainedHigh = 257,
+			High = 100,
 		};
 		enum class ProfileLevel : uint8_t {
 			Automatic,
@@ -160,7 +160,17 @@ namespace Plugin {
 
 			public:
 
+			uint64_t GetUniqueId();
+
 			// Properties - Initialization
+			Codec GetCodec();
+			std::shared_ptr<API::IAPI> GetVideoAPI();
+			API::Adapter GetVideoAdapter();
+			bool IsOpenCLEnabled();
+			ColorFormat GetColorFormat();
+			ColorSpace GetColorSpace();
+			bool IsFullRangeColor();
+
 			virtual std::vector<Usage> CapsUsage() = 0;
 			virtual void SetUsage(Usage v) = 0;
 			virtual Usage GetUsage() = 0;
@@ -219,7 +229,7 @@ namespace Plugin {
 			virtual bool IsEnforceHRDEnabled() = 0;
 
 			virtual void SetFillerDataEnabled(bool v) = 0;
-			virtual bool IsFillerDataEnabled();
+			virtual bool IsFillerDataEnabled() = 0;
 
 			virtual std::pair<uint64_t, uint64_t> CapsTargetBitrate() = 0;
 			virtual void SetTargetBitrate(uint64_t v) = 0;
@@ -243,19 +253,14 @@ namespace Plugin {
 			virtual float GetInitialVBVBufferFullness() = 0;
 
 			// Properties - Picture Control
-			virtual void SetIDRPeriod(uint64_t v) = 0;
-			virtual uint64_t GetIDRPeriod() = 0;
-			// Perhaps add utility function for Keyframe Interval? Simplifies stuff.
-			// Header Insertion Spacing?
-
 			virtual void SetDeblockingFilterEnabled(bool v) = 0;
 			virtual bool IsDeblockingFilterEnabled() = 0;
 
 			// Properties - Motion Estimation
 			virtual void SetMotionEstimationQuarterPixelEnabled(bool v) = 0;
-			virtual bool GetMotionEstimationQuarterPixelEnabled() = 0;
+			virtual bool IsMotionEstimationQuarterPixelEnabled() = 0;
 			virtual void SetMotionEstimationHalfPixelEnabled(bool v) = 0;
-			virtual bool GetMotionEstimationHalfPixelEnabled() = 0;
+			virtual bool IsMotionEstimationHalfPixelEnabled() = 0;
 
 			// Unknown:
 			// Intra-Refresh stuff
@@ -267,6 +272,8 @@ namespace Plugin {
 			void Start();
 			void Restart();
 			void Stop();
+
+			bool IsStarted();
 
 			bool Encode(struct encoder_frame* f, struct encoder_packet* p, bool* b);
 			void GetVideoInfo(struct video_scale_info* info);
@@ -284,7 +291,10 @@ namespace Plugin {
 			amf::AMFComponentPtr m_AMFConverter;
 			amf::AMF_MEMORY_TYPE m_AMFMemoryType;
 			amf::AMF_SURFACE_FORMAT m_AMFSurfaceFormat;
+
+			// Buffers
 			std::vector<uint8_t> m_PacketDataBuffer;
+			std::vector<uint8_t> m_ExtraDataBuffer;
 
 			// API Related
 			std::shared_ptr<API::IAPI> m_API;

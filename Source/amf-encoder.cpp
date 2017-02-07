@@ -49,7 +49,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	m_AMFEncoder = nullptr;
 	m_AMFConverter = nullptr;
 	m_AMFMemoryType = amf::AMF_MEMORY_UNKNOWN;
-	m_AMFSurfaceFormat = amf::AMF_SURFACE_UNKNOWN;
+	m_AMFSurfaceFormat = Utility::ColorFormatToAMF(colorFormat);
 	/// API Related
 	m_API = nullptr;
 	m_APIDevice = nullptr;
@@ -243,6 +243,38 @@ Plugin::AMD::Encoder::~Encoder() {
 	AMF_LOG_DEBUG("%s", notice.data());
 }
 
+uint64_t Plugin::AMD::Encoder::GetUniqueId() {
+	return m_UniqueId;
+}
+
+Plugin::AMD::Codec Plugin::AMD::Encoder::GetCodec() {
+	return m_Codec;
+}
+
+std::shared_ptr<API::IAPI> Plugin::AMD::Encoder::GetVideoAPI() {
+	return m_API;
+}
+
+Plugin::API::Adapter Plugin::AMD::Encoder::GetVideoAdapter() {
+	return m_APIAdapter;
+}
+
+bool Plugin::AMD::Encoder::IsOpenCLEnabled() {
+	return m_OpenCLSubmission;
+}
+
+Plugin::AMD::ColorFormat Plugin::AMD::Encoder::GetColorFormat() {
+	return m_ColorFormat;
+}
+
+Plugin::AMD::ColorSpace Plugin::AMD::Encoder::GetColorSpace() {
+	return m_ColorSpace;
+}
+
+bool Plugin::AMD::Encoder::IsFullRangeColor() {
+	return m_FullColorRange;
+}
+
 void Plugin::AMD::Encoder::UpdateFrameRateValues() {
 	// 1			Second
 	// 1000			Millisecond
@@ -256,7 +288,7 @@ void Plugin::AMD::Encoder::UpdateFrameRateValues() {
 void Plugin::AMD::Encoder::Start() {
 	AMF_RESULT res;
 
-	res = m_AMFConverter->Init(Utility::ColorFormatToAMF(m_ColorFormat), 0, 0);
+	res = m_AMFConverter->Init(Utility::ColorFormatToAMF(m_ColorFormat), m_Resolution.first, m_Resolution.second);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg,
 			"<Id: %lld> Unable to initalize converter, error %ls (code %d)",
@@ -300,6 +332,10 @@ void Plugin::AMD::Encoder::Stop() {
 	m_Started = false;
 }
 
+bool Plugin::AMD::Encoder::IsStarted() {
+	return m_Started;
+}
+
 bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_packet* packet, bool* received_packet) {
 	if (!m_Started)
 		return false;
@@ -310,13 +346,19 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 
 	// Allocate Surface
 	{
-		res = m_AMFContext->AllocSurface(m_AMFMemoryType, m_AMFSurfaceFormat,
-			m_Resolution.first, m_Resolution.second, &pSurface);
+		if (m_OpenCLSubmission) {
+			res = m_AMFContext->AllocSurface(m_AMFMemoryType, m_AMFSurfaceFormat,
+				m_Resolution.first, m_Resolution.second, &pSurface);
+		} else {
+			// Required when not using OpenCL, can't directly write to GPU memory with memcpy.
+			res = m_AMFContext->AllocSurface(amf::AMF_MEMORY_HOST, m_AMFSurfaceFormat,
+				m_Resolution.first, m_Resolution.second, &pSurface);
+		}
 		if (res != AMF_OK) {
 			QUICK_FORMAT_MESSAGE(errMsg,
 				"<Id: %lld> Unable to allocate Surface, error %ls (code %d)",
 				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-			AMF_LOG_WARNING("%s", errMsg.data());
+			AMF_LOG_ERROR("%s", errMsg.data());
 			return false;
 		}
 	}
@@ -356,7 +398,6 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 				}
 			} else {
 				void* plane_nat = plane->GetNative();
-				#pragma loop(hint_parallel(32))
 				for (int32_t py = 0; py < height; py++) {
 					int32_t plane_off = py * hpitch;
 					int32_t frame_off = py * frame->linesize[i];
@@ -377,6 +418,17 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 				return false;
 			}
 			pSyncPoint->Wait();
+			if (!m_OpenCLConversion) {
+				res = pSurface->Convert(m_AMFMemoryType);
+				if (res != AMF_OK) {
+					QUICK_FORMAT_MESSAGE(errMsg,
+						"<Id: %lld> Conversion of Surface from OpenCL failed, error %ls (code %d)",
+						m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+					AMF_LOG_WARNING("%s", errMsg.data());
+					return false;
+				}
+			}
+		} else {
 			res = pSurface->Convert(m_AMFMemoryType);
 			if (res != AMF_OK) {
 				QUICK_FORMAT_MESSAGE(errMsg,
@@ -390,27 +442,57 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 
 	// Color Conversion
 	if (m_OpenCLConversion) {
-		pSurface->Convert(amf::AMF_MEMORY_OPENCL);
-		m_AMFConverter->SubmitInput(pSurface);
-		m_AMFConverter->QueryOutput(&pData);
-		pSurface->Convert(m_AMFMemoryType);
+		if (!m_OpenCLSubmission) {
+			res = pSurface->Convert(amf::AMF_MEMORY_OPENCL);
+			if (res != AMF_OK) {
+				QUICK_FORMAT_MESSAGE(errMsg,
+					"<Id: %lld> [Conversion Pass] Conversion of Surface to OpenCL failed, error %ls (code %d)",
+					m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+				AMF_LOG_WARNING("%s", errMsg.data());
+				return false;
+			}
+		}
+		res = m_AMFConverter->SubmitInput(pSurface);
+		if (res != AMF_OK) {
+			QUICK_FORMAT_MESSAGE(errMsg,
+				"<Id: %lld> [Conversion Pass] Submit to converter failed, error %ls (code %d)",
+				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+			AMF_LOG_WARNING("%s", errMsg.data());
+			return false;
+		}
+		res = m_AMFConverter->QueryOutput(&pData);
+		if (res != AMF_OK) {
+			QUICK_FORMAT_MESSAGE(errMsg,
+				"<Id: %lld> [Conversion Pass] Querying output from converter failed, error %ls (code %d)",
+				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+			AMF_LOG_WARNING("%s", errMsg.data());
+			return false;
+		}
+		res = pSurface->Convert(m_AMFMemoryType);
+		if (res != AMF_OK) {
+			QUICK_FORMAT_MESSAGE(errMsg,
+				"<Id: %lld> [Conversion Pass] Conversion of Surface from OpenCL failed, error %ls (code %d)",
+				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+			AMF_LOG_WARNING("%s", errMsg.data());
+			return false;
+		}
 	}
 
 	// Submit Frame
 	{
-		if (pData != nullptr)
-			pSurface = (amf::AMFSurfacePtr)pData;
-		/// Presentation Timestamp
-		pSurface->SetPts(frame->pts * m_FrameRateTimeStepAMF);
+		if (pData == nullptr)
+			pData = pSurface;
 		/// Decode Timestamp
-		pSurface->SetProperty(AMF_PRESENT_TIMESTAMP, frame->pts - 2); // -2 Offset for B-Picture Support
+		pData->SetPts(frame->pts * m_FrameRateTimeStepAMF);
+		/// Presentation Timestamp
+		pData->SetProperty(AMF_PRESENT_TIMESTAMP, frame->pts);
 		/// Duration
-		pSurface->SetDuration((uint64_t)round(frame->pts * m_FrameRateTimeStep * AMF_SECOND));
+		pData->SetDuration((uint64_t)round(frame->pts * m_FrameRateTimeStep * AMF_SECOND));
 		/// Performance Monitoring: Submission Timestamp
 		auto clk = std::chrono::high_resolution_clock::now();
-		pSurface->SetProperty(AMF_SUBMIT_TIMESTAMP, std::chrono::nanoseconds(clk.time_since_epoch()).count());
+		pData->SetProperty(AMF_SUBMIT_TIMESTAMP, std::chrono::nanoseconds(clk.time_since_epoch()).count());
 		/// Submit
-		res = m_AMFEncoder->SubmitInput(pSurface);
+		res = m_AMFEncoder->SubmitInput(pData);
 		switch (res) {
 			default:
 				{
@@ -427,6 +509,10 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 						m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 					AMF_LOG_ERROR("%s", errMsg.data());
 				}
+				break;
+			case AMF_OK:
+				//AMF_LOG_DEBUG("SubmitInput: Timestamp(%lld) PTS(%lld) DTS(%lld)",
+				//	frame->pts * m_FrameRateTimeStepAMF, frame->pts, frame->pts - 2);
 				break;
 			case AMF_EOF:
 				break; // Swallow
@@ -458,14 +544,20 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 					}
 					packet->data = m_PacketDataBuffer.data();
 					std::memcpy(packet->data, pBuffer->GetNative(), packet->size); // ToDo: Can we make this threaded?
-					packet->dts = pData->GetPts() / m_FrameRateTimeStepAMF;
-					pData->GetProperty(AMF_PRESENT_TIMESTAMP, &packet->pts); // Not technically needed, but VLC is stupid. :(
+					packet->dts = (pData->GetPts() / m_FrameRateTimeStepAMF) - 2; // B-Picture support
+					pData->GetProperty(AMF_PRESENT_TIMESTAMP, &(packet->pts));
+
+					//AMF_LOG_DEBUG("QueryOutput: Size(%lld) PTS(%lld) DTS(%lld) Timestamp(%lld)",
+					//	packet->size,
+					//	packet->pts,
+					//	packet->dts,
+					//	pData->GetPts());
 
 					{
 						uint64_t pktType;
 						#ifdef WITH_HEVC
 						if (m_Codec != Codec::HEVC) {
-						#endif
+							#endif
 							pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &pktType);
 							switch ((AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)pktType) {
 								case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR:
@@ -480,7 +572,7 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 									packet->priority = 0;
 									break;
 							}
-						#ifdef WITH_HEVC
+							#ifdef WITH_HEVC
 						} else {
 							pData->GetProperty(AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE, &pktType);
 							switch ((AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_ENUM)pktType) {
@@ -507,5 +599,60 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 	}
 
 	return true;
+}
+
+void Plugin::AMD::Encoder::GetVideoInfo(struct video_scale_info* info) {
+	if (!m_AMFContext || !m_AMFEncoder)
+		throw std::exception("<" __FUNCTION_NAME__ "> Called while not initialized.");
+
+	switch (m_ColorFormat) {
+		// 4:2:0 Formats
+		case ColorFormat::NV12:
+			info->format = VIDEO_FORMAT_NV12;
+			break;
+		case ColorFormat::I420:
+			info->format = VIDEO_FORMAT_I420;
+			break;
+			// 4:2:2 Formats
+		case ColorFormat::YUY2:
+			info->format = VIDEO_FORMAT_YUY2;
+			break;
+			// Uncompressed
+		case ColorFormat::RGBA:
+			info->format = VIDEO_FORMAT_RGBA;
+			break;
+		case ColorFormat::BGRA:
+			info->format = VIDEO_FORMAT_BGRA;
+			break;
+			// Other
+		case ColorFormat::GRAY:
+			info->format = VIDEO_FORMAT_Y800;
+			break;
+	}
+
+	if (m_FullColorRange) { // Only use Full range if actually enabled.
+		info->range = VIDEO_RANGE_FULL;
+	} else {
+		info->range = VIDEO_RANGE_PARTIAL;
+	}
+}
+
+bool Plugin::AMD::Encoder::GetExtraData(uint8_t** extra_data, size_t* size) {
+	if (!m_AMFContext || !m_AMFEncoder)
+		throw std::exception("<" __FUNCTION_NAME__ "> Called while not initialized.");
+
+	amf::AMFVariant var;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_EXTRADATA, &var);
+	if (res == AMF_OK && var.type == amf::AMF_VARIANT_INTERFACE) {
+		amf::AMFBufferPtr buf(var.pInterface);
+
+		*size = buf->GetSize();
+		m_ExtraDataBuffer.resize(*size);
+		std::memcpy(m_ExtraDataBuffer.data(), buf->GetNative(), *size);
+		*extra_data = m_ExtraDataBuffer.data();
+
+		return true;
+	}
+	return false;
 }
 
