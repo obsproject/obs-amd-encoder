@@ -48,7 +48,7 @@ class CustomWriter : public amf::AMFTraceWriter {
 		const wchar_t* realmsg = &(message[(33 + wcslen(scope) + 2)]); // Skip Time & Scope
 		size_t msgLen = wcslen(realmsg) - (sizeof(wchar_t));
 
-		blog(LOG_INFO, "[AMF Encoder] [%.*ls][%ls] %.*ls",
+		blog(LOG_DEBUG, "[AMF Runtime] [%.*ls][%ls] %.*ls",
 			12, &(message[11]),
 			scope,
 			msgLen, realmsg);
@@ -96,6 +96,7 @@ Plugin::AMD::AMF::AMF() {
 	#pragma endregion Null Class Members
 
 	#ifdef _WIN32
+	std::vector<char> verbuf;
 	void* pProductVersion = nullptr;
 	uint32_t lProductVersionSize = 0;
 	#endif
@@ -117,7 +118,7 @@ Plugin::AMD::AMF::AMF() {
 	// Windows: Get Product Version for Driver Matching
 	#ifdef _WIN32 
 	{
-		std::vector<char> verbuf(GetFileVersionInfoSizeW(AMF_DLL_NAME, nullptr));
+		verbuf.resize(GetFileVersionInfoSizeW(AMF_DLL_NAME, nullptr) * 2);
 		GetFileVersionInfoW(AMF_DLL_NAME, 0, (DWORD)verbuf.size(), verbuf.data());
 
 		void* pBlock = verbuf.data();
