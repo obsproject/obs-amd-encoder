@@ -209,6 +209,10 @@ namespace Plugin {
 			virtual void SetCodingType(CodingType v) = 0;
 			virtual CodingType GetCodingType() = 0;
 
+			virtual std::pair<uint32_t, uint32_t> CapsMaximumLongTermReferenceFrames() = 0;
+			virtual void SetMaximumLongTermReferenceFrames(uint32_t v) = 0;
+			virtual uint32_t GetMaximumLongTermReferenceFrames() = 0;
+
 			// Properties - Dynamic
 			virtual std::vector<RateControlMethod> CapsRateControlMethod() = 0;
 			virtual void SetRateControlMethod(RateControlMethod v) = 0;
@@ -245,14 +249,25 @@ namespace Plugin {
 			virtual void SetPFrameQP(uint8_t v) = 0;
 			virtual uint8_t GetPFrameQP() = 0;
 
+			virtual void SetMaximumAccessUnitSize(uint32_t v) = 0;
+			virtual uint32_t GetMaximumAccessUnitSize() = 0;
+
 			virtual std::pair<uint64_t, uint64_t> CapsVBVBufferSize() = 0;
 			virtual void SetVBVBufferSize(uint64_t v) = 0;
+			virtual void SetVBVBufferStrictness(double_t v) = 0;
 			virtual uint64_t GetVBVBufferSize() = 0;
 
 			virtual void SetVBVBufferInitialFullness(float v) = 0;
 			virtual float GetInitialVBVBufferFullness() = 0;
 
 			// Properties - Picture Control
+			virtual void SetIDRPeriod(uint32_t v) = 0;
+			virtual uint32_t GetIDRPeriod() = 0;
+
+			virtual void SetGOPAlignmentEnabled(bool v) = 0;
+			virtual bool GetGOPAlignmentEnabled() = 0;
+
+
 			virtual void SetDeblockingFilterEnabled(bool v) = 0;
 			virtual bool IsDeblockingFilterEnabled() = 0;
 
@@ -262,9 +277,25 @@ namespace Plugin {
 			virtual void SetMotionEstimationHalfPixelEnabled(bool v) = 0;
 			virtual bool IsMotionEstimationHalfPixelEnabled() = 0;
 
+			// Properties - Slicing
+			virtual void SetSlicesPerFrame(uint32_t v) = 0;
+			virtual uint32_t GetSlicesPerFrame() = 0;
+
+			virtual void SetSliceControlMode(uint32_t v) = 0; // 0-1 range, Horz/Vert perhaps?
+			virtual uint32_t GetSliceControlMode() = 0;
+
+			virtual void SetSliceControlSize(uint32_t v) = 0;
+			virtual uint32_t GetSliceControlSize() = 0;
+			
+			// Experimental
+			virtual void SetLowLatencyInternal(bool v) = 0;
+			virtual bool GetLowLatencyInternal() = 0;
+
+			virtual void SetCommonLowLatencyInternal(bool v) = 0;
+			virtual bool GetCommonLowLatencyInternal() = 0;
+
 			// Unknown:
 			// Intra-Refresh stuff
-			// Slicing stuff
 			// ConstraintSetFlags (H264 only?)
 
 			// Control
