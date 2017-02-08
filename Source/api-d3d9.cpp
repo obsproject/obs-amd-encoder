@@ -76,7 +76,7 @@ Plugin::API::Direct3D9::Direct3D9() {
 }
 
 Plugin::API::Direct3D9::~Direct3D9() {
-	m_InstanceMap.clear(); // Need to destroy IDirect3D9Device9Ex before IDirect3D9Ex.
+	//m_InstanceMap.clear(); // Need to destroy IDirect3D9Device9Ex before IDirect3D9Ex.
 	m_Direct3D9Ex->Release();
 }
 
@@ -93,13 +93,13 @@ std::vector<Adapter> Plugin::API::Direct3D9::EnumerateAdapters() {
 }
 
 std::shared_ptr<Instance> Plugin::API::Direct3D9::CreateInstance(Adapter adapter) {
-	std::pair<int32_t, int32_t> key = std::make_pair(adapter.idLow, adapter.idHigh);
-	auto inst = m_InstanceMap.find(key);
-	if (inst != m_InstanceMap.end())
-		return inst->second;
+	//std::pair<int32_t, int32_t> key = std::make_pair(adapter.idLow, adapter.idHigh);
+	//auto inst = m_InstanceMap.find(key);
+	//if (inst != m_InstanceMap.end())
+	//	return inst->second;
 
 	auto inst2 = std::make_shared<Direct3D9Instance>(this, adapter);
-	m_InstanceMap.insert_or_assign(key, inst2);
+	//m_InstanceMap.insert_or_assign(key, inst2);
 	return inst2;
 }
 
@@ -173,8 +173,9 @@ Plugin::API::Direct3D9Instance::Direct3D9Instance(Direct3D9* api, Adapter adapte
 }
 
 Plugin::API::Direct3D9Instance::~Direct3D9Instance() {
-	std::pair<int32_t, int32_t> key = std::make_pair(m_Adapter.idLow, m_Adapter.idHigh);
-	m_API->m_InstanceMap.erase(key);
+	//std::pair<int32_t, int32_t> key = std::make_pair(m_Adapter.idLow, m_Adapter.idHigh);
+	//m_API->m_InstanceMap.erase(key);
+	
 	//m_Device->Release(); // Can't release/free on AMD hardware?
 }
 

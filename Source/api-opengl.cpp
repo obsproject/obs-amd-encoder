@@ -65,7 +65,7 @@ Plugin::API::OpenGLInstance::~OpenGLInstance() {
 }
 
 Plugin::API::Adapter Plugin::API::OpenGLInstance::GetAdapter() {
-	return Adapter(0, 0, TEXT_T(AMF_UTIL_DEFAULT));
+	return Adapter(0, 0, "Default");
 }
 
 void* Plugin::API::OpenGLInstance::GetContext() {

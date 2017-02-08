@@ -183,13 +183,14 @@ std::vector<Adapter> Plugin::API::Direct3D11::EnumerateAdapters() {
 }
 
 std::shared_ptr<Instance> Plugin::API::Direct3D11::CreateInstance(Adapter adapter) {
-	std::pair<int32_t, int32_t> key = std::make_pair(adapter.idLow, adapter.idHigh);
-	auto inst = m_InstanceMap.find(key);
-	if (inst != m_InstanceMap.end())
-		return inst->second;
+	//std::lock_guard<std::mutex> lock(m_InstanceMapMutex);
+	//std::pair<int32_t, int32_t> key = std::make_pair(adapter.idLow, adapter.idHigh);
+	//auto inst = m_InstanceMap.find(key);
+	//if (inst != m_InstanceMap.end())
+	//	return inst->second;
 
 	auto inst2 = std::make_shared<Direct3D11Instance>(this, adapter);
-	m_InstanceMap.insert_or_assign(key, inst2);
+	//m_InstanceMap.insert_or_assign(key, inst2);
 	return inst2;
 }
 
@@ -274,36 +275,12 @@ Plugin::API::Direct3D11Instance::~Direct3D11Instance() {
 	if (m_Device)
 		m_Device->Release();
 
-	std::pair<int32_t, int32_t> key = std::make_pair(m_Adapter.idLow, m_Adapter.idHigh);
-	m_API->m_InstanceMap.erase(key);
+	//std::lock_guard<std::mutex> lock(m_API->m_InstanceMapMutex);
+	//std::pair<int32_t, int32_t> key = std::make_pair(m_Adapter.idLow, m_Adapter.idHigh);
+	//m_API->m_InstanceMap.erase(key);
 }
 
 Plugin::API::Adapter Plugin::API::Direct3D11Instance::GetAdapter() {
-	/*HRESULT hr;
-	ATL::CComPtr<IDXGIAdapter> dxgiAdapter;
-	hr = this->m_Device->QueryInterface(&dxgiAdapter);
-	if (FAILED(hr)) {
-		std::vector<char> buf(1024);
-		std::sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Failed to query Adapter from D3D11 device, error code %X.", hr);
-		throw std::exception(buf.data());
-	}
-
-	DXGI_ADAPTER_DESC adapterDesc;
-	hr = dxgiAdapter->GetDesc(&adapterDesc);
-	if (FAILED(hr)) {
-		std::vector<char> buf(1024);
-		std::sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Failed to get description from DXGI adapter, error code %X.", hr);
-		throw std::exception(buf.data());
-	}
-
-	std::vector<char> descBuf(256);
-	wcstombs(descBuf.data(), adapterDesc.Description, descBuf.size());
-
-	return Adapter(
-		adapterDesc.AdapterLuid.LowPart,
-		adapterDesc.AdapterLuid.HighPart,
-		std::string(descBuf.data())
-	);*/
 	return m_Adapter;
 }
 

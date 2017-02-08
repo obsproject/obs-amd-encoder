@@ -36,7 +36,7 @@ Plugin::API::Type Plugin::API::Host::GetType() {
 
 std::vector<Adapter> Plugin::API::Host::EnumerateAdapters() {
 	std::vector<Adapter> list;
-	list.push_back(Adapter(0, 0, TEXT_T(AMF_UTIL_DEFAULT)));
+	list.push_back(Adapter(0, 0, "Default"));
 	return list;
 }
 
@@ -45,7 +45,7 @@ std::shared_ptr<Instance> Plugin::API::Host::CreateInstance(Adapter adapter) {
 }
 
 Plugin::API::Adapter Plugin::API::HostInstance::GetAdapter() {
-	return Adapter(0, 0, TEXT_T(AMF_UTIL_DEFAULT));
+	return Adapter(0, 0, "Default");
 }
 
 void* Plugin::API::HostInstance::GetContext() {
