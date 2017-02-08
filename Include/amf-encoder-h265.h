@@ -52,12 +52,12 @@ namespace Plugin {
 				ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor);
 			virtual ~EncoderH265();
 
-			// Properties - Initialization
+			// Initialization
 			virtual std::vector<Usage> CapsUsage() override;
 			virtual void SetUsage(Usage v) override;
 			virtual Usage GetUsage() override;
 
-			// Properties - Static
+			// Static
 			virtual std::vector<QualityPreset> CapsQualityPreset() override;
 			virtual void SetQualityPreset(QualityPreset v) override;
 			virtual QualityPreset GetQualityPreset() override;
@@ -96,7 +96,7 @@ namespace Plugin {
 			virtual void SetMaximumLongTermReferenceFrames(uint32_t v) override;
 			virtual uint32_t GetMaximumLongTermReferenceFrames() override;
 
-			// Properties - Dynamic
+			/// Rate Control
 			virtual std::vector<RateControlMethod> CapsRateControlMethod() override;
 			virtual void SetRateControlMethod(RateControlMethod v) override;
 			virtual RateControlMethod GetRateControlMethod() override;
@@ -108,6 +108,45 @@ namespace Plugin {
 			virtual void SetVariableBitrateAverageQualityEnabled(bool v) override;
 			virtual bool IsVariableBitrateAverageQualityEnabled() override;
 
+			/// VBV Buffer
+			virtual std::pair<uint64_t, uint64_t> CapsVBVBufferSize() override;
+			virtual void SetVBVBufferSize(uint64_t v) override;
+			virtual void SetVBVBufferStrictness(double_t v) override;
+			virtual uint64_t GetVBVBufferSize() override;
+
+			virtual void SetVBVBufferInitialFullness(double v) override;
+			virtual float GetInitialVBVBufferFullness() override;
+
+			/// Picture Control
+			std::vector<HEVC::GOPType> CapsGOPType();
+			void SetGOPType(HEVC::GOPType v);
+			HEVC::GOPType GetGOPType();
+
+			void SetGOPSize(uint32_t v);
+			uint32_t GetGOPSize();
+
+			void SetGOPSizeMin(uint32_t v);
+			uint32_t GetGOPSizeMin();
+
+			void SetGOPSizeMax(uint32_t v);
+			uint32_t GetGOPSizeMax();
+
+			void SetIDRPeriod(uint32_t v); // Distance in GOPs
+			uint32_t GetIDRPeriod();
+
+			void SetHeaderInsertionMode(HEVC::HeaderInsertionMode v);
+			HEVC::HeaderInsertionMode GetHeaderInsertionMode();
+
+			virtual void SetDeblockingFilterEnabled(bool v) override;
+			virtual bool IsDeblockingFilterEnabled() override;
+
+			/// Motion Estimation
+			virtual void SetMotionEstimationQuarterPixelEnabled(bool v) override;
+			virtual bool IsMotionEstimationQuarterPixelEnabled() override;
+			virtual void SetMotionEstimationHalfPixelEnabled(bool v) override;
+			virtual bool IsMotionEstimationHalfPixelEnabled() override;
+
+			// Dynamic
 			virtual void SetFrameSkippingEnabled(bool v) override;
 			virtual bool IsFrameSkippingEnabled() override;
 
@@ -147,45 +186,9 @@ namespace Plugin {
 			virtual void SetMaximumAccessUnitSize(uint32_t v) override;
 			virtual uint32_t GetMaximumAccessUnitSize() override;
 
-			virtual std::pair<uint64_t, uint64_t> CapsVBVBufferSize() override;
-			virtual void SetVBVBufferSize(uint64_t v) override;
-			virtual void SetVBVBufferStrictness(double_t v) override;
-			virtual uint64_t GetVBVBufferSize() override;
-
-			virtual void SetVBVBufferInitialFullness(float v) override;
-			virtual float GetInitialVBVBufferFullness() override;
-
-			// Properties - Picture Control
-			std::vector<HEVC::GOPType> CapsGOPType();
-			void SetGOPType(HEVC::GOPType v);
-			HEVC::GOPType GetGOPType();
-
-			void SetGOPSize(uint32_t v);
-			uint32_t GetGOPSize();
-
-			void SetGOPSizeMin(uint32_t v);
-			uint32_t GetGOPSizeMin();
-
-			void SetGOPSizeMax(uint32_t v);
-			uint32_t GetGOPSizeMax();
-
+			/// - Picture Control
 			virtual void SetGOPAlignmentEnabled(bool v) override;
 			virtual bool GetGOPAlignmentEnabled() override;
-
-			void SetIDRPeriod(uint32_t v); // Distance in GOPs
-			uint32_t GetIDRPeriod();
-
-			void SetHeaderInsertionMode(HEVC::HeaderInsertionMode v);
-			HEVC::HeaderInsertionMode GetHeaderInsertionMode();
-
-			virtual void SetDeblockingFilterEnabled(bool v) override;
-			virtual bool IsDeblockingFilterEnabled() override;
-			
-			// Properties - Motion Estimation
-			virtual void SetMotionEstimationQuarterPixelEnabled(bool v) override;
-			virtual bool IsMotionEstimationQuarterPixelEnabled() override;
-			virtual void SetMotionEstimationHalfPixelEnabled(bool v) override;
-			virtual bool IsMotionEstimationHalfPixelEnabled() override;
 
 			// Properties - Intra-Refresh
 			//void SetIntraRefreshMode(uint32_t v);	// Descrition is identical to IntraRefreshNumMBsPerSlot?
