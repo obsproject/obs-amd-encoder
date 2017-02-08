@@ -123,6 +123,16 @@ void SetThreadName(const char* threadName);
 #define P_PRESET_LOSSLESS			"Preset.Lossless"
 #define P_PRESET_TWITCH				"Preset.Twitch"
 #define P_PRESET_YOUTUBE			"Preset.YouTube"
+enum class Presets : int8_t {
+	None = -1,
+	ResetToDefaults = 0,
+	Recording,
+	HighQuality,
+	Indistinguishable,
+	Lossless,
+	Twitch,
+	YouTube,
+};
 
 // Static
 #define P_USAGE						"Usage"
@@ -200,12 +210,19 @@ void SetThreadName(const char* threadName);
 #define P_VIDEO_API					"Video.API"
 #define P_VIDEO_ADAPTER				"Video.Adapter"
 #define P_OPENCL					"OpenCL"
+#define P_DEBUG						"Debug"
+
 #define P_VIEW						"View"
 #define P_VIEW_BASIC				"View.Basic"
 #define P_VIEW_ADVANCED				"View.Advanced"
 #define P_VIEW_EXPERT				"View.Expert"
 #define P_VIEW_MASTER				"View.Master"
-#define P_DEBUG						"Debug"
+enum class ViewMode :uint8_t {
+	Basic,
+	Advanced,
+	Expert,
+	Master
+};
 
 /// Other - Missing Functionality
 //#define AMF_H264_MAXIMUMLTRFRAMES							TEXT_AMF_H264("MaximumLTRFrames")
