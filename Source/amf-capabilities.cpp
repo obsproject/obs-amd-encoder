@@ -64,24 +64,29 @@ Plugin::AMD::CapabilityManager::CapabilityManager() {
 		for (auto adapter : api->EnumerateAdapters()) {
 			for (auto codec : { Codec::H264AVC/*, Codec::H264SVC*/, Codec::HEVC }) {
 				AMF_LOG_DEBUG("[Capability Manager] Testing %s Adapter '%s' with codec %s...",
-					api->GetName(), adapter.Name.c_str(), Utility::CodecToString(codec));
+					api->GetName().c_str(), adapter.Name.c_str(), Utility::CodecToString(codec));
 
 				bool isSupported = false;
 				try {
-					AMD::Encoder* enc = nullptr;
+					std::unique_ptr<AMD::Encoder> enc;
 					if (codec == Codec::H264AVC || codec == Codec::H264SVC) {
-						enc = (AMD::Encoder*)new AMD::EncoderH264(api, api->GetAdapterById(adapter.idLow, adapter.idHigh),
+						enc = std::make_unique<AMD::EncoderH264>(
+							api,
+							adapter,
 							false, ColorFormat::NV12, ColorSpace::BT709, false);
 					} else {
-						//enc = (AMD::Encoder*)new AMD::EncoderH265(api->GetName(), adapter.idHigh << 32ul + adapter.idLow, false, ColorFormat::NV12, ColorSpace::BT701, false);
+						enc = std::make_unique<AMD::EncoderH265>(
+							api, 
+							api->GetAdapterById(adapter.idLow, adapter.idHigh),
+							false, ColorFormat::NV12, ColorSpace::BT709, false);
 					}
-					delete enc;
 					isSupported = true;
 				} catch (std::exception& e) {
 					AMF_LOG_WARNING("%s", e.what());
 				}
 
-				m_CapabilityMap[std::make_tuple(api->GetType(), adapter, codec)] = isSupported;
+				std::tuple<API::Type, API::Adapter, AMD::Codec> key = std::make_tuple(api->GetType(), adapter, codec);
+				m_CapabilityMap.insert_or_assign(key, isSupported);
 			}
 		}
 	}
