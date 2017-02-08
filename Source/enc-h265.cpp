@@ -67,19 +67,62 @@ const char* Plugin::Interface::H265Interface::get_name(void* type_data) {
 	return name;
 }
 
-void Plugin::Interface::H265Interface::get_defaults(obs_data_t *settings) {
+void Plugin::Interface::H265Interface::get_defaults(obs_data_t *data) {
 	// Static
-	obs_data_set_default_int(settings, P_USAGE, static_cast<int64_t>(AMD::Usage::Transcoding));
-	obs_data_set_default_int(settings, P_QUALITYPRESET, static_cast<int64_t>(AMD::QualityPreset::Balanced));
-	obs_data_set_default_int(settings, P_PROFILE, static_cast<int64_t>(AMD::Profile::Main));
-	obs_data_set_default_int(settings, P_PROFILELEVEL, static_cast<int64_t>(AMD::ProfileLevel::L52));
-	obs_data_set_default_int(settings, P_TIER, static_cast<int64_t>(AMD::HEVC::Tier::Main));
-	///obs_data_set_default_int(settings, P_ASPECTRATIO, );
-	obs_data_set_default_int(settings, P_CODINGTYPE, static_cast<int64_t>(AMD::CodingType::Automatic));
-	obs_data_set_default_int(settings, P_MAXIMUMREFERENCEFRAMES, 1);
+	obs_data_set_default_int(data, P_USAGE, static_cast<int32_t>(Usage::Transcoding));
+	obs_data_set_default_int(data, P_QUALITYPRESET, static_cast<int32_t>(QualityPreset::Balanced));
+	obs_data_set_default_int(data, P_PROFILE, static_cast<int32_t>(Profile::Main));
+	obs_data_set_default_int(data, P_PROFILELEVEL, static_cast<int32_t>(ProfileLevel::Automatic));
+	obs_data_set_default_int(data, P_TIER, static_cast<int32_t>(HEVC::Tier::Main));
+	obs_data_set_default_frames_per_second(data, P_ASPECTRATIO, media_frames_per_second{ 1, 1 }, "");
+	obs_data_set_default_int(data, P_CODINGTYPE, static_cast<int32_t>(CodingType::Automatic));
+	obs_data_set_default_int(data, P_MAXIMUMREFERENCEFRAMES, 1);
+
 	// Rate Control
-	obs_data_set_default_int(settings, P_RATECONTROLMETHOD, static_cast<int64_t>(AMD::RateControlMethod::ConstantBitrate));
-	obs_data_set_default_int(settings, P_PREPASSMODE, static_cast<int64_t>(AMD::PrePassMode::Disabled));
+	obs_data_set_int(data, "last" vstr(P_RATECONTROLMETHOD), -1);
+	obs_data_set_default_int(data, P_RATECONTROLMETHOD, static_cast<int32_t>(RateControlMethod::ConstantBitrate));
+	obs_data_set_default_int(data, P_PREPASSMODE, static_cast<int32_t>(PrePassMode::Disabled));
+	obs_data_set_default_int(data, P_BITRATE_TARGET, 3500);
+	obs_data_set_default_int(data, P_BITRATE_PEAK, 9000);
+	obs_data_set_default_int(data, P_QP_IFRAME, 22);
+	obs_data_set_default_int(data, P_QP_PFRAME, 22);
+	obs_data_set_default_int(data, P_QP_BFRAME, 22);
+	obs_data_set_default_int(data, P_QP_IFRAME_MINIMUM, 18);
+	obs_data_set_default_int(data, P_QP_IFRAME_MAXIMUM, 51);
+	obs_data_set_default_int(data, P_QP_PFRAME_MINIMUM, 18);
+	obs_data_set_default_int(data, P_QP_PFRAME_MAXIMUM, 51);
+	obs_data_set_default_int(data, P_FILLERDATA, 1);
+	obs_data_set_default_int(data, P_FRAMESKIPPING, 0);
+	obs_data_set_default_int(data, P_VBAQ, 0);
+	obs_data_set_default_int(data, P_ENFORCEHRD, 1);
+
+	// VBV Buffer
+	obs_data_set_int(data, "last" vstr(P_VBVBUFFER), -1);
+	obs_data_set_default_int(data, P_VBVBUFFER, 0);
+	obs_data_set_default_int(data, P_VBVBUFFER_SIZE, 3500);
+	obs_data_set_default_double(data, P_VBVBUFFER_STRICTNESS, 50);
+	obs_data_set_default_double(data, P_VBVBUFFER_INITIALFULLNESS, 100);
+
+	// Picture Control
+	obs_data_set_default_double(data, P_KEYFRAMEINTERVAL, 2.0);
+	obs_data_set_default_int(data, P_H264_IDRPERIOD, 0);
+	obs_data_set_default_int(data, P_GOP_TYPE, 60);
+	obs_data_set_default_int(data, P_GOP_SIZE, 60);
+	obs_data_set_default_int(data, P_GOP_SIZE_MINIMUM, 0);
+	obs_data_set_default_int(data, P_GOP_SIZE_MAXIMUM, 16);
+	obs_data_set_default_int(data, P_DEBLOCKINGFILTER, 1);
+	obs_data_set_default_int(data, P_MOTIONESTIMATION, 3);
+
+	// System Properties
+	obs_data_set_string(data, "last" vstr(P_VIDEO_API), "");
+	obs_data_set_default_string(data, P_VIDEO_API, "");
+	obs_data_set_int(data, "last" vstr(P_VIDEO_ADAPTER), 0);
+	obs_data_set_default_int(data, P_VIDEO_ADAPTER, 0);
+	obs_data_set_default_int(data, P_OPENCL, 0);
+	obs_data_set_int(data, "last" vstr(P_VIEW), -1);
+	obs_data_set_default_int(data, P_VIEW, static_cast<int32_t>(ViewMode::Basic));
+	obs_data_set_default_bool(data, P_DEBUG, false);
+	obs_data_set_default_int(data, P_VERSION, 0x0002000000000000ull);
 }
 
 static void fill_api_list(obs_property_t* p) {
@@ -263,8 +306,6 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void* ptr) {
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_QP_IFRAME)));
 	p = obs_properties_add_int_slider(props, P_QP_PFRAME, P_TRANSLATE(P_QP_PFRAME), 0, 51, 1);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_QP_PFRAME)));
-	p = obs_properties_add_int_slider(props, P_QP_BFRAME, P_TRANSLATE(P_QP_BFRAME), 0, 51, 1);
-	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_QP_BFRAME)));
 
 	/// Minimum QP, Maximum QP
 	p = obs_properties_add_int_slider(props, P_QP_IFRAME_MINIMUM, P_TRANSLATE(P_QP_IFRAME_MINIMUM), 0, 51, 1);
@@ -336,10 +377,10 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void* ptr) {
 	#pragma endregion Keyframe Interval
 
 	#pragma region IDR Period
-	p = obs_properties_add_int(props, P_H265_IDRPERIOD, P_TRANSLATE(P_H265_IDRPERIOD), 1, 1000, 1);
+	p = obs_properties_add_int(props, P_H265_IDRPERIOD, P_TRANSLATE(P_H265_IDRPERIOD), 0, 1000, 1);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_H265_IDRPERIOD)));
 	#pragma endregion IDR Period
-	
+
 	#pragma region GOP Type
 	p = obs_properties_add_list(props, P_GOP_TYPE, P_TRANSLATE(P_GOP_TYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_GOP_TYPE)));
@@ -358,7 +399,7 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void* ptr) {
 	p = obs_properties_add_int(props, P_GOP_SIZE_MAXIMUM, P_TRANSLATE(P_GOP_SIZE_MAXIMUM), 1, 1000, 1);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_GOP_SIZE_MAXIMUM)));
 	#pragma endregion GOP Size
-	
+
 	/// GOP Alignment?
 
 	#pragma region Deblocking Filter
@@ -700,6 +741,19 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 		obs_data_default_single(props, data, P_VBVBUFFER_STRICTNESS);
 	#pragma endregion VBV Buffer
 
+	#pragma region GOP
+	bool goptype_fixed = (static_cast<HEVC::GOPType>(obs_data_get_int(data, P_GOP_TYPE)) == HEVC::GOPType::Fixed);
+	obs_property_set_visible(obs_properties_get(props, P_GOP_SIZE), goptype_fixed);
+	obs_property_set_visible(obs_properties_get(props, P_GOP_SIZE_MINIMUM), !goptype_fixed);
+	obs_property_set_visible(obs_properties_get(props, P_GOP_SIZE_MAXIMUM), !goptype_fixed);
+	if (!goptype_fixed) {
+		obs_data_default_single(props, data, P_GOP_SIZE);
+	} else {
+		obs_data_default_single(props, data, P_GOP_SIZE_MINIMUM);
+		obs_data_default_single(props, data, P_GOP_SIZE_MAXIMUM);
+	}
+	#pragma endregion GOP
+
 	bool isnothostmode = strcmp(obs_data_get_string(data, P_VIDEO_API), "Host") != 0;
 	/// Video Adapter
 	obs_property_set_visible(obs_properties_get(props, P_VIDEO_ADAPTER), (curView >= ViewMode::Advanced) && isnothostmode);
@@ -710,8 +764,9 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 	if (!(curView >= ViewMode::Advanced) || !isnothostmode)
 		obs_data_default_single(props, data, P_OPENCL);
 
+
 	#pragma endregion View Mode
-	
+
 	return true;
 }
 
@@ -798,6 +853,46 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 		m_VideoEncoder->SetMaximumReferenceFrames(obs_data_get_int(data, P_MAXIMUMREFERENCEFRAMES));
 	} catch (...) {}
 
+	// Rate Control	
+	double_t framerate = (double_t)obsFPSnum / (double_t)obsFPSden;
+	m_VideoEncoder->SetRateControlMethod(static_cast<RateControlMethod>(obs_data_get_int(data, P_RATECONTROLMETHOD)));
+	m_VideoEncoder->SetRateControlMethod(static_cast<RateControlMethod>(obs_data_get_int(data, P_RATECONTROLMETHOD)));
+	m_VideoEncoder->SetPrePassMode(static_cast<PrePassMode>(obs_data_get_int(data, P_PREPASSMODE)));
+	m_VideoEncoder->SetVariableBitrateAverageQualityEnabled(!!obs_data_get_int(data, P_VBAQ));
+	m_VideoEncoder->SetVBVBufferInitialFullness(obs_data_get_double(data, P_VBVBUFFER_INITIALFULLNESS) / 100.0f);
+	if (obs_data_get_int(data, P_VBVBUFFER) == 0) {
+		m_VideoEncoder->SetVBVBufferStrictness(obs_data_get_double(data, P_VBVBUFFER_STRICTNESS) / 100.0);
+	} else {
+		m_VideoEncoder->SetVBVBufferSize(static_cast<uint32_t>(obs_data_get_int(data, P_VBVBUFFER_SIZE) * 1000));
+	}
+
+	// Picture Control
+	uint32_t gopsize = 0;
+	HEVC::GOPType goptype = static_cast<HEVC::GOPType>(obs_data_get_int(data, P_GOP_TYPE));
+	m_VideoEncoder->SetGOPType(goptype);
+	switch (goptype) {
+		case HEVC::GOPType::Fixed:
+			gopsize = (uint32_t)obs_data_get_int(data, P_GOP_SIZE);
+			m_VideoEncoder->SetGOPSize(gopsize);
+			break;
+		case HEVC::GOPType::Variable:
+			gopsize = (uint32_t)(obs_data_get_int(data, P_GOP_SIZE_MINIMUM) + obs_data_get_int(data, P_GOP_SIZE_MAXIMUM)) / 2;
+			m_VideoEncoder->SetGOPSizeMin((uint32_t)obs_data_get_int(data, P_GOP_SIZE_MINIMUM));
+			m_VideoEncoder->SetGOPSizeMax((uint32_t)obs_data_get_int(data, P_GOP_SIZE_MAXIMUM));
+			break;
+	}
+	uint32_t idrperiod = (uint32_t)obs_data_get_int(data, P_H265_IDRPERIOD);
+	if (idrperiod != 0 && static_cast<ViewMode>(obs_data_get_int(data, P_VIEW)) == ViewMode::Master) {
+		m_VideoEncoder->SetIDRPeriod(idrperiod);
+	} else {
+		double_t keyinterv = (double_t)obs_data_get_double(data, P_KEYFRAMEINTERVAL);
+		idrperiod = (uint32_t)ceil((keyinterv * framerate) / gopsize);
+		m_VideoEncoder->SetIDRPeriod(idrperiod);
+	}
+	m_VideoEncoder->SetDeblockingFilterEnabled(!!obs_data_get_int(data, P_DEBLOCKINGFILTER));
+	m_VideoEncoder->SetMotionEstimationHalfPixelEnabled(!!(obs_data_get_int(data, P_MOTIONESTIMATION) & 1));
+	m_VideoEncoder->SetMotionEstimationQuarterPixelEnabled(!!(obs_data_get_int(data, P_MOTIONESTIMATION) & 2));
+
 	// OBS - Enforce Streaming Service Restrictions
 	#pragma region OBS - Enforce Streaming Service Restrictions
 	{
@@ -859,6 +954,51 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 					break;
 			}
 		}
+
+		// Rate Control Method
+		const char* t_str = obs_data_get_string(data, "rate_control");
+		if (strcmp(t_str, "") != 0) {
+			if (strcmp(t_str, "CBR") == 0) {
+				m_VideoEncoder->SetRateControlMethod(RateControlMethod::ConstantBitrate);
+				m_VideoEncoder->SetFillerDataEnabled(true);
+			} else if (strcmp(t_str, "VBR") == 0) {
+				m_VideoEncoder->SetRateControlMethod(RateControlMethod::PeakConstrainedVariableBitrate);
+			} else if (strcmp(t_str, "VBR_LAT") == 0) {
+				m_VideoEncoder->SetRateControlMethod(RateControlMethod::LatencyConstrainedVariableBitrate);
+			} else if (strcmp(t_str, "CQP") == 0) {
+				m_VideoEncoder->SetRateControlMethod(RateControlMethod::ConstantQP);
+			}
+
+			obs_data_set_int(data, P_RATECONTROLMETHOD, (int32_t)m_VideoEncoder->GetRateControlMethod());
+		} else {
+			if (m_VideoEncoder->GetUsage() != Usage::UltraLowLatency)
+				switch (m_VideoEncoder->GetRateControlMethod()) {
+					case RateControlMethod::ConstantBitrate:
+						obs_data_set_string(data, "rate_control", "CBR");
+						break;
+					case RateControlMethod::PeakConstrainedVariableBitrate:
+						obs_data_set_string(data, "rate_control", "VBR");
+						break;
+					case RateControlMethod::LatencyConstrainedVariableBitrate:
+						obs_data_set_string(data, "rate_control", "VBR_LAT");
+						break;
+					case RateControlMethod::ConstantQP:
+						obs_data_set_string(data, "rate_control", "CQP");
+						break;
+				}
+		}
+
+		// IDR-Period (Keyframes)
+		//uint32_t fpsNum = m_VideoEncoder->GetFrameRate().first;
+		//uint32_t fpsDen = m_VideoEncoder->GetFrameRate().second;
+		//if (obs_data_get_int(data, "keyint_sec") != -1) {
+		//	m_VideoEncoder->SetIDRPeriod(static_cast<uint32_t>(obs_data_get_int(data, "keyint_sec") * (static_cast<double_t>(fpsNum) / static_cast<double_t>(fpsDen))));
+
+		//	obs_data_set_double(data, P_KEYFRAMEINTERVAL, static_cast<double_t>(obs_data_get_int(data, "keyint_sec")));
+		//	obs_data_set_int(data, P_H264_IDRPERIOD, static_cast<uint32_t>(obs_data_get_int(data, "keyint_sec") *  (static_cast<double_t>(fpsNum) / static_cast<double_t>(fpsDen))));
+		//} else {
+		//	obs_data_set_int(data, "keyint_sec", static_cast<uint64_t>(m_VideoEncoder->GetIDRPeriod() / (static_cast<double_t>(fpsNum) / static_cast<double_t>(fpsDen))));
+		//}
 	}
 	#pragma endregion OBS - Enforce Streaming Service Restrictions
 
@@ -891,14 +1031,9 @@ bool Plugin::Interface::H265Interface::update(void *ptr, obs_data_t *settings) {
 }
 
 bool Plugin::Interface::H265Interface::update(obs_data_t* data) {
-	double_t framerate = (double_t)m_VideoEncoder->GetFrameRate().first / (double_t)m_VideoEncoder->GetFrameRate().second;
 	Usage myUsage = static_cast<Usage>(obs_data_get_int(data, P_USAGE));
-
 	if (myUsage == Usage::Transcoding) {
 		// Rate Control
-		m_VideoEncoder->SetRateControlMethod(static_cast<RateControlMethod>(obs_data_get_int(data, P_RATECONTROLMETHOD)));
-		m_VideoEncoder->SetPrePassMode(static_cast<PrePassMode>(obs_data_get_int(data, P_PREPASSMODE)));
-		m_VideoEncoder->SetVariableBitrateAverageQualityEnabled(!!obs_data_get_int(data, P_VBAQ));
 		m_VideoEncoder->SetFrameSkippingEnabled(!!obs_data_get_int(data, P_FRAMESKIPPING));
 		m_VideoEncoder->SetEnforceHRDEnabled(!!obs_data_get_int(data, P_ENFORCEHRD));
 		m_VideoEncoder->SetFillerDataEnabled(!!obs_data_get_int(data, P_FILLERDATA));
@@ -907,44 +1042,18 @@ bool Plugin::Interface::H265Interface::update(obs_data_t* data) {
 		m_VideoEncoder->SetIFrameQPMaximum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_IFRAME_MAXIMUM)));
 		m_VideoEncoder->SetPFrameQPMinimum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_PFRAME_MINIMUM)));
 		m_VideoEncoder->SetPFrameQPMaximum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_PFRAME_MAXIMUM)));
-		m_VideoEncoder->SetTargetBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_TARGET) * 1000));
-		m_VideoEncoder->SetPeakBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_PEAK) * 1000));
-		m_VideoEncoder->SetIFrameQP(static_cast<uint8_t>(obs_data_get_int(data, P_QP_IFRAME)));
-		m_VideoEncoder->SetPFrameQP(static_cast<uint8_t>(obs_data_get_int(data, P_QP_PFRAME)));
-
-		m_VideoEncoder->SetVBVBufferInitialFullness((float)obs_data_get_double(data, P_VBVBUFFER_INITIALFULLNESS) / 100.0f);
-		if (obs_data_get_int(data, P_VBVBUFFER) == 0) {
-			m_VideoEncoder->SetVBVBufferStrictness(obs_data_get_double(data, P_VBVBUFFER_STRICTNESS) / 100.0);
-		} else {
-			m_VideoEncoder->SetVBVBufferSize(static_cast<uint32_t>(obs_data_get_int(data, P_VBVBUFFER_SIZE) * 1000));
-		}
-
-		// Picture Control
-		uint32_t gopsize = 0;
-		HEVC::GOPType goptype = static_cast<HEVC::GOPType>(obs_data_get_int(data, P_GOP_TYPE));
-		m_VideoEncoder->SetGOPType(goptype);
-		switch (goptype) {
-			case HEVC::GOPType::Fixed:
-				gopsize = (uint32_t)obs_data_get_int(data, P_GOP_SIZE);
-				m_VideoEncoder->SetGOPSize(gopsize);
+		switch (m_VideoEncoder->GetRateControlMethod()) {
+			case RateControlMethod::PeakConstrainedVariableBitrate:
+			case RateControlMethod::LatencyConstrainedVariableBitrate:
+				m_VideoEncoder->SetPeakBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_PEAK) * 1000));
+			case RateControlMethod::ConstantBitrate:
+				m_VideoEncoder->SetTargetBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_TARGET) * 1000));
 				break;
-			case HEVC::GOPType::Variable:
-				gopsize = (uint32_t)(obs_data_get_int(data, P_GOP_SIZE_MINIMUM) + obs_data_get_int(data, P_GOP_SIZE_MAXIMUM)) / 2;
-				m_VideoEncoder->SetGOPSizeMin((uint32_t)obs_data_get_int(data, P_GOP_SIZE_MINIMUM));
-				m_VideoEncoder->SetGOPSizeMax((uint32_t)obs_data_get_int(data, P_GOP_SIZE_MAXIMUM));
+			case RateControlMethod::ConstantQP:
+				m_VideoEncoder->SetIFrameQP(static_cast<uint8_t>(obs_data_get_int(data, P_QP_IFRAME)));
+				m_VideoEncoder->SetPFrameQP(static_cast<uint8_t>(obs_data_get_int(data, P_QP_PFRAME)));
 				break;
 		}
-		uint32_t idrperiod = (uint32_t)obs_data_get_int(data, P_H265_IDRPERIOD);
-		if (idrperiod != 0) {
-			m_VideoEncoder->SetIDRPeriod(idrperiod);
-		} else {
-			double_t keyinterv = (double_t)obs_data_get_double(data, P_KEYFRAMEINTERVAL);
-			idrperiod = (uint32_t)ceil((keyinterv * framerate) / gopsize);
-			m_VideoEncoder->SetIDRPeriod(idrperiod);
-		}
-		m_VideoEncoder->SetDeblockingFilterEnabled(!!obs_data_get_int(data, P_DEBLOCKINGFILTER));
-		m_VideoEncoder->SetMotionEstimationHalfPixelEnabled(!!(obs_data_get_int(data, P_MOTIONESTIMATION) & 1));
-		m_VideoEncoder->SetMotionEstimationQuarterPixelEnabled(!!(obs_data_get_int(data, P_MOTIONESTIMATION) & 2));
 	} else if (m_VideoEncoder->GetUsage() == Usage::UltraLowLatency) {
 		/*m_VideoEncoder->SetQPMinimum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_MINIMUM)));
 		m_VideoEncoder->SetQPMaximum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_MAXIMUM)));
