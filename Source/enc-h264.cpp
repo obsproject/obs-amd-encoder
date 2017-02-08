@@ -166,7 +166,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 
 	// Picture Control
 	obs_data_set_default_double(data, P_KEYFRAMEINTERVAL, 2);
-	obs_data_set_default_int(data, P_H264_IDRPERIOD, 60);
+	obs_data_set_default_int(data, P_H264_IDRPERIOD, 0);
 	obs_data_set_int(data, "last" vstr(P_BFRAME_PATTERN), -1);
 	obs_data_set_default_int(data, P_BFRAME_PATTERN, 0);
 	obs_data_set_int(data, "last" vstr(P_BFRAME_REFERENCE), -1);
