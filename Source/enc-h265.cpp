@@ -68,20 +68,28 @@ const char* Plugin::Interface::H265Interface::get_name(void* type_data) {
 }
 
 void Plugin::Interface::H265Interface::get_defaults(obs_data_t *data) {
+	#pragma region OBS - Enforce Streaming Service Restrictions
+	obs_data_set_default_int(data, "bitrate", -1);
+	obs_data_set_default_int(data, "keyint_sec", -1);
+	obs_data_set_default_string(data, "rate_control", "");
+	obs_data_set_default_string(data, "profile", "");
+	obs_data_set_default_string(data, "preset", "");
+	#pragma endregion OBS - Enforce Streaming Service Restrictions
+
 	// Static
-	obs_data_set_default_int(data, P_USAGE, static_cast<int32_t>(Usage::Transcoding));
-	obs_data_set_default_int(data, P_QUALITYPRESET, static_cast<int32_t>(QualityPreset::Balanced));
-	obs_data_set_default_int(data, P_PROFILE, static_cast<int32_t>(Profile::Main));
-	obs_data_set_default_int(data, P_PROFILELEVEL, static_cast<int32_t>(ProfileLevel::Automatic));
-	obs_data_set_default_int(data, P_TIER, static_cast<int32_t>(HEVC::Tier::Main));
-	obs_data_set_default_frames_per_second(data, P_ASPECTRATIO, media_frames_per_second{ 1, 1 }, "");
-	obs_data_set_default_int(data, P_CODINGTYPE, static_cast<int32_t>(CodingType::Automatic));
+	obs_data_set_default_int(data, P_USAGE, static_cast<int64_t>(Usage::Transcoding));
+	obs_data_set_default_int(data, P_QUALITYPRESET, static_cast<int64_t>(QualityPreset::Balanced));
+	obs_data_set_default_int(data, P_PROFILE, static_cast<int64_t>(Profile::Main));
+	obs_data_set_default_int(data, P_PROFILELEVEL, static_cast<int64_t>(ProfileLevel::Automatic));
+	obs_data_set_default_int(data, P_TIER, static_cast<int64_t>(HEVC::Tier::Main));
+	//obs_data_set_default_frames_per_second(data, P_ASPECTRATIO, media_frames_per_second{ 1, 1 }, "");
+	obs_data_set_default_int(data, P_CODINGTYPE, static_cast<int64_t>(CodingType::Automatic));
 	obs_data_set_default_int(data, P_MAXIMUMREFERENCEFRAMES, 1);
 
 	// Rate Control
-	obs_data_set_int(data, "last" vstr(P_RATECONTROLMETHOD), -1);
-	obs_data_set_default_int(data, P_RATECONTROLMETHOD, static_cast<int32_t>(RateControlMethod::ConstantBitrate));
-	obs_data_set_default_int(data, P_PREPASSMODE, static_cast<int32_t>(PrePassMode::Disabled));
+	obs_data_set_default_int(data, ("last" P_RATECONTROLMETHOD), -1);
+	obs_data_set_default_int(data, P_RATECONTROLMETHOD, static_cast<int64_t>(RateControlMethod::ConstantBitrate));
+	obs_data_set_default_int(data, P_PREPASSMODE, static_cast<int64_t>(PrePassMode::Disabled));
 	obs_data_set_default_int(data, P_BITRATE_TARGET, 3500);
 	obs_data_set_default_int(data, P_BITRATE_PEAK, 9000);
 	obs_data_set_default_int(data, P_QP_IFRAME, 22);
@@ -97,7 +105,7 @@ void Plugin::Interface::H265Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, P_ENFORCEHRD, 1);
 
 	// VBV Buffer
-	obs_data_set_int(data, "last" vstr(P_VBVBUFFER), -1);
+	obs_data_set_default_int(data, ("last" P_VBVBUFFER), -1);
 	obs_data_set_default_int(data, P_VBVBUFFER, 0);
 	obs_data_set_default_int(data, P_VBVBUFFER_SIZE, 3500);
 	obs_data_set_default_double(data, P_VBVBUFFER_STRICTNESS, 50);
@@ -114,13 +122,13 @@ void Plugin::Interface::H265Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, P_MOTIONESTIMATION, 3);
 
 	// System Properties
-	obs_data_set_string(data, "last" vstr(P_VIDEO_API), "");
+	obs_data_set_string(data, ("last" P_VIDEO_API), "");
 	obs_data_set_default_string(data, P_VIDEO_API, "");
-	obs_data_set_int(data, "last" vstr(P_VIDEO_ADAPTER), 0);
+	obs_data_set_default_int(data, ("last" P_VIDEO_ADAPTER), 0);
 	obs_data_set_default_int(data, P_VIDEO_ADAPTER, 0);
 	obs_data_set_default_int(data, P_OPENCL, 0);
-	obs_data_set_int(data, "last" vstr(P_VIEW), -1);
-	obs_data_set_default_int(data, P_VIEW, static_cast<int32_t>(ViewMode::Basic));
+	obs_data_set_default_int(data, ("last" P_VIEW), -1);
+	obs_data_set_default_int(data, P_VIEW, static_cast<int64_t>(ViewMode::Basic));
 	obs_data_set_default_bool(data, P_DEBUG, false);
 	obs_data_set_default_int(data, P_VERSION, 0x0002000000000000ull);
 }
@@ -255,10 +263,10 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void* ptr) {
 	obs_property_list_add_int(p, "High", static_cast<int32_t>(HEVC::Tier::High));
 	#pragma endregion Tier
 
-	#pragma region Aspect Ratio
-	p = obs_properties_add_frame_rate(props, P_ASPECTRATIO, P_TRANSLATE(P_ASPECTRATIO));
-	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_ASPECTRATIO)));
-	#pragma endregion Aspect Ratio
+	//#pragma region Aspect Ratio
+	//p = obs_properties_add_frame_rate(props, P_ASPECTRATIO, P_TRANSLATE(P_ASPECTRATIO));
+	//obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_ASPECTRATIO)));
+	//#pragma endregion Aspect Ratio
 
 	#pragma region Coding Type
 	p = obs_properties_add_list(props, P_CODINGTYPE, P_TRANSLATE(P_CODINGTYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
@@ -506,7 +514,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 	#pragma region Video API & Adapter
 	// Video API
 	const char
-		*videoAPI_last = obs_data_get_string(data, "last" vstr(P_VIDEO_API)),
+		*videoAPI_last = obs_data_get_string(data, ("last" P_VIDEO_API)),
 		*videoAPI_cur = obs_data_get_string(data, P_VIDEO_API);
 	if (strlen(videoAPI_cur) == 0) {
 		p = obs_properties_get(props, P_VIDEO_API);
@@ -517,7 +525,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 	}
 	/// If a different API was selected, rebuild the device list.
 	if (strcmp(videoAPI_last, videoAPI_cur) != 0) {
-		obs_data_set_string(data, "last" vstr(P_VIDEO_API), videoAPI_cur);
+		obs_data_set_string(data, ("last" P_VIDEO_API), videoAPI_cur);
 		fill_device_list(obs_properties_get(props, P_VIDEO_ADAPTER), videoAPI_cur);
 		result = true;
 
@@ -528,10 +536,10 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 
 	// Video Adapter
 	int64_t
-		videoAdapter_last = obs_data_get_int(data, "last" vstr(P_VIDEO_ADAPTER)),
+		videoAdapter_last = obs_data_get_int(data, ("last" P_VIDEO_ADAPTER)),
 		videoAdapter_cur = obs_data_get_int(data, P_VIDEO_ADAPTER);
 	if (videoAdapter_last != videoAdapter_cur) {
-		obs_data_set_int(data, "last" vstr(P_VIDEO_ADAPTER), videoAdapter_cur);
+		obs_data_set_int(data, ("last" P_VIDEO_ADAPTER), videoAdapter_cur);
 		result = true;
 
 		auto api = Plugin::API::GetAPI(obs_data_get_string(data, P_VIDEO_API));
@@ -597,10 +605,10 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 	#pragma endregion Video API & Adapter
 
 	#pragma region View Mode
-	ViewMode lastView = static_cast<ViewMode>(obs_data_get_int(data, "last" vstr(P_VIEW))),
+	ViewMode lastView = static_cast<ViewMode>(obs_data_get_int(data, ("last" P_VIEW))),
 		curView = static_cast<ViewMode>(obs_data_get_int(data, P_VIEW));
 	if (lastView != curView) {
-		obs_data_set_int(data, "last" vstr(P_VIEW), static_cast<int32_t>(curView));
+		obs_data_set_int(data, ("last" P_VIEW), static_cast<int32_t>(curView));
 		result = true;
 	}
 
@@ -665,10 +673,10 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 		vis_rcm_qp = false,
 		vis_rcm_fillerdata = false;
 
-	RateControlMethod lastRCM = static_cast<RateControlMethod>(obs_data_get_int(data, "last" vstr(P_RATECONTROLMETHOD))),
+	RateControlMethod lastRCM = static_cast<RateControlMethod>(obs_data_get_int(data, ("last" P_RATECONTROLMETHOD))),
 		curRCM = static_cast<RateControlMethod>(obs_data_get_int(data, P_RATECONTROLMETHOD));
 	if (lastRCM != curRCM) {
-		obs_data_set_int(data, "last" vstr(P_RATECONTROLMETHOD), static_cast<int32_t>(curRCM));
+		obs_data_set_int(data, ("last" P_RATECONTROLMETHOD), static_cast<int32_t>(curRCM));
 		result = true;
 	}
 	switch (curRCM) {
@@ -727,9 +735,9 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 	uint32_t vbvBufferMode = static_cast<uint32_t>(obs_data_get_int(data, P_VBVBUFFER));
 	bool vbvBufferVisible = (curView >= ViewMode::Advanced);
 
-	uint32_t lastVBVBufferMode = static_cast<uint32_t>(obs_data_get_int(data, "last" vstr(P_VBVBUFFER)));
+	uint32_t lastVBVBufferMode = static_cast<uint32_t>(obs_data_get_int(data, ("last" P_VBVBUFFER)));
 	if (lastVBVBufferMode != vbvBufferMode) {
-		obs_data_set_int(data, "last" vstr(P_VBVBUFFER), vbvBufferMode);
+		obs_data_set_int(data, ("last" P_VBVBUFFER), vbvBufferMode);
 		result = true;
 	}
 
