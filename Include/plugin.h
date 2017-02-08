@@ -104,7 +104,7 @@ void SetThreadName(const char* threadName);
 //////////////////////////////////////////////////////////////////////////
 
 #define P_TRANSLATE(x)				obs_module_text_multi(x)
-#define P_DESC(x)					vstr(x) ".Description"
+#define P_DESC(x)					x ".Description"
 
 // Shared
 #define P_VERSION					"Version"
