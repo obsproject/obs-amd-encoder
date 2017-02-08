@@ -41,23 +41,6 @@ using namespace Plugin;
 using namespace Plugin::AMD;
 using namespace Plugin::Interface;
 
-enum class Presets : int8_t {
-	None = -1,
-	ResetToDefaults = 0,
-	Recording,
-	HighQuality,
-	Indistinguishable,
-	Lossless,
-	Twitch,
-	YouTube,
-};
-enum class ViewMode :uint8_t {
-	Basic,
-	Advanced,
-	Expert,
-	Master
-};
-
 #define PREFIX "[H264/AVC]"
 
 void Plugin::Interface::H264Interface::encoder_register() {
@@ -90,6 +73,7 @@ void Plugin::Interface::H264Interface::encoder_register() {
 	encoder_info->get_extra_data = &get_extra_data;
 
 	obs_register_encoder(encoder_info.get());
+	AMF_LOG_DEBUG(PREFIX " Registered.");
 }
 
 const char* Plugin::Interface::H264Interface::get_name(void*) {
@@ -657,6 +641,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 	// Transfer settings from older Plugin versions to newer ones.
 	obs_data_transfer_settings(data);
 
+	#pragma region Video API & Adapter
 	// Video API
 	const char
 		*videoAPI_last = obs_data_get_string(data, "last" vstr(P_VIDEO_API)),
@@ -750,6 +735,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 				e.what());
 		}
 	}
+	#pragma endregion Video API & Adapter
 
 	#pragma region Presets
 	Presets lastPreset = static_cast<Presets>(obs_data_get_int(data, "last" vstr(P_PRESET))),
@@ -1045,6 +1031,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		std::make_pair(P_VIDEO_ADAPTER, ViewMode::Advanced),
 		std::make_pair(P_OPENCL, ViewMode::Expert),
 		std::make_pair(P_VIEW, ViewMode::Basic),
+		std::make_pair(P_DEBUG, ViewMode::Basic),
 	};
 	for (std::pair<const char*, ViewMode> kv : viewstuff) {
 		bool vis = curView >= kv.second;
@@ -1184,7 +1171,6 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 	if (!(curView >= ViewMode::Advanced) || !isnothostmode)
 		obs_data_default_single(props, data, P_OPENCL);
 
-	#pragma endregion Special Logic
 	#pragma endregion View Mode
 
 	return result;
@@ -1400,7 +1386,7 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 		double_t framerate = (double_t)m_VideoEncoder->GetFrameRate().first / (double_t)m_VideoEncoder->GetFrameRate().second;
 		m_VideoEncoder->SetIDRPeriod(max(static_cast<uint32_t>(obs_data_get_double(data, P_KEYFRAMEINTERVAL) * framerate), 1));
 		if (static_cast<ViewMode>(obs_data_get_int(data, P_VIEW)) == ViewMode::Master) {
-			uint64_t idrperiod = static_cast<uint32_t>(obs_data_get_int(data, P_H264_IDRPERIOD));
+			uint32_t idrperiod = static_cast<uint32_t>(obs_data_get_int(data, P_H264_IDRPERIOD));
 			if (idrperiod != 0)
 				m_VideoEncoder->SetIDRPeriod(idrperiod);
 		}
