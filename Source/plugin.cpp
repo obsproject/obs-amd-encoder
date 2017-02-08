@@ -209,6 +209,9 @@ MODULE_EXPORT bool obs_module_load(void) {
 
 	// Register Encoders
 	Plugin::Interface::H264Interface::encoder_register();
+	#ifdef WITH_HEVC
+	Plugin::Interface::H265Interface::encoder_register();
+	#endif
 
 	#ifdef _DEBUG
 	{
@@ -255,6 +258,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 /** Optional: Called when the module is unloaded.  */
 MODULE_EXPORT void obs_module_unload(void) {
 	Plugin::AMD::CapabilityManager::Finalize();
+	Plugin::API::FinalizeAPIs();
 	Plugin::AMD::AMF::Finalize();
 }
 
