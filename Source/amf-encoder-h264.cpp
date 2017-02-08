@@ -355,6 +355,18 @@ Plugin::AMD::CodingType Plugin::AMD::EncoderH264::GetCodingType() {
 	return Utility::CodingTypeFromAMFH264((AMF_VIDEO_ENCODER_CODING_ENUM)e);
 }
 
+std::pair<uint32_t, uint32_t> Plugin::AMD::EncoderH264::CapsMaximumLongTermReferenceFrames() {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+void Plugin::AMD::EncoderH264::SetMaximumLongTermReferenceFrames(uint32_t v) {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+uint32_t Plugin::AMD::EncoderH264::GetMaximumLongTermReferenceFrames() {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
 // Properties - Dynamic
 std::vector<RateControlMethod> Plugin::AMD::EncoderH264::CapsRateControlMethod() {
 	const amf::AMFPropertyInfo* var;
@@ -685,6 +697,14 @@ uint8_t Plugin::AMD::EncoderH264::GetBFrameQP() {
 	return (uint8_t)e;
 }
 
+void Plugin::AMD::EncoderH264::SetMaximumAccessUnitSize(uint32_t v) {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+uint32_t Plugin::AMD::EncoderH264::GetMaximumAccessUnitSize() {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
 std::pair<uint64_t, uint64_t> Plugin::AMD::EncoderH264::CapsVBVBufferSize() {
 	const amf::AMFPropertyInfo* var;
 	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, &var);
@@ -704,6 +724,76 @@ void Plugin::AMD::EncoderH264::SetVBVBufferSize(uint64_t v) {
 			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.data());
 	}
+}
+
+void Plugin::AMD::EncoderH264::SetVBVBufferStrictness(double_t strictness) {
+	uint64_t looseBitrate, targetBitrate, strictBitrate;
+
+	Usage usage = GetUsage();
+	if (usage == Usage::UltraLowLatency) {
+		targetBitrate = GetTargetBitrate();
+	} else {
+		switch (this->GetRateControlMethod()) {
+			case RateControlMethod::ConstantBitrate:
+				targetBitrate = this->GetTargetBitrate();
+				break;
+			case RateControlMethod::LatencyConstrainedVariableBitrate:
+			case RateControlMethod::PeakConstrainedVariableBitrate:
+				targetBitrate = max(this->GetTargetBitrate(), this->GetPeakBitrate());
+				break;
+			case RateControlMethod::ConstantQP:
+				// When using Constant QP, one will have to pick a QP that is decent
+				//  in both quality and bitrate. We can easily calculate both the QP
+				//  required for an average bitrate and the average bitrate itself 
+				//  with these formulas:
+				// BITRATE = ((1 - (QP / 51)) ^ 2) * ((Width * Height) * 1.5 * (FPSNumerator / FPSDenumerator))
+				// QP = (1 - sqrt(BITRATE / ((Width * Height) * 1.5 * (FPSNumerator / FPSDenumerator)))) * 51
+
+				auto frameSize = this->GetResolution();
+				auto frameRate = this->GetFrameRate();
+
+				double_t bitrate = frameSize.first * frameSize.second;
+				switch (this->m_ColorFormat) {
+					case ColorFormat::NV12:
+					case ColorFormat::I420:
+						bitrate *= 1.5;
+						break;
+					case ColorFormat::YUY2:
+						bitrate *= 4;
+						break;
+					case ColorFormat::BGRA:
+					case ColorFormat::RGBA:
+						bitrate *= 3;
+						break;
+					case ColorFormat::GRAY:
+						bitrate *= 1;
+						break;
+				}
+				bitrate *= frameRate.first / frameRate.second;
+
+				uint8_t qp_i = this->GetIFrameQP(),
+					qp_p = this->GetPFrameQP();
+				double_t qp = 1 - ((double_t)(min(qp_i, qp_p)) / 51.0);
+				qp = max(qp * qp, 0.001); // Needs to be at least 0.001.
+
+				targetBitrate = static_cast<uint32_t>(bitrate * qp);
+				break;
+		}
+	}
+	strictBitrate = static_cast<uint32_t>(targetBitrate * (m_FrameRate.second / m_FrameRate.first));
+	looseBitrate = CapsTargetBitrate().second;
+
+	// Three-Point Linear Lerp
+	// 0% = looseBitrate, 50% = targetBitrate, 100% = strictBitrate
+	strictness = min(max(strictness, 0.0), 1.0);
+	double_t aFadeVal = min(strictness * 2.0, 1.0); // 0 - 0.5
+	double_t bFadeVal = max(strictness * 2.0 - 1.0, 0.0); // 0.5 - 1.0
+
+	double_t aFade = (looseBitrate * (1.0 - aFadeVal)) + (targetBitrate * aFadeVal);
+	double_t bFade = (aFade * (1.0 - bFadeVal)) + (strictBitrate * bFadeVal);
+
+	uint32_t vbvBufferSize = static_cast<uint32_t>(round(bFade));
+	this->SetVBVBufferSize(vbvBufferSize);
 }
 
 uint64_t Plugin::AMD::EncoderH264::GetVBVBufferSize() {
@@ -740,16 +830,17 @@ float Plugin::AMD::EncoderH264::GetInitialVBVBufferFullness() {
 }
 
 // Properties - Picture Control
-void Plugin::AMD::EncoderH264::SetIDRPeriod(uint64_t v) {
+void Plugin::AMD::EncoderH264::SetIDRPeriod(uint32_t v) {
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, (int64_t)v);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %lld, error %ls (code %d)",
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
 			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.data());
 	}
 }
 
-uint64_t Plugin::AMD::EncoderH264::GetIDRPeriod() {
+uint32_t Plugin::AMD::EncoderH264::GetIDRPeriod()
+{
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, &e);
@@ -758,7 +849,23 @@ uint64_t Plugin::AMD::EncoderH264::GetIDRPeriod() {
 			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.data());
 	}
-	return e;
+	return (uint32_t)e;
+}
+
+void Plugin::AMD::EncoderH264::SetHeaderInsertionSpacing(uint32_t v) {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+uint32_t Plugin::AMD::EncoderH264::GetHeaderInsertionSpacing() {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+void Plugin::AMD::EncoderH264::SetGOPAlignmentEnabled(bool v) {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+bool Plugin::AMD::EncoderH264::GetGOPAlignmentEnabled() {
+	throw std::logic_error("The method or operation is not implemented.");
 }
 
 void Plugin::AMD::EncoderH264::SetDeblockingFilterEnabled(bool v) {
@@ -921,6 +1028,74 @@ bool Plugin::AMD::EncoderH264::IsMotionEstimationHalfPixelEnabled() {
 	return e;
 }
 
+// Properties - Intra-Refresh
+void Plugin::AMD::EncoderH264::SetIntraRefreshNumMBsPerSlot(uint32_t v) {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+uint32_t Plugin::AMD::EncoderH264::GetIntraRefreshNumMBsPerSlot() {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+void Plugin::AMD::EncoderH264::SetIntraRefreshNumOfStripes(uint32_t v) {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+uint32_t Plugin::AMD::EncoderH264::GetIntraRefreshNumOfStripes() {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+// Properties - Slicing
+void Plugin::AMD::EncoderH264::SetSlicesPerFrame(uint32_t v) {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+uint32_t Plugin::AMD::EncoderH264::GetSlicesPerFrame() {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+void Plugin::AMD::EncoderH264::SetSliceControlMode(uint32_t v) {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+uint32_t Plugin::AMD::EncoderH264::GetSliceControlMode() {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+void Plugin::AMD::EncoderH264::SetSliceControlSize(uint32_t v) {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+uint32_t Plugin::AMD::EncoderH264::GetSliceControlSize() {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+void Plugin::AMD::EncoderH264::SetMaxSliceSize(uint32_t v) {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+uint32_t Plugin::AMD::EncoderH264::GetMaxSliceSize() {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+// Properties - Experimental
+void Plugin::AMD::EncoderH264::SetLowLatencyInternal(bool v) {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+bool Plugin::AMD::EncoderH264::GetLowLatencyInternal() {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+void Plugin::AMD::EncoderH264::SetCommonLowLatencyInternal(bool v) {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+bool Plugin::AMD::EncoderH264::GetCommonLowLatencyInternal() {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+// Internal
 void Plugin::AMD::EncoderH264::PacketPriorityAndKeyframe(amf::AMFDataPtr pData, struct encoder_packet* packet) {
 	uint64_t pktType;
 	pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &pktType);

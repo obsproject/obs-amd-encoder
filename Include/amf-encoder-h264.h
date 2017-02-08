@@ -64,13 +64,17 @@ namespace Plugin {
 
 			virtual void SetAspectRatio(std::pair<uint32_t, uint32_t> v) override;
 			virtual std::pair<uint32_t, uint32_t> GetAspectRatio() override;
-			
+
 			virtual void SetFrameRate(std::pair<uint32_t, uint32_t> v) override;
 			virtual std::pair<uint32_t, uint32_t> GetFrameRate() override;
 
 			virtual std::vector<CodingType> CapsCodingType() override;
 			virtual void SetCodingType(CodingType v) override;
 			virtual CodingType GetCodingType() override;
+
+			virtual std::pair<uint32_t, uint32_t> CapsMaximumLongTermReferenceFrames() override;
+			virtual void SetMaximumLongTermReferenceFrames(uint32_t v) override;
+			virtual uint32_t GetMaximumLongTermReferenceFrames() override;
 
 			// Properties - Dynamic
 			virtual std::vector<RateControlMethod> CapsRateControlMethod() override;
@@ -116,16 +120,26 @@ namespace Plugin {
 			virtual void SetBFrameQP(uint8_t v);
 			virtual uint8_t GetBFrameQP();
 
+			virtual void SetMaximumAccessUnitSize(uint32_t v) override;
+			virtual uint32_t GetMaximumAccessUnitSize() override;
+
 			virtual std::pair<uint64_t, uint64_t> CapsVBVBufferSize() override;
 			virtual void SetVBVBufferSize(uint64_t v) override;
+			virtual void SetVBVBufferStrictness(double_t v) override;
 			virtual uint64_t GetVBVBufferSize() override;
 
 			virtual void SetVBVBufferInitialFullness(float v) override;
 			virtual float GetInitialVBVBufferFullness() override;
 
 			// Properties - Picture Control
-			void SetIDRPeriod(uint64_t v);
-			uint64_t GetIDRPeriod();
+			virtual void SetIDRPeriod(uint32_t v) override;
+			virtual uint32_t GetIDRPeriod() override;
+
+			void SetHeaderInsertionSpacing(uint32_t v);
+			uint32_t GetHeaderInsertionSpacing();
+			
+			virtual void SetGOPAlignmentEnabled(bool v) override;
+			virtual bool GetGOPAlignmentEnabled() override;
 
 			virtual void SetDeblockingFilterEnabled(bool v) override;
 			virtual bool IsDeblockingFilterEnabled() override;
@@ -136,7 +150,7 @@ namespace Plugin {
 
 			virtual void SetBFrameDeltaQP(int8_t v);
 			virtual int8_t GetBFrameDeltaQP();
-			
+
 			virtual void SetBFrameReferenceEnabled(bool v);
 			virtual bool IsBFrameReferenceEnabled();
 
@@ -150,15 +164,37 @@ namespace Plugin {
 			virtual void SetMotionEstimationHalfPixelEnabled(bool v) override;
 			virtual bool IsMotionEstimationHalfPixelEnabled() override;
 
+			// Properties - Intra-Refresh
+			void SetIntraRefreshNumMBsPerSlot(uint32_t v);
+			uint32_t GetIntraRefreshNumMBsPerSlot();
+
+			void SetIntraRefreshNumOfStripes(uint32_t v);
+			uint32_t GetIntraRefreshNumOfStripes();
+
+			// Properties - Slicing
+			virtual void SetSlicesPerFrame(uint32_t v) override;
+			virtual uint32_t GetSlicesPerFrame() override;
+
+			virtual void SetSliceControlMode(uint32_t v) override;
+			virtual uint32_t GetSliceControlMode() override;
+
+			virtual void SetSliceControlSize(uint32_t v) override;
+			virtual uint32_t GetSliceControlSize() override;
+
+			void SetMaxSliceSize(uint32_t v);
+			uint32_t GetMaxSliceSize();
+
+			// Properties - Experimental			
+			virtual void SetLowLatencyInternal(bool v) override;
+			virtual bool GetLowLatencyInternal() override;
+
+			virtual void SetCommonLowLatencyInternal(bool v) override;
+			virtual bool GetCommonLowLatencyInternal() override;
+
+			// Internal
+			protected:
 			virtual void PacketPriorityAndKeyframe(amf::AMFDataPtr d, struct encoder_packet* p) override;
-
 			virtual AMF_RESULT GetExtraDataInternal(amf::AMFVariant* p) override;
-
-
-			// Properties - Exclusive
-			// TODO: Wait For Task (H264 Exclusive, Unknown effect)
-			// TODO: Scan Type (Do we really want to expose this? OBS has no interlaced modes...)
-			// TODO: Intra-Refresh
 		};
 	}
 }
