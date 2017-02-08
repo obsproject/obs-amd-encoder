@@ -39,6 +39,11 @@ namespace Plugin {
 				Fixed,		// Fixed Interval GOP
 				Variable,	// Variable Interval GOP
 			};
+			enum class HeaderInsertionMode : uint8_t {
+				None = 0,
+				AlignedToGOP = 1,
+				AlignedToIDR = 2,
+			};
 		}
 
 		class EncoderH265 : public Encoder {
@@ -51,10 +56,6 @@ namespace Plugin {
 			virtual std::vector<Usage> CapsUsage() override;
 			virtual void SetUsage(Usage v) override;
 			virtual Usage GetUsage() override;
-
-			std::vector<HEVC::Tier> CapsTier();
-			void SetTier(HEVC::Tier v);
-			HEVC::Tier GetTier();
 
 			// Properties - Static
 			virtual std::vector<QualityPreset> CapsQualityPreset() override;
@@ -79,6 +80,10 @@ namespace Plugin {
 			virtual void SetProfileLevel(ProfileLevel v) override;
 			virtual ProfileLevel GetProfileLevel() override;
 
+			std::vector<HEVC::Tier> CapsTier();
+			void SetTier(HEVC::Tier v);
+			HEVC::Tier GetTier();
+
 			virtual std::pair<uint64_t, uint64_t> CapsMaximumReferenceFrames() override;
 			virtual void SetMaximumReferenceFrames(uint64_t v) override;
 			virtual uint64_t GetMaximumReferenceFrames() override;
@@ -86,6 +91,10 @@ namespace Plugin {
 			virtual std::vector<CodingType> CapsCodingType() override;
 			virtual void SetCodingType(CodingType v) override;
 			virtual CodingType GetCodingType() override;
+
+			virtual std::pair<uint32_t, uint32_t> CapsMaximumLongTermReferenceFrames() override;
+			virtual void SetMaximumLongTermReferenceFrames(uint32_t v) override;
+			virtual uint32_t GetMaximumLongTermReferenceFrames() override;
 
 			// Properties - Dynamic
 			virtual std::vector<RateControlMethod> CapsRateControlMethod() override;
@@ -135,17 +144,18 @@ namespace Plugin {
 			virtual void SetPFrameQP(uint8_t v) override;
 			virtual uint8_t GetPFrameQP() override;
 
+			virtual void SetMaximumAccessUnitSize(uint32_t v) override;
+			virtual uint32_t GetMaximumAccessUnitSize() override;
+
 			virtual std::pair<uint64_t, uint64_t> CapsVBVBufferSize() override;
 			virtual void SetVBVBufferSize(uint64_t v) override;
+			virtual void SetVBVBufferStrictness(double_t v) override;
 			virtual uint64_t GetVBVBufferSize() override;
 
 			virtual void SetVBVBufferInitialFullness(float v) override;
 			virtual float GetInitialVBVBufferFullness() override;
 
 			// Properties - Picture Control
-			virtual void SetDeblockingFilterEnabled(bool v) override;
-			virtual bool IsDeblockingFilterEnabled() override;
-
 			std::vector<HEVC::GOPType> CapsGOPType();
 			void SetGOPType(HEVC::GOPType v);
 			HEVC::GOPType GetGOPType();
@@ -159,43 +169,68 @@ namespace Plugin {
 			void SetGOPSizeMax(uint32_t v);
 			uint32_t GetGOPSizeMax();
 
-			void GOPsPerIDR(uint32_t v); // Essentially IDR Period, except in GOPs
-			uint32_t GetGOPsPerIDR();
+			virtual void SetGOPAlignmentEnabled(bool v) override;
+			virtual bool GetGOPAlignmentEnabled() override;
 
+			void SetIDRPeriod(uint32_t v); // Distance in GOPs
+			uint32_t GetIDRPeriod();
+
+			void SetHeaderInsertionMode(HEVC::HeaderInsertionMode v);
+			HEVC::HeaderInsertionMode GetHeaderInsertionMode();
+
+			virtual void SetDeblockingFilterEnabled(bool v) override;
+			virtual bool IsDeblockingFilterEnabled() override;
+			
 			// Properties - Motion Estimation
 			virtual void SetMotionEstimationQuarterPixelEnabled(bool v) override;
 			virtual bool IsMotionEstimationQuarterPixelEnabled() override;
 			virtual void SetMotionEstimationHalfPixelEnabled(bool v) override;
 			virtual bool IsMotionEstimationHalfPixelEnabled() override;
 
-			// Properties - Experimental
-			void SetGOPAlignmentEnabled(bool v);
-			bool GetGOPAlignmentEnabled();
+			// Properties - Intra-Refresh
+			//void SetIntraRefreshMode(uint32_t v);	// Descrition is identical to IntraRefreshNumMBsPerSlot?
+			//uint32_t GetIntraRefreshMode();		// Does not seem to be an actual property yet.
+			// 
+			//void SetIntraRefreshFrameNum(uint32_t v);
+			//uint32_t GetIntraRefreshFrameNum();
 
+			// Properties - Slicing
+			virtual void SetSlicesPerFrame(uint32_t v) override;
+			virtual uint32_t GetSlicesPerFrame() override;
+
+			virtual void SetSliceControlMode(uint32_t v) override;
+			virtual uint32_t GetSliceControlMode() override;
+
+			virtual void SetSliceControlSize(uint32_t v) override;
+			virtual uint32_t GetSliceControlSize() override;
+			
+			// Properties - Experimental
 			void SetQPCBOffset(uint8_t v);
 			uint8_t GetQPCBOffset();
 
 			void SetQPCROffset(uint8_t v);
 			uint8_t GetQPCROffset();
 
-			virtual void PacketPriorityAndKeyframe(amf::AMFDataPtr d, struct encoder_packet* p) override;
+			void SetInputQueueSize(uint32_t v);
+			uint32_t GetInputQueueSize();
 
+			virtual void SetLowLatencyInternal(bool v) override;
+			virtual bool GetLowLatencyInternal() override;
+
+			virtual void SetCommonLowLatencyInternal(bool v) override;
+			virtual bool GetCommonLowLatencyInternal() override;
+
+			// Internal
+			protected:
+			virtual void PacketPriorityAndKeyframe(amf::AMFDataPtr d, struct encoder_packet* p) override;
 			virtual AMF_RESULT GetExtraDataInternal(amf::AMFVariant* p) override;
 
-			// HevcInputQueueSize
+			//Remaining Properties
+			// PerformanceCounter (Interface, but which one?)
 			// HevcIntraRefreshFrameNum
-			// HevcMaxNumOfTemporalLayers/HevcNumOfTemporalLayers/HevcTemporalLayerSelect
-			// - Only supports QP_I/P?
-			// SliceControlMode, not an enum just 0-1 range (Horz, Vert? Vert, Horz?)
-			// SliceControlSize
-			// HevcHeaderInsertionMode
-			// HevcMaxAUSize
-			// HevcSlicesPerFrame
-			// LowLatencyInternal 
-			// CommonLowLatencyInternal 
-			// HevcMaxOfLTRFrames
-			// IntraRefreshMode
-			// BPicturesPattern (doesn't HEVC have merge mode as a replacement for these)
+			// HevcMaxNumOfTemporalLayers/HevcNumOfTemporalLayers/HevcTemporalLayerSelect - Only supports QP_I/P?
+			// BPicturesPattern (replaced by merge mode?)
+			// HevcMaxMBPerSec (PCI-E bandwidth, min/max)
 		};
 	}
 }
