@@ -48,7 +48,7 @@ namespace Plugin {
 
 			protected:
 			IDirect3D9Ex* m_Direct3D9Ex;
-			std::map<Adapter, std::shared_ptr<Instance>> m_InstanceMap;
+			std::map<std::pair<int32_t, int32_t>, std::shared_ptr<Instance>> m_InstanceMap;
 
 			private:
 			std::vector<Adapter> m_Adapters;

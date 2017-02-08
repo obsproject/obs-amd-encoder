@@ -59,9 +59,19 @@ Plugin::API::Direct3D9::Direct3D9() {
 		else
 			enumeratedLUIDs.push_back(adapterLUID);
 
+		std::vector<char> buf(1024);
+		sprintf_s(buf.data(), buf.size(), "%s [%s] (VEN_%04x/DEV_%04x/SUB_%04x/REV_%04x)",
+			adapterIdentifier.Description,
+			adapterIdentifier.DeviceName,
+			
+			adapterIdentifier.VendorId,
+			adapterIdentifier.DeviceId, 
+			adapterIdentifier.SubSysId, 
+			adapterIdentifier.Revision);
+
 		m_Adapters.emplace_back(
 			Adapter(adapterLUID.LowPart, adapterLUID.HighPart,
-				std::string(adapterIdentifier.Description)));
+				std::string(buf.data())));
 	}
 }
 
@@ -83,16 +93,20 @@ std::vector<Adapter> Plugin::API::Direct3D9::EnumerateAdapters() {
 }
 
 std::shared_ptr<Instance> Plugin::API::Direct3D9::CreateInstance(Adapter adapter) {
-	auto inst = m_InstanceMap.find(adapter);
+	std::pair<int32_t, int32_t> key = std::make_pair(adapter.idLow, adapter.idHigh);
+	auto inst = m_InstanceMap.find(key);
 	if (inst != m_InstanceMap.end())
-		return (*inst).second;
+		return inst->second;
 
 	auto inst2 = std::make_shared<Direct3D9Instance>(this, adapter);
-	m_InstanceMap.insert_or_assign(adapter, inst2);
+	m_InstanceMap.insert_or_assign(key, inst2);
 	return inst2;
 }
 
 Plugin::API::Direct3D9Instance::Direct3D9Instance(Direct3D9* api, Adapter adapter) {
+	this->m_API = api;
+	this->m_Adapter = adapter;
+
 	size_t adapterNum = (size_t)-1;
 	D3DADAPTER_IDENTIFIER9 adapterIdentifier;
 	for (size_t adapterIndex = 0;
@@ -156,13 +170,11 @@ Plugin::API::Direct3D9Instance::Direct3D9Instance(Direct3D9* api, Adapter adapte
 		std::sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Unable to create D3D9 device, error code %X.", hr);
 		throw std::exception(buf.data());
 	}
-
-	this->m_API = api;
-	this->m_Adapter = adapter;
 }
 
 Plugin::API::Direct3D9Instance::~Direct3D9Instance() {
-	m_API->m_InstanceMap.erase(m_Adapter);
+	std::pair<int32_t, int32_t> key = std::make_pair(m_Adapter.idLow, m_Adapter.idHigh);
+	m_API->m_InstanceMap.erase(key);
 	//m_Device->Release(); // Can't release/free on AMD hardware?
 }
 

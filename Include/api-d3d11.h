@@ -46,7 +46,7 @@ namespace Plugin {
 
 			protected:
 			ATL::CComPtr<IDXGIFactory1> m_DXGIFactory;
-			std::map<Adapter, std::shared_ptr<Instance>> m_InstanceMap;
+			std::map<std::pair<int32_t, int32_t>, std::shared_ptr<Instance>> m_InstanceMap;
 
 			private:
 			std::vector<Adapter> m_AdapterList;

@@ -154,20 +154,23 @@ Plugin::API::Direct3D11::Direct3D11() {
 		if (desc.VendorId != 0x1002 /* AMD */)
 			continue;
 
-		std::vector<char> descBuf(256);
-		wcstombs(descBuf.data(), desc.Description, descBuf.size());
-		m_AdapterList.push_back(
-			Adapter(
-				desc.AdapterLuid.LowPart,
-				desc.AdapterLuid.HighPart,
-				std::string(descBuf.data())
-			)
+		std::vector<char> buf(1024);
+		sprintf_s(buf.data(), buf.size(), "%ls (VEN_%04x/DEV_%04x/SUB_%04x/REV_%04x)",
+			desc.Description,
+			desc.VendorId,
+			desc.DeviceId,
+			desc.SubSysId,
+			desc.Revision);
+
+		m_AdapterList.emplace_back(
+			desc.AdapterLuid.LowPart,
+			desc.AdapterLuid.HighPart,
+			std::string(buf.data())
 		);
 	}
 }
 
 Plugin::API::Direct3D11::~Direct3D11() {
-	m_InstanceMap.clear();
 }
 
 std::string Plugin::API::Direct3D11::GetName() {
@@ -180,12 +183,13 @@ std::vector<Adapter> Plugin::API::Direct3D11::EnumerateAdapters() {
 }
 
 std::shared_ptr<Instance> Plugin::API::Direct3D11::CreateInstance(Adapter adapter) {
-	auto inst = m_InstanceMap.find(adapter);
+	std::pair<int32_t, int32_t> key = std::make_pair(adapter.idLow, adapter.idHigh);
+	auto inst = m_InstanceMap.find(key);
 	if (inst != m_InstanceMap.end())
-		return (*inst).second;
+		return inst->second;
 
 	auto inst2 = std::make_shared<Direct3D11Instance>(this, adapter);
-	m_InstanceMap.insert_or_assign(adapter, inst2);
+	m_InstanceMap.insert_or_assign(key, inst2);
 	return inst2;
 }
 
@@ -196,6 +200,8 @@ Plugin::API::Type Plugin::API::Direct3D11::GetType() {
 Plugin::API::Direct3D11Instance::Direct3D11Instance(Direct3D11* api, Adapter adapter) {
 	m_API = api;
 	m_Adapter = adapter;
+	m_Device = nullptr;
+	m_DeviceContext = nullptr;
 
 	LUID adapterLUID;
 	adapterLUID.LowPart = adapter.idLow;
@@ -265,12 +271,15 @@ Plugin::API::Direct3D11Instance::Direct3D11Instance(Direct3D11* api, Adapter ada
 }
 
 Plugin::API::Direct3D11Instance::~Direct3D11Instance() {
-	m_API->m_InstanceMap.erase(m_Adapter);
-	m_Device->Release();
+	if (m_Device)
+		m_Device->Release();
+
+	std::pair<int32_t, int32_t> key = std::make_pair(m_Adapter.idLow, m_Adapter.idHigh);
+	m_API->m_InstanceMap.erase(key);
 }
 
 Plugin::API::Adapter Plugin::API::Direct3D11Instance::GetAdapter() {
-	HRESULT hr;
+	/*HRESULT hr;
 	ATL::CComPtr<IDXGIAdapter> dxgiAdapter;
 	hr = this->m_Device->QueryInterface(&dxgiAdapter);
 	if (FAILED(hr)) {
@@ -294,7 +303,8 @@ Plugin::API::Adapter Plugin::API::Direct3D11Instance::GetAdapter() {
 		adapterDesc.AdapterLuid.LowPart,
 		adapterDesc.AdapterLuid.HighPart,
 		std::string(descBuf.data())
-	);
+	);*/
+	return m_Adapter;
 }
 
 void* Plugin::API::Direct3D11Instance::GetContext() {

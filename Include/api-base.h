@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace Plugin {
 	namespace API {
-		/** 
+		/**
 		 *
 		 */
 		enum class Type : uint8_t {
@@ -45,8 +45,20 @@ namespace Plugin {
 			int32_t idLow, idHigh;
 			std::string Name;
 
-			Adapter() : idLow(0), idHigh(0), Name("Invalid Device") {}
-			Adapter(int32_t idLow, int32_t idHigh, std::string Name) : idLow(idLow), idHigh(idHigh), Name(Name) {}
+			Adapter()
+				: idLow(0), idHigh(0), Name("Invalid Device") {}
+			Adapter(int32_t p_idLow, int32_t p_idHigh, std::string p_Name)
+				: idLow(p_idLow), idHigh(p_idHigh), Name(p_Name) {}
+			Adapter(Adapter const& o) {
+				idLow = o.idLow;
+				idHigh = o.idHigh;
+				Name = o.Name;
+			}
+			void operator=(Adapter const& o) {
+				idLow = o.idLow;
+				idHigh = o.idHigh;
+				Name = o.Name;
+			}
 
 			friend bool operator<(const Plugin::API::Adapter& left, const Plugin::API::Adapter& right);
 			friend bool operator>(const Plugin::API::Adapter& left, const Plugin::API::Adapter& right);
@@ -85,6 +97,7 @@ namespace Plugin {
 
 		// Static API Stuff
 		void InitializeAPIs();
+		void FinalizeAPIs();
 		size_t CountAPIs();
 		std::string GetAPIName(size_t index);
 		std::shared_ptr<IAPI> GetAPI(size_t index);

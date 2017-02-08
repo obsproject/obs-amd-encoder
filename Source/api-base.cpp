@@ -119,6 +119,10 @@ void Plugin::API::InitializeAPIs() {
 	}
 }
 
+void Plugin::API::FinalizeAPIs() {
+	s_APIInstances.clear();
+}
+
 size_t Plugin::API::CountAPIs() {
 	return s_APIInstances.size();
 }
