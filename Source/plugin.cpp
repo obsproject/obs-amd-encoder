@@ -305,7 +305,7 @@ const char *obs_module_text_multi(const char *key, uint8_t depth) {
 						seqStart = pos + 2;
 					}
 					haveSequence = !haveSequence;
-					pos = pos + 2;
+					pos = pos + 1;
 				} else if (!haveSequence) {
 					fout << walked.substr(0, 1); // Append the left character.
 				}
