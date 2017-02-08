@@ -334,6 +334,15 @@ namespace Utility {
 
 	#ifdef WITH_HEVC
 	// Tier
+	inline const char* TierToString(Plugin::AMD::HEVC::Tier v) {
+		switch (v) {
+			case HEVC::Tier::Main:
+				return "Main";
+			case HEVC::Tier::High:
+				return "High";
+		}
+		throw std::runtime_error("Invalid Parameter");
+	}
 	inline AMF_VIDEO_ENCODER_HEVC_TIER_ENUM TierToAMFH265(Plugin::AMD::HEVC::Tier v) {
 		switch (v) {
 			case HEVC::Tier::Main:
@@ -548,51 +557,90 @@ namespace Utility {
 		throw std::runtime_error("Invalid Parameter");
 	}
 	#endif
+	
+	inline Plugin::AMD::ProfileLevel H264ProfileLevel(
+		std::pair<uint32_t, uint32_t> resolution, 
+		std::pair<uint32_t, uint32_t> frameRate) {
+		typedef std::pair<uint32_t, uint32_t> levelRestriction;
+		typedef std::pair<ProfileLevel, levelRestriction> level;
 
+		static const level profileLevelLimit[] = { // [Level, [Samples, Samples_Per_Sec]]
+			level(ProfileLevel::L10, levelRestriction(25344, 380160)),
+			level(ProfileLevel::L11, levelRestriction(101376, 768000)),
+			level(ProfileLevel::L12, levelRestriction(101376, 1536000)),
+			level(ProfileLevel::L13, levelRestriction(101376, 3041280)),
+			level(ProfileLevel::L20, levelRestriction(101376, 3041280)),
+			level(ProfileLevel::L21, levelRestriction(202752, 5068800)),
+			level(ProfileLevel::L22, levelRestriction(414720, 5184000)),
+			level(ProfileLevel::L30, levelRestriction(414720, 10368000)),
+			level(ProfileLevel::L31, levelRestriction(921600, 27648000)),
+			level(ProfileLevel::L32, levelRestriction(1310720, 55296000)),
+			//level(H264ProfileLevel::40, levelRestriction(2097152, 62914560)), // Technically identical to 4.1, but backwards compatible.
+			level(ProfileLevel::L41, levelRestriction(2097152, 62914560)),
+			level(ProfileLevel::L42, levelRestriction(2228224, 133693440)),
+			level(ProfileLevel::L50, levelRestriction(5652480, 150994944)),
+			level(ProfileLevel::L51, levelRestriction(9437184, 251658240)),
+			level(ProfileLevel::L52, levelRestriction(9437184, 530841600)),
+			level((ProfileLevel)-1, levelRestriction(0, 0))
+		};
 
+		uint32_t samples = resolution.first * resolution.second;
+		uint32_t samples_sec = (uint32_t)ceil((double_t)samples * ((double_t)frameRate.first / (double_t)frameRate.second));
 
+		level curLevel = profileLevelLimit[0];
+		for (uint32_t index = 0; (int32_t)curLevel.first != -1; index++) {
+			curLevel = profileLevelLimit[index];
 
+			if (samples > curLevel.second.first)
+				continue;
 
+			if (samples_sec > curLevel.second.second)
+				continue;
 
-	//H264ProfileLevel inline GetMinimumProfileLevel(std::pair<uint32_t, uint32_t> frameSize, std::pair<uint32_t, uint32_t> frameRate) {
-	//	typedef std::pair<uint32_t, uint32_t> levelRestriction;
-	//	typedef std::pair<H264ProfileLevel, levelRestriction> level;
+			return curLevel.first;
+		}
+		return ProfileLevel::L52;
+	}
+	#ifdef WITH_HEVC
+	inline Plugin::AMD::ProfileLevel H265ProfileLevel(
+		std::pair<uint32_t, uint32_t> resolution,
+		std::pair<uint32_t, uint32_t> frameRate) {
+		typedef std::pair<uint32_t, uint32_t> levelRestriction; // Total, Main/Sec, High/Sec
+		typedef std::pair<ProfileLevel, levelRestriction> level;
 
-	//	static const level profileLevelLimit[] = { // [Level, [Samples, Samples_Per_Sec]]
-	//		level(H264ProfileLevel::L10, levelRestriction(25344, 380160)),
-	//		level(H264ProfileLevel::L11, levelRestriction(101376, 768000)),
-	//		level(H264ProfileLevel::L12, levelRestriction(101376, 1536000)),
-	//		level(H264ProfileLevel::L13, levelRestriction(101376, 3041280)),
-	//		level(H264ProfileLevel::L20, levelRestriction(101376, 3041280)),
-	//		level(H264ProfileLevel::L21, levelRestriction(202752, 5068800)),
-	//		level(H264ProfileLevel::L22, levelRestriction(414720, 5184000)),
-	//		level(H264ProfileLevel::L30, levelRestriction(414720, 10368000)),
-	//		level(H264ProfileLevel::L31, levelRestriction(921600, 27648000)),
-	//		level(H264ProfileLevel::L32, levelRestriction(1310720, 55296000)),
-	//		//level(H264ProfileLevel::40, levelRestriction(2097152, 62914560)), // Technically identical to 4.1, but backwards compatible.
-	//		level(H264ProfileLevel::L41, levelRestriction(2097152, 62914560)),
-	//		level(H264ProfileLevel::L42, levelRestriction(2228224, 133693440)),
-	//		level(H264ProfileLevel::L50, levelRestriction(5652480, 150994944)),
-	//		level(H264ProfileLevel::L51, levelRestriction(9437184, 251658240)),
-	//		level(H264ProfileLevel::L52, levelRestriction(9437184, 530841600)),
-	//		level((H264ProfileLevel)-1, levelRestriction(0, 0))
-	//	};
+		static const level profileLevelLimit[] = { // [Level, [Samples, Samples_Per_Sec]]
+			level(ProfileLevel::L10, levelRestriction(   36864,     552960)),
+			level(ProfileLevel::L20, levelRestriction(  122880,    3686400)),
+			level(ProfileLevel::L21, levelRestriction(  245760,    7372800)),
+			level(ProfileLevel::L30, levelRestriction(  552960,   16588800)),
+			level(ProfileLevel::L31, levelRestriction(  983040,   33177600)),
+			level(ProfileLevel::L40, levelRestriction( 2228224,   66846720)),
+			level(ProfileLevel::L41, levelRestriction( 2228224,  133693440)),
+			level(ProfileLevel::L50, levelRestriction( 8912896,  267386880)),
+			level(ProfileLevel::L51, levelRestriction( 8912896,  534773760)),
+			level(ProfileLevel::L52, levelRestriction( 8912896, 1069547520)),
+			level(ProfileLevel::L60, levelRestriction(35651584, 1069547520)),
+			level(ProfileLevel::L61, levelRestriction(35651584, 2139095040)),
+			level(ProfileLevel::L62, levelRestriction(35651584, 4278190080)),
+			level((ProfileLevel)-1, levelRestriction(0, 0))
+		};
 
-	//	uint32_t samples = frameSize.first * frameSize.second;
-	//	uint32_t samples_sec = (uint32_t)ceil((double_t)samples * ((double_t)frameRate.first / (double_t)frameRate.second));
+		uint32_t samples = resolution.first * resolution.second;
+		uint32_t samples_sec = (uint32_t)ceil((double_t)samples * ((double_t)frameRate.first / (double_t)frameRate.second));
 
-	//	level curLevel = profileLevelLimit[0];
-	//	for (uint32_t index = 0; (int32_t)curLevel.first != -1; index++) {
-	//		curLevel = profileLevelLimit[index];
+		level curLevel = profileLevelLimit[0];
+		for (uint32_t index = 0; (int32_t)curLevel.first != -1; index++) {
+			curLevel = profileLevelLimit[index];
 
-	//		if (samples > curLevel.second.first)
-	//			continue;
+			if (samples > curLevel.second.first)
+				continue;
 
-	//		if (samples_sec > curLevel.second.second)
-	//			continue;
+			if (samples_sec > curLevel.second.second)
+				continue;
 
-	//		return curLevel.first;
-	//	}
-	//	return H264ProfileLevel::L52;
-	//}
+			return curLevel.first;
+		}
+		return ProfileLevel::L62;
+	}
+	#endif
 }
