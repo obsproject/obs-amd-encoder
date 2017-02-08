@@ -40,6 +40,20 @@ SOFTWARE.
 #define AMF_PRESENT_TIMESTAMP L"PTS"
 #define AMF_SUBMIT_TIMESTAMP L"STS"
 
+#ifdef _DEBUG
+#define AMFTRACECALL { \
+	auto trace = AMF::Instance()->GetTrace(); \
+	std::vector<wchar_t> buf(1024); \
+	mbstowcs(buf.data(), __FILE__, buf.size()); \
+	std::vector<wchar_t> buf2(1024); \
+	mbstowcs(buf2.data(), __FUNCTION_NAME__, buf2.size()); \
+	trace->TraceW(buf.data(), __LINE__, AMF_TRACE_DEBUG, L"Trace", 1, L"Function: %s", buf2.data()); \
+	AMF_LOG_DEBUG("<Trace> " __FUNCTION_NAME__); \
+};
+#else
+#define AMFTRACECALL ;
+#endif
+
 namespace Plugin {
 	namespace AMD {
 		// Initialization Parameters
@@ -257,7 +271,7 @@ namespace Plugin {
 			virtual void SetVBVBufferStrictness(double_t v) = 0;
 			virtual uint64_t GetVBVBufferSize() = 0;
 
-			virtual void SetVBVBufferInitialFullness(float v) = 0;
+			virtual void SetVBVBufferInitialFullness(double v) = 0;
 			virtual float GetInitialVBVBufferFullness() = 0;
 
 			// Properties - Picture Control
