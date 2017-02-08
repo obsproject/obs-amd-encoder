@@ -226,7 +226,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	// All: Quality Preset
 	// Adv: Profile
 	// Adv: Profile Level
-	// Exp: Aspect Ratio
+	// Mas: Aspect Ratio
 	// Exp: Coding Type
 	// Exp: Maximum Reference Frames
 	// ----------- Rate Control Section
@@ -714,6 +714,10 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 			TEMP_LIMIT_DROPDOWN(CapsQualityPreset, AMD::QualityPreset, P_QUALITYPRESET);
 			TEMP_LIMIT_DROPDOWN(CapsProfile, AMD::Profile, P_PROFILE);
 			TEMP_LIMIT_DROPDOWN(CapsProfileLevel, AMD::ProfileLevel, P_PROFILELEVEL);
+			{
+				auto tmp_p = obs_properties_get(props, P_PROFILELEVEL);
+				obs_property_list_item_disable(tmp_p, 0, false);
+			}
 			// Aspect Ratio - No limits, only affects players/transcoders
 			TEMP_LIMIT_DROPDOWN(CapsCodingType, AMD::CodingType, P_CODINGTYPE);
 			TEMP_LIMIT_SLIDER(CapsMaximumReferenceFrames, P_MAXIMUMREFERENCEFRAMES);
@@ -993,7 +997,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		std::make_pair(P_QUALITYPRESET, ViewMode::Basic),
 		std::make_pair(P_PROFILE, ViewMode::Advanced),
 		std::make_pair(P_PROFILELEVEL, ViewMode::Advanced),
-		std::make_pair(P_ASPECTRATIO, ViewMode::Expert),
+		std::make_pair(P_ASPECTRATIO, ViewMode::Master),
 		std::make_pair(P_CODINGTYPE, ViewMode::Expert),
 		std::make_pair(P_MAXIMUMREFERENCEFRAMES, ViewMode::Expert),
 		// ----------- Rate Control Section
