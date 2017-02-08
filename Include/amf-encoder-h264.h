@@ -128,7 +128,7 @@ namespace Plugin {
 			virtual void SetVBVBufferStrictness(double_t v) override;
 			virtual uint64_t GetVBVBufferSize() override;
 
-			virtual void SetVBVBufferInitialFullness(float v) override;
+			virtual void SetVBVBufferInitialFullness(double v) override;
 			virtual float GetInitialVBVBufferFullness() override;
 
 			// Properties - Picture Control

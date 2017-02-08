@@ -42,12 +42,18 @@ using namespace Plugin::AMD;
 
 Plugin::AMD::EncoderH264::EncoderH264(std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
 	ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor)
-	: Encoder(Codec::H264AVC, videoAPI, videoAdapter, useOpenCL, colorFormat, colorSpace, fullRangeColor) {}
+	: Encoder(Codec::H264AVC, videoAPI, videoAdapter, useOpenCL, colorFormat, colorSpace, fullRangeColor) {
+	AMFTRACECALL;
+}
 
-Plugin::AMD::EncoderH264::~EncoderH264() {}
+Plugin::AMD::EncoderH264::~EncoderH264() {
+	AMFTRACECALL;
+}
 
 // Properties - Initialization
 std::vector<Usage> Plugin::AMD::EncoderH264::CapsUsage() {
+	AMFTRACECALL;
+
 	const amf::AMFPropertyInfo* var;
 	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_USAGE, &var);
 	if (res != AMF_OK) {
@@ -64,6 +70,8 @@ std::vector<Usage> Plugin::AMD::EncoderH264::CapsUsage() {
 }
 
 void Plugin::AMD::EncoderH264::SetUsage(Usage v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_USAGE, Utility::UsageToAMFH264(v));
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %s, error %ls (code %d)",
@@ -73,6 +81,8 @@ void Plugin::AMD::EncoderH264::SetUsage(Usage v) {
 }
 
 Plugin::AMD::Usage Plugin::AMD::EncoderH264::GetUsage() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_USAGE, &e);
@@ -86,6 +96,8 @@ Plugin::AMD::Usage Plugin::AMD::EncoderH264::GetUsage() {
 
 // Properties - Static
 std::vector<QualityPreset> Plugin::AMD::EncoderH264::CapsQualityPreset() {
+	AMFTRACECALL;
+
 	const amf::AMFPropertyInfo* var;
 	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_QUALITY_PRESET, &var);
 	if (res != AMF_OK) {
@@ -102,6 +114,8 @@ std::vector<QualityPreset> Plugin::AMD::EncoderH264::CapsQualityPreset() {
 }
 
 void Plugin::AMD::EncoderH264::SetQualityPreset(QualityPreset v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET,
 		Utility::QualityPresetToAMFH264(v));
 	if (res != AMF_OK) {
@@ -112,6 +126,8 @@ void Plugin::AMD::EncoderH264::SetQualityPreset(QualityPreset v) {
 }
 
 Plugin::AMD::QualityPreset Plugin::AMD::EncoderH264::GetQualityPreset() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QUALITY_PRESET, &e);
@@ -124,6 +140,8 @@ Plugin::AMD::QualityPreset Plugin::AMD::EncoderH264::GetQualityPreset() {
 }
 
 std::vector<Profile> Plugin::AMD::EncoderH264::CapsProfile() {
+	AMFTRACECALL;
+
 	const amf::AMFPropertyInfo* var;
 	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_PROFILE, &var);
 	if (res != AMF_OK) {
@@ -140,6 +158,8 @@ std::vector<Profile> Plugin::AMD::EncoderH264::CapsProfile() {
 }
 
 void Plugin::AMD::EncoderH264::SetProfile(Profile v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE,
 		Utility::ProfileToAMFH264(v));
 	if (res != AMF_OK) {
@@ -150,6 +170,8 @@ void Plugin::AMD::EncoderH264::SetProfile(Profile v) {
 }
 
 Plugin::AMD::Profile Plugin::AMD::EncoderH264::GetProfile() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PROFILE, &e);
@@ -162,6 +184,8 @@ Plugin::AMD::Profile Plugin::AMD::EncoderH264::GetProfile() {
 }
 
 std::vector<ProfileLevel> Plugin::AMD::EncoderH264::CapsProfileLevel() {
+	AMFTRACECALL;
+
 	const amf::AMFPropertyInfo* var;
 	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_PROFILE_LEVEL, &var);
 	if (res != AMF_OK) {
@@ -178,6 +202,11 @@ std::vector<ProfileLevel> Plugin::AMD::EncoderH264::CapsProfileLevel() {
 }
 
 void Plugin::AMD::EncoderH264::SetProfileLevel(ProfileLevel v) {
+	AMFTRACECALL;;
+
+	if (v == ProfileLevel::Automatic)
+		v = Utility::H264ProfileLevel(m_Resolution, m_FrameRate);
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL,
 		(int64_t)v);
 	if (res != AMF_OK) {
@@ -188,6 +217,8 @@ void Plugin::AMD::EncoderH264::SetProfileLevel(ProfileLevel v) {
 }
 
 Plugin::AMD::ProfileLevel Plugin::AMD::EncoderH264::GetProfileLevel() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PROFILE_LEVEL, &e);
@@ -200,6 +231,8 @@ Plugin::AMD::ProfileLevel Plugin::AMD::EncoderH264::GetProfileLevel() {
 }
 
 std::pair<uint64_t, uint64_t> Plugin::AMD::EncoderH264::CapsMaximumReferenceFrames() {
+	AMFTRACECALL;
+
 	const amf::AMFPropertyInfo* var;
 	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_MAX_NUM_REFRAMES, &var);
 	if (res != AMF_OK) {
@@ -212,6 +245,8 @@ std::pair<uint64_t, uint64_t> Plugin::AMD::EncoderH264::CapsMaximumReferenceFram
 }
 
 void Plugin::AMD::EncoderH264::SetMaximumReferenceFrames(uint64_t v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_NUM_REFRAMES, v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %lld, error %ls (code %d)",
@@ -221,6 +256,8 @@ void Plugin::AMD::EncoderH264::SetMaximumReferenceFrames(uint64_t v) {
 }
 
 uint64_t Plugin::AMD::EncoderH264::GetMaximumReferenceFrames() {
+	AMFTRACECALL;
+
 	uint64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_NUM_REFRAMES, &e);
@@ -233,6 +270,8 @@ uint64_t Plugin::AMD::EncoderH264::GetMaximumReferenceFrames() {
 }
 
 std::pair<std::pair<uint32_t, uint32_t>, std::pair<uint32_t, uint32_t>> Plugin::AMD::EncoderH264::CapsResolution() {
+	AMFTRACECALL;
+
 	const amf::AMFPropertyInfo* var;
 	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_FRAMESIZE, &var);
 	if (res != AMF_OK) {
@@ -248,6 +287,8 @@ std::pair<std::pair<uint32_t, uint32_t>, std::pair<uint32_t, uint32_t>> Plugin::
 }
 
 void Plugin::AMD::EncoderH264::SetResolution(std::pair<uint32_t, uint32_t> v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, ::AMFConstructSize(v.first, v.second));
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ldx%ld, error %ls (code %d)",
@@ -259,6 +300,8 @@ void Plugin::AMD::EncoderH264::SetResolution(std::pair<uint32_t, uint32_t> v) {
 }
 
 std::pair<uint32_t, uint32_t> Plugin::AMD::EncoderH264::GetResolution() {
+	AMFTRACECALL;
+
 	AMFSize e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, &e);
@@ -273,6 +316,8 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::EncoderH264::GetResolution() {
 }
 
 void Plugin::AMD::EncoderH264::SetAspectRatio(std::pair<uint32_t, uint32_t> v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ASPECT_RATIO, ::AMFConstructRatio(v.first, v.second));
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld:%ld, error %ls (code %d)",
@@ -282,6 +327,8 @@ void Plugin::AMD::EncoderH264::SetAspectRatio(std::pair<uint32_t, uint32_t> v) {
 }
 
 std::pair<uint32_t, uint32_t> Plugin::AMD::EncoderH264::GetAspectRatio() {
+	AMFTRACECALL;
+
 	AMFRatio e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_ASPECT_RATIO, &e);
@@ -294,6 +341,8 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::EncoderH264::GetAspectRatio() {
 }
 
 void Plugin::AMD::EncoderH264::SetFrameRate(std::pair<uint32_t, uint32_t> v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FRAMERATE, ::AMFConstructRate(v.first, v.second));
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld/%ld, error %ls (code %d)",
@@ -305,6 +354,8 @@ void Plugin::AMD::EncoderH264::SetFrameRate(std::pair<uint32_t, uint32_t> v) {
 }
 
 std::pair<uint32_t, uint32_t> Plugin::AMD::EncoderH264::GetFrameRate() {
+	AMFTRACECALL;
+
 	AMFRate e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FRAMERATE, &e);
@@ -319,6 +370,8 @@ std::pair<uint32_t, uint32_t> Plugin::AMD::EncoderH264::GetFrameRate() {
 }
 
 std::vector<CodingType> Plugin::AMD::EncoderH264::CapsCodingType() {
+	AMFTRACECALL;
+
 	const amf::AMFPropertyInfo* var;
 	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_CABAC_ENABLE, &var);
 	if (res != AMF_OK) {
@@ -335,6 +388,8 @@ std::vector<CodingType> Plugin::AMD::EncoderH264::CapsCodingType() {
 }
 
 void Plugin::AMD::EncoderH264::SetCodingType(CodingType v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_CABAC_ENABLE, Utility::CodingTypeToAMFH264(v));
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %s, error %ls (code %d)",
@@ -344,6 +399,8 @@ void Plugin::AMD::EncoderH264::SetCodingType(CodingType v) {
 }
 
 Plugin::AMD::CodingType Plugin::AMD::EncoderH264::GetCodingType() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_CABAC_ENABLE, &e);
@@ -356,19 +413,27 @@ Plugin::AMD::CodingType Plugin::AMD::EncoderH264::GetCodingType() {
 }
 
 std::pair<uint32_t, uint32_t> Plugin::AMD::EncoderH264::CapsMaximumLongTermReferenceFrames() {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 void Plugin::AMD::EncoderH264::SetMaximumLongTermReferenceFrames(uint32_t v) {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 uint32_t Plugin::AMD::EncoderH264::GetMaximumLongTermReferenceFrames() {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 // Properties - Dynamic
 std::vector<RateControlMethod> Plugin::AMD::EncoderH264::CapsRateControlMethod() {
+	AMFTRACECALL;
+
 	const amf::AMFPropertyInfo* var;
 	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, &var);
 	if (res != AMF_OK) {
@@ -385,6 +450,8 @@ std::vector<RateControlMethod> Plugin::AMD::EncoderH264::CapsRateControlMethod()
 }
 
 void Plugin::AMD::EncoderH264::SetRateControlMethod(RateControlMethod v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, Utility::RateControlMethodToAMFH264(v));
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %s, error %ls (code %d)",
@@ -394,6 +461,8 @@ void Plugin::AMD::EncoderH264::SetRateControlMethod(RateControlMethod v) {
 }
 
 Plugin::AMD::RateControlMethod Plugin::AMD::EncoderH264::GetRateControlMethod() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD, &e);
@@ -406,6 +475,8 @@ Plugin::AMD::RateControlMethod Plugin::AMD::EncoderH264::GetRateControlMethod() 
 }
 
 std::vector<PrePassMode> Plugin::AMD::EncoderH264::CapsPrePassMode() {
+	AMFTRACECALL;
+
 	const amf::AMFPropertyInfo* var;
 	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_RATE_CONTROL_PREANALYSIS_ENABLE, &var);
 	if (res != AMF_OK) {
@@ -422,6 +493,8 @@ std::vector<PrePassMode> Plugin::AMD::EncoderH264::CapsPrePassMode() {
 }
 
 void Plugin::AMD::EncoderH264::SetPrePassMode(PrePassMode v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_PREANALYSIS_ENABLE, Utility::PrePassModeToAMFH264(v));
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %s, error %ls (code %d)",
@@ -431,6 +504,8 @@ void Plugin::AMD::EncoderH264::SetPrePassMode(PrePassMode v) {
 }
 
 Plugin::AMD::PrePassMode Plugin::AMD::EncoderH264::GetPrePassMode() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_PREANALYSIS_ENABLE, &e);
@@ -443,6 +518,8 @@ Plugin::AMD::PrePassMode Plugin::AMD::EncoderH264::GetPrePassMode() {
 }
 
 void Plugin::AMD::EncoderH264::SetVariableBitrateAverageQualityEnabled(bool v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENABLE_VBAQ, v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %s, error %ls (code %d)",
@@ -452,6 +529,8 @@ void Plugin::AMD::EncoderH264::SetVariableBitrateAverageQualityEnabled(bool v) {
 }
 
 bool Plugin::AMD::EncoderH264::IsVariableBitrateAverageQualityEnabled() {
+	AMFTRACECALL;
+
 	bool e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_ENABLE_VBAQ, &e);
@@ -464,6 +543,8 @@ bool Plugin::AMD::EncoderH264::IsVariableBitrateAverageQualityEnabled() {
 }
 
 void Plugin::AMD::EncoderH264::SetFrameSkippingEnabled(bool v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %s, error %ls (code %d)",
@@ -473,6 +554,8 @@ void Plugin::AMD::EncoderH264::SetFrameSkippingEnabled(bool v) {
 }
 
 bool Plugin::AMD::EncoderH264::IsFrameSkippingEnabled() {
+	AMFTRACECALL;
+
 	bool e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_RATE_CONTROL_SKIP_FRAME_ENABLE, &e);
@@ -485,6 +568,8 @@ bool Plugin::AMD::EncoderH264::IsFrameSkippingEnabled() {
 }
 
 void Plugin::AMD::EncoderH264::SetEnforceHRDEnabled(bool v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %s, error %ls (code %d)",
@@ -494,6 +579,8 @@ void Plugin::AMD::EncoderH264::SetEnforceHRDEnabled(bool v) {
 }
 
 bool Plugin::AMD::EncoderH264::IsEnforceHRDEnabled() {
+	AMFTRACECALL;
+
 	bool e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_ENFORCE_HRD, &e);
@@ -506,6 +593,8 @@ bool Plugin::AMD::EncoderH264::IsEnforceHRDEnabled() {
 }
 
 void Plugin::AMD::EncoderH264::SetFillerDataEnabled(bool v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %s, error %ls (code %d)",
@@ -515,6 +604,8 @@ void Plugin::AMD::EncoderH264::SetFillerDataEnabled(bool v) {
 }
 
 bool Plugin::AMD::EncoderH264::IsFillerDataEnabled() {
+	AMFTRACECALL;
+
 	bool e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_FILLER_DATA_ENABLE, &e);
@@ -527,6 +618,8 @@ bool Plugin::AMD::EncoderH264::IsFillerDataEnabled() {
 }
 
 void Plugin::AMD::EncoderH264::SetQPMinimum(uint8_t v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MIN_QP, (int64_t)v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %d, error %ls (code %d)",
@@ -536,6 +629,8 @@ void Plugin::AMD::EncoderH264::SetQPMinimum(uint8_t v) {
 }
 
 uint8_t Plugin::AMD::EncoderH264::GetQPMinimum() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MIN_QP, &e);
@@ -548,6 +643,8 @@ uint8_t Plugin::AMD::EncoderH264::GetQPMinimum() {
 }
 
 void Plugin::AMD::EncoderH264::SetQPMaximum(uint8_t v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_QP, (int64_t)v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %d, error %ls (code %d)",
@@ -557,6 +654,8 @@ void Plugin::AMD::EncoderH264::SetQPMaximum(uint8_t v) {
 }
 
 uint8_t Plugin::AMD::EncoderH264::GetQPMaximum() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_QP, &e);
@@ -569,6 +668,8 @@ uint8_t Plugin::AMD::EncoderH264::GetQPMaximum() {
 }
 
 std::pair<uint64_t, uint64_t> Plugin::AMD::EncoderH264::CapsTargetBitrate() {
+	AMFTRACECALL;
+
 	const amf::AMFPropertyInfo* var;
 	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_TARGET_BITRATE, &var);
 	if (res != AMF_OK) {
@@ -581,6 +682,8 @@ std::pair<uint64_t, uint64_t> Plugin::AMD::EncoderH264::CapsTargetBitrate() {
 }
 
 void Plugin::AMD::EncoderH264::SetTargetBitrate(uint64_t v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, (int64_t)v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %lld, error %ls (code %d)",
@@ -590,6 +693,8 @@ void Plugin::AMD::EncoderH264::SetTargetBitrate(uint64_t v) {
 }
 
 uint64_t Plugin::AMD::EncoderH264::GetTargetBitrate() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, &e);
@@ -602,6 +707,8 @@ uint64_t Plugin::AMD::EncoderH264::GetTargetBitrate() {
 }
 
 std::pair<uint64_t, uint64_t> Plugin::AMD::EncoderH264::CapsPeakBitrate() {
+	AMFTRACECALL;
+
 	const amf::AMFPropertyInfo* var;
 	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_PEAK_BITRATE, &var);
 	if (res != AMF_OK) {
@@ -614,6 +721,8 @@ std::pair<uint64_t, uint64_t> Plugin::AMD::EncoderH264::CapsPeakBitrate() {
 }
 
 void Plugin::AMD::EncoderH264::SetPeakBitrate(uint64_t v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, (int64_t)v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %lld, error %ls (code %d)",
@@ -623,6 +732,8 @@ void Plugin::AMD::EncoderH264::SetPeakBitrate(uint64_t v) {
 }
 
 uint64_t Plugin::AMD::EncoderH264::GetPeakBitrate() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_PEAK_BITRATE, &e);
@@ -635,6 +746,8 @@ uint64_t Plugin::AMD::EncoderH264::GetPeakBitrate() {
 }
 
 void Plugin::AMD::EncoderH264::SetIFrameQP(uint8_t v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_I, (int64_t)v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %d, error %ls (code %d)",
@@ -644,6 +757,8 @@ void Plugin::AMD::EncoderH264::SetIFrameQP(uint8_t v) {
 }
 
 uint8_t Plugin::AMD::EncoderH264::GetIFrameQP() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QP_I, &e);
@@ -656,6 +771,8 @@ uint8_t Plugin::AMD::EncoderH264::GetIFrameQP() {
 }
 
 void Plugin::AMD::EncoderH264::SetPFrameQP(uint8_t v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_P, (int64_t)v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %d, error %ls (code %d)",
@@ -665,6 +782,8 @@ void Plugin::AMD::EncoderH264::SetPFrameQP(uint8_t v) {
 }
 
 uint8_t Plugin::AMD::EncoderH264::GetPFrameQP() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QP_P, &e);
@@ -677,6 +796,8 @@ uint8_t Plugin::AMD::EncoderH264::GetPFrameQP() {
 }
 
 void Plugin::AMD::EncoderH264::SetBFrameQP(uint8_t v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_B, (int64_t)v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %d, error %ls (code %d)",
@@ -686,6 +807,8 @@ void Plugin::AMD::EncoderH264::SetBFrameQP(uint8_t v) {
 }
 
 uint8_t Plugin::AMD::EncoderH264::GetBFrameQP() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_QP_B, &e);
@@ -698,14 +821,20 @@ uint8_t Plugin::AMD::EncoderH264::GetBFrameQP() {
 }
 
 void Plugin::AMD::EncoderH264::SetMaximumAccessUnitSize(uint32_t v) {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 uint32_t Plugin::AMD::EncoderH264::GetMaximumAccessUnitSize() {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 std::pair<uint64_t, uint64_t> Plugin::AMD::EncoderH264::CapsVBVBufferSize() {
+	AMFTRACECALL;
+
 	const amf::AMFPropertyInfo* var;
 	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, &var);
 	if (res != AMF_OK) {
@@ -718,6 +847,8 @@ std::pair<uint64_t, uint64_t> Plugin::AMD::EncoderH264::CapsVBVBufferSize() {
 }
 
 void Plugin::AMD::EncoderH264::SetVBVBufferSize(uint64_t v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, (int64_t)v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %lld, error %ls (code %d)",
@@ -727,6 +858,8 @@ void Plugin::AMD::EncoderH264::SetVBVBufferSize(uint64_t v) {
 }
 
 void Plugin::AMD::EncoderH264::SetVBVBufferStrictness(double_t strictness) {
+	AMFTRACECALL;
+
 	uint64_t looseBitrate, targetBitrate, strictBitrate;
 
 	Usage usage = GetUsage();
@@ -797,6 +930,8 @@ void Plugin::AMD::EncoderH264::SetVBVBufferStrictness(double_t strictness) {
 }
 
 uint64_t Plugin::AMD::EncoderH264::GetVBVBufferSize() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_VBV_BUFFER_SIZE, &e);
@@ -808,7 +943,9 @@ uint64_t Plugin::AMD::EncoderH264::GetVBVBufferSize() {
 	return e;
 }
 
-void Plugin::AMD::EncoderH264::SetVBVBufferInitialFullness(float v) {
+void Plugin::AMD::EncoderH264::SetVBVBufferInitialFullness(double v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, (int64_t)(v * 64));
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %lf (%d), error %ls (code %d)",
@@ -818,6 +955,8 @@ void Plugin::AMD::EncoderH264::SetVBVBufferInitialFullness(float v) {
 }
 
 float Plugin::AMD::EncoderH264::GetInitialVBVBufferFullness() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_INITIAL_VBV_BUFFER_FULLNESS, &e);
@@ -831,6 +970,8 @@ float Plugin::AMD::EncoderH264::GetInitialVBVBufferFullness() {
 
 // Properties - Picture Control
 void Plugin::AMD::EncoderH264::SetIDRPeriod(uint32_t v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, (int64_t)v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
@@ -839,8 +980,9 @@ void Plugin::AMD::EncoderH264::SetIDRPeriod(uint32_t v) {
 	}
 }
 
-uint32_t Plugin::AMD::EncoderH264::GetIDRPeriod()
-{
+uint32_t Plugin::AMD::EncoderH264::GetIDRPeriod() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, &e);
@@ -853,22 +995,32 @@ uint32_t Plugin::AMD::EncoderH264::GetIDRPeriod()
 }
 
 void Plugin::AMD::EncoderH264::SetHeaderInsertionSpacing(uint32_t v) {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 uint32_t Plugin::AMD::EncoderH264::GetHeaderInsertionSpacing() {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 void Plugin::AMD::EncoderH264::SetGOPAlignmentEnabled(bool v) {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 bool Plugin::AMD::EncoderH264::GetGOPAlignmentEnabled() {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 void Plugin::AMD::EncoderH264::SetDeblockingFilterEnabled(bool v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER, v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %s, error %ls (code %d)",
@@ -878,6 +1030,8 @@ void Plugin::AMD::EncoderH264::SetDeblockingFilterEnabled(bool v) {
 }
 
 bool Plugin::AMD::EncoderH264::IsDeblockingFilterEnabled() {
+	AMFTRACECALL;
+
 	bool e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER, &e);
@@ -890,6 +1044,8 @@ bool Plugin::AMD::EncoderH264::IsDeblockingFilterEnabled() {
 }
 
 uint8_t Plugin::AMD::EncoderH264::CapsBFramePattern() {
+	AMFTRACECALL;
+
 	const amf::AMFPropertyInfo* var;
 	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_B_PIC_PATTERN, &var);
 	if (res != AMF_OK) {
@@ -902,6 +1058,8 @@ uint8_t Plugin::AMD::EncoderH264::CapsBFramePattern() {
 }
 
 void Plugin::AMD::EncoderH264::SetBFramePattern(uint8_t v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, (int64_t)v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %d, error %ls (code %d)",
@@ -911,6 +1069,8 @@ void Plugin::AMD::EncoderH264::SetBFramePattern(uint8_t v) {
 }
 
 uint8_t Plugin::AMD::EncoderH264::GetBFramePattern() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_B_PIC_PATTERN, &e);
@@ -923,6 +1083,8 @@ uint8_t Plugin::AMD::EncoderH264::GetBFramePattern() {
 }
 
 void Plugin::AMD::EncoderH264::SetBFrameDeltaQP(int8_t v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_QP_B, (int64_t)v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %d, error %ls (code %d)",
@@ -932,6 +1094,8 @@ void Plugin::AMD::EncoderH264::SetBFrameDeltaQP(int8_t v) {
 }
 
 int8_t Plugin::AMD::EncoderH264::GetBFrameDeltaQP() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_B_PIC_DELTA_QP, &e);
@@ -944,6 +1108,8 @@ int8_t Plugin::AMD::EncoderH264::GetBFrameDeltaQP() {
 }
 
 void Plugin::AMD::EncoderH264::SetBFrameReferenceEnabled(bool v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %s, error %ls (code %d)",
@@ -953,6 +1119,8 @@ void Plugin::AMD::EncoderH264::SetBFrameReferenceEnabled(bool v) {
 }
 
 bool Plugin::AMD::EncoderH264::IsBFrameReferenceEnabled() {
+	AMFTRACECALL;
+
 	bool e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_B_REFERENCE_ENABLE, &e);
@@ -965,6 +1133,8 @@ bool Plugin::AMD::EncoderH264::IsBFrameReferenceEnabled() {
 }
 
 void Plugin::AMD::EncoderH264::SetBFrameReferenceDeltaQP(int8_t v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, (int64_t)v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %d, error %ls (code %d)",
@@ -974,6 +1144,8 @@ void Plugin::AMD::EncoderH264::SetBFrameReferenceDeltaQP(int8_t v) {
 }
 
 int8_t Plugin::AMD::EncoderH264::GetBFrameReferenceDeltaQP() {
+	AMFTRACECALL;
+
 	int64_t e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_REF_B_PIC_DELTA_QP, &e);
@@ -987,6 +1159,8 @@ int8_t Plugin::AMD::EncoderH264::GetBFrameReferenceDeltaQP() {
 
 // Properties - Motion Estimation
 void Plugin::AMD::EncoderH264::SetMotionEstimationQuarterPixelEnabled(bool v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set mode to %s, error %ls (code %d)",
@@ -996,6 +1170,8 @@ void Plugin::AMD::EncoderH264::SetMotionEstimationQuarterPixelEnabled(bool v) {
 }
 
 bool Plugin::AMD::EncoderH264::IsMotionEstimationQuarterPixelEnabled() {
+	AMFTRACECALL;
+
 	bool e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MOTION_HALF_PIXEL, &e);
@@ -1008,6 +1184,8 @@ bool Plugin::AMD::EncoderH264::IsMotionEstimationQuarterPixelEnabled() {
 }
 
 void Plugin::AMD::EncoderH264::SetMotionEstimationHalfPixelEnabled(bool v) {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL, v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set mode to %s, error %ls (code %d)",
@@ -1017,6 +1195,8 @@ void Plugin::AMD::EncoderH264::SetMotionEstimationHalfPixelEnabled(bool v) {
 }
 
 bool Plugin::AMD::EncoderH264::IsMotionEstimationHalfPixelEnabled() {
+	AMFTRACECALL;
+
 	bool e;
 
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MOTION_QUARTERPIXEL, &e);
@@ -1030,68 +1210,100 @@ bool Plugin::AMD::EncoderH264::IsMotionEstimationHalfPixelEnabled() {
 
 // Properties - Intra-Refresh
 void Plugin::AMD::EncoderH264::SetIntraRefreshNumMBsPerSlot(uint32_t v) {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 uint32_t Plugin::AMD::EncoderH264::GetIntraRefreshNumMBsPerSlot() {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 void Plugin::AMD::EncoderH264::SetIntraRefreshNumOfStripes(uint32_t v) {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 uint32_t Plugin::AMD::EncoderH264::GetIntraRefreshNumOfStripes() {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 // Properties - Slicing
 void Plugin::AMD::EncoderH264::SetSlicesPerFrame(uint32_t v) {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 uint32_t Plugin::AMD::EncoderH264::GetSlicesPerFrame() {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 void Plugin::AMD::EncoderH264::SetSliceControlMode(uint32_t v) {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 uint32_t Plugin::AMD::EncoderH264::GetSliceControlMode() {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 void Plugin::AMD::EncoderH264::SetSliceControlSize(uint32_t v) {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 uint32_t Plugin::AMD::EncoderH264::GetSliceControlSize() {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 void Plugin::AMD::EncoderH264::SetMaxSliceSize(uint32_t v) {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 uint32_t Plugin::AMD::EncoderH264::GetMaxSliceSize() {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 // Properties - Experimental
 void Plugin::AMD::EncoderH264::SetLowLatencyInternal(bool v) {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 bool Plugin::AMD::EncoderH264::GetLowLatencyInternal() {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 void Plugin::AMD::EncoderH264::SetCommonLowLatencyInternal(bool v) {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
 bool Plugin::AMD::EncoderH264::GetCommonLowLatencyInternal() {
+	AMFTRACECALL;
+
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
