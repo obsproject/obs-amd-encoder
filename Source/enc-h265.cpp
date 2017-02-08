@@ -161,7 +161,7 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void* ptr) {
 	// Adv: Profile
 	// Adv: Profile Level
 	// Adv: Tier
-	// Exp: Aspect Ratio
+	// Mas: Aspect Ratio
 	// Exp: Coding Type
 	// Exp: Maximum Reference Frames
 	// ----------- Rate Control Section
@@ -612,7 +612,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 		std::make_pair(P_PROFILE, ViewMode::Advanced),
 		std::make_pair(P_PROFILELEVEL, ViewMode::Advanced),
 		std::make_pair(P_TIER, ViewMode::Advanced),
-		std::make_pair(P_ASPECTRATIO, ViewMode::Expert),
+		std::make_pair(P_ASPECTRATIO, ViewMode::Master),
 		std::make_pair(P_CODINGTYPE, ViewMode::Expert),
 		std::make_pair(P_MAXIMUMREFERENCEFRAMES, ViewMode::Expert),
 		// ----------- Rate Control Section
