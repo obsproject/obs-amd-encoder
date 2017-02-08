@@ -61,10 +61,12 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	m_FullColorRange = fullRangeColor;
 	m_Resolution = std::make_pair<uint32_t, uint32_t>(0, 0);
 	m_FrameRate = std::make_pair<uint32_t, uint32_t>(0, 0);
+	m_FrameRateTimeStep = 0;
 	m_FrameRateTimeStepAMF = 0;
 	/// Flags
 	m_Started = false;
 	m_OpenCLConversion = false;
+	m_OpenCLSubmission = useOpenCL;
 	#pragma endregion Null Values
 
 	// Initialize selected API on Video Adapter
@@ -87,7 +89,6 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 		throw std::exception(errMsg.data());
 	}
 	/// Initialize Context using selected API
-	m_OpenCLSubmission = useOpenCL;
 	switch (m_API->GetType()) {
 		case API::Type::Host:
 			m_AMFMemoryType = amf::AMF_MEMORY_HOST;
