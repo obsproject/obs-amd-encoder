@@ -288,27 +288,28 @@ namespace Utility {
 	inline AMF_VIDEO_ENCODER_PROFILE_ENUM ProfileToAMFH264(Plugin::AMD::Profile v) {
 		switch (v) {
 			case Profile::ConstrainedBaseline:
-				return (AMF_VIDEO_ENCODER_PROFILE_ENUM)0;
+				return (AMF_VIDEO_ENCODER_PROFILE_ENUM)256;
 			case Profile::Baseline:
 				return AMF_VIDEO_ENCODER_PROFILE_BASELINE;
 			case Profile::Main:
 				return AMF_VIDEO_ENCODER_PROFILE_MAIN;
 			case Profile::ConstrainedHigh:
-				return (AMF_VIDEO_ENCODER_PROFILE_ENUM)1;
+				return (AMF_VIDEO_ENCODER_PROFILE_ENUM)257;
 			case Profile::High:
 				return AMF_VIDEO_ENCODER_PROFILE_HIGH;
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
 	inline Plugin::AMD::Profile ProfileFromAMFH264(AMF_VIDEO_ENCODER_PROFILE_ENUM v) {
+		#pragma warning( disable: 4063 ) // Developer Note: I know better, Compiler.
 		switch (v) {
-			case 256:
+			case (AMF_VIDEO_ENCODER_PROFILE_ENUM)256:
 				return Profile::ConstrainedBaseline;
 			case AMF_VIDEO_ENCODER_PROFILE_BASELINE:
 				return Profile::Baseline;
 			case AMF_VIDEO_ENCODER_PROFILE_MAIN:
 				return Profile::Main;
-			case 257:
+			case (AMF_VIDEO_ENCODER_PROFILE_ENUM)257:
 				return Profile::ConstrainedHigh;
 			case AMF_VIDEO_ENCODER_PROFILE_HIGH:
 				return Profile::High;
