@@ -214,6 +214,7 @@ namespace Plugin {
 			void SetQPCROffset(uint8_t v);
 			uint8_t GetQPCROffset();
 
+			std::pair<uint32_t, uint32_t> CapsInputQueueSize();
 			void SetInputQueueSize(uint32_t v);
 			uint32_t GetInputQueueSize();
 

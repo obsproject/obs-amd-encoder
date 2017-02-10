@@ -1329,16 +1329,42 @@ uint8_t Plugin::AMD::EncoderH265::GetQPCROffset() {
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
+std::pair<uint32_t, uint32_t> Plugin::AMD::EncoderH265::CapsInputQueueSize() {
+	AMFTRACECALL;
+
+	const amf::AMFPropertyInfo* var;
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(L"HevcInputQueueSize", &var);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+
+	return std::make_pair((uint32_t)var->minValue.int64Value, (uint32_t)var->maxValue.int64Value);
+}
+
 void Plugin::AMD::EncoderH265::SetInputQueueSize(uint32_t v) {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"HevcInputQueueSize", v);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set mode to %ld, error %ls (code %d)",
+			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
 }
 
 uint32_t Plugin::AMD::EncoderH265::GetInputQueueSize() {
 	AMFTRACECALL;
-
-	throw std::logic_error("The method or operation is not implemented.");
+	
+	int64_t e;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"HevcInputQueueSize", &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return (uint32_t)e;
 }
 
 void Plugin::AMD::EncoderH265::SetLowLatencyInternal(bool v) {
