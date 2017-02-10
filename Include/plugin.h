@@ -60,13 +60,6 @@ SOFTWARE.
 #define QUICK_FORMAT_MESSAGE(var, ...) std::vector<char> var(1024); \
 	sprintf_s(var.data(), var.size(), __VA_ARGS__);
 
-#define ThrowExceptionWithAMFError(format, res, ...) {\
-	std::vector<char> _throwexceptionwithamferror_buf(8192);\
-	sprintf_s(_throwexceptionwithamferror_buf.data(), _throwexceptionwithamferror_buf.size(), format, ##__VA_ARGS__, Plugin::AMD::AMF::GetInstance()->GetTrace()->GetResultText(res), res);\
-	AMF_LOG_WARNING("%s", _throwexceptionwithamferror_buf.data()); \
-	throw std::exception(_throwexceptionwithamferror_buf.data()); \
-}
-
 #ifndef __FUNCTION_NAME__
 #if defined(_WIN32) || defined(_WIN64)   //WINDOWS
 #define __FUNCTION_NAME__   __FUNCTION__  
@@ -74,9 +67,6 @@ SOFTWARE.
 #define __FUNCTION_NAME__   __func__ 
 #endif
 #endif
-
-// Defines - Translation Strings
-
 
 //////////////////////////////////////////////////////////////////////////
 // Code
