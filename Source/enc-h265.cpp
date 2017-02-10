@@ -643,7 +643,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 		//std::make_pair(P_QP_MAXIMUM, ViewMode::Advanced),
 		//std::make_pair(P_FILLERDATA, ViewMode::Basic),
 		std::make_pair(P_FRAMESKIPPING, ViewMode::Advanced),
-		std::make_pair(P_VBAQ, ViewMode::Expert),
+		//std::make_pair(P_VBAQ, ViewMode::Expert),
 		std::make_pair(P_ENFORCEHRD, ViewMode::Expert),
 		// ----------- VBV Buffer
 		std::make_pair(P_VBVBUFFER, ViewMode::Advanced),
@@ -737,6 +737,12 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 	obs_property_set_visible(obs_properties_get(props, P_FILLERDATA), vis_rcm_fillerdata);
 	if (!vis_rcm_fillerdata)
 		obs_data_default_single(props, data, P_FILLERDATA);
+
+	/// VBAQ (Causes issues with Constant QP)
+	obs_property_set_visible(obs_properties_get(props, P_VBAQ), (curView >= ViewMode::Expert) && !vis_rcm_qp);
+	if (!(curView >= ViewMode::Expert) || vis_rcm_qp) {
+		obs_data_default_single(props, data, P_VBAQ);
+	}
 	#pragma endregion Rate Control
 
 	#pragma region VBV Buffer
@@ -1073,7 +1079,17 @@ bool Plugin::Interface::H265Interface::encode(void *ptr, struct encoder_frame * 
 }
 
 bool Plugin::Interface::H265Interface::encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
-	return m_VideoEncoder->Encode(frame, packet, received_packet);
+	if (!frame || !packet || !received_packet)
+		return false;
+
+	try {
+		return m_VideoEncoder->Encode(frame, packet, received_packet);
+	} catch (std::exception e) {
+		AMF_LOG_ERROR("Exception during encoding: %s", e.what());
+	} catch (...) {
+		AMF_LOG_ERROR("Unknown exception during encoding.");
+	}
+	return false;
 }
 
 void Plugin::Interface::H265Interface::get_video_info(void *ptr, struct video_scale_info *info) {
