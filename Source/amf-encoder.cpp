@@ -32,11 +32,6 @@ SOFTWARE.
 using namespace Plugin;
 using namespace Plugin::AMD;
 
-static const wchar_t* fullColorParams[] = {
-	L"FullRangeColor",
-	L"NominalRange",
-};
-
 Plugin::AMD::Encoder::Encoder(Codec codec,
 	std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
 	ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor) {
@@ -187,19 +182,6 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 			Utility::CodecToString(codec),
 			m_AMF->GetTrace()->GetResultText(res),
 			res);
-		throw std::exception(errMsg.data());
-	}
-	/// Full Range Color Stuff
-	for (const wchar_t* par : fullColorParams) {
-		res = m_AMFEncoder->SetProperty(par, m_FullColorRange);
-		if (res == AMF_OK)
-			break;
-	}
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg,
-			"<Id: %lld> Failed to set encoder color range, error %ls (code %d)",
-			m_UniqueId,
-			m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.data());
 	}
 

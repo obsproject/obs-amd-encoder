@@ -44,6 +44,27 @@ Plugin::AMD::EncoderH264::EncoderH264(std::shared_ptr<API::IAPI> videoAPI, API::
 	ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor)
 	: Encoder(Codec::H264AVC, videoAPI, videoAdapter, useOpenCL, colorFormat, colorSpace, fullRangeColor) {
 	AMFTRACECALL;
+
+	AMF_RESULT res;
+
+	/// Full Range Color Stuff
+	static const wchar_t* fullColorParams[] = {
+		L"FullRangeColor",
+		L"NominalRange",
+	};
+	for (const wchar_t* par : fullColorParams) {
+		res = m_AMFConverter->SetProperty(par, m_FullColorRange);
+		res = m_AMFEncoder->SetProperty(par, m_FullColorRange);
+		if (res == AMF_OK)
+			break;
+	}
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg,
+			"<Id: %lld> Failed to set encoder color range, error %ls (code %d)",
+			m_UniqueId,
+			m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
 }
 
 Plugin::AMD::EncoderH264::~EncoderH264() {
