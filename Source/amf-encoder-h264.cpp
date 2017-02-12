@@ -934,19 +934,19 @@ void Plugin::AMD::EncoderH264::SetVBVBufferStrictness(double_t strictness) {
 				break;
 		}
 	}
-	strictBitrate = static_cast<uint32_t>(targetBitrate * (m_FrameRate.second / m_FrameRate.first));
+	strictBitrate = static_cast<uint64_t>(round(targetBitrate * ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first)));
 	looseBitrate = CapsTargetBitrate().second;
 
 	// Three-Point Linear Lerp
 	// 0% = looseBitrate, 50% = targetBitrate, 100% = strictBitrate
-	strictness = min(max(strictness, 0.0), 1.0);
+	strictness = clamp(strictness, 0.0, 1.0);
 	double_t aFadeVal = min(strictness * 2.0, 1.0); // 0 - 0.5
 	double_t bFadeVal = max(strictness * 2.0 - 1.0, 0.0); // 0.5 - 1.0
 
 	double_t aFade = (looseBitrate * (1.0 - aFadeVal)) + (targetBitrate * aFadeVal);
 	double_t bFade = (aFade * (1.0 - bFadeVal)) + (strictBitrate * bFadeVal);
 
-	uint32_t vbvBufferSize = static_cast<uint32_t>(round(bFade));
+	uint64_t vbvBufferSize = static_cast<uint64_t>(round(bFade));
 	this->SetVBVBufferSize(vbvBufferSize);
 }
 

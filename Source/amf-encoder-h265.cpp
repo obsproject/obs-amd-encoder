@@ -962,7 +962,7 @@ void Plugin::AMD::EncoderH265::SetVBVBufferStrictness(double_t strictness) {
 				break;
 		}
 	}
-	strictBitrate = static_cast<uint32_t>(targetBitrate * (m_FrameRate.second / m_FrameRate.first));
+	strictBitrate = static_cast<uint64_t>(round(targetBitrate * ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first)));
 	looseBitrate = CapsTargetBitrate().second;
 
 	// Three-Point Linear Lerp
@@ -974,7 +974,7 @@ void Plugin::AMD::EncoderH265::SetVBVBufferStrictness(double_t strictness) {
 	double_t aFade = (looseBitrate * (1.0 - aFadeVal)) + (targetBitrate * aFadeVal);
 	double_t bFade = (aFade * (1.0 - bFadeVal)) + (strictBitrate * bFadeVal);
 
-	uint32_t vbvBufferSize = static_cast<uint32_t>(round(bFade));
+	uint64_t vbvBufferSize = static_cast<uint64_t>(round(bFade));
 	this->SetVBVBufferSize(vbvBufferSize);
 }
 
