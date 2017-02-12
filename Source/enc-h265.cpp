@@ -105,10 +105,10 @@ void Plugin::Interface::H265Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, P_QP_IFRAME_MAXIMUM, 51);
 	obs_data_set_default_int(data, P_QP_PFRAME_MINIMUM, 18);
 	obs_data_set_default_int(data, P_QP_PFRAME_MAXIMUM, 51);
-	obs_data_set_default_int(data, P_FILLERDATA, 1);
+	obs_data_set_default_int(data, P_FILLERDATA, 0);
 	obs_data_set_default_int(data, P_FRAMESKIPPING, 0);
 	obs_data_set_default_int(data, P_VBAQ, 0);
-	obs_data_set_default_int(data, P_ENFORCEHRD, 1);
+	obs_data_set_default_int(data, P_ENFORCEHRD, 0);
 
 	// VBV Buffer
 	obs_data_set_int(data, ("last" P_VBVBUFFER), -1);
