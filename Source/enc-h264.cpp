@@ -79,28 +79,16 @@ const char* Plugin::Interface::H264Interface::get_name(void*) {
 }
 
 void* Plugin::Interface::H264Interface::create(obs_data_t* settings, obs_encoder_t* encoder) {
-	Plugin::Interface::H264Interface* enc = nullptr;
 	try {
-		AMF_LOG_INFO("Starting up...");
-		enc = new Plugin::Interface::H264Interface(settings, encoder);
-		return enc;
+		return new Plugin::Interface::H264Interface(settings, encoder);
 	} catch (std::exception e) {
 		AMF_LOG_ERROR("%s", e.what());
-		if (enc)
-			delete enc;
 	}
 	return nullptr;
 }
 
 void Plugin::Interface::H264Interface::destroy(void* data) {
-	try {
-		AMF_LOG_INFO("Shutting down...");
-		Plugin::Interface::H264Interface* enc = static_cast<Plugin::Interface::H264Interface*>(data);
-		delete enc;
-	} catch (std::exception e) {
-		AMF_LOG_ERROR("%s", e.what());
-		data = nullptr;
-	}
+	delete static_cast<Plugin::Interface::H264Interface*>(data);
 }
 
 bool Plugin::Interface::H264Interface::encode(void *data, struct encoder_frame *frame, struct encoder_packet *packet, bool *received_packet) {
@@ -716,11 +704,11 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 			TEMP_LIMIT_SLIDER_BITRATE(CapsPeakBitrate, P_BITRATE_PEAK);
 			TEMP_LIMIT_SLIDER_BITRATE(CapsVBVBufferSize, P_VBVBUFFER_SIZE);
 			{
-				auto p = obs_properties_get(props, P_BFRAME_PATTERN);
-				auto l = enc.CapsBFramePattern();
-				obs_property_int_set_limits(p, 0, (int)l, 1);
-				if (obs_data_get_int(data, obs_property_name(p)) > l) {
-					obs_data_set_int(data, obs_property_name(p), l);
+				auto bframep = obs_properties_get(props, P_BFRAME_PATTERN);
+				auto bframecaps = enc.CapsBFramePattern();
+				obs_property_int_set_limits(bframep, 0, (int)bframecaps, 1);
+				if (obs_data_get_int(data, obs_property_name(bframep)) > bframecaps) {
+					obs_data_set_int(data, obs_property_name(bframep), bframecaps);
 				}
 			}
 		} catch (const std::exception& e) {
