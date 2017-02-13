@@ -1072,7 +1072,7 @@ void Plugin::AMD::EncoderH264::SetGOPAlignmentEnabled(bool v) {
 	}
 }
 
-bool Plugin::AMD::EncoderH264::IsGOPAlignmentEnabled() {
+bool Plugin::AMD::EncoderH264::IsGOPAlignmentEnable() {
 	AMFTRACECALL;
 
 	bool e;

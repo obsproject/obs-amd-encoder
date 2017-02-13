@@ -279,7 +279,7 @@ namespace Plugin {
 			virtual uint32_t GetIDRPeriod() = 0;
 
 			virtual void SetGOPAlignmentEnabled(bool v) = 0;
-			virtual bool GetGOPAlignmentEnabled() = 0;
+			virtual bool IsGOPAlignmentEnable() = 0;
 
 
 			virtual void SetDeblockingFilterEnabled(bool v) = 0;

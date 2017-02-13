@@ -139,7 +139,7 @@ namespace Plugin {
 			uint32_t GetHeaderInsertionSpacing();
 			
 			virtual void SetGOPAlignmentEnabled(bool v) override;
-			virtual bool GetGOPAlignmentEnabled() override;
+			virtual bool IsGOPAlignmentEnable() override;
 
 			virtual void SetDeblockingFilterEnabled(bool v) override;
 			virtual bool IsDeblockingFilterEnabled() override;
