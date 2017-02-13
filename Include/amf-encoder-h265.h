@@ -131,8 +131,11 @@ namespace Plugin {
 			void SetGOPSizeMax(uint32_t v);
 			uint32_t GetGOPSizeMax();
 
-			void SetIDRPeriod(uint32_t v); // Distance in GOPs
-			uint32_t GetIDRPeriod();
+			virtual void SetGOPAlignmentEnabled(bool v) override;
+			virtual bool IsGOPAlignmentEnabled() override;
+
+			virtual void SetIDRPeriod(uint32_t v) override; // Distance in GOPs
+			virtual uint32_t GetIDRPeriod() override;
 
 			void SetHeaderInsertionMode(H265::HeaderInsertionMode v);
 			H265::HeaderInsertionMode GetHeaderInsertionMode();
@@ -143,6 +146,7 @@ namespace Plugin {
 			/// Motion Estimation
 			virtual void SetMotionEstimationQuarterPixelEnabled(bool v) override;
 			virtual bool IsMotionEstimationQuarterPixelEnabled() override;
+
 			virtual void SetMotionEstimationHalfPixelEnabled(bool v) override;
 			virtual bool IsMotionEstimationHalfPixelEnabled() override;
 
@@ -170,10 +174,9 @@ namespace Plugin {
 
 			virtual std::pair<uint64_t, uint64_t> CapsTargetBitrate() override;
 			virtual void SetTargetBitrate(uint64_t v) override;
-
 			virtual uint64_t GetTargetBitrate() override;
-			virtual std::pair<uint64_t, uint64_t> CapsPeakBitrate() override;
 
+			virtual std::pair<uint64_t, uint64_t> CapsPeakBitrate() override;
 			virtual void SetPeakBitrate(uint64_t v) override;
 			virtual uint64_t GetPeakBitrate() override;
 
@@ -186,28 +189,26 @@ namespace Plugin {
 			virtual void SetMaximumAccessUnitSize(uint32_t v) override;
 			virtual uint32_t GetMaximumAccessUnitSize() override;
 
-			/// - Picture Control
-			virtual void SetGOPAlignmentEnabled(bool v) override;
-			virtual bool GetGOPAlignmentEnabled() override;
+			/// Intra-Refresh
+			void SetIntraRefreshMode(uint32_t v);	// Description is identical to IntraRefreshNumMBsPerSlot?
+			uint32_t GetIntraRefreshMode();			// Does not seem to be an actual property yet.
+			
+			void SetIntraRefreshFrameNum(uint32_t v);
+			uint32_t GetIntraRefreshFrameNum();
 
-			// Properties - Intra-Refresh
-			//void SetIntraRefreshMode(uint32_t v);	// Descrition is identical to IntraRefreshNumMBsPerSlot?
-			//uint32_t GetIntraRefreshMode();		// Does not seem to be an actual property yet.
-			// 
-			//void SetIntraRefreshFrameNum(uint32_t v);
-			//uint32_t GetIntraRefreshFrameNum();
-
-			// Properties - Slicing
+			/// Slicing
+			virtual std::pair<uint32_t, uint32_t> CapsSlicesPerFrame() override;
 			virtual void SetSlicesPerFrame(uint32_t v) override;
 			virtual uint32_t GetSlicesPerFrame() override;
 
-			virtual void SetSliceControlMode(uint32_t v) override;
-			virtual uint32_t GetSliceControlMode() override;
+			virtual void SetSliceControlMode(SliceControlMode v) override;
+			virtual SliceControlMode GetSliceControlMode() override;
 
+			virtual std::pair<uint32_t, uint32_t> CapsSliceControlSize() override;
 			virtual void SetSliceControlSize(uint32_t v) override;
 			virtual uint32_t GetSliceControlSize() override;
 			
-			// Properties - Experimental
+			// Experimental
 			void SetQPCBOffset(uint8_t v);
 			uint8_t GetQPCBOffset();
 
@@ -228,6 +229,8 @@ namespace Plugin {
 			protected:
 			virtual void PacketPriorityAndKeyframe(amf::AMFDataPtr d, struct encoder_packet* p) override;
 			virtual AMF_RESULT GetExtraDataInternal(amf::AMFVariant* p) override;
+
+
 
 			//Remaining Properties
 			// PerformanceCounter (Interface, but which one?)
