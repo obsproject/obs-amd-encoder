@@ -42,7 +42,7 @@ using namespace Plugin::Interface;
 
 void Plugin::Interface::H264Interface::encoder_register() {
 	// Test if we actually have AVC support.
-	if (!AMD::CapabilityManager::Instance()->IsCodecSupported(Codec::H264AVC)) {
+	if (!AMD::CapabilityManager::Instance()->IsCodecSupported(Codec::AVC)) {
 		AMF_LOG_WARNING(PREFIX " Not supported by any GPU, disabling...");
 		return;
 	}
@@ -185,7 +185,7 @@ static void fill_api_list(obs_property_t* p) {
 	auto cm = CapabilityManager::Instance();
 
 	for (auto api : Plugin::API::EnumerateAPIs()) {
-		if (cm->IsCodecSupportedByAPI(Codec::H264AVC, api->GetType()))
+		if (cm->IsCodecSupportedByAPI(Codec::AVC, api->GetType()))
 			obs_property_list_add_string(p, api->GetName().c_str(), api->GetName().c_str());
 	}
 }
@@ -200,7 +200,7 @@ static void fill_device_list(obs_property_t* p, const char* apiname) {
 			int32_t id[2];
 			int64_t v;
 		} adapterid = { adapter.idLow, adapter.idHigh };
-		if (cm->IsCodecSupportedByAPIAdapter(Codec::H264AVC, api->GetType(), adapter))
+		if (cm->IsCodecSupportedByAPIAdapter(Codec::AVC, api->GetType(), adapter))
 			obs_property_list_add_int(p, adapter.Name.c_str(), adapterid.v);
 	}
 }

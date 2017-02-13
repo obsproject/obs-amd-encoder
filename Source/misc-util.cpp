@@ -59,9 +59,9 @@ namespace Utility {
 	inline const char* CodecToString(Plugin::AMD::Codec v) {
 		switch (v) {
 			#ifdef WITH_AVC
-			case Codec::H264AVC:
+			case Codec::AVC:
 				return "H264/AVC";
-			case Codec::H264SVC:
+			case Codec::SVC:
 				return "H264/SVC";
 				#endif
 				#ifdef WITH_HEVC
@@ -74,9 +74,9 @@ namespace Utility {
 	inline const wchar_t* CodecToAMF(Plugin::AMD::Codec v) {
 		switch (v) {
 			#ifdef WITH_AVC
-			case Codec::H264AVC:
+			case Codec::AVC:
 				return AMFVideoEncoderVCE_AVC;
-			case Codec::H264SVC:
+			case Codec::SVC:
 				return AMFVideoEncoderVCE_SVC;
 				#endif
 				#ifdef WITH_HEVC

@@ -58,8 +58,8 @@ namespace Plugin {
 	namespace AMD {
 		// Initialization Parameters
 		enum class Codec : uint8_t {
-			H264AVC,
-			H264SVC,
+			AVC,
+			SVC,
 			HEVC,
 		};
 		enum class ColorFormat : uint8_t {

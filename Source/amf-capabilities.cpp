@@ -62,14 +62,14 @@ Plugin::AMD::CapabilityManager::CapabilityManager() {
 	// Key order: API, Adapter, Codec
 	for (auto api : API::EnumerateAPIs()) {
 		for (auto adapter : api->EnumerateAdapters()) {
-			for (auto codec : { Codec::H264AVC/*, Codec::H264SVC*/, Codec::HEVC }) {
+			for (auto codec : { Codec::AVC, Codec::SVC, Codec::HEVC }) {
 
 				bool isSupported = false;
 				try {
 					std::unique_ptr<AMD::Encoder> enc;
 
 					#ifdef WITH_AVC
-					if (codec == Codec::H264AVC || codec == Codec::H264SVC) {
+					if (codec == Codec::AVC || codec == Codec::SVC) {
 						enc = std::make_unique<AMD::EncoderH264>(
 							api,
 							adapter,

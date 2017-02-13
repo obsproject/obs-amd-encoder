@@ -42,7 +42,7 @@ using namespace Plugin::AMD;
 
 Plugin::AMD::EncoderH264::EncoderH264(std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
 	ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor)
-	: Encoder(Codec::H264AVC, videoAPI, videoAdapter, useOpenCL, colorFormat, colorSpace, fullRangeColor) {
+	: Encoder(Codec::AVC, videoAPI, videoAdapter, useOpenCL, colorFormat, colorSpace, fullRangeColor) {
 	AMFTRACECALL;
 
 	AMF_RESULT res;
