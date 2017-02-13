@@ -611,7 +611,7 @@ static void obs_data_transfer_settings(obs_data_t * data) {
 	}
 }
 
-bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *props, obs_property_t *pmod, obs_data_t *data) {
+bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *props, obs_property_t * /*pmod*/, obs_data_t *data) {
 	bool result = false;
 	obs_property_t* p;
 
