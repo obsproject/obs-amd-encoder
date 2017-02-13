@@ -163,6 +163,12 @@ namespace Plugin {
 			EnabledAtHalfScale,
 			EnabledAtQuarterScale,
 		};
+		enum class SliceControlMode : uint8_t {
+			Unknown0,
+			Unknown1,
+			Unknown2,
+			Unknown3,
+		};
 
 		class Encoder {
 			protected:
@@ -279,8 +285,7 @@ namespace Plugin {
 			virtual uint32_t GetIDRPeriod() = 0;
 
 			virtual void SetGOPAlignmentEnabled(bool v) = 0;
-			virtual bool IsGOPAlignmentEnable() = 0;
-
+			virtual bool IsGOPAlignmentEnabled() = 0;
 
 			virtual void SetDeblockingFilterEnabled(bool v) = 0;
 			virtual bool IsDeblockingFilterEnabled() = 0;
@@ -292,12 +297,14 @@ namespace Plugin {
 			virtual bool IsMotionEstimationHalfPixelEnabled() = 0;
 
 			// Properties - Slicing
+			virtual std::pair<uint32_t, uint32_t> CapsSlicesPerFrame() = 0;
 			virtual void SetSlicesPerFrame(uint32_t v) = 0;
 			virtual uint32_t GetSlicesPerFrame() = 0;
 
-			virtual void SetSliceControlMode(uint32_t v) = 0; // 0-1 range, Horz/Vert perhaps?
-			virtual uint32_t GetSliceControlMode() = 0;
+			virtual void SetSliceControlMode(SliceControlMode v) = 0; // 0-1 range, Horz/Vert perhaps?
+			virtual SliceControlMode GetSliceControlMode() = 0;
 
+			virtual std::pair<uint32_t, uint32_t> CapsSliceControlSize() = 0;
 			virtual void SetSliceControlSize(uint32_t v) = 0;
 			virtual uint32_t GetSliceControlSize() = 0;
 			
