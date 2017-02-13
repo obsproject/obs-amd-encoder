@@ -764,13 +764,14 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 	#pragma endregion VBV Buffer
 
 	#pragma region GOP
+	bool gopvisible = (curView >= ViewMode::Expert);
 	bool goptype_fixed = (static_cast<HEVC::GOPType>(obs_data_get_int(data, P_GOP_TYPE)) == HEVC::GOPType::Fixed);
-	obs_property_set_visible(obs_properties_get(props, P_GOP_SIZE), goptype_fixed);
-	obs_property_set_visible(obs_properties_get(props, P_GOP_SIZE_MINIMUM), !goptype_fixed);
-	obs_property_set_visible(obs_properties_get(props, P_GOP_SIZE_MAXIMUM), !goptype_fixed);
+	obs_property_set_visible(obs_properties_get(props, P_GOP_SIZE), goptype_fixed && gopvisible);
+	obs_property_set_visible(obs_properties_get(props, P_GOP_SIZE_MINIMUM), !goptype_fixed && gopvisible);
+	obs_property_set_visible(obs_properties_get(props, P_GOP_SIZE_MAXIMUM), !goptype_fixed && gopvisible);
 	if (!goptype_fixed) {
 		obs_data_default_single(props, data, P_GOP_SIZE);
-	} else {
+	} else if (goptype_fixed) {
 		obs_data_default_single(props, data, P_GOP_SIZE_MINIMUM);
 		obs_data_default_single(props, data, P_GOP_SIZE_MAXIMUM);
 	}
@@ -889,18 +890,22 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 
 	// Picture Control
 	uint32_t gopsize = 0;
-	HEVC::GOPType goptype = static_cast<HEVC::GOPType>(obs_data_get_int(data, P_GOP_TYPE));
-	m_VideoEncoder->SetGOPType(goptype);
-	switch (goptype) {
-		case HEVC::GOPType::Fixed:
-			gopsize = (uint32_t)obs_data_get_int(data, P_GOP_SIZE);
-			m_VideoEncoder->SetGOPSize(gopsize);
-			break;
-		case HEVC::GOPType::Variable:
-			gopsize = (uint32_t)(obs_data_get_int(data, P_GOP_SIZE_MINIMUM) + obs_data_get_int(data, P_GOP_SIZE_MAXIMUM)) / 2;
-			m_VideoEncoder->SetGOPSizeMin((uint32_t)obs_data_get_int(data, P_GOP_SIZE_MINIMUM));
-			m_VideoEncoder->SetGOPSizeMax((uint32_t)obs_data_get_int(data, P_GOP_SIZE_MAXIMUM));
-			break;
+	if (static_cast<ViewMode>(obs_data_get_int(data, P_VIEW)) >= ViewMode::Expert) {
+		HEVC::GOPType goptype = static_cast<HEVC::GOPType>(obs_data_get_int(data, P_GOP_TYPE));
+		m_VideoEncoder->SetGOPType(goptype);
+		switch (goptype) {
+			case HEVC::GOPType::Fixed:
+				gopsize = (uint32_t)obs_data_get_int(data, P_GOP_SIZE);
+				m_VideoEncoder->SetGOPSize(gopsize);
+				break;
+			case HEVC::GOPType::Variable:
+				gopsize = (uint32_t)(obs_data_get_int(data, P_GOP_SIZE_MINIMUM) + obs_data_get_int(data, P_GOP_SIZE_MAXIMUM)) / 2;
+				m_VideoEncoder->SetGOPSizeMin((uint32_t)obs_data_get_int(data, P_GOP_SIZE_MINIMUM));
+				m_VideoEncoder->SetGOPSizeMax((uint32_t)obs_data_get_int(data, P_GOP_SIZE_MAXIMUM));
+				break;
+		}
+	} else {
+		gopsize = static_cast<uint32_t>(floor(obsFPSden / (double_t)obsFPSnum));
 	}
 	uint32_t idrperiod = (uint32_t)obs_data_get_int(data, P_H265_IDRPERIOD);
 	if (idrperiod != 0 && static_cast<ViewMode>(obs_data_get_int(data, P_VIEW)) == ViewMode::Master) {
