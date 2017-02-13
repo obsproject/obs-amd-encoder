@@ -111,7 +111,6 @@ namespace Plugin {
 			/// VBV Buffer
 			virtual std::pair<uint64_t, uint64_t> CapsVBVBufferSize() override;
 			virtual void SetVBVBufferSize(uint64_t v) override;
-			virtual void SetVBVBufferStrictness(double_t v) override;
 			virtual uint64_t GetVBVBufferSize() override;
 
 			virtual void SetVBVBufferInitialFullness(double v) override;

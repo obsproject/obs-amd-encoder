@@ -271,6 +271,49 @@ void Plugin::AMD::Encoder::UpdateFrameRateValues() {
 	m_FrameRateTimeStepAMF = (uint64_t)round(m_FrameRateTimeStep * AMF_SECOND);
 }
 
+void Plugin::AMD::Encoder::SetVBVBufferStrictness(double_t v) {
+	AMFTRACECALL;
+
+	auto bitrateCaps = CapsTargetBitrate();
+	uint64_t looseBitrate = bitrateCaps.second,
+		targetBitrate = 0,
+		strictBitrate = bitrateCaps.first;
+
+	Usage usage = GetUsage();
+	if (usage == Usage::UltraLowLatency) {
+		targetBitrate = clamp(GetTargetBitrate(), bitrateCaps.first, bitrateCaps.second);
+	} else {
+		switch (this->GetRateControlMethod()) {
+			case RateControlMethod::ConstantBitrate:
+				targetBitrate = clamp(GetTargetBitrate(), bitrateCaps.first, bitrateCaps.second);
+				break;
+			case RateControlMethod::LatencyConstrainedVariableBitrate:
+			case RateControlMethod::PeakConstrainedVariableBitrate:
+				targetBitrate = max(this->GetTargetBitrate(), this->GetPeakBitrate());
+				break;
+			case RateControlMethod::ConstantQP:
+				targetBitrate = bitrateCaps.second / 2;
+				break;
+		}
+	}
+	targetBitrate = clamp(targetBitrate, bitrateCaps.first, bitrateCaps.second);
+	strictBitrate = clamp(static_cast<uint64_t>(
+		round(targetBitrate * ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first))
+		), bitrateCaps.first, targetBitrate);
+
+	// Three-Point Linear Lerp
+	// 0% = looseBitrate, 50% = targetBitrate, 100% = strictBitrate
+	v = clamp(v, 0.0, 1.0);
+	double_t aFadeVal = min(v * 2.0, 1.0); // 0 - 0.5
+	double_t bFadeVal = max(v * 2.0 - 1.0, 0.0); // 0.5 - 1.0
+
+	double_t aFade = (looseBitrate * (1.0 - aFadeVal)) + (targetBitrate * aFadeVal);
+	double_t bFade = (aFade * (1.0 - bFadeVal)) + (strictBitrate * bFadeVal);
+
+	uint64_t vbvBufferSize = static_cast<uint64_t>(round(bFade));
+	this->SetVBVBufferSize(vbvBufferSize);
+}
+
 void Plugin::AMD::Encoder::Start() {
 	AMF_RESULT res;
 

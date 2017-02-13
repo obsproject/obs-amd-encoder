@@ -274,7 +274,7 @@ namespace Plugin {
 
 			virtual std::pair<uint64_t, uint64_t> CapsVBVBufferSize() = 0;
 			virtual void SetVBVBufferSize(uint64_t v) = 0;
-			virtual void SetVBVBufferStrictness(double_t v) = 0;
+			void SetVBVBufferStrictness(double_t v);
 			virtual uint64_t GetVBVBufferSize() = 0;
 
 			virtual void SetVBVBufferInitialFullness(double v) = 0;
