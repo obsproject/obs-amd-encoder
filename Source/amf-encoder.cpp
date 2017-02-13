@@ -25,6 +25,9 @@ SOFTWARE.
 #include "amf-encoder.h"
 #include "misc-util.cpp"
 #include "components/VideoConverter.h"
+#ifdef WITH_AVC
+#include "components/VideoEncoderVCE.h"
+#endif
 #ifdef WITH_HEVC
 #include "components/VideoEncoderHEVC.h"
 #endif

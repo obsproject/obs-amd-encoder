@@ -32,8 +32,10 @@ SOFTWARE.
 #include "amf.h"
 #include "amf-encoder.h"
 #include "components/VideoConverter.h"
+#ifdef WITH_AVC
 #include "amf-encoder-h264.h"
 #include "components/VideoEncoderVCE.h"
+#endif
 #ifdef WITH_HEVC
 #include "amf-encoder-h265.h"
 #include "components/VideoEncoderHEVC.h"
@@ -56,10 +58,12 @@ namespace Utility {
 	// Codec
 	inline const char* CodecToString(Plugin::AMD::Codec v) {
 		switch (v) {
+			#ifdef WITH_AVC
 			case Codec::H264AVC:
 				return "H264/AVC";
 			case Codec::H264SVC:
 				return "H264/SVC";
+				#endif
 				#ifdef WITH_HEVC
 			case Codec::HEVC:
 				return "H265/HEVC";
@@ -69,10 +73,12 @@ namespace Utility {
 	}
 	inline const wchar_t* CodecToAMF(Plugin::AMD::Codec v) {
 		switch (v) {
+			#ifdef WITH_AVC
 			case Codec::H264AVC:
 				return AMFVideoEncoderVCE_AVC;
 			case Codec::H264SVC:
 				return AMFVideoEncoderVCE_SVC;
+				#endif
 				#ifdef WITH_HEVC
 			case Codec::HEVC:
 				return AMFVideoEncoder_HEVC;
@@ -155,6 +161,7 @@ namespace Utility {
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
+	#ifdef WITH_AVC
 	inline AMF_VIDEO_ENCODER_USAGE_ENUM UsageToAMFH264(Plugin::AMD::Usage v) {
 		switch (v) {
 			case Usage::Transcoding:
@@ -181,6 +188,7 @@ namespace Utility {
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
+	#endif
 	#ifdef WITH_HEVC
 	inline AMF_VIDEO_ENCODER_HEVC_USAGE_ENUM UsageToAMFH265(Plugin::AMD::Usage v) {
 		switch (v) {
@@ -222,6 +230,7 @@ namespace Utility {
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
+	#ifdef WITH_AVC
 	inline AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM QualityPresetToAMFH264(Plugin::AMD::QualityPreset v) {
 		switch (v) {
 			case QualityPreset::Speed:
@@ -244,6 +253,7 @@ namespace Utility {
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
+	#endif
 	#ifdef WITH_HEVC
 	inline AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_ENUM QualityPresetToAMFH265(Plugin::AMD::QualityPreset v) {
 		switch (v) {
@@ -285,6 +295,7 @@ namespace Utility {
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
+	#ifdef WITH_AVC
 	inline AMF_VIDEO_ENCODER_PROFILE_ENUM ProfileToAMFH264(Plugin::AMD::Profile v) {
 		switch (v) {
 			case Profile::ConstrainedBaseline:
@@ -316,6 +327,7 @@ namespace Utility {
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
+	#endif
 	#ifdef WITH_HEVC
 	inline AMF_VIDEO_ENCODER_HEVC_PROFILE_ENUM ProfileToAMFH265(Plugin::AMD::Profile v) {
 		switch (v) {
@@ -376,6 +388,7 @@ namespace Utility {
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
+	#ifdef WITH_AVC
 	inline AMF_VIDEO_ENCODER_CODING_ENUM CodingTypeToAMFH264(Plugin::AMD::CodingType v) {
 		switch (v) {
 			case CodingType::Automatic:
@@ -398,6 +411,7 @@ namespace Utility {
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
+	#endif
 	#ifdef WITH_HEVC
 	inline int64_t CodingTypeToAMFH265(Plugin::AMD::CodingType v) {
 		switch (v) {
@@ -433,6 +447,7 @@ namespace Utility {
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
+	#ifdef WITH_AVC
 	inline AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM RateControlMethodToAMFH264(Plugin::AMD::RateControlMethod v) {
 		switch (v) {
 			case RateControlMethod::ConstantQP:
@@ -459,6 +474,7 @@ namespace Utility {
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
+	#endif
 	#ifdef WITH_HEVC
 	inline AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_ENUM RateControlMethodToAMFH265(Plugin::AMD::RateControlMethod v) {
 		switch (v) {
@@ -502,6 +518,7 @@ namespace Utility {
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
+	#ifdef WITH_AVC
 	inline AMF_VIDEO_ENCODER_PREENCODE_MODE_ENUM PrePassModeToAMFH264(Plugin::AMD::PrePassMode v) {
 		switch (v) {
 			case PrePassMode::Disabled:
@@ -528,7 +545,9 @@ namespace Utility {
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
+	#endif
 
+	// GOP Type
 	#ifdef WITH_HEVC
 	inline const char* GOPTypeToString(HEVC::GOPType v) {
 		switch (v) {
@@ -558,9 +577,10 @@ namespace Utility {
 		throw std::runtime_error("Invalid Parameter");
 	}
 	#endif
-	
+
+	#ifdef WITH_AVC
 	inline Plugin::AMD::ProfileLevel H264ProfileLevel(
-		std::pair<uint32_t, uint32_t> resolution, 
+		std::pair<uint32_t, uint32_t> resolution,
 		std::pair<uint32_t, uint32_t> frameRate) {
 		typedef std::pair<uint32_t, uint32_t> levelRestriction;
 		typedef std::pair<ProfileLevel, levelRestriction> level;
@@ -602,6 +622,7 @@ namespace Utility {
 		}
 		return ProfileLevel::L52;
 	}
+	#endif
 	#ifdef WITH_HEVC
 	inline Plugin::AMD::ProfileLevel H265ProfileLevel(
 		std::pair<uint32_t, uint32_t> resolution,
@@ -610,16 +631,16 @@ namespace Utility {
 		typedef std::pair<ProfileLevel, levelRestriction> level;
 
 		static const level profileLevelLimit[] = { // [Level, [Samples, Samples_Per_Sec]]
-			level(ProfileLevel::L10, levelRestriction(   36864,     552960)),
-			level(ProfileLevel::L20, levelRestriction(  122880,    3686400)),
-			level(ProfileLevel::L21, levelRestriction(  245760,    7372800)),
-			level(ProfileLevel::L30, levelRestriction(  552960,   16588800)),
-			level(ProfileLevel::L31, levelRestriction(  983040,   33177600)),
-			level(ProfileLevel::L40, levelRestriction( 2228224,   66846720)),
-			level(ProfileLevel::L41, levelRestriction( 2228224,  133693440)),
-			level(ProfileLevel::L50, levelRestriction( 8912896,  267386880)),
-			level(ProfileLevel::L51, levelRestriction( 8912896,  534773760)),
-			level(ProfileLevel::L52, levelRestriction( 8912896, 1069547520)),
+			level(ProfileLevel::L10, levelRestriction(36864,     552960)),
+			level(ProfileLevel::L20, levelRestriction(122880,    3686400)),
+			level(ProfileLevel::L21, levelRestriction(245760,    7372800)),
+			level(ProfileLevel::L30, levelRestriction(552960,   16588800)),
+			level(ProfileLevel::L31, levelRestriction(983040,   33177600)),
+			level(ProfileLevel::L40, levelRestriction(2228224,   66846720)),
+			level(ProfileLevel::L41, levelRestriction(2228224,  133693440)),
+			level(ProfileLevel::L50, levelRestriction(8912896,  267386880)),
+			level(ProfileLevel::L51, levelRestriction(8912896,  534773760)),
+			level(ProfileLevel::L52, levelRestriction(8912896, 1069547520)),
 			level(ProfileLevel::L60, levelRestriction(35651584, 1069547520)),
 			level(ProfileLevel::L61, levelRestriction(35651584, 2139095040)),
 			level(ProfileLevel::L62, levelRestriction(35651584, 4278190080)),

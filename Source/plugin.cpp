@@ -35,7 +35,9 @@ SOFTWARE.
 #include "api-base.h"
 #include "amf.h"
 #include "amf-capabilities.h"
+#ifdef WITH_AVC
 #include "enc-h264.h"
+#endif
 #ifdef WITH_HEVC
 #include "enc-h265.h"
 #endif
@@ -208,7 +210,9 @@ MODULE_EXPORT bool obs_module_load(void) {
 	}
 
 	// Register Encoders
+	#ifdef WITH_AVC
 	Plugin::Interface::H264Interface::encoder_register();
+	#endif
 	#ifdef WITH_HEVC
 	Plugin::Interface::H265Interface::encoder_register();
 	#endif

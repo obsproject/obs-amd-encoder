@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 2.8.12)
 PROJECT(enc-amf)
 
+################################################################################
 # Version
+################################################################################
 SET(enc-amf_VERSION_MAJOR 1)
 SET(enc-amf_VERSION_MINOR 9)
 SET(enc-amf_VERSION_PATCH 9)
@@ -19,16 +21,16 @@ configure_file(
 	"${PROJECT_BINARY_DIR}/Include/Version.h"
 )
 
-# Code Stuff
+################################################################################
+# Code
+################################################################################
 SET(enc-amf_HEADERS
 	"Include/amf.h"
 	"Include/amf-capabilities.h"
 	"Include/amf-encoder.h"
-	"Include/amf-encoder-h264.h"
 	"Include/api-base.h"
 	"Include/api-host.h"
 	"Include/api-opengl.h"
-	"Include/enc-h264.h"
 	"Include/plugin.h"
 	"${PROJECT_BINARY_DIR}/Include/Version.h"
 )
@@ -36,11 +38,9 @@ SET(enc-amf_SOURCES
 	"Source/amf.cpp"
 	"Source/amf-capabilities.cpp"
 	"Source/amf-encoder.cpp"
-	"Source/amf-encoder-h264.cpp"
 	"Source/api-base.cpp"
 	"Source/api-host.cpp"
 	"Source/api-opengl.cpp"
-	"Source/enc-h264.cpp"
 	"Source/misc-util.cpp"
 	"Source/plugin.cpp"
 )
@@ -49,8 +49,8 @@ SET(enc-amf_LIBRARIES
 	winmm
 )
 
+# Windows Only
 if (WIN32)
-	# Direct3D support should only be compiled for Windows
 	LIST(APPEND enc-amf_HEADERS
 		"Include/api-d3d9.h"
 		"Include/api-d3d11.h"
@@ -61,12 +61,17 @@ if (WIN32)
 	)
 endif()
 
-
-# OBS Studio Specific
+################################################################################
+# Standalone and OBS Studio Build Data
+################################################################################
 if(BUILD_AMF_ENCODER)
+	# OBS Studio Specific
+	
+	# Variables
 	OPTION(AMDAMF_Disable "Disable AMD Advanced Media Framework support" OFF)
 	SET(AMDAMF_SDKDir "" CACHE PATH "AMD Advanced Media Framework SDK Directory")
 
+	# Tests
 	if(AMDAMF_Disable)
 		message(STATUS "AMD AMF support disabled")
 		return()
@@ -82,6 +87,7 @@ if(BUILD_AMF_ENCODER)
 		return()
 	endif()
 	
+	# Directories
 	INCLUDE_DIRECTORIES(
 		"${CMAKE_SOURCE_DIR}"
 		"${PROJECT_BINARY_DIR}"
@@ -94,12 +100,13 @@ if(BUILD_AMF_ENCODER)
 	)
 	SET(LIBOBS_LIBRARIES libobs)
 else()
-# Standlone Specific
+	# Standlone Specific
 
 	# Variables
 	SET(PATH_AMDAMFSDK "" CACHE PATH "AMD Advanced Media Framework SDK Directory")
 	SET(PATH_OBSStudio "" CACHE PATH "OBS Studio Source Code Directory")
 	
+	# Tests
 	if(PATH_AMDAMFSDK STREQUAL "")
 		message(STATUS "PATH_AMDAMFSDK not set!")
 		return()
@@ -120,18 +127,7 @@ else()
 		return()
 	endif()
 	
-	# Safety Check: HEVC is only built in Standalone
-	add_definitions(-DWITH_HEVC)
-	LIST(APPEND enc-amf_HEADERS
-		"Include/amf-encoder-h265.h"
-		"Include/enc-h265.h"
-	)
-	LIST(APPEND enc-amf_SOURCES
-		"Source/amf-encoder-h265.cpp"
-		"Source/enc-h265.cpp"
-	)
-	
-	# Stuff
+	# Find OBS Libraries
 	SET(obsPath "${PATH_OBSStudio}")
 	INCLUDE("${PATH_OBSStudio}/cmake/external/Findlibobs.cmake")
 	
@@ -148,6 +144,41 @@ else()
 	)
 endif()
 
+################################################################################
+# Optional Features
+################################################################################
+# AVC Encoding
+OPTION(BUILD_AMF_AVC "AMF Plugin: Build AVC (H264) support" ON)
+
+if(BUILD_AMF_AVC)
+	add_definitions(-DWITH_AVC)
+	LIST(APPEND enc-amf_HEADERS
+		"Include/amf-encoder-h264.h"
+		"Include/enc-h264.h"
+	)
+	LIST(APPEND enc-amf_SOURCES
+		"Source/amf-encoder-h264.cpp"
+		"Source/enc-h264.cpp"
+	)
+endif()
+
+# HEVC Encoding
+OPTION(BUILD_AMF_HEVC "AMF Plugin: Build HEVC support" OFF)
+if(BUILD_AMF_HEVC)
+	add_definitions(-DWITH_HEVC)
+	LIST(APPEND enc-amf_HEADERS
+		"Include/amf-encoder-h265.h"
+		"Include/enc-h265.h"
+	)
+	LIST(APPEND enc-amf_SOURCES
+		"Source/amf-encoder-h265.cpp"
+		"Source/enc-h265.cpp"
+	)
+endif()
+
+################################################################################
+# Build
+################################################################################
 ADD_LIBRARY(enc-amf MODULE
 	${enc-amf_HEADERS}
 	${enc-amf_SOURCES}
