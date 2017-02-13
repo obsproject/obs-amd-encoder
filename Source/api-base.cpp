@@ -75,7 +75,7 @@ Plugin::API::IAPI::IAPI() {}
 
 Plugin::API::IAPI::~IAPI() {}
 
-Plugin::API::Adapter Plugin::API::IAPI::GetAdapterById(uint32_t idLow, uint32_t idHigh) {
+Plugin::API::Adapter Plugin::API::IAPI::GetAdapterById(int32_t idLow, int32_t idHigh) {
 	for (auto adapter : EnumerateAdapters()) {
 		if ((adapter.idLow == idLow) && (adapter.idHigh == idHigh))
 			return adapter;

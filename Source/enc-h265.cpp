@@ -86,7 +86,7 @@ void Plugin::Interface::H265Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, P_QUALITYPRESET, static_cast<int64_t>(QualityPreset::Balanced));
 	obs_data_set_default_int(data, P_PROFILE, static_cast<int64_t>(Profile::Main));
 	obs_data_set_default_int(data, P_PROFILELEVEL, static_cast<int64_t>(ProfileLevel::Automatic));
-	obs_data_set_default_int(data, P_TIER, static_cast<int64_t>(HEVC::Tier::Main));
+	obs_data_set_default_int(data, P_TIER, static_cast<int64_t>(H265::Tier::Main));
 	//obs_data_set_default_frames_per_second(data, P_ASPECTRATIO, media_frames_per_second{ 1, 1 }, "");
 	obs_data_set_default_int(data, P_CODINGTYPE, static_cast<int64_t>(CodingType::Automatic));
 	obs_data_set_default_int(data, P_MAXIMUMREFERENCEFRAMES, 1);
@@ -121,7 +121,7 @@ void Plugin::Interface::H265Interface::get_defaults(obs_data_t *data) {
 	// Picture Control
 	obs_data_set_default_double(data, P_KEYFRAMEINTERVAL, 2.0);
 	obs_data_set_default_int(data, P_H264_IDRPERIOD, 0);
-	obs_data_set_default_int(data, P_GOP_TYPE, static_cast<int64_t>(HEVC::GOPType::Fixed));
+	obs_data_set_default_int(data, P_GOP_TYPE, static_cast<int64_t>(H265::GOPType::Fixed));
 	obs_data_set_default_int(data, P_GOP_SIZE, 60);
 	obs_data_set_default_int(data, P_GOP_SIZE_MINIMUM, 1);
 	obs_data_set_default_int(data, P_GOP_SIZE_MAXIMUM, 16);
@@ -269,8 +269,8 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void*) {
 	#pragma region Tier
 	p = obs_properties_add_list(props, P_TIER, P_TRANSLATE(P_TIER), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_TIER)));
-	obs_property_list_add_int(p, "Main", static_cast<int32_t>(HEVC::Tier::Main));
-	obs_property_list_add_int(p, "High", static_cast<int32_t>(HEVC::Tier::High));
+	obs_property_list_add_int(p, "Main", static_cast<int32_t>(H265::Tier::Main));
+	obs_property_list_add_int(p, "High", static_cast<int32_t>(H265::Tier::High));
 	#pragma endregion Tier
 
 	//#pragma region Aspect Ratio
@@ -400,8 +400,8 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void*) {
 	#pragma region GOP Type
 	p = obs_properties_add_list(props, P_GOP_TYPE, P_TRANSLATE(P_GOP_TYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_GOP_TYPE)));
-	obs_property_list_add_int(p, P_TRANSLATE(P_GOP_TYPE_FIXED), static_cast<int64_t>(HEVC::GOPType::Fixed));
-	obs_property_list_add_int(p, P_TRANSLATE(P_GOP_TYPE_VARIABLE), static_cast<int64_t>(HEVC::GOPType::Variable));
+	obs_property_list_add_int(p, P_TRANSLATE(P_GOP_TYPE_FIXED), static_cast<int64_t>(H265::GOPType::Fixed));
+	obs_property_list_add_int(p, P_TRANSLATE(P_GOP_TYPE_VARIABLE), static_cast<int64_t>(H265::GOPType::Variable));
 	obs_property_set_modified_callback(p, properties_modified);
 	#pragma endregion GOP Type
 
@@ -596,7 +596,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 				auto tmp_p = obs_properties_get(props, P_PROFILELEVEL);
 				obs_property_list_item_disable(tmp_p, 0, false);
 			}
-			TEMP_LIMIT_DROPDOWN(CapsTier, AMD::HEVC::Tier, P_TIER);
+			TEMP_LIMIT_DROPDOWN(CapsTier, AMD::H265::Tier, P_TIER);
 			// Aspect Ratio - No limits, only affects players/transcoders
 			TEMP_LIMIT_DROPDOWN(CapsCodingType, AMD::CodingType, P_CODINGTYPE);
 			TEMP_LIMIT_SLIDER(CapsMaximumReferenceFrames, P_MAXIMUMREFERENCEFRAMES);
@@ -765,7 +765,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 
 	#pragma region GOP
 	bool gopvisible = (curView >= ViewMode::Expert);
-	bool goptype_fixed = (static_cast<HEVC::GOPType>(obs_data_get_int(data, P_GOP_TYPE)) == HEVC::GOPType::Fixed);
+	bool goptype_fixed = (static_cast<H265::GOPType>(obs_data_get_int(data, P_GOP_TYPE)) == H265::GOPType::Fixed);
 	obs_property_set_visible(obs_properties_get(props, P_GOP_SIZE), goptype_fixed && gopvisible);
 	obs_property_set_visible(obs_properties_get(props, P_GOP_SIZE_MINIMUM), !goptype_fixed && gopvisible);
 	obs_property_set_visible(obs_properties_get(props, P_GOP_SIZE_MAXIMUM), !goptype_fixed && gopvisible);
@@ -794,7 +794,12 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 }
 
 void* Plugin::Interface::H265Interface::create(obs_data_t* data, obs_encoder_t* encoder) {
-	return new H265Interface(data, encoder);
+	try {
+		return new H265Interface(data, encoder);
+	} catch (std::exception e) {
+		AMF_LOG_ERROR("%s", e.what());
+	}
+	return nullptr;
 }
 
 Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t* encoder) {
@@ -867,7 +872,7 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 	/// Profile & Level
 	m_VideoEncoder->SetProfile(static_cast<Profile>(obs_data_get_int(data, P_PROFILE)));
 	m_VideoEncoder->SetProfileLevel(static_cast<ProfileLevel>(obs_data_get_int(data, P_PROFILELEVEL)));
-	m_VideoEncoder->SetTier(static_cast<HEVC::Tier>(obs_data_get_int(data, P_TIER)));
+	m_VideoEncoder->SetTier(static_cast<H265::Tier>(obs_data_get_int(data, P_TIER)));
 
 	try {
 		m_VideoEncoder->SetCodingType(static_cast<CodingType>(obs_data_get_int(data, P_CODINGTYPE)));
@@ -891,14 +896,14 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 	// Picture Control
 	uint32_t gopsize = 0;
 	if (static_cast<ViewMode>(obs_data_get_int(data, P_VIEW)) >= ViewMode::Expert) {
-		HEVC::GOPType goptype = static_cast<HEVC::GOPType>(obs_data_get_int(data, P_GOP_TYPE));
+		H265::GOPType goptype = static_cast<H265::GOPType>(obs_data_get_int(data, P_GOP_TYPE));
 		m_VideoEncoder->SetGOPType(goptype);
 		switch (goptype) {
-			case HEVC::GOPType::Fixed:
+			case H265::GOPType::Fixed:
 				gopsize = (uint32_t)obs_data_get_int(data, P_GOP_SIZE);
 				m_VideoEncoder->SetGOPSize(gopsize);
 				break;
-			case HEVC::GOPType::Variable:
+			case H265::GOPType::Variable:
 				gopsize = (uint32_t)(obs_data_get_int(data, P_GOP_SIZE_MINIMUM) + obs_data_get_int(data, P_GOP_SIZE_MAXIMUM)) / 2;
 				m_VideoEncoder->SetGOPSizeMin((uint32_t)obs_data_get_int(data, P_GOP_SIZE_MINIMUM));
 				m_VideoEncoder->SetGOPSizeMax((uint32_t)obs_data_get_int(data, P_GOP_SIZE_MAXIMUM));
@@ -1029,7 +1034,10 @@ void Plugin::Interface::H265Interface::destroy(void* ptr) {
 }
 
 Plugin::Interface::H265Interface::~H265Interface() {
-	m_VideoEncoder->Stop();
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Finalizing...");
+	if (m_VideoEncoder)
+		m_VideoEncoder->Stop();
+	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Complete.");
 }
 
 bool Plugin::Interface::H265Interface::update(void *ptr, obs_data_t *settings) {

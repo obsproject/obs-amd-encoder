@@ -33,8 +33,11 @@ SOFTWARE.
 #include "Version.h"
 
 // Open Broadcaster Software
+#pragma warning (push)
+#pragma warning (disable: 4201)
 #include "libobs/obs-module.h"
 #include "libobs/obs-encoder.h"
+#pragma warning (pop)
 
 //////////////////////////////////////////////////////////////////////////
 // Defines
@@ -231,3 +234,11 @@ enum class ViewMode :uint8_t {
 //#define AMF_H264_INTRAREFRESH_NUMBEROFSTRIPES_DESCRIPTION	TEXT_AMF_H264("IntraRefresh.NumberOfStripes.Description")
 //#define AMF_H264_INTRAREFRESH_MACROBLOCKSPERSLOT			TEXT_AMF_H264("IntraRefresh.MacroblocksPerSlot")
 //#define AMF_H264_INTRAREFRESH_MACROBLOCKSPERSLOT_DESCRIPTION	TEXT_AMF_H264("IntraRefresh.MacroblocksPerSlot.Description")
+
+//////////////////////////////////////////////////////////////////////////
+// Code
+//////////////////////////////////////////////////////////////////////////
+namespace Plugin {
+	uint64_t GetUniqueIdentifier();
+
+}

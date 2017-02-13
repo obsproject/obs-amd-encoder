@@ -315,7 +315,7 @@ Plugin::AMD::ProfileLevel Plugin::AMD::EncoderH265::GetProfileLevel() {
 	return (ProfileLevel)(e / 3);
 }
 
-std::vector<HEVC::Tier> Plugin::AMD::EncoderH265::CapsTier() {
+std::vector<H265::Tier> Plugin::AMD::EncoderH265::CapsTier() {
 	AMFTRACECALL;
 
 	const amf::AMFPropertyInfo* var;
@@ -326,14 +326,14 @@ std::vector<HEVC::Tier> Plugin::AMD::EncoderH265::CapsTier() {
 		throw std::exception(errMsg.data());
 	}
 
-	std::vector<HEVC::Tier> ret;
+	std::vector<H265::Tier> ret;
 	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
 		ret.push_back(Utility::TierFromAMFH265((AMF_VIDEO_ENCODER_HEVC_TIER_ENUM)enm->value));
 	}
 	return ret;
 }
 
-void Plugin::AMD::EncoderH265::SetTier(HEVC::Tier v) {
+void Plugin::AMD::EncoderH265::SetTier(H265::Tier v) {
 	AMFTRACECALL;
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_TIER, Utility::TierToAMFH265(v));
@@ -344,7 +344,7 @@ void Plugin::AMD::EncoderH265::SetTier(HEVC::Tier v) {
 	}
 }
 
-Plugin::AMD::HEVC::Tier Plugin::AMD::EncoderH265::GetTier() {
+Plugin::AMD::H265::Tier Plugin::AMD::EncoderH265::GetTier() {
 	AMFTRACECALL;
 
 	int64_t e;
@@ -355,7 +355,7 @@ Plugin::AMD::HEVC::Tier Plugin::AMD::EncoderH265::GetTier() {
 			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.data());
 	}
-	return (HEVC::Tier)e;
+	return (H265::Tier)e;
 }
 
 std::pair<uint64_t, uint64_t> Plugin::AMD::EncoderH265::CapsMaximumReferenceFrames() {
@@ -909,7 +909,9 @@ void Plugin::AMD::EncoderH265::SetVBVBufferSize(uint64_t v) {
 void Plugin::AMD::EncoderH265::SetVBVBufferStrictness(double_t strictness) {
 	AMFTRACECALL;
 
-	uint64_t looseBitrate, targetBitrate, strictBitrate;
+	uint64_t looseBitrate = 0,
+		targetBitrate = 0,
+		strictBitrate = 0;
 
 	Usage usage = GetUsage();
 	if (usage == Usage::UltraLowLatency) {
@@ -1018,7 +1020,7 @@ float Plugin::AMD::EncoderH265::GetInitialVBVBufferFullness() {
 }
 
 // Properties - Picture Control
-std::vector<HEVC::GOPType> Plugin::AMD::EncoderH265::CapsGOPType() {
+std::vector<H265::GOPType> Plugin::AMD::EncoderH265::CapsGOPType() {
 	AMFTRACECALL;
 
 	const amf::AMFPropertyInfo* var;
@@ -1029,14 +1031,14 @@ std::vector<HEVC::GOPType> Plugin::AMD::EncoderH265::CapsGOPType() {
 		throw std::exception(errMsg.data());
 	}
 
-	std::vector<HEVC::GOPType> ret;
+	std::vector<H265::GOPType> ret;
 	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
 		ret.push_back(Utility::GOPTypeFromAMFH265(enm->value));
 	}
 	return ret;
 }
 
-void Plugin::AMD::EncoderH265::SetGOPType(HEVC::GOPType v) {
+void Plugin::AMD::EncoderH265::SetGOPType(H265::GOPType v) {
 	AMFTRACECALL;
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(L"GOPType", Utility::GOPTypeToAMFH265(v));
@@ -1047,7 +1049,7 @@ void Plugin::AMD::EncoderH265::SetGOPType(HEVC::GOPType v) {
 	}
 }
 
-Plugin::AMD::HEVC::GOPType Plugin::AMD::EncoderH265::GetGOPType() {
+Plugin::AMD::H265::GOPType Plugin::AMD::EncoderH265::GetGOPType() {
 	AMFTRACECALL;
 
 	int64_t e;
@@ -1168,13 +1170,13 @@ uint32_t Plugin::AMD::EncoderH265::GetIDRPeriod() {
 	return (uint32_t)e;
 }
 
-void Plugin::AMD::EncoderH265::SetHeaderInsertionMode(HEVC::HeaderInsertionMode v) {
+void Plugin::AMD::EncoderH265::SetHeaderInsertionMode(H265::HeaderInsertionMode v) {
 	AMFTRACECALL;
 
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
-Plugin::AMD::HEVC::HeaderInsertionMode Plugin::AMD::EncoderH265::GetHeaderInsertionMode() {
+Plugin::AMD::H265::HeaderInsertionMode Plugin::AMD::EncoderH265::GetHeaderInsertionMode() {
 	AMFTRACECALL;
 
 	throw std::logic_error("The method or operation is not implemented.");

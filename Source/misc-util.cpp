@@ -47,14 +47,6 @@ SOFTWARE.
 using namespace Plugin::AMD;
 
 namespace Utility {
-	static uint64_t GetUniqueIdentifier() {
-		static std::mutex __mutex;
-		static uint64_t __curId;
-
-		const std::lock_guard<std::mutex> lock(__mutex);
-		return ++__curId;
-	}
-
 	// Codec
 	inline const char* CodecToString(Plugin::AMD::Codec v) {
 		switch (v) {
@@ -347,30 +339,30 @@ namespace Utility {
 
 	#ifdef WITH_HEVC
 	// Tier
-	inline const char* TierToString(Plugin::AMD::HEVC::Tier v) {
+	inline const char* TierToString(Plugin::AMD::H265::Tier v) {
 		switch (v) {
-			case HEVC::Tier::Main:
+			case H265::Tier::Main:
 				return "Main";
-			case HEVC::Tier::High:
+			case H265::Tier::High:
 				return "High";
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
-	inline AMF_VIDEO_ENCODER_HEVC_TIER_ENUM TierToAMFH265(Plugin::AMD::HEVC::Tier v) {
+	inline AMF_VIDEO_ENCODER_HEVC_TIER_ENUM TierToAMFH265(Plugin::AMD::H265::Tier v) {
 		switch (v) {
-			case HEVC::Tier::Main:
+			case H265::Tier::Main:
 				return AMF_VIDEO_ENCODER_HEVC_TIER_MAIN;
-			case HEVC::Tier::High:
+			case H265::Tier::High:
 				return AMF_VIDEO_ENCODER_HEVC_TIER_HIGH;
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
-	inline Plugin::AMD::HEVC::Tier TierFromAMFH265(AMF_VIDEO_ENCODER_HEVC_TIER_ENUM v) {
+	inline Plugin::AMD::H265::Tier TierFromAMFH265(AMF_VIDEO_ENCODER_HEVC_TIER_ENUM v) {
 		switch (v) {
 			case AMF_VIDEO_ENCODER_HEVC_TIER_MAIN:
-				return HEVC::Tier::Main;
+				return H265::Tier::Main;
 			case AMF_VIDEO_ENCODER_HEVC_TIER_HIGH:
-				return HEVC::Tier::High;
+				return H265::Tier::High;
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
@@ -549,29 +541,29 @@ namespace Utility {
 
 	// GOP Type
 	#ifdef WITH_HEVC
-	inline const char* GOPTypeToString(HEVC::GOPType v) {
+	inline const char* GOPTypeToString(H265::GOPType v) {
 		switch (v) {
-			case HEVC::GOPType::Fixed:
+			case H265::GOPType::Fixed:
 				return "Fixed";
-			case HEVC::GOPType::Variable:
+			case H265::GOPType::Variable:
 				return "Variable";
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
-	inline HEVC::GOPType GOPTypeFromAMFH265(int64_t v) {
+	inline H265::GOPType GOPTypeFromAMFH265(int64_t v) {
 		switch (v) {
 			case 0:
-				return HEVC::GOPType::Fixed;
+				return H265::GOPType::Fixed;
 			case 1:
-				return HEVC::GOPType::Variable;
+				return H265::GOPType::Variable;
 		}
 		throw std::runtime_error("Invalid Parameter");
 	}
-	inline int64_t GOPTypeToAMFH265(HEVC::GOPType v) {
+	inline int64_t GOPTypeToAMFH265(H265::GOPType v) {
 		switch (v) {
-			case HEVC::GOPType::Fixed:
+			case H265::GOPType::Fixed:
 				return 0;
-			case HEVC::GOPType::Variable:
+			case H265::GOPType::Variable:
 				return 1;
 		}
 		throw std::runtime_error("Invalid Parameter");

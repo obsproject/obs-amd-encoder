@@ -378,3 +378,17 @@ void SetThreadName(const char* threadName) {
 }
 
 #endif
+
+//////////////////////////////////////////////////////////////////////////
+// Code
+//////////////////////////////////////////////////////////////////////////
+
+uint64_t Plugin::GetUniqueIdentifier() {
+	static std::mutex __mutex;
+	static uint64_t __curId;
+
+	const std::lock_guard<std::mutex> lock(__mutex);
+	return ++__curId;
+}
+
+

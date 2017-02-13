@@ -89,7 +89,7 @@ namespace Plugin {
 			virtual Type GetType() = 0;
 
 			virtual std::vector<Adapter> EnumerateAdapters() = 0;
-			Adapter GetAdapterById(uint32_t idLow, uint32_t idHigh);
+			Adapter GetAdapterById(int32_t idLow, int32_t idHigh);
 			Adapter GetAdapterByName(std::string name);
 
 			virtual std::shared_ptr<Instance> CreateInstance(Adapter adapter) = 0;

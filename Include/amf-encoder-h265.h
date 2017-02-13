@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace Plugin {
 	namespace AMD {
-		namespace HEVC {
+		namespace H265 {
 			enum class Tier : uint8_t {
 				Main,
 				High,
@@ -80,9 +80,9 @@ namespace Plugin {
 			virtual void SetProfileLevel(ProfileLevel v) override;
 			virtual ProfileLevel GetProfileLevel() override;
 
-			std::vector<HEVC::Tier> CapsTier();
-			void SetTier(HEVC::Tier v);
-			HEVC::Tier GetTier();
+			std::vector<H265::Tier> CapsTier();
+			void SetTier(H265::Tier v);
+			H265::Tier GetTier();
 
 			virtual std::pair<uint64_t, uint64_t> CapsMaximumReferenceFrames() override;
 			virtual void SetMaximumReferenceFrames(uint64_t v) override;
@@ -118,9 +118,9 @@ namespace Plugin {
 			virtual float GetInitialVBVBufferFullness() override;
 
 			/// Picture Control
-			std::vector<HEVC::GOPType> CapsGOPType();
-			void SetGOPType(HEVC::GOPType v);
-			HEVC::GOPType GetGOPType();
+			std::vector<H265::GOPType> CapsGOPType();
+			void SetGOPType(H265::GOPType v);
+			H265::GOPType GetGOPType();
 
 			void SetGOPSize(uint32_t v);
 			uint32_t GetGOPSize();
@@ -134,8 +134,8 @@ namespace Plugin {
 			void SetIDRPeriod(uint32_t v); // Distance in GOPs
 			uint32_t GetIDRPeriod();
 
-			void SetHeaderInsertionMode(HEVC::HeaderInsertionMode v);
-			HEVC::HeaderInsertionMode GetHeaderInsertionMode();
+			void SetHeaderInsertionMode(H265::HeaderInsertionMode v);
+			H265::HeaderInsertionMode GetHeaderInsertionMode();
 
 			virtual void SetDeblockingFilterEnabled(bool v) override;
 			virtual bool IsDeblockingFilterEnabled() override;

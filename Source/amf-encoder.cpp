@@ -39,7 +39,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
 	ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor) {
 	#pragma region Null Values
-	m_UniqueId = Utility::GetUniqueIdentifier();
+	m_UniqueId = Plugin::GetUniqueIdentifier();
 	/// AMF Internals
 	m_AMF = nullptr;
 	m_AMFFactory = nullptr;
