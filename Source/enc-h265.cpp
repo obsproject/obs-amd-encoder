@@ -605,7 +605,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 			TEMP_LIMIT_SLIDER_BITRATE(CapsTargetBitrate, P_BITRATE_TARGET);
 			TEMP_LIMIT_SLIDER_BITRATE(CapsPeakBitrate, P_BITRATE_PEAK);
 			TEMP_LIMIT_SLIDER_BITRATE(CapsVBVBufferSize, P_VBVBUFFER_SIZE);
-		} catch (std::exception& e) {
+		} catch (const std::exception& e) {
 			AMF_LOG_ERROR("Exception occured while updating capabilities: %s",
 				e.what());
 		}

@@ -187,7 +187,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 	// AMF
 	try {
 		Plugin::AMD::AMF::Initialize();
-	} catch (std::exception& e) {
+	} catch (const std::exception& e) {
 		AMF_LOG_ERROR("Encountered Exception during AMF initialization: %s", e.what());
 		return false;
 	} catch (...) {
@@ -201,7 +201,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 	// AMF Capabilities
 	try {
 		Plugin::AMD::CapabilityManager::Initialize();
-	} catch (std::exception& e) {
+	} catch (const std::exception& e) {
 		AMF_LOG_ERROR("Encountered Exception during Capability Manager initialization: %s", e.what());
 		return false;
 	} catch (...) {

@@ -86,7 +86,7 @@ Plugin::AMD::CapabilityManager::CapabilityManager() {
 					#endif
 					if (enc != nullptr)
 						isSupported = true;
-				} catch (std::exception& e) {
+				} catch (const std::exception& e) {
 					AMF_LOG_WARNING("%s", e.what());
 				}
 

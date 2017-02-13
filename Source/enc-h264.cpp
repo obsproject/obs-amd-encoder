@@ -723,7 +723,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 					obs_data_set_int(data, obs_property_name(p), l);
 				}
 			}
-		} catch (std::exception& e) {
+		} catch (const std::exception& e) {
 			AMF_LOG_ERROR("Exception occured while updating capabilities: %s",
 				e.what());
 		}
