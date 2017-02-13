@@ -120,8 +120,8 @@ Plugin::API::Direct3D9Instance::Direct3D9Instance(Direct3D9* api, Adapter adapte
 		if (FAILED(api->m_Direct3D9Ex->GetAdapterLUID((UINT)adapterIndex, &adapterLUID)))
 			continue;
 
-		if ((adapterLUID.LowPart == adapter.idLow)
-			&& (adapterLUID.HighPart == adapter.idHigh)) {
+		if ((static_cast<int32_t>(adapterLUID.LowPart) == adapter.idLow)
+			&& (static_cast<int32_t>(adapterLUID.HighPart) == adapter.idHigh)) {
 			adapterNum = adapterIndex;
 			break;
 		}
