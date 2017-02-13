@@ -30,6 +30,14 @@ SOFTWARE.
 
 namespace Plugin {
 	namespace AMD {
+		namespace H264 {
+			enum class SliceMode : uint8_t {
+				Unknown1 = 1, // Horizontal?
+				Unknown2 = 2, // Vertical?
+			};
+
+		}
+
 		class EncoderH264 : public Encoder {
 			public:
 			EncoderH264(std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
@@ -139,7 +147,7 @@ namespace Plugin {
 			uint32_t GetHeaderInsertionSpacing();
 			
 			virtual void SetGOPAlignmentEnabled(bool v) override;
-			virtual bool IsGOPAlignmentEnable() override;
+			virtual bool IsGOPAlignmentEnabled() override;
 
 			virtual void SetDeblockingFilterEnabled(bool v) override;
 			virtual bool IsDeblockingFilterEnabled() override;
@@ -165,6 +173,7 @@ namespace Plugin {
 			virtual bool IsMotionEstimationHalfPixelEnabled() override;
 
 			// Properties - Intra-Refresh
+			std::pair<uint32_t, uint32_t> CapsIntraRefreshNumMBsPerSlot();
 			void SetIntraRefreshNumMBsPerSlot(uint32_t v);
 			uint32_t GetIntraRefreshNumMBsPerSlot();
 
@@ -172,17 +181,23 @@ namespace Plugin {
 			uint32_t GetIntraRefreshNumOfStripes();
 
 			// Properties - Slicing
+			void SetSliceMode(H264::SliceMode v);
+			H264::SliceMode GetSliceMode();
+
+			virtual std::pair<uint32_t, uint32_t> CapsSlicesPerFrame() override;
 			virtual void SetSlicesPerFrame(uint32_t v) override;
 			virtual uint32_t GetSlicesPerFrame() override;
 
-			virtual void SetSliceControlMode(uint32_t v) override;
-			virtual uint32_t GetSliceControlMode() override;
+			virtual void SetSliceControlMode(SliceControlMode v) override;
+			virtual SliceControlMode GetSliceControlMode() override;
 
+			virtual std::pair<uint32_t, uint32_t> CapsSliceControlSize() override;
 			virtual void SetSliceControlSize(uint32_t v) override;
 			virtual uint32_t GetSliceControlSize() override;
 
-			void SetMaxSliceSize(uint32_t v);
-			uint32_t GetMaxSliceSize();
+			std::pair<uint32_t, uint32_t> CapsMaximumSliceSize();
+			void SetMaximumSliceSize(uint32_t v);
+			uint32_t GetMaximumSliceSize();
 
 			// Properties - Experimental			
 			virtual void SetLowLatencyInternal(bool v) override;

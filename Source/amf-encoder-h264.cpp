@@ -423,7 +423,7 @@ Plugin::AMD::CodingType Plugin::AMD::EncoderH264::GetCodingType() {
 	AMFTRACECALL;
 
 	int64_t e;
-	
+
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_CABAC_ENABLE, &e);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Unable to retrieve value, error %ls (code %d)",
@@ -1052,13 +1052,26 @@ uint32_t Plugin::AMD::EncoderH264::GetIDRPeriod() {
 void Plugin::AMD::EncoderH264::SetHeaderInsertionSpacing(uint32_t v) {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING, (int64_t)v);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
+			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
 }
 
 uint32_t Plugin::AMD::EncoderH264::GetHeaderInsertionSpacing() {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	int64_t e;
+
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_HEADER_INSERTION_SPACING, &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return (uint32_t)e;
 }
 
 void Plugin::AMD::EncoderH264::SetGOPAlignmentEnabled(bool v) {
@@ -1072,7 +1085,7 @@ void Plugin::AMD::EncoderH264::SetGOPAlignmentEnabled(bool v) {
 	}
 }
 
-bool Plugin::AMD::EncoderH264::IsGOPAlignmentEnable() {
+bool Plugin::AMD::EncoderH264::IsGOPAlignmentEnabled() {
 	AMFTRACECALL;
 
 	bool e;
@@ -1276,102 +1289,280 @@ bool Plugin::AMD::EncoderH264::IsMotionEstimationHalfPixelEnabled() {
 }
 
 // Properties - Intra-Refresh
+std::pair<uint32_t, uint32_t> Plugin::AMD::EncoderH264::CapsIntraRefreshNumMBsPerSlot() {
+	AMFTRACECALL;
+
+	const amf::AMFPropertyInfo* var;
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, &var);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+
+	return std::make_pair((uint32_t)var->minValue.int64Value, (uint32_t)var->maxValue.int64Value);
+}
+
 void Plugin::AMD::EncoderH264::SetIntraRefreshNumMBsPerSlot(uint32_t v) {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, (int64_t)v);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
+			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
 }
 
 uint32_t Plugin::AMD::EncoderH264::GetIntraRefreshNumMBsPerSlot() {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	int64_t e;
+
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_INTRA_REFRESH_NUM_MBS_PER_SLOT, &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return (uint32_t)e;
 }
 
 void Plugin::AMD::EncoderH264::SetIntraRefreshNumOfStripes(uint32_t v) {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"IntraRefreshNumOfStripes", (int64_t)v);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
+			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
 }
 
 uint32_t Plugin::AMD::EncoderH264::GetIntraRefreshNumOfStripes() {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	int64_t e;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"IntraRefreshNumOfStripes", &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return (uint32_t)e;
 }
 
 // Properties - Slicing
+void Plugin::AMD::EncoderH264::SetSliceMode(H264::SliceMode v) {
+	AMFTRACECALL;
+
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"SliceMode", static_cast<int64_t>(v));
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
+			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+}
+
+Plugin::AMD::H264::SliceMode Plugin::AMD::EncoderH264::GetSliceMode() {
+	AMFTRACECALL;
+
+	int64_t e;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"SliceMode", &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return static_cast<H264::SliceMode>(e);
+}
+
+std::pair<uint32_t, uint32_t> Plugin::AMD::EncoderH264::CapsSlicesPerFrame() {
+	AMFTRACECALL;
+
+	const amf::AMFPropertyInfo* var;
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, &var);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+
+	return std::make_pair((uint32_t)var->minValue.int64Value, (uint32_t)var->maxValue.int64Value);
+}
+
 void Plugin::AMD::EncoderH264::SetSlicesPerFrame(uint32_t v) {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, (int64_t)v);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
+			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
 }
 
 uint32_t Plugin::AMD::EncoderH264::GetSlicesPerFrame() {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	int64_t e;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_SLICES_PER_FRAME, &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return (uint32_t)e;
 }
 
-void Plugin::AMD::EncoderH264::SetSliceControlMode(uint32_t v) {
+void Plugin::AMD::EncoderH264::SetSliceControlMode(SliceControlMode v) {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"SliceControlMode", static_cast<int64_t>(v));
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
+			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
 }
 
-uint32_t Plugin::AMD::EncoderH264::GetSliceControlMode() {
+Plugin::AMD::SliceControlMode Plugin::AMD::EncoderH264::GetSliceControlMode() {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	int64_t e;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"SliceControlMode", &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return static_cast<SliceControlMode>(e);
+}
+
+std::pair<uint32_t, uint32_t> Plugin::AMD::EncoderH264::CapsSliceControlSize() {
+	AMFTRACECALL;
+
+	const amf::AMFPropertyInfo* var;
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(L"SliceControlSize", &var);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+
+	return std::make_pair((uint32_t)var->minValue.int64Value, (uint32_t)var->maxValue.int64Value);
 }
 
 void Plugin::AMD::EncoderH264::SetSliceControlSize(uint32_t v) {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"SliceControlSize", (int64_t)v);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
+			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
 }
 
 uint32_t Plugin::AMD::EncoderH264::GetSliceControlSize() {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	int64_t e;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"SliceControlSize", &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return (uint32_t)e;
 }
 
-void Plugin::AMD::EncoderH264::SetMaxSliceSize(uint32_t v) {
+std::pair<uint32_t, uint32_t> Plugin::AMD::EncoderH264::CapsMaximumSliceSize() {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	const amf::AMFPropertyInfo* var;
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(L"MaxSliceSize", &var);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+
+	return std::make_pair((uint32_t)var->minValue.int64Value, (uint32_t)var->maxValue.int64Value);
 }
 
-uint32_t Plugin::AMD::EncoderH264::GetMaxSliceSize() {
+void Plugin::AMD::EncoderH264::SetMaximumSliceSize(uint32_t v) {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"MaxSliceSize", (int64_t)v);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
+			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+}
+
+uint32_t Plugin::AMD::EncoderH264::GetMaximumSliceSize() {
+	AMFTRACECALL;
+
+	int64_t e;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"MaxSliceSize", &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return (uint32_t)e;
 }
 
 // Properties - Experimental
 void Plugin::AMD::EncoderH264::SetLowLatencyInternal(bool v) {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"LowLatencyInternal", v);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set mode to %s, error %ls (code %d)",
+			m_UniqueId, v ? "Enabled" : "Disabled", m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
 }
 
 bool Plugin::AMD::EncoderH264::GetLowLatencyInternal() {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	bool e;
+
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"LowLatencyInternal", &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return e;
 }
 
 void Plugin::AMD::EncoderH264::SetCommonLowLatencyInternal(bool v) {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"CommonLowLatencyInternal", v);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set mode to %s, error %ls (code %d)",
+			m_UniqueId, v ? "Enabled" : "Disabled", m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
 }
 
 bool Plugin::AMD::EncoderH264::GetCommonLowLatencyInternal() {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	bool e;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"CommonLowLatencyInternal", &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return e;
 }
 
 // Internal
