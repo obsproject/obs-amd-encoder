@@ -152,7 +152,7 @@ Plugin::AMD::AMF::AMF() {
 			GetLastError());
 		throw std::exception(msg.data());
 	} else {
-		AMF_RESULT res = AMFQueryVersion(&m_AMFVersion_Runtime);
+		res = AMFQueryVersion(&m_AMFVersion_Runtime);
 		if (res != AMF_OK) {
 			QUICK_FORMAT_MESSAGE(msg, "Querying Version failed, error code %ld.",
 				res);
@@ -168,7 +168,7 @@ Plugin::AMD::AMF::AMF() {
 			GetLastError());
 		throw std::exception(msg.data());
 	} else {
-		AMF_RESULT res = AMFInit(m_AMFVersion_Runtime, &m_AMFFactory);
+		res = AMFInit(m_AMFVersion_Runtime, &m_AMFFactory);
 		if (res != AMF_OK) {
 			QUICK_FORMAT_MESSAGE(msg, "Initializing AMF Library failed, error code %ld.",
 				res);
