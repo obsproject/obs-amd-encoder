@@ -45,7 +45,7 @@ Plugin::AMD::EncoderH264::EncoderH264(std::shared_ptr<API::IAPI> videoAPI, API::
 	: Encoder(Codec::AVC, videoAPI, videoAdapter, useOpenCL, colorFormat, colorSpace, fullRangeColor) {
 	AMFTRACECALL;
 
-	AMF_RESULT res;
+	AMF_RESULT res = AMF_UNEXPECTED;
 
 	/// Full Range Color Stuff
 	static const wchar_t* fullColorParams[] = {
@@ -423,7 +423,7 @@ Plugin::AMD::CodingType Plugin::AMD::EncoderH264::GetCodingType() {
 	AMFTRACECALL;
 
 	int64_t e;
-
+	
 	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_CABAC_ENABLE, &e);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Unable to retrieve value, error %ls (code %d)",
@@ -436,19 +436,39 @@ Plugin::AMD::CodingType Plugin::AMD::EncoderH264::GetCodingType() {
 std::pair<uint32_t, uint32_t> Plugin::AMD::EncoderH264::CapsMaximumLongTermReferenceFrames() {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	const amf::AMFPropertyInfo* var;
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, &var);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+
+	return std::make_pair((uint32_t)var->minValue.int64Value, (uint32_t)var->maxValue.int64Value);
 }
 
 void Plugin::AMD::EncoderH264::SetMaximumLongTermReferenceFrames(uint32_t v) {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, (int64_t)v);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
+			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
 }
 
 uint32_t Plugin::AMD::EncoderH264::GetMaximumLongTermReferenceFrames() {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	int64_t e;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_LTR_FRAMES, &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return (uint32_t)e;
 }
 
 // Properties - Dynamic
@@ -844,13 +864,25 @@ uint8_t Plugin::AMD::EncoderH264::GetBFrameQP() {
 void Plugin::AMD::EncoderH264::SetMaximumAccessUnitSize(uint32_t v) {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, (int64_t)v);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
+			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
 }
 
 uint32_t Plugin::AMD::EncoderH264::GetMaximumAccessUnitSize() {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	int64_t e;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_MAX_AU_SIZE, &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return (uint32_t)e;
 }
 
 std::pair<uint64_t, uint64_t> Plugin::AMD::EncoderH264::CapsVBVBufferSize() {
@@ -881,7 +913,9 @@ void Plugin::AMD::EncoderH264::SetVBVBufferSize(uint64_t v) {
 void Plugin::AMD::EncoderH264::SetVBVBufferStrictness(double_t strictness) {
 	AMFTRACECALL;
 
-	uint64_t looseBitrate, targetBitrate, strictBitrate;
+	uint64_t looseBitrate = 0,
+		targetBitrate = 0,
+		strictBitrate = 0;
 
 	Usage usage = GetUsage();
 	if (usage == Usage::UltraLowLatency) {
@@ -1030,13 +1064,25 @@ uint32_t Plugin::AMD::EncoderH264::GetHeaderInsertionSpacing() {
 void Plugin::AMD::EncoderH264::SetGOPAlignmentEnabled(bool v) {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"EnableGOPAlignment", v);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %s, error %ls (code %d)",
+			m_UniqueId, v ? "Enabled" : "Disabled", m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
 }
 
-bool Plugin::AMD::EncoderH264::GetGOPAlignmentEnabled() {
+bool Plugin::AMD::EncoderH264::IsGOPAlignmentEnabled() {
 	AMFTRACECALL;
 
-	throw std::logic_error("The method or operation is not implemented.");
+	bool e;
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"EnableGOPAlignment", &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.data());
+	}
+	return e;
 }
 
 void Plugin::AMD::EncoderH264::SetDeblockingFilterEnabled(bool v) {
