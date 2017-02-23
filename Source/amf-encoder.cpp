@@ -60,7 +60,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	m_Resolution = std::make_pair<uint32_t, uint32_t>(0, 0);
 	m_FrameRate = std::make_pair<uint32_t, uint32_t>(0, 0);
 	m_FrameRateTimeStep = 0;
-	m_FrameRateTimeStepAMF = 0;
+	m_FrameRateTimeStepI = 0;
 	/// Flags
 	m_Started = false;
 	m_OpenCLConversion = false;
@@ -268,7 +268,7 @@ void Plugin::AMD::Encoder::UpdateFrameRateValues() {
 	// 10000000		amf_pts
 	// 1000000000	Nanosecond
 	m_FrameRateTimeStep = 1.0 / ((double_t)m_FrameRate.first / (double_t)m_FrameRate.second);
-	m_FrameRateTimeStepAMF = (uint64_t)round(m_FrameRateTimeStep * AMF_SECOND);
+	m_FrameRateTimeStepI = (uint64_t)round(m_FrameRateTimeStep * AMF_SECOND);
 }
 
 void Plugin::AMD::Encoder::SetVBVBufferStrictness(double_t v) {
@@ -296,7 +296,6 @@ void Plugin::AMD::Encoder::SetVBVBufferStrictness(double_t v) {
 				break;
 		}
 	}
-	targetBitrate = clamp(targetBitrate, bitrateCaps.first, bitrateCaps.second);
 	strictBitrate = clamp(static_cast<uint64_t>(
 		round(targetBitrate * ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first))
 		), bitrateCaps.first, targetBitrate);
@@ -511,12 +510,17 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 	{
 		if (pData == nullptr)
 			pData = pSurface;
+
+		uint64_t lastTS = (uint64_t)round((frame->pts - 1) * m_FrameRateTimeStep * AMF_SECOND);
+		uint64_t nowTS = (uint64_t)round(frame->pts * m_FrameRateTimeStep * AMF_SECOND);
+		uint64_t durTS = nowTS - lastTS;
+
 		/// Decode Timestamp
-		pData->SetPts(frame->pts * m_FrameRateTimeStepAMF);
+		//pData->SetPts(nowTS);
 		/// Presentation Timestamp
 		pData->SetProperty(AMF_PRESENT_TIMESTAMP, frame->pts);
 		/// Duration
-		pData->SetDuration((uint64_t)round(frame->pts * m_FrameRateTimeStep * AMF_SECOND));
+		//pData->SetDuration(durTS);
 		/// Performance Monitoring: Submission Timestamp
 		auto clk = std::chrono::high_resolution_clock::now();
 		pData->SetProperty(AMF_SUBMIT_TIMESTAMP, std::chrono::nanoseconds(clk.time_since_epoch()).count());
@@ -540,8 +544,9 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 				}
 				break;
 			case AMF_OK:
-				//AMF_LOG_DEBUG("SubmitInput: Timestamp(%lld) PTS(%lld) DTS(%lld)",
-				//	frame->pts * m_FrameRateTimeStepAMF, frame->pts, frame->pts - 2);
+				m_FrameIndexQueue.push(frame->pts);
+				AMF_LOG_DEBUG("SubmitInput: Timestamp(%lld) PTS(%lld) DTS(%lld) CalcPTS(%lld) Duration(%lld)",
+					frame->pts * m_FrameRateTimeStepI, frame->pts, frame->pts - 2, nowTS, durTS);
 				break;
 			case AMF_EOF:
 				break; // Swallow
@@ -564,7 +569,19 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 				{
 					amf::AMFBufferPtr pBuffer = amf::AMFBufferPtr(pData);
 
+					// Timestamps
+					int64_t presentTS = -1, rawDecodeTS = -1, decodeTS = -1;
 					packet->type = OBS_ENCODER_VIDEO;
+					/// Presentation
+					pData->GetProperty(AMF_PRESENT_TIMESTAMP, &presentTS);
+					//packet->pts = presentTS;
+					/// Decode
+					rawDecodeTS = pData->GetPts();
+					decodeTS = rawDecodeTS / m_FrameRateTimeStepI;
+					packet->dts = m_FrameIndexQueue.front(); m_FrameIndexQueue.pop();
+
+					/// Data
+					PacketPriorityAndKeyframe(pData, packet);
 					packet->size = pBuffer->GetSize();
 					if (m_PacketDataBuffer.size() < packet->size) {
 						size_t newBufferSize = (size_t)exp2(ceil(log2(packet->size)));
@@ -573,16 +590,13 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 					}
 					packet->data = m_PacketDataBuffer.data();
 					std::memcpy(packet->data, pBuffer->GetNative(), packet->size); // ToDo: Can we make this threaded?
-					packet->dts = (pData->GetPts() / m_FrameRateTimeStepAMF) - 2; // B-Picture support
-					pData->GetProperty(AMF_PRESENT_TIMESTAMP, &(packet->pts));
-					PacketPriorityAndKeyframe(pData, packet);
 
-					//AMF_LOG_DEBUG("QueryOutput: Size(%lld) PTS(%lld) DTS(%lld) Timestamp(%lld)",
-					//	packet->size,
-					//	packet->pts,
-					//	packet->dts,
-					//	pData->GetPts());
-
+					AMF_LOG_DEBUG("QueryOutput: Size(%lld) PTS(%lld) DTS(%lld) CalcPTS(%lld) Duration(%lld)",
+						packet->size,
+						packet->pts,
+						packet->dts,
+						pData->GetPts(),
+						pData->GetDuration());
 
 					*received_packet = true;
 				}
