@@ -134,7 +134,7 @@ Plugin::AMD::AMF::AMF() {
 	m_AMFVersion_Compiler = AMF_FULL_VERSION;
 	res = AMFQueryVersion(&m_AMFVersion_Runtime);
 	if (res != AMF_OK)
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Querying Version failed with error %ls (code %ld).", res);
+		ThrowException("<" __FUNCTION_NAME__ "> Querying Version failed with error code %ld.", res);
 	#pragma endregion Query AMF Runtime Version
 
 		/// Find Function for Initializing AMF.
@@ -147,21 +147,20 @@ Plugin::AMD::AMF::AMF() {
 	} else {
 		res = AMFInit(m_AMFVersion_Runtime, &m_AMFFactory);
 		if (res != AMF_OK)
-			ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Initializing AMF Library failed with error %ls (code %ld).", res);
+			ThrowException("<" __FUNCTION_NAME__ "> Initializing AMF Library failed with error code %ld.", res);
 	}
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> AMF Library initialized.");
 
 	/// Retrieve Trace Object.
 	res = m_AMFFactory->GetTrace(&m_AMFTrace);
 	if (res != AMF_OK) {
-		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Retrieving Trace object failed with error %ls (code %ld).", res);
+		ThrowException("<" __FUNCTION_NAME__ "> Retrieving Trace object failed with error code %ld.", res);
 	}
 
 	/// Retrieve Debug Object.
 	res = m_AMFFactory->GetDebug(&m_AMFDebug);
 	if (res != AMF_OK) {
-		AMF_LOG_ERROR("<" __FUNCTION_NAME__ "> Retrieving Debug object failed with error code %ls (code %ld).", res);
-		throw std::exception("", res);
+		ThrowExceptionWithAMFError("<" __FUNCTION_NAME__ "> Retrieving Debug object failed with error code %ls (code %ld).", res);
 	}
 
 	/// Register Trace Writer and disable Debug Tracing.

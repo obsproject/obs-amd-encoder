@@ -67,6 +67,12 @@ MODULE_EXTERN const char *obs_module_text_multi(const char *val, uint8_t depth =
 #define AMF_LOG_CONFIG(format, ...)		AMF_LOG(350,         format, ##__VA_ARGS__)
 #define AMF_LOG_DEBUG(format, ...)		AMF_LOG(LOG_DEBUG,   format, ##__VA_ARGS__)
 
+#define ThrowException(format, ...) {\
+	std::vector<char> _throwexceptionwithamferror_buf(8192);\
+	sprintf_s(_throwexceptionwithamferror_buf.data(), _throwexceptionwithamferror_buf.size(), format, ##__VA_ARGS__);\
+	AMF_LOG_WARNING("%s", _throwexceptionwithamferror_buf.data()); \
+	throw std::exception(_throwexceptionwithamferror_buf.data()); \
+}
 #define ThrowExceptionWithAMFError(format, res, ...) {\
 	std::vector<char> _throwexceptionwithamferror_buf(8192);\
 	sprintf_s(_throwexceptionwithamferror_buf.data(), _throwexceptionwithamferror_buf.size(), format, ##__VA_ARGS__, Plugin::AMD::AMF::GetInstance()->GetTrace()->GetResultText(res), res);\
