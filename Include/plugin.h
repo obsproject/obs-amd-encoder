@@ -57,7 +57,7 @@ MODULE_EXTERN const char *obs_module_text_multi(const char *val, uint8_t depth =
 #define clamp(val,low,high) (val > high ? high : (val < low ? low : val))
 
 #include "Version.h"
-#define PLUGIN_VERSION_FULL				(((uint64_t)PLUGIN_VERSION_MAJOR << 48ull) | ((uint64_t)PLUGIN_VERSION_MINOR << 32ull) | ((uint64_t)PLUGIN_VERSION_PATCH) | ((uint64_t)PLUGIN_VERSION_BUILD))
+#define PLUGIN_VERSION_FULL				(((uint64_t)PLUGIN_VERSION_MAJOR << 48ull) | ((uint64_t)PLUGIN_VERSION_MINOR << 32ull) | ((uint64_t)PLUGIN_VERSION_PATCH) << 16ul | ((uint64_t)PLUGIN_VERSION_BUILD))
 #define PLUGIN_VERSION_TEXT				vstr(PLUGIN_VERSION_MAJOR) "." vstr(PLUGIN_VERSION_MINOR) "." vstr(PLUGIN_VERSION_PATCH) "." vstr(PLUGIN_VERSION_BUILD)
 
 #define AMF_LOG(level, format, ...)		blog(level, "[AMF Encoder] " format, ##__VA_ARGS__);

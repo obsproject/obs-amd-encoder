@@ -241,7 +241,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_int(data, "last" vstr(AMF_H264_VIEW), -1);
 	obs_data_set_default_int(data, AMF_H264_VIEW, static_cast<int32_t>(ViewMode::Basic));
 	obs_data_set_default_bool(data, AMF_H264_DEBUG, false);
-	obs_data_set_default_int(data, AMF_H264_VERSION, 0x0001000400030005ull);
+	obs_data_set_default_int(data, AMF_H264_VERSION, PLUGIN_VERSION_FULL);
 }
 
 static void fill_api_list(obs_property_t* p) {
