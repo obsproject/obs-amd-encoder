@@ -60,7 +60,7 @@ Plugin::API::Direct3D9::Direct3D9() {
 			enumeratedLUIDs.push_back(adapterLUID);
 
 		std::vector<char> buf(1024);
-		sprintf_s(buf.data(), buf.size(), "%s [%s] (VEN_%04x/DEV_%04x/SUB_%04x/REV_%04x)",
+		std::snprintf(buf.data(), buf.size(), "%s [%s] (VEN_%04x/DEV_%04x/SUB_%04x/REV_%04x)",
 			adapterIdentifier.Description,
 			adapterIdentifier.DeviceName,
 			
@@ -145,7 +145,7 @@ Plugin::API::Direct3D9Instance::Direct3D9Instance(Direct3D9* api, Adapter adapte
 	HRESULT hr = api->m_Direct3D9Ex->GetDeviceCaps((UINT)adapterNum, D3DDEVTYPE_HAL, &ddCaps);
 	if (FAILED(hr)) {
 		std::vector<char> buf(1024);
-		std::sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Unable to query capabilities for D3D9 adapter, error code %X.", hr);
+		std::snprintf(buf.data(), buf.size(), "<" __FUNCTION_NAME__ "> Unable to query capabilities for D3D9 adapter, error code %X.", hr);
 		throw std::exception(buf.data());
 	}
 
@@ -167,7 +167,7 @@ Plugin::API::Direct3D9Instance::Direct3D9Instance(Direct3D9* api, Adapter adapte
 	);
 	if (FAILED(hr)) {
 		std::vector<char> buf(1024);
-		std::sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Unable to create D3D9 device, error code %X.", hr);
+		std::snprintf(buf.data(), buf.size(), "<" __FUNCTION_NAME__ "> Unable to create D3D9 device, error code %X.", hr);
 		throw std::exception(buf.data());
 	}
 }
@@ -191,7 +191,7 @@ Plugin::API::Adapter Plugin::API::Direct3D9Instance::GetAdapter() {
 	HRESULT hr = instance->device->GetCreationParameters(&par);
 	if (FAILED(hr)) {
 		std::vector<char> buf(1024);
-		std::sprintf(buf.data(), "<" __FUNCTION_NAME__ "> Unable to get adapter from D3D9 device, error code %X.", hr);
+		std::snprintf(buf.data(), "<" __FUNCTION_NAME__ "> Unable to get adapter from D3D9 device, error code %X.", hr);
 		throw std::exception(buf.data());
 	}
 
