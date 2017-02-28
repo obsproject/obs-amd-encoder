@@ -274,7 +274,7 @@ void Plugin::AMD::Encoder::UpdateFrameRateValues() {
 void Plugin::AMD::Encoder::SetVBVBufferStrictness(double_t v) {
 	AMFTRACECALL;
 
-	auto bitrateCaps = CapsTargetBitrate();
+	auto bitrateCaps = CapsVBVBufferSize();
 	uint64_t looseBitrate = bitrateCaps.second,
 		targetBitrate = 0,
 		strictBitrate = bitrateCaps.first;
@@ -303,8 +303,8 @@ void Plugin::AMD::Encoder::SetVBVBufferStrictness(double_t v) {
 	// Three-Point Linear Lerp
 	// 0% = looseBitrate, 50% = targetBitrate, 100% = strictBitrate
 	v = clamp(v, 0.0, 1.0);
-	double_t aFadeVal = min(v * 2.0, 1.0); // 0 - 0.5
-	double_t bFadeVal = max(v * 2.0 - 1.0, 0.0); // 0.5 - 1.0
+	double_t aFadeVal = clamp(v * 2.0, 0.0, 1.0); // 0 - 0.5
+	double_t bFadeVal = clamp(v * 2.0 - 1.0, 0.0, 0.0); // 0.5 - 1.0
 
 	double_t aFade = (looseBitrate * (1.0 - aFadeVal)) + (targetBitrate * aFadeVal);
 	double_t bFade = (aFade * (1.0 - bFadeVal)) + (strictBitrate * bFadeVal);
