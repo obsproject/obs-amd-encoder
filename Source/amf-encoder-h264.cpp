@@ -25,9 +25,6 @@ SOFTWARE.
 #include "amf-encoder-h264.h"
 #include "misc-util.cpp"
 
-#undef QUICK_FORMAT_MESSAGE
-#define QUICK_FORMAT_MESSAGE(var, ...) std::vector<char> var(1024); \
-	sprintf_s(var.data(), var.size(), "[H264/AVC] " __VA_ARGS__);
 #define QUICK_THROW_ERROR(format, ...) {\
 	QUICK_FORMAT_MESSAGE(errMsg, __FUNCTION_NAME__ format, \
 		m_UniqueId,  ##__VA_ARGS__, \
