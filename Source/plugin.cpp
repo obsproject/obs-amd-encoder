@@ -152,7 +152,7 @@ static void printDebugInfo(amf::AMFComponentPtr m_AMFEncoder) {
 			const amf::AMFEnumDescriptionEntry* pEnumEntry = pInfo->pEnumDescription;
 			while (pEnumEntry->name != nullptr) {
 				QUICK_FORMAT_MESSAGE(tmp, "%ls[%ld]", pEnumEntry->name, pEnumEntry->value);
-				venum << tmp.data() << "; ";
+				venum << tmp.c_str() << "; ";
 				pEnumEntry++;
 			}
 		}
