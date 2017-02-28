@@ -555,7 +555,7 @@ Plugin::AMD::PrePassMode Plugin::AMD::EncoderH264::GetPrePassMode() {
 	return Utility::PrePassModeFromAMFH264((AMF_VIDEO_ENCODER_PREENCODE_MODE_ENUM)e);
 }
 
-void Plugin::AMD::EncoderH264::SetVariableBitrateAverageQualityEnabled(bool v) {
+void Plugin::AMD::EncoderH264::SetVarianceBasedAdaptiveQuantizationEnabled(bool v) {
 	AMFTRACECALL;
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_ENABLE_VBAQ, v);
@@ -566,7 +566,7 @@ void Plugin::AMD::EncoderH264::SetVariableBitrateAverageQualityEnabled(bool v) {
 	}
 }
 
-bool Plugin::AMD::EncoderH264::IsVariableBitrateAverageQualityEnabled() {
+bool Plugin::AMD::EncoderH264::IsVarianceBasedAdaptiveQuantizationEnabled() {
 	AMFTRACECALL;
 
 	bool e;

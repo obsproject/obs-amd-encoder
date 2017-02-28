@@ -572,7 +572,7 @@ Plugin::AMD::PrePassMode Plugin::AMD::EncoderH265::GetPrePassMode() {
 	}
 }
 
-void Plugin::AMD::EncoderH265::SetVariableBitrateAverageQualityEnabled(bool v) {
+void Plugin::AMD::EncoderH265::SetVarianceBasedAdaptiveQuantizationEnabled(bool v) {
 	AMFTRACECALL;
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_ENABLE_VBAQ, v);
@@ -583,7 +583,7 @@ void Plugin::AMD::EncoderH265::SetVariableBitrateAverageQualityEnabled(bool v) {
 	}
 }
 
-bool Plugin::AMD::EncoderH265::IsVariableBitrateAverageQualityEnabled() {
+bool Plugin::AMD::EncoderH265::IsVarianceBasedAdaptiveQuantizationEnabled() {
 	AMFTRACECALL;
 
 	bool e;

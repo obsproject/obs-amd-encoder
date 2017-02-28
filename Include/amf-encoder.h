@@ -245,8 +245,8 @@ namespace Plugin {
 			virtual void SetPrePassMode(PrePassMode v) = 0;
 			virtual PrePassMode GetPrePassMode() = 0;
 
-			virtual void SetVariableBitrateAverageQualityEnabled(bool v) = 0;
-			virtual bool IsVariableBitrateAverageQualityEnabled() = 0;
+			virtual void SetVarianceBasedAdaptiveQuantizationEnabled(bool v) = 0;
+			virtual bool IsVarianceBasedAdaptiveQuantizationEnabled() = 0;
 
 			virtual void SetFrameSkippingEnabled(bool v) = 0;
 			virtual bool IsFrameSkippingEnabled() = 0;

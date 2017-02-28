@@ -886,7 +886,7 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 	m_VideoEncoder->SetRateControlMethod(static_cast<RateControlMethod>(obs_data_get_int(data, P_RATECONTROLMETHOD)));
 	m_VideoEncoder->SetPrePassMode(static_cast<PrePassMode>(obs_data_get_int(data, P_PREPASSMODE)));
 	if (m_VideoEncoder->GetRateControlMethod() != RateControlMethod::ConstantQP)
-		m_VideoEncoder->SetVariableBitrateAverageQualityEnabled(!!obs_data_get_int(data, P_VBAQ));
+		m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled(!!obs_data_get_int(data, P_VBAQ));
 	m_VideoEncoder->SetVBVBufferInitialFullness(obs_data_get_double(data, P_VBVBUFFER_INITIALFULLNESS) / 100.0f);
 	if (obs_data_get_int(data, P_VBVBUFFER) == 0) {
 		m_VideoEncoder->SetVBVBufferStrictness(obs_data_get_double(data, P_VBVBUFFER_STRICTNESS) / 100.0);

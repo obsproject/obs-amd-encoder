@@ -105,8 +105,8 @@ namespace Plugin {
 			virtual void SetPrePassMode(PrePassMode v) override;
 			virtual PrePassMode GetPrePassMode() override;
 
-			virtual void SetVariableBitrateAverageQualityEnabled(bool v) override;
-			virtual bool IsVariableBitrateAverageQualityEnabled() override;
+			virtual void SetVarianceBasedAdaptiveQuantizationEnabled(bool v) override;
+			virtual bool IsVarianceBasedAdaptiveQuantizationEnabled() override;
 
 			/// VBV Buffer
 			virtual std::pair<uint64_t, uint64_t> CapsVBVBufferSize() override;

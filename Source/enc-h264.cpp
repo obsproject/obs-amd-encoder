@@ -1348,7 +1348,7 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 		// Rate Control
 		m_VideoEncoder->SetRateControlMethod(static_cast<RateControlMethod>(obs_data_get_int(data, P_RATECONTROLMETHOD)));
 		m_VideoEncoder->SetPrePassMode(static_cast<PrePassMode>(obs_data_get_int(data, P_PREPASSMODE)));
-		m_VideoEncoder->SetVariableBitrateAverageQualityEnabled(!!obs_data_get_int(data, P_VBAQ));
+		m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled(!!obs_data_get_int(data, P_VBAQ));
 		m_VideoEncoder->SetFrameSkippingEnabled(!!obs_data_get_int(data, P_FRAMESKIPPING));
 		m_VideoEncoder->SetEnforceHRDEnabled(!!obs_data_get_int(data, P_ENFORCEHRD));
 		m_VideoEncoder->SetFillerDataEnabled(!!obs_data_get_int(data, P_FILLERDATA));
@@ -1569,7 +1569,7 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 		PLOG_INFO("    Filler Data: %s",
 			m_VideoEncoder->IsFillerDataEnabled() ? "Enabled" : "Disabled");
 		PLOG_INFO("    VBAQ: %s",
-			m_VideoEncoder->IsVariableBitrateAverageQualityEnabled() ? "Enabled" : "Disabled");
+			m_VideoEncoder->IsVarianceBasedAdaptiveQuantizationEnabled() ? "Enabled" : "Disabled");
 		PLOG_INFO("    Deblocking Filter: %s",
 			m_VideoEncoder->IsDeblockingFilterEnabled() ? "Enabled" : "Disabled");
 		PLOG_INFO("  IDR Period: %d Frames",
