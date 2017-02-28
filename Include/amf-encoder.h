@@ -42,13 +42,16 @@ SOFTWARE.
 
 #ifdef _DEBUG
 #define AMFTRACECALL { \
+	std::mbstate_t state = std::mbstate_t(); \
 	auto trace = AMF::Instance()->GetTrace(); \
-	std::vector<wchar_t> buf(1024); \
-	mbstowcs(buf.data(), __FILE__, buf.size()); \
-	std::vector<wchar_t> buf2(1024); \
-	mbstowcs(buf2.data(), __FUNCTION_NAME__, buf2.size()); \
+	const char* file = __FILE__; \
+	const char* fname = __FUNCTION_NAME__; \
+	std::vector<wchar_t> buf(std::mbsrtowcs(NULL, &file, 0, &state) + 1); \
+	std::mbsrtowcs(buf.data(), &file, buf.size(), &state); \
+	std::vector<wchar_t> buf2(std::mbsrtowcs(NULL, &fname, 0, &state) + 1); \
+	std::mbsrtowcs(buf2.data(), &fname, buf2.size(), &state); \
 	trace->TraceW(buf.data(), __LINE__, AMF_TRACE_DEBUG, L"Trace", 1, L"Function: %s", buf2.data()); \
-	AMF_LOG_DEBUG("<Trace> " __FUNCTION_NAME__); \
+	PLOG_DEBUG("<Trace> " __FUNCTION_NAME__); \
 };
 #else
 #define AMFTRACECALL ;
