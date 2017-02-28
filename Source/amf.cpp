@@ -102,7 +102,7 @@ Plugin::AMD::AMF::AMF() {
 	#endif
 
 	// Initialize AMF Library
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Initializing...");
+	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Initializing...");
 
 	// Load AMF Runtime Library
 	m_AMFModule = LoadLibraryW(AMF_DLL_NAME);
@@ -112,7 +112,7 @@ Plugin::AMD::AMF::AMF() {
 			GetLastError());
 		throw std::exception(msg.data());
 	} else {
-		AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Loaded '%ls'.", AMF_DLL_NAME);
+		PLOG_DEBUG("<" __FUNCTION_NAME__ "> Loaded '%ls'.", AMF_DLL_NAME);
 	}
 
 	// Windows: Get Product Version for Driver Matching
@@ -133,7 +133,7 @@ Plugin::AMD::AMF::AMF() {
 		VerQueryValueA(pBlock, "\\VarFileInfo\\Translation", (LPVOID*)&lpTranslate, &cbTranslate);
 
 		std::vector<char> buf(1024);
-		sprintf(buf.data(), "%s%04x%04x%s",
+		std::snprintf(buf.data(), buf.size(), "%s%04x%04x%s",
 			"\\StringFileInfo\\",
 			lpTranslate[0].wLanguage,
 			lpTranslate[0].wCodePage,
@@ -175,7 +175,7 @@ Plugin::AMD::AMF::AMF() {
 			throw std::exception(msg.data());
 		}
 	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> AMF Library initialized.");
+	PLOG_DEBUG("<" __FUNCTION_NAME__ "> AMF Library initialized.");
 
 	/// Retrieve Trace Object.
 	res = m_AMFFactory->GetTrace(&m_AMFTrace);
@@ -199,7 +199,11 @@ Plugin::AMD::AMF::AMF() {
 	this->EnableDebugTrace(false);
 
 	// Log success
-	AMF_LOG_INFO("Version " PLUGIN_VERSION_TEXT " loaded (Compiled: %d.%d.%d.%d, Runtime: %d.%d.%d.%d, Library: %.*s).",
+	PLOG_INFO("Version %d.%d.%d.%d loaded (Compiled: %d.%d.%d.%d, Runtime: %d.%d.%d.%d, Library: %.*s).",
+		PLUGIN_VERSION_MAJOR,
+		PLUGIN_VERSION_MINOR,
+		PLUGIN_VERSION_PATCH,
+		PLUGIN_VERSION_BUILD,
 		(uint16_t)((m_AMFVersion_Plugin >> 48ull) & 0xFFFF),
 		(uint16_t)((m_AMFVersion_Plugin >> 32ull) & 0xFFFF),
 		(uint16_t)((m_AMFVersion_Plugin >> 16ull) & 0xFFFF),
@@ -211,11 +215,11 @@ Plugin::AMD::AMF::AMF() {
 		lProductVersionSize, pProductVersion
 	);
 
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Initialized.");
+	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Initialized.");
 }
 
 Plugin::AMD::AMF::~AMF() {
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Finalizing.");
+	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Finalizing.");
 	if (m_TraceWriter) {
 		//m_AMFTrace->UnregisterWriter(L"OBSWriter");
 		delete m_TraceWriter;
@@ -224,7 +228,7 @@ Plugin::AMD::AMF::~AMF() {
 
 	if (m_AMFModule)
 		FreeLibrary(m_AMFModule);
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Finalized.");
+	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Finalized.");
 
 	#pragma region Null Class Members
 	m_TimerPeriod = 0;
