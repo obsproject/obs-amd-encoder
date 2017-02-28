@@ -7,7 +7,7 @@ PROJECT(enc-amf)
 SET(enc-amf_VERSION_MAJOR 1)
 SET(enc-amf_VERSION_MINOR 9)
 SET(enc-amf_VERSION_PATCH 9)
-SET(enc-amf_VERSION_BUILD 4)
+SET(enc-amf_VERSION_BUILD 5)
 configure_file(
 	"${PROJECT_SOURCE_DIR}/#Resources/package.in.bat"
 	"${PROJECT_SOURCE_DIR}/#Resources/package.bat"
