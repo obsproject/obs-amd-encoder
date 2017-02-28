@@ -64,51 +64,51 @@ static std::string fastPrintVariant(const char* text, amf::AMFVariantStruct vari
 	std::vector<char> buf(1024);
 	switch (variant.type) {
 		case amf::AMF_VARIANT_EMPTY:
-			sprintf(buf.data(), "%s%s", text, "Empty");
+			std::snprintf(buf.data(), buf.size(), "%s%s", text, "Empty");
 			break;
 		case amf::AMF_VARIANT_BOOL:
-			sprintf(buf.data(), "%s%s", text, variant.boolValue ? "true" : "false");
+			std::snprintf(buf.data(), buf.size(), "%s%s", text, variant.boolValue ? "true" : "false");
 			break;
 		case amf::AMF_VARIANT_INT64:
-			sprintf(buf.data(), "%s%lld", text, variant.int64Value);
+			std::snprintf(buf.data(), buf.size(), "%s%lld", text, variant.int64Value);
 			break;
 		case amf::AMF_VARIANT_DOUBLE:
-			sprintf(buf.data(), "%s%f", text, variant.doubleValue);
+			std::snprintf(buf.data(), buf.size(), "%s%f", text, variant.doubleValue);
 			break;
 		case amf::AMF_VARIANT_RECT:
-			sprintf(buf.data(), "%s[%ld,%ld,%ld,%ld]", text,
+			std::snprintf(buf.data(), buf.size(), "%s[%ld,%ld,%ld,%ld]", text,
 				variant.rectValue.top, variant.rectValue.left,
 				variant.rectValue.bottom, variant.rectValue.right);
 			break;
 		case amf::AMF_VARIANT_SIZE:
-			sprintf(buf.data(), "%s%ldx%ld", text,
+			std::snprintf(buf.data(), buf.size(), "%s%ldx%ld", text,
 				variant.sizeValue.width, variant.sizeValue.height);
 			break;
 		case amf::AMF_VARIANT_POINT:
-			sprintf(buf.data(), "%s[%ld,%ld]", text,
+			std::snprintf(buf.data(), buf.size(), "%s[%ld,%ld]", text,
 				variant.pointValue.x, variant.pointValue.y);
 			break;
 		case amf::AMF_VARIANT_RATE:
-			sprintf(buf.data(), "%s%ld/%ld", text,
+			std::snprintf(buf.data(), buf.size(), "%s%ld/%ld", text,
 				variant.rateValue.num, variant.rateValue.den);
 			break;
 		case amf::AMF_VARIANT_RATIO:
-			sprintf(buf.data(), "%s%ld:%ld", text,
+			std::snprintf(buf.data(), buf.size(), "%s%ld:%ld", text,
 				variant.ratioValue.num, variant.ratioValue.den);
 			break;
 		case amf::AMF_VARIANT_COLOR:
-			sprintf(buf.data(), "%s(%d,%d,%d,%d)", text,
+			std::snprintf(buf.data(), buf.size(), "%s(%d,%d,%d,%d)", text,
 				variant.colorValue.r,
 				variant.colorValue.g,
 				variant.colorValue.b,
 				variant.colorValue.a);
 			break;
 		case amf::AMF_VARIANT_STRING:
-			sprintf(buf.data(), "%s'%s'", text,
+			std::snprintf(buf.data(), buf.size(), "%s'%s'", text,
 				variant.stringValue);
 			break;
 		case amf::AMF_VARIANT_WSTRING:
-			sprintf(buf.data(), "%s'%ls'", text,
+			std::snprintf(buf.data(), buf.size(), "%s'%ls'", text,
 				variant.wstringValue);
 			break;
 	}
@@ -118,7 +118,7 @@ static std::string fastPrintVariant(const char* text, amf::AMFVariantStruct vari
 static void printDebugInfo(amf::AMFComponentPtr m_AMFEncoder) {
 	amf::AMFPropertyInfo* pInfo;
 	size_t propCount = m_AMFEncoder->GetPropertyCount();
-	AMF_LOG_INFO("-- Internal AMF Encoder Properties --");
+	PLOG_INFO("-- Internal AMF Encoder Properties --");
 	for (size_t propIndex = 0; propIndex < propCount; propIndex++) {
 		static const char* typeToString[] = {
 			"Empty",
@@ -157,7 +157,7 @@ static void printDebugInfo(amf::AMFComponentPtr m_AMFEncoder) {
 			}
 		}
 
-		AMF_LOG_INFO("%ls(Description: %ls, Type: %s, Index %d, Content Type: %d, Access: %s%s%s, Values: {%s, %s, %s, %s%s%s})",
+		PLOG_INFO("%ls(Description: %ls, Type: %s, Index %d, Content Type: %d, Access: %s%s%s, Values: {%s, %s, %s, %s%s%s})",
 			pInfo->name,
 			pInfo->desc,
 			typeToString[pInfo->type],
@@ -182,16 +182,16 @@ static void printDebugInfo(amf::AMFComponentPtr m_AMFEncoder) {
 *                   false to indicate failure and unload the module
 */
 MODULE_EXPORT bool obs_module_load(void) {
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Loading...");
+	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Loading...");
 
 	// AMF
 	try {
 		Plugin::AMD::AMF::Initialize();
 	} catch (const std::exception& e) {
-		AMF_LOG_ERROR("Encountered Exception during AMF initialization: %s", e.what());
+		PLOG_ERROR("Encountered Exception during AMF initialization: %s", e.what());
 		return false;
 	} catch (...) {
-		AMF_LOG_ERROR("Unexpected Exception during AMF initialization.");
+		PLOG_ERROR("Unexpected Exception during AMF initialization.");
 		return false;
 	}
 
@@ -202,10 +202,10 @@ MODULE_EXPORT bool obs_module_load(void) {
 	try {
 		Plugin::AMD::CapabilityManager::Initialize();
 	} catch (const std::exception& e) {
-		AMF_LOG_ERROR("Encountered Exception during Capability Manager initialization: %s", e.what());
+		PLOG_ERROR("Encountered Exception during Capability Manager initialization: %s", e.what());
 		return false;
 	} catch (...) {
-		AMF_LOG_ERROR("Unexpected Exception during Capability Manager initialization.");
+		PLOG_ERROR("Unexpected Exception during Capability Manager initialization.");
 		return false;
 	}
 
@@ -219,7 +219,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 
 	#ifdef _DEBUG
 	{
-		AMF_LOG_INFO("Dumping Parameter Information...");
+		PLOG_INFO("Dumping Parameter Information...");
 		const wchar_t* encoders[] = {
 			AMFVideoEncoderVCE_AVC,
 			AMFVideoEncoder_HEVC
@@ -245,7 +245,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 				m_AMFContext->InitDX11(nullptr);
 				amf::AMFComponentPtr m_AMFComponent;
 				if (m_AMFFactory->CreateComponent(m_AMFContext, enc, &m_AMFComponent) == AMF_OK) {
-					AMF_LOG_INFO("-- %ls --", enc);
+					PLOG_INFO("-- %ls --", enc);
 					printDebugInfo(m_AMFComponent);
 					m_AMFComponent->Terminate();
 				}
@@ -255,7 +255,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 	}
 	#endif
 
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Loaded.");
+	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Loaded.");
 	return true;
 }
 
