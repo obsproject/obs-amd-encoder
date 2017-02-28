@@ -314,6 +314,8 @@ void Plugin::AMD::Encoder::SetVBVBufferStrictness(double_t v) {
 }
 
 void Plugin::AMD::Encoder::Start() {
+	AMFTRACECALL;
+
 	AMF_RESULT res;
 
 	res = m_AMFConverter->Init(Utility::ColorFormatToAMF(m_ColorFormat), m_Resolution.first, m_Resolution.second);
@@ -338,6 +340,8 @@ void Plugin::AMD::Encoder::Start() {
 }
 
 void Plugin::AMD::Encoder::Restart() {
+	AMFTRACECALL;
+
 	AMF_RESULT res = m_AMFEncoder->ReInit(m_Resolution.first, m_Resolution.second);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg,
@@ -349,6 +353,8 @@ void Plugin::AMD::Encoder::Restart() {
 }
 
 void Plugin::AMD::Encoder::Stop() {
+	AMFTRACECALL;
+
 	if (!m_Started)
 		throw std::logic_error("Can't stop an encoder that isn't running!");
 
@@ -361,10 +367,14 @@ void Plugin::AMD::Encoder::Stop() {
 }
 
 bool Plugin::AMD::Encoder::IsStarted() {
+	AMFTRACECALL;
+
 	return m_Started;
 }
 
 bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_packet* packet, bool* received_packet) {
+	AMFTRACECALL;
+
 	if (!m_Started)
 		return false;
 
@@ -608,6 +618,8 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 }
 
 void Plugin::AMD::Encoder::GetVideoInfo(struct video_scale_info* info) {
+	AMFTRACECALL;
+
 	if (!m_AMFContext || !m_AMFEncoder)
 		throw std::exception("<" __FUNCTION_NAME__ "> Called while not initialized.");
 
@@ -644,6 +656,8 @@ void Plugin::AMD::Encoder::GetVideoInfo(struct video_scale_info* info) {
 }
 
 bool Plugin::AMD::Encoder::GetExtraData(uint8_t** extra_data, size_t* size) {
+	AMFTRACECALL;
+
 	if (!m_AMFContext || !m_AMFEncoder)
 		throw std::exception("<" __FUNCTION_NAME__ "> Called while not initialized.");
 
