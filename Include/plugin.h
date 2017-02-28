@@ -30,7 +30,6 @@ SOFTWARE.
 #include <stdexcept>
 #include <thread>
 #include <memory>
-#include "Version.h"
 
 // Open Broadcaster Software
 #pragma warning (push)
@@ -43,26 +42,13 @@ SOFTWARE.
 // Defines
 //////////////////////////////////////////////////////////////////////////
 
-#pragma warning (disable : 4996)
-
+// Utility
 #define vstr(s) dstr(s)
 #define dstr(s) #s
 #define clamp(val,low,high) (val > high ? high : (val < low ? low : val))
 
-#define PLUGIN_NAME_AMF				"AMD Advanced Media Framework"
-#define PLUGIN_VERSION_FULL		(((uint64_t)PLUGIN_VERSION_MAJOR << 48ull) | ((uint64_t)PLUGIN_VERSION_MINOR << 32ull) | ((uint64_t)PLUGIN_VERSION_PATCH) | ((uint64_t)PLUGIN_VERSION_BUILD))
-#define PLUGIN_VERSION_TEXT		vstr(PLUGIN_VERSION_MAJOR) "." vstr(PLUGIN_VERSION_MINOR) "." vstr(PLUGIN_VERSION_PATCH) "." vstr(PLUGIN_VERSION_BUILD)
-
-#define AMF_LOG(level, ...)		blog(level, "[AMF] " __VA_ARGS__);
-#define AMF_LOG_ERROR(...)		AMF_LOG(LOG_ERROR,   __VA_ARGS__)
-#define AMF_LOG_WARNING(...)	AMF_LOG(LOG_WARNING, __VA_ARGS__)
-#define AMF_LOG_INFO(...)		AMF_LOG(LOG_INFO,    __VA_ARGS__)
-#define AMF_LOG_CONFIG(...)		AMF_LOG(350,         __VA_ARGS__)
-#define AMF_LOG_DEBUG(...)		AMF_LOG(LOG_DEBUG,   __VA_ARGS__)
-
 #define QUICK_FORMAT_MESSAGE(var, ...) std::vector<char> var(1024); \
 	sprintf_s(var.data(), var.size(), __VA_ARGS__);
-
 #ifndef __FUNCTION_NAME__
 #if defined(_WIN32) || defined(_WIN64)   //WINDOWS
 #define __FUNCTION_NAME__   __FUNCTION__  
@@ -70,6 +56,16 @@ SOFTWARE.
 #define __FUNCTION_NAME__   __func__ 
 #endif
 #endif
+
+// Plugin
+#define PLUGIN_NAME				"AMD Advanced Media Framework"
+#include "Version.h"
+
+#define PLOG(level, ...)		blog(level, "[AMF] " __VA_ARGS__);
+#define PLOG_ERROR(...)			PLOG(LOG_ERROR,   __VA_ARGS__)
+#define PLOG_WARNING(...)		PLOG(LOG_WARNING, __VA_ARGS__)
+#define PLOG_INFO(...)			PLOG(LOG_INFO,    __VA_ARGS__)
+#define PLOG_DEBUG(...)			PLOG(LOG_DEBUG,   __VA_ARGS__)
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -87,6 +83,11 @@ void SetThreadName(std::thread* thread, const char* threadName);
 void SetThreadName(const char* threadName);
 
 #endif
+
+namespace Plugin {
+	uint64_t GetUniqueIdentifier();
+
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Properties
@@ -234,11 +235,3 @@ enum class ViewMode :uint8_t {
 //#define AMF_H264_INTRAREFRESH_NUMBEROFSTRIPES_DESCRIPTION	TEXT_AMF_H264("IntraRefresh.NumberOfStripes.Description")
 //#define AMF_H264_INTRAREFRESH_MACROBLOCKSPERSLOT			TEXT_AMF_H264("IntraRefresh.MacroblocksPerSlot")
 //#define AMF_H264_INTRAREFRESH_MACROBLOCKSPERSLOT_DESCRIPTION	TEXT_AMF_H264("IntraRefresh.MacroblocksPerSlot.Description")
-
-//////////////////////////////////////////////////////////////////////////
-// Code
-//////////////////////////////////////////////////////////////////////////
-namespace Plugin {
-	uint64_t GetUniqueIdentifier();
-
-}
