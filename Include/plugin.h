@@ -47,8 +47,12 @@ SOFTWARE.
 #define dstr(s) #s
 #define clamp(val,low,high) (val > high ? high : (val < low ? low : val))
 
-#define QUICK_FORMAT_MESSAGE(var, ...) std::vector<char> var(1024); \
-	sprintf_s(var.data(), var.size(), __VA_ARGS__);
+#define QUICK_FORMAT_MESSAGE(var, ...) std::string var = ""; { \
+		std::vector<char> QUICK_FORMAT_MESSAGE_buf(1024); \
+		std::snprintf(QUICK_FORMAT_MESSAGE_buf.data(), QUICK_FORMAT_MESSAGE_buf.size(), __VA_ARGS__); \
+		var = std::string(QUICK_FORMAT_MESSAGE_buf.data()); \
+	}
+
 #ifndef __FUNCTION_NAME__
 #if defined(_WIN32) || defined(_WIN64)   //WINDOWS
 #define __FUNCTION_NAME__   __FUNCTION__  
