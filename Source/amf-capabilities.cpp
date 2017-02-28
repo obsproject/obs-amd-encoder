@@ -87,10 +87,10 @@ Plugin::AMD::CapabilityManager::CapabilityManager() {
 					if (enc != nullptr)
 						isSupported = true;
 				} catch (const std::exception& e) {
-					AMF_LOG_WARNING("%s", e.what());
+					PLOG_WARNING("%s", e.what());
 				}
 
-				AMF_LOG_DEBUG("[Capability Manager] Testing %s Adapter '%s' with codec %s: %s.",
+				PLOG_DEBUG("[Capability Manager] Testing %s Adapter '%s' with codec %s: %s.",
 					api->GetName().c_str(), adapter.Name.c_str(), Utility::CodecToString(codec),
 					isSupported ? "Supported" : "Not Supported");
 

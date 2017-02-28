@@ -43,7 +43,7 @@ using namespace Plugin::Interface;
 void Plugin::Interface::H264Interface::encoder_register() {
 	// Test if we actually have AVC support.
 	if (!AMD::CapabilityManager::Instance()->IsCodecSupported(Codec::AVC)) {
-		AMF_LOG_WARNING(PREFIX " Not supported by any GPU, disabling...");
+		PLOG_WARNING(PREFIX " Not supported by any GPU, disabling...");
 		return;
 	}
 
@@ -70,11 +70,11 @@ void Plugin::Interface::H264Interface::encoder_register() {
 	encoder_info->get_extra_data = &get_extra_data;
 
 	obs_register_encoder(encoder_info.get());
-	AMF_LOG_DEBUG(PREFIX " Registered.");
+	PLOG_DEBUG(PREFIX " Registered.");
 }
 
 const char* Plugin::Interface::H264Interface::get_name(void*) {
-	static const char* name = "H264/AVC Encoder (" PLUGIN_NAME_AMF ")";
+	static const char* name = "H264/AVC Encoder (" PLUGIN_NAME ")";
 	return name;
 }
 
@@ -82,7 +82,7 @@ void* Plugin::Interface::H264Interface::create(obs_data_t* settings, obs_encoder
 	try {
 		return new Plugin::Interface::H264Interface(settings, encoder);
 	} catch (std::exception e) {
-		AMF_LOG_ERROR("%s", e.what());
+		PLOG_ERROR("%s", e.what());
 	}
 	return nullptr;
 }
@@ -95,7 +95,7 @@ bool Plugin::Interface::H264Interface::encode(void *data, struct encoder_frame *
 	try {
 		return static_cast<Plugin::Interface::H264Interface*>(data)->encode(frame, packet, received_packet);
 	} catch (std::exception e) {
-		AMF_LOG_ERROR("%s", e.what());
+		PLOG_ERROR("%s", e.what());
 	}
 	return false;
 }
@@ -712,7 +712,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 				}
 			}
 		} catch (const std::exception& e) {
-			AMF_LOG_ERROR("Exception occured while updating capabilities: %s",
+			PLOG_ERROR("Exception occured while updating capabilities: %s",
 				e.what());
 		}
 	}
@@ -1176,7 +1176,7 @@ bool Plugin::Interface::H264Interface::get_extra_data(void *data, uint8_t** extr
 // Module Code
 //////////////////////////////////////////////////////////////////////////
 Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t* encoder) {
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Initializing...");
+	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Initializing...");
 
 	// OBS Settings
 	uint32_t obsWidth = obs_encoder_get_width(encoder);
@@ -1329,16 +1329,16 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 	// Dynamic Properties (Can be changed during Encoding)
 	this->update(data);
 
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Complete.");
+	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Complete.");
 }
 
 Plugin::Interface::H264Interface::~H264Interface() {
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Finalizing...");
+	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Finalizing...");
 	if (m_VideoEncoder) {
 		m_VideoEncoder->Stop();
 		delete m_VideoEncoder;
 	}
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Complete.");
+	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Complete.");
 }
 
 bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
@@ -1501,111 +1501,111 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	#pragma endregion OBS Enforce Streaming Service Settings
 
 	if (m_VideoEncoder->IsStarted()) {
-		AMF_LOG_INFO("-- Encoder Parameters --");
+		PLOG_INFO("-- Encoder Parameters --");
 
-		AMF_LOG_INFO("Initialization:");
-		AMF_LOG_INFO("  Unqiue Id: %d", m_VideoEncoder->GetUniqueId());
-		AMF_LOG_INFO("  Codec: AVC");
-		AMF_LOG_INFO("  Video API: %s", m_VideoEncoder->GetVideoAPI()->GetName().c_str());
-		AMF_LOG_INFO("  Video Adapter: %s", m_VideoEncoder->GetVideoAdapter().Name.c_str());
-		AMF_LOG_INFO("  OpenCL: %s", m_VideoEncoder->IsOpenCLEnabled() ? "Enabled" : "Disabled");
+		PLOG_INFO("Initialization:");
+		PLOG_INFO("  Unqiue Id: %d", m_VideoEncoder->GetUniqueId());
+		PLOG_INFO("  Codec: AVC");
+		PLOG_INFO("  Video API: %s", m_VideoEncoder->GetVideoAPI()->GetName().c_str());
+		PLOG_INFO("  Video Adapter: %s", m_VideoEncoder->GetVideoAdapter().Name.c_str());
+		PLOG_INFO("  OpenCL: %s", m_VideoEncoder->IsOpenCLEnabled() ? "Enabled" : "Disabled");
 
-		AMF_LOG_INFO("Frame:");
-		AMF_LOG_INFO("  Format: %s %s %s ",
+		PLOG_INFO("Frame:");
+		PLOG_INFO("  Format: %s %s %s ",
 			Utility::ColorFormatToString(m_VideoEncoder->GetColorFormat()),
 			Utility::ColorSpaceToString(m_VideoEncoder->GetColorSpace()),
 			m_VideoEncoder->IsFullRangeColor() ? "Full" : "Partial");
 		auto frres = m_VideoEncoder->GetResolution();
-		AMF_LOG_INFO("  Resolution: %ldx%ld", frres.first, frres.second);
+		PLOG_INFO("  Resolution: %ldx%ld", frres.first, frres.second);
 		auto frrate = m_VideoEncoder->GetFrameRate();
-		AMF_LOG_INFO("  Rate: %ld/%ld (%f fps)", frrate.first, frrate.second, (float)frrate.first / (float)frrate.second);
+		PLOG_INFO("  Rate: %ld/%ld (%f fps)", frrate.first, frrate.second, (float)frrate.first / (float)frrate.second);
 		auto fraspect = m_VideoEncoder->GetAspectRatio();
-		AMF_LOG_INFO("  Aspect Ratio: %d:%d", fraspect.first, fraspect.second);
+		PLOG_INFO("  Aspect Ratio: %d:%d", fraspect.first, fraspect.second);
 
-		AMF_LOG_INFO("Static:");
-		AMF_LOG_INFO("  Usage: %s",
+		PLOG_INFO("Static:");
+		PLOG_INFO("  Usage: %s",
 			Utility::UsageToString(m_VideoEncoder->GetUsage()));
-		AMF_LOG_INFO("  Quality Preset: %s",
+		PLOG_INFO("  Quality Preset: %s",
 			Utility::QualityPresetToString(m_VideoEncoder->GetQualityPreset()));
 		auto plvl = static_cast<int32_t>(m_VideoEncoder->GetProfileLevel());
-		AMF_LOG_INFO("  Profile: %s %d.%d",
+		PLOG_INFO("  Profile: %s %d.%d",
 			Utility::ProfileToString(m_VideoEncoder->GetProfile()), plvl / 10, plvl % 10);
-		AMF_LOG_INFO("  Max. Reference Frames: %d Frames",
+		PLOG_INFO("  Max. Reference Frames: %d Frames",
 			m_VideoEncoder->GetMaximumReferenceFrames());
-		AMF_LOG_INFO("  Coding Type: %s",
+		PLOG_INFO("  Coding Type: %s",
 			Utility::CodingTypeToString(m_VideoEncoder->GetCodingType()));
 
-		AMF_LOG_INFO("Dynamic:");
-		AMF_LOG_INFO("  Control Method: %s",
+		PLOG_INFO("Dynamic:");
+		PLOG_INFO("  Control Method: %s",
 			Utility::RateControlMethodToString(m_VideoEncoder->GetRateControlMethod()));
-		AMF_LOG_INFO("  Pre-Pass: %s",
+		PLOG_INFO("  Pre-Pass: %s",
 			Utility::PrePassModeToString(m_VideoEncoder->GetPrePassMode()));
-		AMF_LOG_INFO("  QP Limits: %d - %d",
+		PLOG_INFO("  QP Limits: %d - %d",
 			m_VideoEncoder->GetQPMinimum(), m_VideoEncoder->GetQPMaximum());
-		AMF_LOG_INFO("  Fixed QP:");
-		AMF_LOG_INFO("    I-Frame: %d",
+		PLOG_INFO("  Fixed QP:");
+		PLOG_INFO("    I-Frame: %d",
 			m_VideoEncoder->GetIFrameQP());
-		AMF_LOG_INFO("    P-Frame: %d",
+		PLOG_INFO("    P-Frame: %d",
 			m_VideoEncoder->GetPFrameQP());
 		try {
-			AMF_LOG_INFO("    B-Frame: %d",
+			PLOG_INFO("    B-Frame: %d",
 				m_VideoEncoder->GetBFrameQP());
 		} catch (...) {}
-		AMF_LOG_INFO("  Bitrate:");
-		AMF_LOG_INFO("    Target: %ld bps",
+		PLOG_INFO("  Bitrate:");
+		PLOG_INFO("    Target: %ld bps",
 			m_VideoEncoder->GetTargetBitrate());
-		AMF_LOG_INFO("    Peak: %ld bps",
+		PLOG_INFO("    Peak: %ld bps",
 			m_VideoEncoder->GetPeakBitrate());
-		AMF_LOG_INFO("  VBV Buffer:");
-		AMF_LOG_INFO("    Size: %ld bps",
+		PLOG_INFO("  VBV Buffer:");
+		PLOG_INFO("    Size: %ld bps",
 			m_VideoEncoder->GetVBVBufferSize());
-		AMF_LOG_INFO("    Initial Fullness: %f %%",
+		PLOG_INFO("    Initial Fullness: %f %%",
 			m_VideoEncoder->GetInitialVBVBufferFullness() * 100.0);
-		AMF_LOG_INFO("  Flags:");
-		AMF_LOG_INFO("    Frame Skipping: %s",
+		PLOG_INFO("  Flags:");
+		PLOG_INFO("    Frame Skipping: %s",
 			m_VideoEncoder->IsFrameSkippingEnabled() ? "Enabled" : "Disabled");
-		AMF_LOG_INFO("    Enforce HRD: %s",
+		PLOG_INFO("    Enforce HRD: %s",
 			m_VideoEncoder->IsEnforceHRDEnabled() ? "Enabled" : "Disabled");
-		AMF_LOG_INFO("    Filler Data: %s",
+		PLOG_INFO("    Filler Data: %s",
 			m_VideoEncoder->IsFillerDataEnabled() ? "Enabled" : "Disabled");
-		AMF_LOG_INFO("    VBAQ: %s",
+		PLOG_INFO("    VBAQ: %s",
 			m_VideoEncoder->IsVariableBitrateAverageQualityEnabled() ? "Enabled" : "Disabled");
-		AMF_LOG_INFO("    Deblocking Filter: %s",
+		PLOG_INFO("    Deblocking Filter: %s",
 			m_VideoEncoder->IsDeblockingFilterEnabled() ? "Enabled" : "Disabled");
-		AMF_LOG_INFO("  IDR Period: %d Frames",
+		PLOG_INFO("  IDR Period: %d Frames",
 			m_VideoEncoder->GetIDRPeriod());
-		AMF_LOG_INFO("  B-Frames:");
+		PLOG_INFO("  B-Frames:");
 		try {
-			AMF_LOG_INFO("    Pattern: %d",
+			PLOG_INFO("    Pattern: %d",
 				m_VideoEncoder->GetBFramePattern());
 		} catch (...) {
-			AMF_LOG_INFO("    Pattern: N/A");
+			PLOG_INFO("    Pattern: N/A");
 		}
 		try {
-			AMF_LOG_INFO("    Delta QP: %d",
+			PLOG_INFO("    Delta QP: %d",
 				m_VideoEncoder->GetBFrameDeltaQP());
 		} catch (...) {
-			AMF_LOG_INFO("    Delta QP: N/A");
+			PLOG_INFO("    Delta QP: N/A");
 		}
 		try {
-			AMF_LOG_INFO("    Reference: %s",
+			PLOG_INFO("    Reference: %s",
 				m_VideoEncoder->IsBFrameReferenceEnabled() ? "Enabled" : "Disabled");
 		} catch (...) {
-			AMF_LOG_INFO("    Reference: N/A");
+			PLOG_INFO("    Reference: N/A");
 		}
 		try {
-			AMF_LOG_INFO("    Reference Delta QP: %d",
+			PLOG_INFO("    Reference Delta QP: %d",
 				m_VideoEncoder->GetBFrameReferenceDeltaQP());
 		} catch (...) {
-			AMF_LOG_INFO("    Reference Delta QP: N/A");
+			PLOG_INFO("    Reference Delta QP: N/A");
 		}
-		AMF_LOG_INFO("  Motion Estimation: %s %s",
+		PLOG_INFO("  Motion Estimation: %s %s",
 			m_VideoEncoder->IsMotionEstimationQuarterPixelEnabled() ? "Quarter " : "",
 			m_VideoEncoder->IsMotionEstimationHalfPixelEnabled() ? "Half" : "");
 
 		if (static_cast<ViewMode>(obs_data_get_int(data, P_VIEW)) >= ViewMode::Master)
-			AMF_LOG_ERROR("View Mode 'Master' is active, avoid giving anything but basic support. Error is most likely caused by user settings themselves.");
-		AMF_LOG_INFO("-- Encoder Parameters --");
+			PLOG_ERROR("View Mode 'Master' is active, avoid giving anything but basic support. Error is most likely caused by user settings themselves.");
+		PLOG_INFO("-- Encoder Parameters --");
 	}
 
 	return true;
@@ -1620,9 +1620,9 @@ bool Plugin::Interface::H264Interface::encode(struct encoder_frame * frame, stru
 	try {
 		retVal = m_VideoEncoder->Encode(frame, packet, received_packet);
 	} catch (std::exception e) {
-		AMF_LOG_ERROR("Exception during encoding: %s", e.what());
+		PLOG_ERROR("Exception during encoding: %s", e.what());
 	} catch (...) {
-		AMF_LOG_ERROR("Unknown exception during encoding.");
+		PLOG_ERROR("Unknown exception during encoding.");
 	}
 
 	return retVal;

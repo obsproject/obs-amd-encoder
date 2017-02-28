@@ -536,7 +536,7 @@ std::vector<PrePassMode> Plugin::AMD::EncoderH265::CapsPrePassMode() {
 	} else {
 		std::vector<PrePassMode> ret;
 		for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
-			AMF_LOG_ERROR("Unknown Pre-Pass Mode: %ls %lld", enm->name, enm->value);
+			PLOG_ERROR("Unknown Pre-Pass Mode: %ls %lld", enm->name, enm->value);
 			//ret.push_back(Utility::PrePassModeFromAMFH265((AMF_VIDEO_ENCODER_PREENCODE_MODE_ENUM)enm->value));
 		}
 		return ret;

@@ -124,7 +124,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 			"<Id: %lld> Initialising OpenCL failed, error %ls (code %d)",
 			m_UniqueId,
 			m_AMF->GetTrace()->GetResultText(res), res);
-		AMF_LOG_WARNING("%s", errMsg.data());
+		PLOG_WARNING("%s", errMsg.data());
 	} else {
 		m_OpenCLConversion = true;
 
@@ -137,7 +137,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 					"<Id: %lld> Retrieving Compute object failed, error %ls (code %d)",
 					m_UniqueId,
 					m_AMF->GetTrace()->GetResultText(res), res);
-				AMF_LOG_WARNING("%s", errMsg.data());
+				PLOG_WARNING("%s", errMsg.data());
 			}
 		}
 	}
@@ -192,7 +192,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	QUICK_FORMAT_MESSAGE(notice,
 		"<Id: %lld> Initialized.",
 		m_UniqueId);
-	AMF_LOG_DEBUG("%s", notice.data());
+	PLOG_DEBUG("%s", notice.data());
 }
 
 Plugin::AMD::Encoder::~Encoder() {
@@ -226,7 +226,7 @@ Plugin::AMD::Encoder::~Encoder() {
 	QUICK_FORMAT_MESSAGE(notice,
 		"<Id: %lld> Finalized.",
 		m_UniqueId);
-	AMF_LOG_DEBUG("%s", notice.data());
+	PLOG_DEBUG("%s", notice.data());
 }
 
 uint64_t Plugin::AMD::Encoder::GetUniqueId() {
@@ -386,7 +386,7 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 			QUICK_FORMAT_MESSAGE(errMsg,
 				"<Id: %lld> Unable to allocate Surface, error %ls (code %d)",
 				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-			AMF_LOG_ERROR("%s", errMsg.data());
+			PLOG_ERROR("%s", errMsg.data());
 			return false;
 		}
 	}
@@ -401,7 +401,7 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 				QUICK_FORMAT_MESSAGE(errMsg,
 					"<Id: %lld> Conversion of Surface to OpenCL failed, error %ls (code %d)",
 					m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-				AMF_LOG_WARNING("%s", errMsg.data());
+				PLOG_WARNING("%s", errMsg.data());
 				return false;
 			}
 		}
@@ -421,7 +421,7 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 					QUICK_FORMAT_MESSAGE(errMsg,
 						"<Id: %lld> Unable to copy plane %d with OpenCL, error %ls (code %d)",
 						m_UniqueId, i, m_AMF->GetTrace()->GetResultText(res), res);
-					AMF_LOG_WARNING("%s", errMsg.data());
+					PLOG_WARNING("%s", errMsg.data());
 					return false;
 				}
 			} else {
@@ -442,7 +442,7 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 				QUICK_FORMAT_MESSAGE(errMsg,
 					"<Id: %lld> Failed to finish OpenCL queue, error %ls (code %d)",
 					m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-				AMF_LOG_WARNING("%s", errMsg.data());
+				PLOG_WARNING("%s", errMsg.data());
 				return false;
 			}
 			pSyncPoint->Wait();
@@ -452,7 +452,7 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 					QUICK_FORMAT_MESSAGE(errMsg,
 						"<Id: %lld> Conversion of Surface from OpenCL failed, error %ls (code %d)",
 						m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-					AMF_LOG_WARNING("%s", errMsg.data());
+					PLOG_WARNING("%s", errMsg.data());
 					return false;
 				}
 			}
@@ -462,7 +462,7 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 				QUICK_FORMAT_MESSAGE(errMsg,
 					"<Id: %lld> Conversion of Surface from OpenCL failed, error %ls (code %d)",
 					m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-				AMF_LOG_WARNING("%s", errMsg.data());
+				PLOG_WARNING("%s", errMsg.data());
 				return false;
 			}
 		}
@@ -476,7 +476,7 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 				QUICK_FORMAT_MESSAGE(errMsg,
 					"<Id: %lld> [Conversion Pass] Conversion of Surface to OpenCL failed, error %ls (code %d)",
 					m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-				AMF_LOG_WARNING("%s", errMsg.data());
+				PLOG_WARNING("%s", errMsg.data());
 				return false;
 			}
 		}
@@ -485,7 +485,7 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 			QUICK_FORMAT_MESSAGE(errMsg,
 				"<Id: %lld> [Conversion Pass] Submit to converter failed, error %ls (code %d)",
 				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-			AMF_LOG_WARNING("%s", errMsg.data());
+			PLOG_WARNING("%s", errMsg.data());
 			return false;
 		}
 		res = m_AMFConverter->QueryOutput(&pData);
@@ -493,7 +493,7 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 			QUICK_FORMAT_MESSAGE(errMsg,
 				"<Id: %lld> [Conversion Pass] Querying output from converter failed, error %ls (code %d)",
 				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-			AMF_LOG_WARNING("%s", errMsg.data());
+			PLOG_WARNING("%s", errMsg.data());
 			return false;
 		}
 		res = pSurface->Convert(m_AMFMemoryType);
@@ -501,7 +501,7 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 			QUICK_FORMAT_MESSAGE(errMsg,
 				"<Id: %lld> [Conversion Pass] Conversion of Surface from OpenCL failed, error %ls (code %d)",
 				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-			AMF_LOG_WARNING("%s", errMsg.data());
+			PLOG_WARNING("%s", errMsg.data());
 			return false;
 		}
 	}
@@ -532,7 +532,7 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 					QUICK_FORMAT_MESSAGE(errMsg,
 						"<Id: %lld> Submitting Surface failed, error %ls (code %d)",
 						m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-					AMF_LOG_ERROR("%s", errMsg.data());
+					PLOG_ERROR("%s", errMsg.data());
 				}
 				return false;
 			case AMF_INPUT_FULL:
@@ -540,12 +540,12 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 					QUICK_FORMAT_MESSAGE(errMsg,
 						"<Id: %lld> Submitting Surface failed , error %ls (code %d)",
 						m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-					AMF_LOG_ERROR("%s", errMsg.data());
+					PLOG_ERROR("%s", errMsg.data());
 				}
 				break;
 			case AMF_OK:
 				m_FrameIndexQueue.push(frame->pts);
-				AMF_LOG_DEBUG("SubmitInput: Timestamp(%lld) PTS(%lld) DTS(%lld) CalcPTS(%lld) Duration(%lld)",
+				PLOG_DEBUG("SubmitInput: Timestamp(%lld) PTS(%lld) DTS(%lld) CalcPTS(%lld) Duration(%lld)",
 					frame->pts * m_FrameRateTimeStepI, frame->pts, frame->pts - 2, nowTS, durTS);
 				break;
 			case AMF_EOF:
@@ -562,7 +562,7 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 					QUICK_FORMAT_MESSAGE(errMsg,
 						"<Id: %lld> Retrieving Packet failed, error %ls (code %d)",
 						m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-					AMF_LOG_ERROR("%s", errMsg.data());
+					PLOG_ERROR("%s", errMsg.data());
 				}
 				return false;
 			case AMF_OK:
@@ -591,7 +591,7 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 					packet->data = m_PacketDataBuffer.data();
 					std::memcpy(packet->data, pBuffer->GetNative(), packet->size); // ToDo: Can we make this threaded?
 
-					AMF_LOG_DEBUG("QueryOutput: Size(%lld) PTS(%lld) DTS(%lld) CalcPTS(%lld) Duration(%lld)",
+					PLOG_DEBUG("QueryOutput: Size(%lld) PTS(%lld) DTS(%lld) CalcPTS(%lld) Duration(%lld)",
 						packet->size,
 						packet->pts,
 						packet->dts,

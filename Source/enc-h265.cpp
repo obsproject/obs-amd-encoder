@@ -32,7 +32,7 @@ SOFTWARE.
 void Plugin::Interface::H265Interface::encoder_register() {
 	// Test if we actually have AVC support.
 	if (!AMD::CapabilityManager::Instance()->IsCodecSupported(Codec::HEVC)) {
-		AMF_LOG_WARNING(PREFIX " Not supported by any GPU, disabling...");
+		PLOG_WARNING(PREFIX " Not supported by any GPU, disabling...");
 		return;
 	}
 
@@ -59,11 +59,11 @@ void Plugin::Interface::H265Interface::encoder_register() {
 	encoder_info->get_extra_data = &get_extra_data;
 
 	obs_register_encoder(encoder_info.get());
-	AMF_LOG_DEBUG(PREFIX " Registered.");
+	PLOG_DEBUG(PREFIX " Registered.");
 }
 
 const char* Plugin::Interface::H265Interface::get_name(void*) {
-	static const char* name = "H265/HEVC Encoder (" PLUGIN_NAME_AMF ")";
+	static const char* name = "H265/HEVC Encoder (" PLUGIN_NAME ")";
 	return name;
 }
 
@@ -606,7 +606,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 			TEMP_LIMIT_SLIDER_BITRATE(CapsPeakBitrate, P_BITRATE_PEAK);
 			TEMP_LIMIT_SLIDER_BITRATE(CapsVBVBufferSize, P_VBVBUFFER_SIZE);
 		} catch (const std::exception& e) {
-			AMF_LOG_ERROR("Exception occured while updating capabilities: %s",
+			PLOG_ERROR("Exception occured while updating capabilities: %s",
 				e.what());
 		}
 	}
@@ -797,13 +797,13 @@ void* Plugin::Interface::H265Interface::create(obs_data_t* data, obs_encoder_t* 
 	try {
 		return new H265Interface(data, encoder);
 	} catch (std::exception e) {
-		AMF_LOG_ERROR("%s", e.what());
+		PLOG_ERROR("%s", e.what());
 	}
 	return nullptr;
 }
 
 Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t* encoder) {
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Initializing...");
+	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Initializing...");
 
 	// OBS Settings
 	uint32_t obsWidth = obs_encoder_get_width(encoder);
@@ -1026,7 +1026,7 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 	// Dynamic Properties (Can be changed during Encoding)
 	this->update(data);
 
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Complete.");
+	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Complete.");
 }
 
 void Plugin::Interface::H265Interface::destroy(void* ptr) {
@@ -1034,10 +1034,10 @@ void Plugin::Interface::H265Interface::destroy(void* ptr) {
 }
 
 Plugin::Interface::H265Interface::~H265Interface() {
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Finalizing...");
+	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Finalizing...");
 	if (m_VideoEncoder)
 		m_VideoEncoder->Stop();
-	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Complete.");
+	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Complete.");
 }
 
 bool Plugin::Interface::H265Interface::update(void *ptr, obs_data_t *settings) {
@@ -1097,9 +1097,9 @@ bool Plugin::Interface::H265Interface::encode(struct encoder_frame * frame, stru
 	try {
 		return m_VideoEncoder->Encode(frame, packet, received_packet);
 	} catch (std::exception e) {
-		AMF_LOG_ERROR("Exception during encoding: %s", e.what());
+		PLOG_ERROR("Exception during encoding: %s", e.what());
 	} catch (...) {
-		AMF_LOG_ERROR("Unknown exception during encoding.");
+		PLOG_ERROR("Unknown exception during encoding.");
 	}
 	return false;
 }
