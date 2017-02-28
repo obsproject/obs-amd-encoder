@@ -352,7 +352,6 @@ namespace Plugin {
 			amf::AMF_SURFACE_FORMAT m_AMFSurfaceFormat;
 
 			// Buffers
-			std::queue<int64_t> m_FrameIndexQueue;
 			std::vector<uint8_t> m_PacketDataBuffer;
 			std::vector<uint8_t> m_ExtraDataBuffer;
 
