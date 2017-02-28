@@ -134,7 +134,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, P_QP_MAXIMUM, 51);
 	obs_data_set_default_int(data, P_FILLERDATA, 1);
 	obs_data_set_default_int(data, P_FRAMESKIPPING, 0);
-	obs_data_set_default_int(data, P_VBAQ, 0);
+	obs_data_set_default_int(data, P_VBAQ, 1);
 	obs_data_set_default_int(data, P_ENFORCEHRD, 1);
 
 	// VBV Buffer
