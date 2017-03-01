@@ -278,7 +278,7 @@ void* Plugin::API::Direct3D11::CreateInstanceOnAdapter(Adapter adapter) {
 		if (SUCCEEDED(hr)) {
 			break;
 		} else {
-			AMF_LOG_WARNING("<" __FUNCTION_NAME__ "> Unable to create D3D11 device, error code %X (mode " SIZE_T_FORMAT ").", hr, c);
+			AMF_LOG_WARNING("<" __FUNCTION_NAME__ "> Unable to create D3D11 device, error code %X (mode %Iu).", hr, c);
 		}
 	}
 	if (FAILED(hr)) {
