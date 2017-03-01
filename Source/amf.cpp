@@ -46,7 +46,7 @@ class CustomWriter : public amf::AMFTraceWriter {
 
 	virtual void Write(const wchar_t* scope, const wchar_t* message) override {
 		const wchar_t* realmsg = &(message[(33 + wcslen(scope) + 2)]); // Skip Time & Scope
-		size_t msgLen = wcslen(realmsg) - (sizeof(wchar_t));
+		int msgLen = (int)wcslen(realmsg) - (sizeof(wchar_t));
 
 		blog(LOG_INFO, "[AMF Encoder] [%.*ls][%ls] %.*ls",
 			12, &(message[11]),
@@ -94,31 +94,33 @@ Plugin::AMD::AMF::AMF() {
 	}
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Loaded '%ls'.", AMF_DLL_NAME);
 	#ifdef _WIN32 // Windows: Get Product Version
+	void* pProductVersion = "unknown";
+	uint32_t lProductVersionSize = 7;
 	std::vector<char> verbuf(GetFileVersionInfoSizeW(AMF_DLL_NAME, nullptr));
-	GetFileVersionInfoW(AMF_DLL_NAME, 0, (DWORD)verbuf.size(), verbuf.data());
+	if (GetFileVersionInfoW(AMF_DLL_NAME, 0, (DWORD)verbuf.size(), verbuf.data())) {
 
-	void* pBlock = verbuf.data();
+		void* pBlock = verbuf.data();
 
-	// Read the list of languages and code pages.
-	struct LANGANDCODEPAGE {
-		WORD wLanguage;
-		WORD wCodePage;
-	} *lpTranslate;
-	UINT cbTranslate = sizeof(LANGANDCODEPAGE);
+		// Read the list of languages and code pages.
+		struct LANGANDCODEPAGE {
+			WORD wLanguage;
+			WORD wCodePage;
+		} *lpTranslate;
+		UINT cbTranslate = sizeof(LANGANDCODEPAGE);
 
-	VerQueryValueA(pBlock, "\\VarFileInfo\\Translation", (LPVOID*)&lpTranslate, &cbTranslate);
+		if (VerQueryValueA(pBlock, "\\VarFileInfo\\Translation", (LPVOID*)&lpTranslate, &cbTranslate)) {
 
-	std::vector<char> buf(1024);
-	sprintf(buf.data(), "%s%04x%04x%s",
-		"\\StringFileInfo\\",
-		lpTranslate[0].wLanguage,
-		lpTranslate[0].wCodePage,
-		"\\ProductVersion");
+			std::vector<char> buf(1024);
+			sprintf(buf.data(), "%s%04x%04x%s",
+				"\\StringFileInfo\\",
+				lpTranslate[0].wLanguage,
+				lpTranslate[0].wCodePage,
+				"\\ProductVersion");
 
-	// Retrieve file description for language and code page "i". 
-	void* pProductVersion;
-	uint32_t lProductVersionSize;
-	VerQueryValueA(pBlock, buf.data(), &pProductVersion, &lProductVersionSize);
+			// Retrieve file description for language and code page "i". 
+			VerQueryValueA(pBlock, buf.data(), &pProductVersion, &lProductVersionSize);
+		}
+	}
 	#endif _WIN32 // Windows: Get Product Version
 
 	/// Find Function for Querying AMF Version.
@@ -178,7 +180,7 @@ Plugin::AMD::AMF::AMF() {
 		(uint16_t)((m_AMFVersion_Runtime >> 32ull) & 0xFFFF),
 		(uint16_t)((m_AMFVersion_Runtime >> 16ull) & 0xFFFF),
 		(uint16_t)((m_AMFVersion_Runtime & 0xFFFF)),
-		lProductVersionSize, pProductVersion
+		lProductVersionSize, (char *)pProductVersion
 	);
 
 	AMF_LOG_DEBUG("<" __FUNCTION_NAME__ "> Initialized.");
