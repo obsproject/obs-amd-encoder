@@ -137,7 +137,7 @@ static void printDebugInfo(amf::AMFComponentPtr m_AMFEncoder) {
 		AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(propIndex, (const amf::AMFPropertyInfo**) &pInfo);
 		if (res != AMF_OK)
 			continue;
-		AMF_LOG_INFO(" [%ls] %ls (Type: %s, Index %d)",
+		AMF_LOG_INFO(" [%ls] %ls (Type: %s, Index %Iu)",
 			pInfo->name, pInfo->desc, typeToString[pInfo->type], propIndex);
 		AMF_LOG_INFO("  Content Type: %d",
 			pInfo->contentType);
@@ -449,13 +449,13 @@ bool Plugin::AMD::H264Encoder::SendInput(struct encoder_frame* frame) {
 			int32_t queueSizeDelta = ((int32_t)m_InputQueueLastSize - (int32_t)queueSize);
 
 			if (queueSizeDelta >= 5) {
-				AMF_LOG_INFO("GPU Encoder is catching up, queue is shrinking... (%ld,%+ld,%ld)",
+				AMF_LOG_INFO("GPU Encoder is catching up, queue is shrinking... (%Iu,%+ld,%Iu)",
 					m_InputQueueLastSize,
 					queueSizeDelta,
 					queueSize);
 				m_InputQueueLastSize = queueSize;
 			} else if (queueSizeDelta <= -5) {
-				AMF_LOG_WARNING("GPU Encoder overloaded, queue is growing... (%ld,%+ld,%ld)",
+				AMF_LOG_WARNING("GPU Encoder overloaded, queue is growing... (%Iu,%+ld,%Iu)",
 					m_InputQueueLastSize, queueSizeDelta, queueSize);
 				m_InputQueueLastSize = queueSize;
 			}
@@ -480,7 +480,7 @@ bool Plugin::AMD::H264Encoder::SendInput(struct encoder_frame* frame) {
 			throw std::exception("Unable to submit first frame, terminating...");
 		else {
 			uint64_t dtime = (uint64_t)diff.count();
-			AMF_LOG_INFO("First submission took %ld.%ld seconds.", dtime / 1000000000, dtime % 1000000000);
+			AMF_LOG_INFO("First submission took %" PRIu64 ".%" PRIu64 " seconds.", dtime / 1000000000, dtime % 1000000000);
 		}
 	}
 
@@ -531,7 +531,7 @@ bool Plugin::AMD::H264Encoder::GetOutput(struct encoder_packet* packet, bool* re
 		packet->size = pAMFBuffer->GetSize();
 		if (m_PacketDataBuffer.size() < packet->size) {
 			size_t newBufferSize = (size_t)exp2(ceil(log2(packet->size)));
-			AMF_LOG_DEBUG("Packet Buffer was resized to %d byte from %d byte.", newBufferSize, m_PacketDataBuffer.size());
+			AMF_LOG_DEBUG("Packet Buffer was resized to %Iu byte from %Iu byte.", newBufferSize, m_PacketDataBuffer.size());
 			m_PacketDataBuffer.resize(newBufferSize);
 		}
 		packet->data = m_PacketDataBuffer.data();
