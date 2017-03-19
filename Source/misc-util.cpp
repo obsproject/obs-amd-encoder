@@ -570,6 +570,32 @@ namespace Utility {
 	}
 	#endif
 
+	// Slicing
+	#ifdef WITH_AVC
+	inline const char* SliceModeToString(H264::SliceMode v) {
+		switch (v) {
+			case H264::SliceMode::Row:
+				return "Row";
+			case H264::SliceMode::Column:
+				return "Column";
+		}
+		throw std::runtime_error("Invalid Parameter");
+	}
+	#endif
+	inline const char* SliceControlModeToString(SliceControlMode v) {
+		switch (v) {
+			case SliceControlMode::Unknown0:
+				return "Unknown 0";
+			case SliceControlMode::Unknown1:
+				return "Unknown 1";
+			case SliceControlMode::Unknown2:
+				return "Unknown 2";
+			case SliceControlMode::Unknown3:
+				return "Unknown 3";
+		}
+		throw std::runtime_error("Invalid Parameter");
+	}
+
 	#ifdef WITH_AVC
 	inline Plugin::AMD::ProfileLevel H264ProfileLevel(
 		std::pair<uint32_t, uint32_t> resolution,
