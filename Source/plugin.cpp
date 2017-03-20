@@ -23,24 +23,18 @@ SOFTWARE.
 */
 
 #pragma once
-//////////////////////////////////////////////////////////////////////////
-// Includes
-//////////////////////////////////////////////////////////////////////////
-#include <sstream>
-#include <map>
-
-// Plugin
 #include "plugin.h"
 #include "api-base.h"
 #include "amf.h"
 #include "amf-capabilities.h"
+#include <sstream>
+
 #ifdef WITH_AVC
 #include "enc-h264.h"
 #endif
 #ifdef WITH_HEVC
 #include "enc-h265.h"
 #endif
-
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -278,120 +272,4 @@ MODULE_EXPORT const char* obs_module_name() {
 MODULE_EXPORT const char* obs_module_description() {
 	return "AMD Media Framework Plugin";
 }
-
-// Allow translation strings to reference other translation strings up to a certain depth.
-static std::map<std::string, std::string> translatedMap;
-const char *obs_module_text_multi(const char *key, uint8_t depth) {
-	// Check if it already was translated.
-	if (!translatedMap.count(std::string(key))) { // If not, translate it now.
-		const char* out = obs_module_text(key);
-
-		// Allow for nested translations using \@...\@ sequences.
-		if (depth > 0) {
-			// I'm pretty sure this can be optimized a ton if necessary.
-
-			size_t seqStart = 0,
-				seqEnd = 0;
-			bool haveSequence = false;
-
-			std::stringstream fout;
-
-			// Walk the given string.
-			std::string walkable = std::string(out);
-
-			for (size_t pos = 0; pos <= walkable.length(); pos++) {
-				std::string walked = walkable.substr(pos, 2);
-
-				if (walked == "\\@") { // Sequence Start/End
-					if (haveSequence) {
-						seqEnd = pos;
-
-						std::string sequence = walkable.substr(seqStart, seqEnd - seqStart);
-						fout << obs_module_text_multi(sequence.c_str(), depth--);
-					} else {
-						seqStart = pos + 2;
-					}
-					haveSequence = !haveSequence;
-					pos = pos + 1;
-				} else if (!haveSequence) {
-					fout << walked.substr(0, 1); // Append the left character.
-				}
-			}
-
-			std::pair<std::string, std::string> kv = std::pair<std::string, std::string>(std::string(key), fout.str());
-			translatedMap.insert(kv);
-		} else {
-			return out;
-		}
-	}
-
-	auto value = translatedMap.find(std::string(key));
-	return value->second.c_str();
-}
-
-//////////////////////////////////////////////////////////////////////////
-// Threading Specific
-//////////////////////////////////////////////////////////////////////////
-
-#if (defined _WIN32) || (defined _WIN64) // Windows
-#include <windows.h>
-
-const DWORD MS_VC_EXCEPTION = 0x406D1388;
-
-#pragma pack(push,8)
-typedef struct tagTHREADNAME_INFO {
-	DWORD dwType; // Must be 0x1000.
-	LPCSTR szName; // Pointer to name (in user addr space).
-	DWORD dwThreadID; // Thread ID (-1=caller thread).
-	DWORD dwFlags; // Reserved for future use, must be zero.
-} THREADNAME_INFO;
-#pragma pack(pop)
-
-void SetThreadName(uint32_t dwThreadID, const char* threadName) {
-
-	// DWORD dwThreadID = ::GetThreadId( static_cast<HANDLE>( t.native_handle() ) );
-
-	THREADNAME_INFO info;
-	info.dwType = 0x1000;
-	info.szName = threadName;
-	info.dwThreadID = dwThreadID;
-	info.dwFlags = 0;
-
-	__try {
-		RaiseException(MS_VC_EXCEPTION, 0, sizeof(info) / sizeof(ULONG_PTR), (ULONG_PTR*)&info);
-	} __except (EXCEPTION_EXECUTE_HANDLER) {}
-}
-void SetThreadName(const char* threadName) {
-	SetThreadName(GetCurrentThreadId(), threadName);
-}
-void SetThreadName(std::thread* pthread, const char* threadName) {
-	DWORD threadId = ::GetThreadId(static_cast<HANDLE>(pthread->native_handle()));
-	SetThreadName(threadId, threadName);
-}
-
-#else // Linux, Mac
-#include <sys/prctl.h>
-
-void SetThreadName(std::thread* pthread, const char* threadName) {
-	auto handle = pthread->native_handle();
-	pthread_setname_np(handle, threadName);
-}
-void SetThreadName(const char* threadName) {
-	prctl(PR_SET_NAME, threadName, 0, 0, 0);
-}
-
-#endif
-
-//////////////////////////////////////////////////////////////////////////
-// Code
-//////////////////////////////////////////////////////////////////////////
-
-uint64_t Plugin::GetUniqueIdentifier() {
-	static std::mutex __mutex;
-	static uint64_t __curId;
-
-	const std::lock_guard<std::mutex> lock(__mutex);
-	return ++__curId;
-}
-
 
