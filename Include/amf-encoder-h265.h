@@ -48,8 +48,11 @@ namespace Plugin {
 
 		class EncoderH265 : public Encoder {
 			public:
-			EncoderH265(std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
-				ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor);
+			EncoderH265(
+				std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter = API::Adapter::Adapter(),
+				bool useOpenCLSubmission = false, bool useOpenCLConversion = false,
+				ColorFormat colorFormat = ColorFormat::NV12, ColorSpace colorSpace = ColorSpace::BT709, bool fullRangeColor = false,
+				bool useAsyncQueue = false, size_t asyncQueueSize = 0);
 			virtual ~EncoderH265();
 
 			// Initialization
@@ -225,15 +228,16 @@ namespace Plugin {
 			virtual bool GetCommonLowLatencyInternal() override;
 
 			// Internal
+			virtual void LogProperties() override;
 			protected:
 			virtual void PacketPriorityAndKeyframe(amf::AMFDataPtr d, struct encoder_packet* p) override;
 			virtual AMF_RESULT GetExtraDataInternal(amf::AMFVariant* p) override;
 
 
 
+
 			//Remaining Properties
 			// PerformanceCounter (Interface, but which one?)
-			// HevcIntraRefreshFrameNum
 			// HevcMaxNumOfTemporalLayers/HevcNumOfTemporalLayers/HevcTemporalLayerSelect - Only supports QP_I/P?
 			// BPicturesPattern (replaced by merge mode?)
 			// HevcMaxMBPerSec (PCI-E bandwidth, min/max)

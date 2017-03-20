@@ -23,12 +23,31 @@ SOFTWARE.
 */
 
 #include "amf-encoder-h265.h"
-#include "misc-util.cpp"
+#include "utility.h"
+#include <inttypes.h>
 
+#define QUICK_THROW_ERROR(format, ...) {\
+	QUICK_FORMAT_MESSAGE(errMsg, __FUNCTION_NAME__ format, \
+		m_UniqueId,  ##__VA_ARGS__, \
+		m_AMF->GetTrace()->GetResultText(res), res); \
+	throw std::exception(errMsg.c_str()); \
+}
+#define PREFIX "[H265]<Id: %lld> "
+
+using namespace Plugin;
 using namespace Plugin::AMD;
+using namespace Utility;
 
-Plugin::AMD::EncoderH265::EncoderH265(std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter, bool useOpenCL, ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor)
-	: Encoder(Codec::HEVC, videoAPI, videoAdapter, useOpenCL, colorFormat, colorSpace, fullRangeColor) {
+Plugin::AMD::EncoderH265::EncoderH265(
+	std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter,
+	bool useOpenCLSubmission, bool useOpenCLConversion,
+	ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor,
+	bool useAsyncQueue, size_t asyncQueueSize)
+	: Encoder(Codec::HEVC,
+		videoAPI, videoAdapter,
+		useOpenCLSubmission, useOpenCLConversion,
+		colorFormat, colorSpace, fullRangeColor,
+		useAsyncQueue, asyncQueueSize) {
 	AMFTRACECALL;
 }
 
@@ -1541,6 +1560,8 @@ bool Plugin::AMD::EncoderH265::GetCommonLowLatencyInternal() {
 
 // Internal
 void Plugin::AMD::EncoderH265::PacketPriorityAndKeyframe(amf::AMFDataPtr pData, struct encoder_packet* packet) {
+	AMFTRACECALL;
+
 	uint64_t pktType;
 	pData->GetProperty(AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE, &pktType);
 	switch ((AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_ENUM)pktType) {
@@ -1555,5 +1576,164 @@ void Plugin::AMD::EncoderH265::PacketPriorityAndKeyframe(amf::AMFDataPtr pData, 
 }
 
 AMF_RESULT Plugin::AMD::EncoderH265::GetExtraDataInternal(amf::AMFVariant* p) {
+	AMFTRACECALL;
+
 	return m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_HEVC_EXTRADATA, p);
+}
+
+void Plugin::AMD::EncoderH265::LogProperties() {
+	AMFTRACECALL;
+
+	PLOG_INFO(PREFIX "Encoder Parameters:");
+	#pragma region Backend
+	PLOG_INFO(PREFIX "  Backend:");
+	PLOG_INFO(PREFIX "    Video API: %s",
+		m_API->GetName().c_str());
+	PLOG_INFO(PREFIX "    Video Adapter: %s",
+		m_APIAdapter.Name.c_str());
+	PLOG_INFO(PREFIX "    OpenCL Conversion: %s",
+		m_OpenCL ? "Enabled" : "Disabled");
+	PLOG_INFO(PREFIX "    OpenCL Submission: %s",
+		m_OpenCLSubmission ? "Enabled" : "Disabled");
+	#pragma endregion Backend
+	#pragma region Frame
+	PLOG_INFO(PREFIX "  Frame:");
+	PLOG_INFO(PREFIX "    Format: %s %s %s",
+		Utility::ColorFormatToString(m_ColorFormat),
+		Utility::ColorSpaceToString(m_ColorSpace),
+		m_FullColorRange ? "Full" : "Partial");
+	PLOG_INFO(PREFIX "    Resolution: " PRIu32 "x" PRIu32,
+		m_Resolution.first,
+		m_Resolution.second);
+	PLOG_INFO(PREFIX "    Frame Rate: " PRIu32 "/" PRIu32,
+		m_FrameRate.first,
+		m_FrameRate.second);
+	auto aspectRatio = GetAspectRatio();
+	PLOG_INFO(PREFIX "    Aspect Ratio: " PRIu32 ":" PRIu32,
+		aspectRatio.first,
+		aspectRatio.second);
+	#pragma endregion Frame
+	#pragma region Static
+	PLOG_INFO(PREFIX "  Static:");
+	PLOG_INFO(PREFIX "    Usage: %s",
+		Utility::UsageToString(GetUsage()));
+	PLOG_INFO(PREFIX "    Quality Preset: %s",
+		Utility::QualityPresetToString(GetQualityPreset()));
+	auto profileLevel = static_cast<uint16_t>(GetProfileLevel());
+	PLOG_INFO(PREFIX "    Profile: %s " PRIu16 "." PRIu16,
+		Utility::ProfileToString(GetProfile()),
+		profileLevel / 10,
+		profileLevel % 10);
+	PLOG_INFO(PREFIX "    Tier: %s",
+		Utility::TierToString(GetTier()));
+	PLOG_INFO(PREFIX "    Coding Type: %s",
+		Utility::CodingTypeToString(GetCodingType()));
+	PLOG_INFO(PREFIX "    Max. Reference Frames: " PRIu16,
+		(uint16_t)GetMaximumReferenceFrames());
+	PLOG_INFO(PREFIX "    Max. Long-Term Reference Frames: " PRIu16,
+		(uint16_t)GetMaximumLongTermReferenceFrames());
+	#pragma endregion Static
+	#pragma region Rate Control
+	PLOG_INFO(PREFIX "  Rate Control:");
+	PLOG_INFO(PREFIX "    Method: %s",
+		Utility::RateControlMethodToString(GetRateControlMethod()));
+	PLOG_INFO(PREFIX "    Pre-Pass Mode: %s",
+		Utility::PrePassModeToString(GetPrePassMode()));
+	#pragma region QP
+	PLOG_INFO(PREFIX "    QP:");
+	PLOG_INFO(PREFIX "      I-Frame Range:" PRIu8 " - " PRIu8,
+		GetIFrameQPMinimum(),
+		GetIFrameQPMaximum());
+	PLOG_INFO(PREFIX "      I-Frame: " PRIu8,
+		GetIFrameQP());
+	PLOG_INFO(PREFIX "      P-Frame Range:" PRIu8 " - " PRIu8,
+		GetPFrameQPMinimum(),
+		GetPFrameQPMaximum());
+	PLOG_INFO(PREFIX "      P-Frame: " PRIu8,
+		GetPFrameQP());
+	#pragma endregion QP
+	#pragma region Bitrate
+	PLOG_INFO(PREFIX "    Bitrate:");
+	PLOG_INFO(PREFIX "      Target: " PRIu64 " bit/s",
+		GetTargetBitrate());
+	PLOG_INFO(PREFIX "      Peak: " PRIu64 " bit/s",
+		GetPeakBitrate());
+	#pragma endregion Bitrate
+	#pragma region Flags
+	PLOG_INFO(PREFIX "    Flags:");
+	PLOG_INFO(PREFIX "      Filler Data: %s",
+		IsFillerDataEnabled() ? "Enabled" : "Disabled");
+	PLOG_INFO(PREFIX "      Frame Skipping: %s",
+		IsFrameSkippingEnabled() ? "Enabled" : "Disabled");
+	PLOG_INFO(PREFIX "      Variable Based Adaptive Quantization: %s",
+		IsVarianceBasedAdaptiveQuantizationEnabled() ? "Enabled" : "Disabled");
+	PLOG_INFO(PREFIX "      Enforce Hypothetical Reference Decoder: %s",
+		IsEnforceHRDEnabled() ? "Enabled" : "Disabled");
+	#pragma endregion Flags
+	#pragma region Video Buffering Verifier
+	PLOG_INFO(PREFIX "    Video Buffering Verfier:");
+	PLOG_INFO(PREFIX "      Buffer Size: " PRIu64 " bits",
+		GetVBVBufferSize());
+	PLOG_INFO(PREFIX "      Initial Fullness: " PRIu64 " %%",
+		(uint64_t)round(GetInitialVBVBufferFullness() * 100.0));
+	#pragma endregion Video Buffering Verifier
+	PLOG_INFO(PREFIX "    Max. Access Unit Size: " PRIu32,
+		GetMaximumAccessUnitSize());
+	#pragma endregion Rate Control
+
+	#pragma region Picture Control
+	PLOG_INFO(PREFIX "  Picture Control:");
+	PLOG_INFO(PREFIX "    IDR Period: " PRIu32 " Frames",
+		GetIDRPeriod());
+	PLOG_INFO(PREFIX "    GOP:");
+	PLOG_INFO(PREFIX "      Type: %s",
+		Utility::GOPTypeToString(GetGOPType()));
+	PLOG_INFO(PREFIX "      Size: " PRIu32,
+		GetGOPSize());
+	PLOG_INFO(PREFIX "      Size Range: " PRIu32 " - " PRIu32,
+		GetGOPSizeMin(),
+		GetGOPSizeMax());
+	PLOG_INFO(PREFIX "      Alignment: %s",
+		IsGOPAlignmentEnabled() ? "Enabled" : "Disabled");
+	PLOG_INFO(PREFIX "    Deblocking Filter: %s",
+		IsDeblockingFilterEnabled() ? "Enabled" : "Disabled");
+	PLOG_INFO(PREFIX "    Motion Estimation: %s%s",
+		IsMotionEstimationQuarterPixelEnabled() ? (IsMotionEstimationHalfPixelEnabled() ? "Quarter" : "Quarter, ") : "",
+		IsMotionEstimationHalfPixelEnabled() ? "Half" : "");
+	#pragma endregion Picture Control
+
+	#pragma region Intra-Refresh
+	PLOG_INFO(PREFIX "  Intra-Refresh");
+	PLOG_INFO(PREFIX "    Mode: " PRIu32,
+		GetIntraRefreshMode())
+		PLOG_INFO(PREFIX "    Frame Number: " PRIu32,
+			GetIntraRefreshFrameNum());
+	#pragma endregion Intra-Refresh
+
+	#pragma region Slicing
+	PLOG_INFO(PREFIX "  Slicing:");
+	PLOG_INFO(PREFIX "    Slices Per Frame: " PRIu32,
+		GetSlicesPerFrame());
+	PLOG_INFO(PREFIX "    Control Mode: %s",
+		Utility::SliceControlModeToString(GetSliceControlMode()));
+	PLOG_INFO(PREFIX "    Control Size: " PRIu32,
+		GetSliceControlSize());
+	#pragma endregion Slicing
+
+	#pragma region Experimental
+	PLOG_INFO(PREFIX "  Experimental:");
+	PLOG_INFO(PREFIX "    QPCBOffset: " PRIu32,
+		GetQPCBOffset());
+	PLOG_INFO(PREFIX "    QPCROffset: " PRIu32,
+		GetQPCROffset());
+	PLOG_INFO(PREFIX "    Input Queue: " PRIu32,
+		GetInputQueueSize());
+	PLOG_INFO(PREFIX "    Low Latency: %s",
+		GetLowLatencyInternal() ? "Enabled" : "Disabled");
+	PLOG_INFO(PREFIX "    Ultra Low Latency: %s",
+		GetCommonLowLatencyInternal() ? "Enabled" : "Disabled");
+	#pragma endregion Experimental
+
+	//PLOG_INFO(PREFIX "  ");
+	//PLOG_INFO(PREFIX "    ");
 }
