@@ -122,7 +122,7 @@ SOFTWARE.
 // System
 #define P_VIDEO_API					"Video.API"
 #define P_VIDEO_ADAPTER				"Video.Adapter"
-#define P_OPENCL_SUBMISSION			"OpenCL.Submission"
+#define P_OPENCL_TRANSFER			"OpenCL.Transfer"
 #define P_OPENCL_CONVERSION			"OpenCL.Conversion"
 #define P_ASYNCHRONOUSQUEUE			"AsynchronousQueue"
 #define P_ASYNCHRONOUSQUEUE_SIZE	"AsynchronousQueue.Size"
