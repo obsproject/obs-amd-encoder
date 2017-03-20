@@ -176,33 +176,58 @@ namespace Plugin {
 		class Encoder {
 			protected:
 			Encoder(Codec codec,
-				std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
-				ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor);
+				std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter,
+				bool useOpenCLSubmission, bool useOpenCLConversion,
+				ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor,
+				bool useAsyncQueue, size_t asyncQueueSize);
 			public:
 			virtual ~Encoder();
 
 			public:
 
+			#pragma region Initialization
 			uint64_t GetUniqueId();
 
-			// Properties - Initialization
+			//void SetCodec(Codec v);
 			Codec GetCodec();
+
+			//void SetVideoAPI(std::shared_ptr<API::IAPI> v);
 			std::shared_ptr<API::IAPI> GetVideoAPI();
+
+			//void SetVideoAdapter(API::Adapter v);
 			API::Adapter GetVideoAdapter();
+
+			//void SetOpenCLEnabled(bool v);
 			bool IsOpenCLEnabled();
+
+			//void SetColorFormat(ColorFormat v);
 			ColorFormat GetColorFormat();
+
+			//void SetColorSpace(ColorSpace v);
 			ColorSpace GetColorSpace();
+
+			//void SetFullRangeColor(bool v);
 			bool IsFullRangeColor();
 
+			//void SetAsynchronousEncodeEnabled(bool v);
+			bool IsAsynchronousEncodeEnabled();
+
+			//void SetAsyncQueueSize(uint8_t v);
+			uint8_t GetAsyncQueueSize();
+
+			//bool Initialize();
+			#pragma endregion Initialization
+
+			#pragma region Settings
 			virtual std::vector<Usage> CapsUsage() = 0;
 			virtual void SetUsage(Usage v) = 0;
 			virtual Usage GetUsage() = 0;
 
-			// Properties - Static
 			virtual std::vector<QualityPreset> CapsQualityPreset() = 0;
 			virtual void SetQualityPreset(QualityPreset v) = 0;
 			virtual QualityPreset GetQualityPreset() = 0;
 
+			#pragma region Frame
 			virtual std::pair<std::pair<uint32_t, uint32_t>, std::pair<uint32_t, uint32_t>> CapsResolution() = 0;
 			virtual void SetResolution(std::pair<uint32_t, uint32_t> v) = 0;
 			virtual std::pair<uint32_t, uint32_t> GetResolution() = 0;
@@ -212,10 +237,9 @@ namespace Plugin {
 
 			virtual void SetFrameRate(std::pair<uint32_t, uint32_t> v) = 0;
 			virtual std::pair<uint32_t, uint32_t> GetFrameRate() = 0;
-			protected:
-			void UpdateFrameRateValues();
-			public:
+			#pragma endregion Frame
 
+			#pragma region Profile
 			virtual std::vector<Profile> CapsProfile() = 0;
 			virtual void SetProfile(Profile v) = 0;
 			virtual Profile GetProfile() = 0;
@@ -223,20 +247,22 @@ namespace Plugin {
 			virtual std::vector<ProfileLevel> CapsProfileLevel() = 0;
 			virtual void SetProfileLevel(ProfileLevel v) = 0;
 			virtual ProfileLevel GetProfileLevel() = 0;
-
-			virtual std::pair<uint64_t, uint64_t> CapsMaximumReferenceFrames() = 0;
-			virtual void SetMaximumReferenceFrames(uint64_t v) = 0;
-			virtual uint64_t GetMaximumReferenceFrames() = 0;
+			#pragma endregion Profile
 
 			virtual std::vector<CodingType> CapsCodingType() = 0;
 			virtual void SetCodingType(CodingType v) = 0;
 			virtual CodingType GetCodingType() = 0;
 
+			#pragma region Reference Frames
+			virtual std::pair<uint64_t, uint64_t> CapsMaximumReferenceFrames() = 0;
+			virtual void SetMaximumReferenceFrames(uint64_t v) = 0;
+			virtual uint64_t GetMaximumReferenceFrames() = 0;
+
 			virtual std::pair<uint32_t, uint32_t> CapsMaximumLongTermReferenceFrames() = 0;
 			virtual void SetMaximumLongTermReferenceFrames(uint32_t v) = 0;
 			virtual uint32_t GetMaximumLongTermReferenceFrames() = 0;
+			#pragma endregion Reference Frames
 
-			// Properties - Dynamic
 			virtual std::vector<RateControlMethod> CapsRateControlMethod() = 0;
 			virtual void SetRateControlMethod(RateControlMethod v) = 0;
 			virtual RateControlMethod GetRateControlMethod() = 0;
@@ -275,6 +301,7 @@ namespace Plugin {
 			virtual void SetMaximumAccessUnitSize(uint32_t v) = 0;
 			virtual uint32_t GetMaximumAccessUnitSize() = 0;
 
+			#pragma region Video Buffering Verifier
 			virtual std::pair<uint64_t, uint64_t> CapsVBVBufferSize() = 0;
 			virtual void SetVBVBufferSize(uint64_t v) = 0;
 			void SetVBVBufferStrictness(double_t v);
@@ -282,8 +309,9 @@ namespace Plugin {
 
 			virtual void SetVBVBufferInitialFullness(double v) = 0;
 			virtual float GetInitialVBVBufferFullness() = 0;
+			#pragma endregion Video Buffering Verifier
 
-			// Properties - Picture Control
+			#pragma region Picture Control
 			virtual void SetIDRPeriod(uint32_t v) = 0;
 			virtual uint32_t GetIDRPeriod() = 0;
 
@@ -292,14 +320,17 @@ namespace Plugin {
 
 			virtual void SetDeblockingFilterEnabled(bool v) = 0;
 			virtual bool IsDeblockingFilterEnabled() = 0;
+			#pragma endregion Picture Control
 
-			// Properties - Motion Estimation
+			#pragma region Motion Estimation
 			virtual void SetMotionEstimationQuarterPixelEnabled(bool v) = 0;
 			virtual bool IsMotionEstimationQuarterPixelEnabled() = 0;
+
 			virtual void SetMotionEstimationHalfPixelEnabled(bool v) = 0;
 			virtual bool IsMotionEstimationHalfPixelEnabled() = 0;
+			#pragma endregion Motion Estimation
 
-			// Properties - Slicing
+			#pragma region Slicing
 			virtual std::pair<uint32_t, uint32_t> CapsSlicesPerFrame() = 0;
 			virtual void SetSlicesPerFrame(uint32_t v) = 0;
 			virtual uint32_t GetSlicesPerFrame() = 0;
@@ -310,37 +341,50 @@ namespace Plugin {
 			virtual std::pair<uint32_t, uint32_t> CapsSliceControlSize() = 0;
 			virtual void SetSliceControlSize(uint32_t v) = 0;
 			virtual uint32_t GetSliceControlSize() = 0;
-			
-			// Experimental
+			#pragma endregion Slicing
+
+			#pragma region Internal
 			virtual void SetLowLatencyInternal(bool v) = 0;
 			virtual bool GetLowLatencyInternal() = 0;
 
 			virtual void SetCommonLowLatencyInternal(bool v) = 0;
 			virtual bool GetCommonLowLatencyInternal() = 0;
+			#pragma endregion Internal
+			#pragma endregion Settings
 
-			// Unknown:
-			// Intra-Refresh stuff
-			// ConstraintSetFlags (H264 only?)
-
-			// Control
-			public:
+			#pragma region Control
 			void Start();
 			void Restart();
 			void Stop();
 
 			bool IsStarted();
+			virtual void LogProperties() = 0;
 
 			bool Encode(struct encoder_frame* f, struct encoder_packet* p, bool* b);
 			void GetVideoInfo(struct video_scale_info* info);
 			bool GetExtraData(uint8_t** extra_data, size_t* size);
+			#pragma endregion Control
+
+			protected:
+			void UpdateFrameRateValues();
 
 			private:
 			virtual void PacketPriorityAndKeyframe(amf::AMFDataPtr d, struct encoder_packet* p) = 0;
 			virtual AMF_RESULT GetExtraDataInternal(amf::AMFVariant* p) = 0;
 
-			protected:
-			uint64_t m_UniqueId;
+			bool EncodeAllocate(OUT amf::AMFSurfacePtr surface);
+			bool EncodeStore(OUT amf::AMFSurfacePtr surface, IN struct encoder_frame* frame);
+			bool EncodeConvert(IN amf::AMFSurfacePtr surface, OUT amf::AMFDataPtr data);
+			bool EncodeSend(IN amf::AMFDataPtr data);
+			bool EncodeRetrieve(IN amf::AMFDataPtr packet);
+			bool EncodeLoad(IN amf::AMFDataPtr data, OUT struct encoder_packet* packet, OUT bool* received_packet);
 
+			static int32_t AsyncSendMain(Encoder* obj);
+			int32_t AsyncSendLocalMain();
+			static int32_t AsyncRetrieveMain(Encoder* obj);
+			int32_t AsyncRetrieveLocalMain();
+
+			protected:
 			// AMF Internals
 			Plugin::AMD::AMF* m_AMF;
 			amf::AMFFactory* m_AMFFactory;
@@ -351,31 +395,48 @@ namespace Plugin {
 			amf::AMF_MEMORY_TYPE m_AMFMemoryType;
 			amf::AMF_SURFACE_FORMAT m_AMFSurfaceFormat;
 
-			// Buffers
-			std::vector<uint8_t> m_PacketDataBuffer;
-			std::vector<uint8_t> m_ExtraDataBuffer;
-
 			// API Related
 			std::shared_ptr<API::IAPI> m_API;
 			API::Adapter m_APIAdapter;
 			std::shared_ptr<API::Instance> m_APIDevice;
 
+			// Buffers
+			std::vector<uint8_t> m_PacketDataBuffer;
+			std::vector<uint8_t> m_ExtraDataBuffer;
+
+			// Flags
+			bool m_Initialized;
+			bool m_Started;
+			bool m_OpenCL;
+			bool m_OpenCLSubmission; // Submit Frames using OpenCL
+			bool m_OpenCLConversion; // Convert Frames using OpenCL instead of DirectCompute
+			bool m_HaveFirstFrame;
+
 			// Properties
+			uint64_t m_UniqueId;
 			Codec m_Codec;
 			ColorFormat m_ColorFormat;
 			ColorSpace m_ColorSpace;
 			bool m_FullColorRange;
-
 			std::pair<uint32_t, uint32_t> m_Resolution;
 			std::pair<uint32_t, uint32_t> m_FrameRate;
 			uint64_t m_FrameRateTimeStepI;
 			double_t m_FrameRateTimeStep;
 
-			// Flags
-			bool m_Started;
-			bool m_OpenCLSubmission;
-			bool m_OpenCLConversion;
-
+			// Threading
+			bool m_AsyncQueue;
+			size_t m_AsyncQueueSize;
+			struct EncoderThreadingData {
+				// Thread
+				std::thread worker;
+				bool shutdown;
+				// Semaphore
+				size_t wakeupcount;
+				std::condition_variable condvar;
+				std::mutex mutex;
+				// Data
+				std::queue<amf::AMFDataPtr> queue;
+			} *m_AsyncSend, *m_AsyncRetrieve;
 		};
 	}
 }
