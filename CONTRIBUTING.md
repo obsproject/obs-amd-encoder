@@ -49,8 +49,8 @@ The plugin itself is made up of several sub-modules:
 * API-Direct3D11: api-d3d11.cpp, api-d3d11.h
 * API-Host: api-host.cpp, api-host.h
 * Plugin: plugin.cpp, plugin.h, CMakeLists.txt
-* Utilities: misc-util.cpp
-* Locale: Any locale files
+* Utilities: utility.cpp, utility.h
+* Locale: strings.h, Any locale files
 * Resources: Any resource files
 
 ### Commits
