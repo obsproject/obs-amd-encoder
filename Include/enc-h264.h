@@ -23,10 +23,8 @@ SOFTWARE.
 */
 
 #pragma once
-
-#include "plugin.h"
-#include "amf-capabilities.h"
 #include "amf-encoder-h264.h"
+#include "plugin.h"
 
 namespace Plugin {
 	namespace Interface {
