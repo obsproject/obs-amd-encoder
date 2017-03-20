@@ -31,7 +31,9 @@ SET(enc-amf_HEADERS
 	"Include/api-base.h"
 	"Include/api-host.h"
 	"Include/api-opengl.h"
+	"Include/utility.h"
 	"Include/plugin.h"
+	"Include/strings.h"
 	"${PROJECT_BINARY_DIR}/Include/Version.h"
 )
 SET(enc-amf_SOURCES
@@ -41,7 +43,7 @@ SET(enc-amf_SOURCES
 	"Source/api-base.cpp"
 	"Source/api-host.cpp"
 	"Source/api-opengl.cpp"
-	"Source/misc-util.cpp"
+	"Source/utility.cpp"
 	"Source/plugin.cpp"
 )
 SET(enc-amf_LIBRARIES
