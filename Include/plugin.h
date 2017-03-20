@@ -23,7 +23,6 @@ SOFTWARE.
 */
 
 #pragma once
-
 #include <cstdint>
 #include <inttypes.h>
 #include <exception>
@@ -55,7 +54,15 @@ SOFTWARE.
 // Utility
 #define vstr(s) dstr(s)
 #define dstr(s) #s
+
+#define NOMINMAX
 #define clamp(val,low,high) (val > high ? high : (val < low ? low : val))
+#define max(val,high) (val > high ? val : high)
+#define min(val,low ) (val < low  ? val  : low)
+
+#define NOINOUT
+#define IN
+#define OUT
 
 #define QUICK_FORMAT_MESSAGE(var, ...) std::string var = ""; { \
 		std::vector<char> QUICK_FORMAT_MESSAGE_buf(1024); \
@@ -70,16 +77,6 @@ SOFTWARE.
 #define __FUNCTION_NAME__   __func__ 
 #endif
 #endif
-
-#ifdef IN
-#undef IN
-#endif
-#define IN
-
-#ifdef OUT
-#undef OUT
-#endif
-#define OUT
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -138,11 +135,11 @@ enum class Presets : int8_t {
 };
 
 // Static
-#define P_USAGE						"Usage"
-#define P_USAGE_TRANSCODING			"Usage.Transcoding"
-#define P_USAGE_ULTRALOWLATENCY		"Usage.UltraLowLatency"
-#define P_USAGE_LOWLATENCY			"Usage.LowLatency"
-#define P_USAGE_WEBCAM				"Usage.Webcam"
+//#define P_USAGE						"Usage"
+//#define P_USAGE_TRANSCODING			"Usage.Transcoding"
+//#define P_USAGE_ULTRALOWLATENCY		"Usage.UltraLowLatency"
+//#define P_USAGE_LOWLATENCY			"Usage.LowLatency"
+//#define P_USAGE_WEBCAM				"Usage.Webcam"
 #define P_QUALITYPRESET				"QualityPreset"
 #define P_QUALITYPRESET_SPEED		"QualityPreset.Speed"
 #define P_QUALITYPRESET_BALANCED	"QualityPreset.Balanced"
