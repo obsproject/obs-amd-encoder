@@ -27,6 +27,7 @@ SOFTWARE.
 #include <vector>
 #include <map>
 #include <string.h>
+#include <memory>
 
 namespace Plugin {
 	namespace API {
