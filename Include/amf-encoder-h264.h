@@ -32,16 +32,18 @@ namespace Plugin {
 	namespace AMD {
 		namespace H264 {
 			enum class SliceMode : uint8_t {
-				Unknown1 = 1, // Horizontal?
-				Unknown2 = 2, // Vertical?
+				Row = 1, // Horizontal?
+				Column = 2, // Vertical?
 			};
-
 		}
 
 		class EncoderH264 : public Encoder {
 			public:
-			EncoderH264(std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter, bool useOpenCL,
-				ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor);
+			EncoderH264(
+				std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter = API::Adapter::Adapter(),
+				bool useOpenCLSubmission = false, bool useOpenCLConversion = false,
+				ColorFormat colorFormat = ColorFormat::NV12, ColorSpace colorSpace = ColorSpace::BT709, bool fullRangeColor = false,
+				bool useAsyncQueue = false, size_t asyncQueueSize = 0);
 			virtual ~EncoderH264();
 
 			// Properties - Initialization
@@ -144,7 +146,7 @@ namespace Plugin {
 
 			void SetHeaderInsertionSpacing(uint32_t v);
 			uint32_t GetHeaderInsertionSpacing();
-			
+
 			virtual void SetGOPAlignmentEnabled(bool v) override;
 			virtual bool IsGOPAlignmentEnabled() override;
 
@@ -206,6 +208,7 @@ namespace Plugin {
 			virtual bool GetCommonLowLatencyInternal() override;
 
 			// Internal
+			virtual void LogProperties() override;
 			protected:
 			virtual void PacketPriorityAndKeyframe(amf::AMFDataPtr d, struct encoder_packet* p) override;
 			virtual AMF_RESULT GetExtraDataInternal(amf::AMFVariant* p) override;
