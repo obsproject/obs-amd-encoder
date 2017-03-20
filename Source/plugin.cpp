@@ -26,7 +26,6 @@ SOFTWARE.
 //////////////////////////////////////////////////////////////////////////
 // Includes
 //////////////////////////////////////////////////////////////////////////
-#include <windows.h>
 #include <sstream>
 #include <map>
 
@@ -40,6 +39,10 @@ SOFTWARE.
 #endif
 #ifdef WITH_HEVC
 #include "enc-h265.h"
+#endif
+
+#ifdef _WIN32
+#include <windows.h>
 #endif
 
 using namespace Plugin;
@@ -361,16 +364,16 @@ void SetThreadName(uint32_t dwThreadID, const char* threadName) {
 void SetThreadName(const char* threadName) {
 	SetThreadName(GetCurrentThreadId(), threadName);
 }
-void SetThreadName(std::thread* thread, const char* threadName) {
-	DWORD threadId = ::GetThreadId(static_cast<HANDLE>(thread->native_handle()));
+void SetThreadName(std::thread* pthread, const char* threadName) {
+	DWORD threadId = ::GetThreadId(static_cast<HANDLE>(pthread->native_handle()));
 	SetThreadName(threadId, threadName);
 }
 
 #else // Linux, Mac
 #include <sys/prctl.h>
 
-void SetThreadName(std::thread* thread, const char* threadName) {
-	auto handle = thread->native_handle();
+void SetThreadName(std::thread* pthread, const char* threadName) {
+	auto handle = pthread->native_handle();
 	pthread_setname_np(handle, threadName);
 }
 void SetThreadName(const char* threadName) {

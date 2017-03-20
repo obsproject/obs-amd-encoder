@@ -42,6 +42,16 @@ SOFTWARE.
 // Defines
 //////////////////////////////////////////////////////////////////////////
 
+// Plugin
+#define PLUGIN_NAME				"AMD Advanced Media Framework"
+#include "Version.h"
+
+#define PLOG(level, ...)		blog(level, "[AMF] " __VA_ARGS__);
+#define PLOG_ERROR(...)			PLOG(LOG_ERROR,   __VA_ARGS__)
+#define PLOG_WARNING(...)		PLOG(LOG_WARNING, __VA_ARGS__)
+#define PLOG_INFO(...)			PLOG(LOG_INFO,    __VA_ARGS__)
+#define PLOG_DEBUG(...)			PLOG(LOG_DEBUG,   __VA_ARGS__)
+
 // Utility
 #define vstr(s) dstr(s)
 #define dstr(s) #s
@@ -61,15 +71,15 @@ SOFTWARE.
 #endif
 #endif
 
-// Plugin
-#define PLUGIN_NAME				"AMD Advanced Media Framework"
-#include "Version.h"
+#ifdef IN
+#undef IN
+#endif
+#define IN
 
-#define PLOG(level, ...)		blog(level, "[AMF] " __VA_ARGS__);
-#define PLOG_ERROR(...)			PLOG(LOG_ERROR,   __VA_ARGS__)
-#define PLOG_WARNING(...)		PLOG(LOG_WARNING, __VA_ARGS__)
-#define PLOG_INFO(...)			PLOG(LOG_INFO,    __VA_ARGS__)
-#define PLOG_DEBUG(...)			PLOG(LOG_DEBUG,   __VA_ARGS__)
+#ifdef OUT
+#undef OUT
+#endif
+#define OUT
 
 //////////////////////////////////////////////////////////////////////////
 // Code
@@ -80,17 +90,16 @@ MODULE_EXTERN const char *obs_module_text_multi(const char *val, uint8_t depth =
 #if (defined _WIN32) || (defined _WIN64)
 void SetThreadName(uint32_t dwThreadID, const char* threadName);
 void SetThreadName(const char* threadName);
-void SetThreadName(std::thread* thread, const char* threadName);
+void SetThreadName(std::thread* pthread, const char* threadName);
 
 #else
-void SetThreadName(std::thread* thread, const char* threadName);
+void SetThreadName(std::thread* pthread, const char* threadName);
 void SetThreadName(const char* threadName);
 
 #endif
 
 namespace Plugin {
 	uint64_t GetUniqueIdentifier();
-
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -203,7 +212,10 @@ enum class Presets : int8_t {
 // System
 #define P_VIDEO_API					"Video.API"
 #define P_VIDEO_ADAPTER				"Video.Adapter"
-#define P_OPENCL					"OpenCL"
+#define P_OPENCL_SUBMISSION			"OpenCL.Submission"
+#define P_OPENCL_CONVERSION			"OpenCL.Conversion"
+#define P_ASYNCHRONOUSQUEUE			"AsynchronousQueue"
+#define P_ASYNCHRONOUSQUEUE_SIZE	"AsynchronousQueue.Size"
 #define P_DEBUG						"Debug"
 
 #define P_VIEW						"View"
