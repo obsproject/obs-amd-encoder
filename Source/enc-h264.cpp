@@ -158,6 +158,8 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, P_VIDEO_ADAPTER, 0);
 	obs_data_set_default_int(data, P_OPENCL_TRANSFER, 1);
 	obs_data_set_default_int(data, P_OPENCL_CONVERSION, 1);
+	obs_data_set_default_int(data, P_ASYNCHRONOUSQUEUE, 0);
+	obs_data_set_default_int(data, P_ASYNCHRONOUSQUEUE_SIZE, 4);
 	obs_data_set_default_int(data, ("last" P_VIEW), -1);
 	obs_data_set_default_int(data, P_VIEW, static_cast<int64_t>(ViewMode::Basic));
 	obs_data_set_default_bool(data, P_DEBUG, false);
