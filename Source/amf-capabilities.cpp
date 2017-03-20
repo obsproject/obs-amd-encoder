@@ -22,15 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#pragma once
-
 #include "amf-capabilities.h"
-#include "misc-util.cpp"
+#include "utility.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#include <VersionHelpers.h>
-#endif
+//#ifdef _WIN32
+//#include <windows.h>
+//#include <VersionHelpers.h>
+//#endif
 
 using namespace Plugin;
 using namespace Plugin::AMD;
@@ -38,8 +36,7 @@ using namespace Plugin::AMD;
 #pragma region Singleton
 static CapabilityManager* __instance;
 static std::mutex __instance_mutex;
-void Plugin::AMD::CapabilityManager::Initialize()
-{
+void Plugin::AMD::CapabilityManager::Initialize() {
 	const std::lock_guard<std::mutex> lock(__instance_mutex);
 	if (!__instance)
 		__instance = new CapabilityManager();
@@ -62,26 +59,19 @@ Plugin::AMD::CapabilityManager::CapabilityManager() {
 	// Key order: API, Adapter, Codec
 	for (auto api : API::EnumerateAPIs()) {
 		for (auto adapter : api->EnumerateAdapters()) {
-			for (auto codec : { Codec::AVC, Codec::SVC, Codec::HEVC }) {
-
+			for (auto codec : { Codec::AVC/*, Codec::SVC*/, Codec::HEVC }) {
 				bool isSupported = false;
 				try {
 					std::unique_ptr<AMD::Encoder> enc;
 
 					#ifdef WITH_AVC
 					if (codec == Codec::AVC || codec == Codec::SVC) {
-						enc = std::make_unique<AMD::EncoderH264>(
-							api,
-							adapter,
-							false, ColorFormat::NV12, ColorSpace::BT709, false);
+						enc = std::make_unique<AMD::EncoderH264>(api, adapter);
 					}
 					#endif
 					#ifdef WITH_HEVC
 					if (codec == Codec::HEVC) {
-						enc = std::make_unique<AMD::EncoderH265>(
-							api, 
-							adapter,
-							false, ColorFormat::NV12, ColorSpace::BT709, false);
+						enc = std::make_unique<AMD::EncoderH265>(api, adapter);
 					}
 					#endif
 					if (enc != nullptr)
