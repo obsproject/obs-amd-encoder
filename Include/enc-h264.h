@@ -63,7 +63,7 @@ namespace Plugin {
 			// Storage
 			//////////////////////////////////////////////////////////////////////////
 			private:
-			Plugin::AMD::EncoderH264* m_VideoEncoder;
+			std::unique_ptr<Plugin::AMD::EncoderH264> m_VideoEncoder;
 		};
 	}
 }
