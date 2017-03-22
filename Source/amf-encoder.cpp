@@ -159,7 +159,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 			m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.c_str());
 	}
-	res = m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_MEMORY_TYPE, m_AMFMemoryType);
+	res = m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_MEMORY_TYPE, amf::AMF_MEMORY_UNKNOWN);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg,
 			"<Id: %lld> Unable to set converter memory type, error %ls (code %d)",
@@ -420,20 +420,19 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 		return false;
 
 	amf::AMFSurfacePtr surface = nullptr;
-	amf::AMFDataPtr data = nullptr;
+	amf::AMFDataPtr surface_data = nullptr;
+	amf::AMFDataPtr packet_data = nullptr;
 
 	// Encoding Steps
 	if (!EncodeAllocate(surface))
 		return false;
 	if (!EncodeStore(surface, frame))
 		return false;
-	if (!EncodeConvert(surface, data))
+	if (!EncodeConvert(surface, surface_data))
 		return false;
-	if (!EncodeSend(data))
+	if (!EncodeMain(surface_data, packet_data))
 		return false;
-	if (!EncodeRetrieve(data))
-		return false;
-	if (!EncodeLoad(data, packet, received_packet))
+	if (!EncodeLoad(packet_data, packet, received_packet))
 		return false;
 
 	return true;
@@ -498,8 +497,11 @@ bool Plugin::AMD::Encoder::GetExtraData(uint8_t** extra_data, size_t* size) {
 	return false;
 }
 
-bool Plugin::AMD::Encoder::EncodeAllocate(OUT amf::AMFSurfacePtr surface) {
+bool Plugin::AMD::Encoder::EncodeAllocate(OUT amf::AMFSurfacePtr& surface) {
+	AMFTRACECALL;
+
 	AMF_RESULT res;
+	auto clk_start = std::chrono::high_resolution_clock::now();
 
 	// Allocate
 	if (m_OpenCLSubmission) {
@@ -518,12 +520,23 @@ bool Plugin::AMD::Encoder::EncodeAllocate(OUT amf::AMFSurfacePtr surface) {
 		return false;
 	}
 
+	// Performance Tracking
+	auto clk_end = std::chrono::high_resolution_clock::now();
+	uint64_t pf_timestamp = std::chrono::nanoseconds(clk_end.time_since_epoch()).count();
+	uint64_t pf_time = std::chrono::nanoseconds(clk_end - clk_start).count();
+
+	surface->SetProperty(AMF_TIMESTAMP_ALLOCATE, pf_timestamp);
+	surface->SetProperty(AMF_TIME_ALLOCATE, pf_time);
+
 	return true;
 }
 
-bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr surface, IN struct encoder_frame* frame) {
+bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struct encoder_frame* frame) {
+	AMFTRACECALL;
+
 	AMF_RESULT res;
 	amf::AMFComputeSyncPointPtr pSyncPoint;
+	auto clk_start = std::chrono::high_resolution_clock::now();
 
 	if (m_OpenCLSubmission) {
 		m_AMFCompute->PutSyncPoint(&pSyncPoint);
@@ -565,37 +578,26 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr surface, IN struct
 					static_cast<void*>(frame->data[i] + frame_off), frame->linesize[i]);
 			}
 		}
+	}
 
-		if (m_OpenCLSubmission) {
-			res = m_AMFCompute->FinishQueue();
-			if (res != AMF_OK) {
-				QUICK_FORMAT_MESSAGE(errMsg,
-					"<Id: %lld> Failed to finish OpenCL queue, error %ls (code %d)",
-					m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-				PLOG_WARNING("%s", errMsg.data());
-				return false;
-			}
-			pSyncPoint->Wait();
-			if (!m_OpenCL) {
-				res = surface->Convert(m_AMFMemoryType);
-				if (res != AMF_OK) {
-					QUICK_FORMAT_MESSAGE(errMsg,
-						"<Id: %lld> Conversion of Surface from OpenCL failed, error %ls (code %d)",
-						m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-					PLOG_WARNING("%s", errMsg.data());
-					return false;
-				}
-			}
-		} else {
-			res = surface->Convert(m_AMFMemoryType);
-			if (res != AMF_OK) {
-				QUICK_FORMAT_MESSAGE(errMsg,
-					"<Id: %lld> Conversion of Surface from OpenCL failed, error %ls (code %d)",
-					m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-				PLOG_WARNING("%s", errMsg.data());
-				return false;
-			}
+	if (m_OpenCLSubmission) {
+		res = m_AMFCompute->FinishQueue();
+		if (res != AMF_OK) {
+			QUICK_FORMAT_MESSAGE(errMsg,
+				"<Id: %lld> Failed to finish OpenCL queue, error %ls (code %d)",
+				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+			PLOG_WARNING("%s", errMsg.data());
+			return false;
 		}
+		pSyncPoint->Wait();
+	}
+	res = surface->Convert(m_AMFMemoryType);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg,
+			"<Id: %lld> Conversion of Surface failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		PLOG_WARNING("%s", errMsg.data());
+		return false;
 	}
 
 	// Data Stuff
@@ -608,94 +610,158 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr surface, IN struct
 	surface->SetProperty(AMF_PRESENT_TIMESTAMP, frame->pts);
 	/// Duration
 	surface->SetDuration(tsNow - tsLast);
-	/// Performance Monitoring: Submission Timestamp
-	auto clk = std::chrono::high_resolution_clock::now();
-	surface->SetProperty(AMF_SUBMIT_TIMESTAMP, std::chrono::nanoseconds(clk.time_since_epoch()).count());
+
+	// Performance Tracking
+	auto clk_end = std::chrono::high_resolution_clock::now();
+	uint64_t pf_timestamp = std::chrono::nanoseconds(clk_end.time_since_epoch()).count();
+	uint64_t pf_time = std::chrono::nanoseconds(clk_end - clk_start).count();
+	surface->SetProperty(AMF_TIMESTAMP_STORE, pf_timestamp);
+	surface->SetProperty(AMF_TIME_STORE, pf_time);
+
+	PLOG_DEBUG("EncodeStore: PTS(%8lld) DTS(%8lld) TS(%16lld) Duration(%16lld)",
+		frame->pts,
+		frame->pts,
+		surface->GetPts(),
+		surface->GetDuration());
 
 	return true;
 }
 
-bool Plugin::AMD::Encoder::EncodeConvert(IN amf::AMFSurfacePtr surface, OUT amf::AMFDataPtr data) {
+bool Plugin::AMD::Encoder::EncodeConvert(IN amf::AMFSurfacePtr& surface, OUT amf::AMFDataPtr& data) {
+	AMFTRACECALL;
+
 	AMF_RESULT res;
+	auto clk_start = std::chrono::high_resolution_clock::now();
 
-	if (m_OpenCL) {
-		if (!m_OpenCLSubmission) {
-			res = surface->Convert(amf::AMF_MEMORY_OPENCL);
-			if (res != AMF_OK) {
-				QUICK_FORMAT_MESSAGE(errMsg,
-					"<Id: %lld> [Conversion Pass] Conversion of Surface to OpenCL failed, error %ls (code %d)",
-					m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-				PLOG_WARNING("%s", errMsg.data());
-				return false;
-			}
-		}
-		res = m_AMFConverter->SubmitInput(surface);
-		if (res != AMF_OK) {
-			QUICK_FORMAT_MESSAGE(errMsg,
-				"<Id: %lld> [Conversion Pass] Submit to converter failed, error %ls (code %d)",
-				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-			PLOG_WARNING("%s", errMsg.data());
-			return false;
-		}
-		res = m_AMFConverter->QueryOutput(&data);
-		if (res != AMF_OK) {
-			QUICK_FORMAT_MESSAGE(errMsg,
-				"<Id: %lld> [Conversion Pass] Querying output from converter failed, error %ls (code %d)",
-				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-			PLOG_WARNING("%s", errMsg.data());
-			return false;
-		}
-		res = data->Convert(m_AMFMemoryType);
-		if (res != AMF_OK) {
-			QUICK_FORMAT_MESSAGE(errMsg,
-				"<Id: %lld> [Conversion Pass] Conversion of Surface from OpenCL failed, error %ls (code %d)",
-				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-			PLOG_WARNING("%s", errMsg.data());
-			return false;
-		}
+	res = m_AMFConverter->SubmitInput(surface);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg,
+			"<Id: %lld> [Conversion Pass] Submit to converter failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		PLOG_WARNING("%s", errMsg.data());
+		return false;
 	}
+	res = m_AMFConverter->QueryOutput(&data);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg,
+			"<Id: %lld> [Conversion Pass] Querying output from converter failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		PLOG_WARNING("%s", errMsg.data());
+		return false;
+	}
+
+	// Performance Tracking
+	auto clk_end = std::chrono::high_resolution_clock::now();
+	uint64_t pf_timestamp = std::chrono::nanoseconds(clk_end.time_since_epoch()).count();
+	uint64_t pf_time = std::chrono::nanoseconds(clk_end - clk_start).count();
+	surface->SetProperty(AMF_TIMESTAMP_CONVERT, pf_timestamp);
+	surface->SetProperty(AMF_TIME_CONVERT, pf_time);
+
 	return true;
 }
 
-bool Plugin::AMD::Encoder::EncodeSend(IN amf::AMFDataPtr data) {
-	const uint64_t attempts = 5;
-	std::chrono::nanoseconds sleepTime = std::chrono::nanoseconds((uint64_t)ceil(m_FrameRateTimeStep / attempts / 2));
-	bool frameSubmitted = false;
-	for (uint64_t attempt = 1; (attempt <= attempts) && !frameSubmitted; attempt++) {
-		if (m_AsyncQueue) {
-			std::unique_lock<std::mutex> lock(m_AsyncSend->mutex);
-			if (m_AsyncSend->queue.size() < m_AsyncQueueSize) {
-				m_AsyncSend->queue.push(data);
-				m_AsyncSend->wakeupcount++;
-				m_AsyncSend->condvar.notify_one();
-				frameSubmitted = true;
-				break;
-			} else {
-				m_AsyncSend->wakeupcount++;
-				m_AsyncSend->condvar.notify_one();
-			}
-		} else {
-			AMF_RESULT res = m_AMFEncoder->SubmitInput(data);
-			switch (res) {
-				case AMF_INPUT_FULL: // TODO: We don't really have a way to call QueryOutput here...
-					break;
-				case AMF_REPEAT:
-					// Submitted, but need more data.
-				case AMF_OK:
+bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFDataPtr& packet) {
+	AMFTRACECALL;
+
+	const uint64_t attempts = 16;
+	std::chrono::microseconds sleepTime = std::chrono::microseconds(500);//std::chrono::nanoseconds((uint64_t)ceil(m_FrameRateTimeStep / attempts));
+
+	bool frameSubmitted = false,
+		packetRetrieved = false;
+
+	for (uint64_t attempt = 1; (attempt <= attempts) && (!frameSubmitted || !packetRetrieved); attempt++) {
+		// Submit
+		if (!frameSubmitted) {
+			if (m_AsyncQueue) { // Asynchronous
+				std::unique_lock<std::mutex> slock(m_AsyncSend->mutex);
+				if (m_AsyncSend->queue.size() < m_AsyncQueueSize) {
+					m_AsyncSend->queue.push(data);
+					m_AsyncSend->wakeupcount++;
+					m_AsyncSend->condvar.notify_one();
 					frameSubmitted = true;
 					break;
-				default:
-					{
-						QUICK_FORMAT_MESSAGE(errMsg,
-							"<Id: %lld> Submitting Surface failed, error %ls (code %d)",
-							m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-						PLOG_ERROR("%s", errMsg.data());
-					}
-					return false;
+				} else {
+					m_AsyncSend->wakeupcount++;
+					m_AsyncSend->condvar.notify_one();
+				}
+			} else {
+				// Performance Tracking
+				auto clk = std::chrono::high_resolution_clock::now();
+				uint64_t pf_ts = std::chrono::nanoseconds(clk.time_since_epoch()).count();
+				data->SetProperty(AMF_TIMESTAMP_SUBMIT, pf_ts);
+
+				AMF_RESULT res = m_AMFEncoder->SubmitInput(data);
+				switch (res) {
+					case AMF_INPUT_FULL: // TODO: We don't really have a way to call QueryOutput here...
+						break;
+					case AMF_REPEAT:
+						// Submitted, but need more data.
+					case AMF_OK:
+						frameSubmitted = true;
+						break;
+					default:
+						{
+							QUICK_FORMAT_MESSAGE(errMsg,
+								"<Id: %lld> Submitting Surface failed, error %ls (code %d)",
+								m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+							PLOG_ERROR("%s", errMsg.data());
+						}
+						return false;
+				}
+			}
+		}
+		
+		// Retrieve
+		if (!packetRetrieved) {
+			if (m_AsyncQueue) {
+				std::unique_lock<std::mutex> rlock(m_AsyncRetrieve->mutex);
+				if (m_AsyncRetrieve->queue.size() > 0) {
+					packet = m_AsyncRetrieve->queue.front();
+					m_AsyncRetrieve->queue.pop();
+					packetRetrieved = true;
+				} else {
+					m_AsyncRetrieve->wakeupcount++;
+					m_AsyncRetrieve->condvar.notify_one();
+				}
+			} else {
+				AMF_RESULT res = m_AMFEncoder->QueryOutput(&packet);
+				switch (res) {
+					case AMF_REPEAT:
+						packetRetrieved = true;
+						// Returned with B-Frames, means that we need more frames.
+					case AMF_NEED_MORE_INPUT:
+						packetRetrieved = true;
+						// TODO: Somehow call SubmitInput here.
+						break;
+					case AMF_OK:
+						m_HaveFirstFrame = true;
+						packetRetrieved = true;
+
+						// Performance Tracking
+						{
+							auto clk = std::chrono::high_resolution_clock::now();
+							uint64_t pf_query = std::chrono::nanoseconds(clk.time_since_epoch()).count(),
+								pf_submit, pf_main;
+							packet->GetProperty(AMF_TIMESTAMP_SUBMIT, &pf_submit);
+							packet->SetProperty(AMF_TIMESTAMP_QUERY, pf_query);
+							pf_main = (pf_query - pf_submit);
+							packet->SetProperty(AMF_TIME_MAIN, pf_main);
+						}
+
+						break;
+					default:
+						{
+							QUICK_FORMAT_MESSAGE(errMsg,
+								"<Id: %lld> Retrieving Packet failed, error %ls (code %d)",
+								m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+							PLOG_ERROR("%s", errMsg.data());
+						}
+						return false;
+				}
 			}
 		}
 
-		if (!frameSubmitted)
+		if (!packetRetrieved)
 			std::this_thread::sleep_for(sleepTime);
 	}
 	if (!frameSubmitted) {
@@ -704,54 +770,7 @@ bool Plugin::AMD::Encoder::EncodeSend(IN amf::AMFDataPtr data) {
 			m_UniqueId);
 		PLOG_WARNING("%s", errMsg.data());
 	}
-	return true;
-}
-
-bool Plugin::AMD::Encoder::EncodeRetrieve(IN amf::AMFDataPtr packet) {
-	const uint64_t attempts = 5;
-	std::chrono::nanoseconds sleepTime = std::chrono::nanoseconds((uint64_t)ceil(m_FrameRateTimeStep / attempts / 2));
-	bool packetRetrieved = false;
-	for (uint64_t attempt = 1; (attempt <= attempts) && !packetRetrieved && m_HaveFirstFrame; attempt++) {
-		if (m_AsyncQueue) {
-			// Multi Thread
-			std::unique_lock<std::mutex> lock(m_AsyncRetrieve->mutex);
-			if (m_AsyncRetrieve->queue.size() > 0) {
-				packet = m_AsyncRetrieve->queue.front();
-				m_AsyncRetrieve->queue.pop();
-				packetRetrieved = true;
-			} else {
-				m_AsyncRetrieve->wakeupcount++;
-				m_AsyncRetrieve->condvar.notify_one();
-			}
-		} else {
-			// Single Thread
-			AMF_RESULT res;
-			res = m_AMFEncoder->QueryOutput(&packet);
-			switch (res) {
-				case AMF_REPEAT:
-					// Returned with B-Frames, means that we need more frames.
-				case AMF_NEED_MORE_INPUT:
-					// TODO: Somehow call SubmitInput here.
-					break;
-				case AMF_OK:
-					m_HaveFirstFrame = true;
-					packetRetrieved = true;
-					break; // Swallow
-				default:
-					{
-						QUICK_FORMAT_MESSAGE(errMsg,
-							"<Id: %lld> Retrieving Packet failed, error %ls (code %d)",
-							m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-						PLOG_ERROR("%s", errMsg.data());
-					}
-					return false;
-			}
-		}
-
-		if (!packetRetrieved)
-			std::this_thread::sleep_for(sleepTime);
-	}
-	if (!packetRetrieved) {
+	if (m_HaveFirstFrame && !packetRetrieved) {
 		QUICK_FORMAT_MESSAGE(errMsg,
 			"<Id: %lld> No output Packet, encoder is overloaded!",
 			m_UniqueId);
@@ -760,8 +779,14 @@ bool Plugin::AMD::Encoder::EncodeRetrieve(IN amf::AMFDataPtr packet) {
 	return true;
 }
 
-bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr data, OUT struct encoder_packet* packet, OUT bool* received_packet) {
+bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encoder_packet* packet, OUT bool* received_packet) {
+	AMFTRACECALL;
+
+	if (data == nullptr)
+		return true;
+
 	amf::AMFBufferPtr pBuffer = amf::AMFBufferPtr(data);
+	auto clk_start = std::chrono::high_resolution_clock::now();
 
 	// Timestamps
 	packet->type = OBS_ENCODER_VIDEO;
@@ -769,7 +794,6 @@ bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr data, OUT struct encode
 	data->GetProperty(AMF_PRESENT_TIMESTAMP, &packet->pts);
 	/// Decode Timestamp
 	packet->dts = (int64_t)round((double_t)data->GetPts() / m_FrameRateTimeStep);
-
 	/// Data
 	PacketPriorityAndKeyframe(data, packet);
 	packet->size = pBuffer->GetSize();
@@ -781,12 +805,39 @@ bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr data, OUT struct encode
 	packet->data = m_PacketDataBuffer.data();
 	std::memcpy(packet->data, pBuffer->GetNative(), packet->size);
 
-	//PLOG_DEBUG("QueryOutput: frame->dts(%8lld) TS(%16lld) Duration(%16lld) frame->pts(%8lld) Size(%16lld)",
-	//	packet->dts,
-	//	data->GetPts(),
-	//	data->GetDuration(),
-	//	packet->pts,
-	//	packet->size);
+	// Performance Tracking
+	auto clk_end = std::chrono::high_resolution_clock::now();
+	uint64_t pf_allocate_ts, pf_allocate_t,
+		pf_store_ts, pf_store_t,
+		pf_convert_ts, pf_convert_t,
+		pf_submit_ts, pf_query_ts, pf_main_t,
+		pf_load_ts, pf_load_t;
+
+	data->GetProperty(AMF_TIMESTAMP_ALLOCATE, &pf_allocate_ts);
+	data->GetProperty(AMF_TIME_ALLOCATE, &pf_allocate_t);
+	data->GetProperty(AMF_TIMESTAMP_STORE, &pf_store_ts);
+	data->GetProperty(AMF_TIME_STORE, &pf_store_t);
+	data->GetProperty(AMF_TIMESTAMP_CONVERT, &pf_convert_ts);
+	data->GetProperty(AMF_TIME_CONVERT, &pf_convert_t);
+	data->GetProperty(AMF_TIMESTAMP_SUBMIT, &pf_submit_ts);
+	data->GetProperty(AMF_TIMESTAMP_QUERY, &pf_query_ts);
+	data->GetProperty(AMF_TIME_MAIN, &pf_main_t);
+	pf_load_ts = std::chrono::nanoseconds(clk_end.time_since_epoch()).count();
+	pf_load_t = std::chrono::nanoseconds(clk_end - clk_start).count();
+
+	PLOG_DEBUG(
+		" EncodeLoad: PTS(%8lld) DTS(%8lld) TS(%16lld) Duration(%16lld) Size(%16lld)",
+		packet->pts,
+		packet->dts,
+		data->GetPts(),
+		data->GetDuration(),
+		packet->size);
+	PLOG_DEBUG("   Timings: Allocate(%8lld ns) Store(%8lld ns) Convert(%8lld ns) Main(%8lld ns) Load(%8lld ns)",
+		pf_allocate_t,
+		pf_store_t,
+		pf_convert_t,
+		pf_main_t,
+		pf_load_t);
 
 	*received_packet = true;
 

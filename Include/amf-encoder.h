@@ -37,8 +37,17 @@ SOFTWARE.
 
 #include "components/Component.h"
 
+#define AMF_TIMESTAMP_ALLOCATE	L"TS_Allocate"
+#define AMF_TIME_ALLOCATE		L"T_Allocate"
+#define AMF_TIMESTAMP_STORE		L"TS_Store"
+#define AMF_TIME_STORE			L"T_Store"
+#define AMF_TIMESTAMP_CONVERT	L"TS_Convert"
+#define AMF_TIME_CONVERT		L"T_Convert"
+#define AMF_TIMESTAMP_SUBMIT	L"TS_Submit"
+#define AMF_TIMESTAMP_QUERY		L"TS_Query"
+#define AMF_TIME_MAIN			L"T_Main" // Time between Submit and Query
+
 #define AMF_PRESENT_TIMESTAMP L"PTS"
-#define AMF_SUBMIT_TIMESTAMP L"STS"
 
 #ifdef _DEBUG
 #define AMFTRACECALL { \
@@ -369,15 +378,14 @@ namespace Plugin {
 			void UpdateFrameRateValues();
 
 			private:
-			virtual void PacketPriorityAndKeyframe(amf::AMFDataPtr d, struct encoder_packet* p) = 0;
+			virtual void PacketPriorityAndKeyframe(amf::AMFDataPtr& d, struct encoder_packet* p) = 0;
 			virtual AMF_RESULT GetExtraDataInternal(amf::AMFVariant* p) = 0;
 
-			bool EncodeAllocate(OUT amf::AMFSurfacePtr surface);
-			bool EncodeStore(OUT amf::AMFSurfacePtr surface, IN struct encoder_frame* frame);
-			bool EncodeConvert(IN amf::AMFSurfacePtr surface, OUT amf::AMFDataPtr data);
-			bool EncodeSend(IN amf::AMFDataPtr data);
-			bool EncodeRetrieve(IN amf::AMFDataPtr packet);
-			bool EncodeLoad(IN amf::AMFDataPtr data, OUT struct encoder_packet* packet, OUT bool* received_packet);
+			bool EncodeAllocate(OUT amf::AMFSurfacePtr& surface);
+			bool EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struct encoder_frame* frame);
+			bool EncodeConvert(IN amf::AMFSurfacePtr& surface, OUT amf::AMFDataPtr& data);
+			bool EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFDataPtr& packet);
+			bool EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encoder_packet* packet, OUT bool* received_packet);
 
 			static int32_t AsyncSendMain(Encoder* obj);
 			int32_t AsyncSendLocalMain();
