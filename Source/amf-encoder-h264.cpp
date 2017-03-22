@@ -1498,14 +1498,14 @@ bool Plugin::AMD::EncoderH264::GetCommonLowLatencyInternal() {
 }
 
 // Internal
-void Plugin::AMD::EncoderH264::PacketPriorityAndKeyframe(amf::AMFDataPtr pData, struct encoder_packet* packet) {
+void Plugin::AMD::EncoderH264::PacketPriorityAndKeyframe(amf::AMFDataPtr& pData, struct encoder_packet* packet) {
 	AMFTRACECALL;
 	uint64_t pktType;
 	pData->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &pktType);
 	switch ((AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)pktType) {
 		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR:
-		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_I:
 			packet->keyframe = true;
+		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_I:
 			packet->priority = 3;
 			break;
 		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_P:
@@ -1548,7 +1548,7 @@ void Plugin::AMD::EncoderH264::LogProperties() {
 	PLOG_INFO(PREFIX "    Async Queue: %s",
 		m_UniqueId,
 		m_OpenCL ? "Enabled" : "Disabled");
-	PLOG_INFO(PREFIX "      Size: " PRIu32,
+	PLOG_INFO(PREFIX "      Size: %" PRIu32,
 		m_UniqueId,
 		(uint32_t)m_AsyncQueueSize);
 	#pragma endregion Backend
@@ -1560,16 +1560,16 @@ void Plugin::AMD::EncoderH264::LogProperties() {
 		Utility::ColorFormatToString(m_ColorFormat),
 		Utility::ColorSpaceToString(m_ColorSpace),
 		m_FullColorRange ? "Full" : "Partial");
-	PLOG_INFO(PREFIX "    Resolution: " PRIu32 "x" PRIu32,
+	PLOG_INFO(PREFIX "    Resolution: %" PRIu32 "x%" PRIu32,
 		m_UniqueId,
 		m_Resolution.first,
 		m_Resolution.second);
-	PLOG_INFO(PREFIX "    Frame Rate: " PRIu32 "/" PRIu32,
+	PLOG_INFO(PREFIX "    Frame Rate: %" PRIu32 "/%" PRIu32,
 		m_UniqueId,
 		m_FrameRate.first,
 		m_FrameRate.second);
 	auto aspectRatio = GetAspectRatio();
-	PLOG_INFO(PREFIX "    Aspect Ratio: " PRIu32 ":" PRIu32,
+	PLOG_INFO(PREFIX "    Aspect Ratio: %" PRIu32 ":%" PRIu32,
 		m_UniqueId,
 		aspectRatio.first,
 		aspectRatio.second);
@@ -1584,7 +1584,7 @@ void Plugin::AMD::EncoderH264::LogProperties() {
 		m_UniqueId,
 		Utility::QualityPresetToString(GetQualityPreset()));
 	auto profileLevel = static_cast<uint16_t>(GetProfileLevel());
-	PLOG_INFO(PREFIX "    Profile: %s " PRIu16 "." PRIu16,
+	PLOG_INFO(PREFIX "    Profile: %s %" PRIu16 ".%" PRIu16,
 		m_UniqueId,
 		Utility::ProfileToString(GetProfile()),
 		profileLevel / 10,
@@ -1592,10 +1592,10 @@ void Plugin::AMD::EncoderH264::LogProperties() {
 	PLOG_INFO(PREFIX "    Coding Type: %s",
 		m_UniqueId,
 		Utility::CodingTypeToString(GetCodingType()));
-	PLOG_INFO(PREFIX "    Max. Reference Frames: " PRIu16,
+	PLOG_INFO(PREFIX "    Max. Reference Frames: %" PRIu16,
 		m_UniqueId,
 		(uint16_t)GetMaximumReferenceFrames());
-	PLOG_INFO(PREFIX "    Max. Long-Term Reference Frames: " PRIu16,
+	PLOG_INFO(PREFIX "    Max. Long-Term Reference Frames: %" PRIu16,
 		m_UniqueId,
 		(uint16_t)GetMaximumLongTermReferenceFrames());
 	#pragma endregion Static
@@ -1611,18 +1611,18 @@ void Plugin::AMD::EncoderH264::LogProperties() {
 	#pragma region QP
 	PLOG_INFO(PREFIX "    QP:",
 		m_UniqueId);
-	PLOG_INFO(PREFIX "      Range: " PRIu8 " - " PRIu8,
+	PLOG_INFO(PREFIX "      Range: %" PRIu8 " - %" PRIu8,
 		m_UniqueId,
 		GetQPMinimum(),
 		GetQPMaximum());
-	PLOG_INFO(PREFIX "      I-Frame: " PRIu8,
+	PLOG_INFO(PREFIX "      I-Frame: %" PRIu8,
 		m_UniqueId,
 		GetIFrameQP());
-	PLOG_INFO(PREFIX "      P-Frame: " PRIu8,
+	PLOG_INFO(PREFIX "      P-Frame: %" PRIu8,
 		m_UniqueId,
 		GetPFrameQP());
 	try {
-		PLOG_INFO(PREFIX "      B-Frame: " PRIu8,
+		PLOG_INFO(PREFIX "      B-Frame: %" PRIu8,
 			m_UniqueId,
 			GetBFrameQP());
 	} catch (...) {
@@ -1633,10 +1633,10 @@ void Plugin::AMD::EncoderH264::LogProperties() {
 	#pragma region Bitrate
 	PLOG_INFO(PREFIX "    Bitrate:",
 		m_UniqueId);
-	PLOG_INFO(PREFIX "      Target: " PRIu64 " bit/s",
+	PLOG_INFO(PREFIX "      Target: %" PRIu64 " bit/s",
 		m_UniqueId,
 		GetTargetBitrate());
-	PLOG_INFO(PREFIX "      Peak: " PRIu64 " bit/s",
+	PLOG_INFO(PREFIX "      Peak: %" PRIu64 " bit/s",
 		m_UniqueId,
 		GetPeakBitrate());
 	#pragma endregion Bitrate
@@ -1659,14 +1659,14 @@ void Plugin::AMD::EncoderH264::LogProperties() {
 	#pragma region Video Buffering Verifier
 	PLOG_INFO(PREFIX "    Video Buffering Verfier:",
 		m_UniqueId);
-	PLOG_INFO(PREFIX "      Buffer Size: " PRIu64 " bits",
+	PLOG_INFO(PREFIX "      Buffer Size: %" PRIu64 " bits",
 		m_UniqueId,
 		GetVBVBufferSize());
-	PLOG_INFO(PREFIX "      Initial Fullness: " PRIu64 " %%",
+	PLOG_INFO(PREFIX "      Initial Fullness: %" PRIu64 " %%",
 		m_UniqueId,
 		(uint64_t)round(GetInitialVBVBufferFullness() * 100.0));
 	#pragma endregion Video Buffering Verifier
-	PLOG_INFO(PREFIX "    Max. Access Unit Size: " PRIu32,
+	PLOG_INFO(PREFIX "    Max. Access Unit Size: %" PRIu32,
 		m_UniqueId,
 		GetMaximumAccessUnitSize());
 	#pragma endregion Rate Control
@@ -1674,10 +1674,10 @@ void Plugin::AMD::EncoderH264::LogProperties() {
 	#pragma region Picture Control
 	PLOG_INFO(PREFIX "  Picture Control:",
 		m_UniqueId);
-	PLOG_INFO(PREFIX "    IDR Period: " PRIu32 " Frames",
+	PLOG_INFO(PREFIX "    IDR Period: %" PRIu32 " Frames",
 		m_UniqueId,
 		GetIDRPeriod());
-	PLOG_INFO(PREFIX "    Header Insertion Spacing: " PRIu32,
+	PLOG_INFO(PREFIX "    Header Insertion Spacing: %" PRIu32,
 		m_UniqueId,
 		GetHeaderInsertionSpacing());
 	PLOG_INFO(PREFIX "    GOP Alignment: %s",
@@ -1693,7 +1693,7 @@ void Plugin::AMD::EncoderH264::LogProperties() {
 	PLOG_INFO(PREFIX "    B-Frames:",
 		m_UniqueId);
 	try {
-		PLOG_INFO(PREFIX "      Pattern: " PRIu8,
+		PLOG_INFO(PREFIX "      Pattern: %" PRIu8,
 			m_UniqueId,
 			GetBFramePattern());
 	} catch (...) {
@@ -1701,7 +1701,7 @@ void Plugin::AMD::EncoderH264::LogProperties() {
 			m_UniqueId);
 	}
 	try {
-		PLOG_INFO(PREFIX "      Delta QP: " PRIi8,
+		PLOG_INFO(PREFIX "      Delta QP: %" PRIi8,
 			m_UniqueId,
 			GetBFrameDeltaQP());
 	} catch (...) {
@@ -1717,7 +1717,7 @@ void Plugin::AMD::EncoderH264::LogProperties() {
 			m_UniqueId);
 	}
 	try {
-		PLOG_INFO(PREFIX "      Reference Delta QP: " PRIi8,
+		PLOG_INFO(PREFIX "      Reference Delta QP: %" PRIi8,
 			m_UniqueId,
 			GetBFrameReferenceDeltaQP());
 	} catch (...) {
@@ -1729,10 +1729,10 @@ void Plugin::AMD::EncoderH264::LogProperties() {
 	#pragma region Intra-Refresh
 	PLOG_INFO(PREFIX "  Intra-Refresh:",
 		m_UniqueId);
-	PLOG_INFO(PREFIX "    Number of Macroblocks Per Slot: " PRIu32,
+	PLOG_INFO(PREFIX "    Number of Macroblocks Per Slot: %" PRIu32,
 		m_UniqueId,
 		GetIntraRefreshNumMBsPerSlot());
-	PLOG_INFO(PREFIX "    Number of Stripes: " PRIu32,
+	PLOG_INFO(PREFIX "    Number of Stripes: %" PRIu32,
 		m_UniqueId,
 		GetIntraRefreshNumOfStripes());
 	#pragma endregion Intra-Refresh
@@ -1740,19 +1740,19 @@ void Plugin::AMD::EncoderH264::LogProperties() {
 	#pragma region Slicing
 	PLOG_INFO(PREFIX "  Slicing:",
 		m_UniqueId);
-	PLOG_INFO(PREFIX "    Mode: " PRIu64,
+	PLOG_INFO(PREFIX "    Mode: %" PRIu64,
 		m_UniqueId,
 		Utility::SliceModeToString(GetSliceMode()));
-	PLOG_INFO(PREFIX "    Slices Per Frame: " PRIu32,
+	PLOG_INFO(PREFIX "    Slices Per Frame: %" PRIu32,
 		m_UniqueId,
 		GetSlicesPerFrame());
 	PLOG_INFO(PREFIX "    Control Mode: %s",
 		m_UniqueId,
 		Utility::SliceControlModeToString(GetSliceControlMode()));
-	PLOG_INFO(PREFIX "    Control Size: " PRIu32,
+	PLOG_INFO(PREFIX "    Control Size: %" PRIu32,
 		m_UniqueId,
 		GetSliceControlSize());
-	PLOG_INFO(PREFIX "    Maximum Slice Size: " PRIu32,
+	PLOG_INFO(PREFIX "    Maximum Slice Size: %" PRIu32,
 		m_UniqueId,
 		GetMaximumSliceSize());
 	#pragma endregion Slicing
