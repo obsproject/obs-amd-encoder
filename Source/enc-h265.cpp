@@ -894,7 +894,7 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 	m_VideoEncoder = std::make_unique<EncoderH265>(api, adapter,
 		!!obs_data_get_int(data, P_OPENCL_TRANSFER), !!obs_data_get_int(data, P_OPENCL_CONVERSION),
 		colorFormat, colorSpace, voi->range == VIDEO_RANGE_FULL,
-		!!obs_data_get_int(data, P_ASYNCHRONOUSQUEUE), obs_data_get_int(data, P_ASYNCHRONOUSQUEUE_SIZE));
+		!!obs_data_get_int(data, P_ASYNCHRONOUSQUEUE), (size_t)obs_data_get_int(data, P_ASYNCHRONOUSQUEUE_SIZE));
 
 	/// Static Properties
 	m_VideoEncoder->SetUsage(Usage::Transcoding);
