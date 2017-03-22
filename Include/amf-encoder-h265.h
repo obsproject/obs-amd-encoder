@@ -230,7 +230,7 @@ namespace Plugin {
 			// Internal
 			virtual void LogProperties() override;
 			protected:
-			virtual void PacketPriorityAndKeyframe(amf::AMFDataPtr d, struct encoder_packet* p) override;
+			virtual void PacketPriorityAndKeyframe(amf::AMFDataPtr& d, struct encoder_packet* p) override;
 			virtual AMF_RESULT GetExtraDataInternal(amf::AMFVariant* p) override;
 
 
