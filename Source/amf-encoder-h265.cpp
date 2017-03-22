@@ -1595,12 +1595,21 @@ void Plugin::AMD::EncoderH265::LogProperties() {
 	PLOG_INFO(PREFIX "    Video Adapter: %s",
 		m_UniqueId,
 		m_APIAdapter.Name.c_str());
-	PLOG_INFO(PREFIX "    OpenCL Conversion: %s",
+	PLOG_INFO(PREFIX "    OpenCL: %s",
 		m_UniqueId,
-		m_OpenCL ? "Enabled" : "Disabled");
-	PLOG_INFO(PREFIX "    OpenCL Submission: %s",
+		m_OpenCL ? "Supported" : "Not Supported");
+	PLOG_INFO(PREFIX "      Submission: %s",
 		m_UniqueId,
 		m_OpenCLSubmission ? "Enabled" : "Disabled");
+	PLOG_INFO(PREFIX "      Conversion: %s",
+		m_UniqueId,
+		m_OpenCLConversion ? "Enabled" : "Disabled");
+	PLOG_INFO(PREFIX "    Async Queue: %s",
+		m_UniqueId,
+		m_OpenCL ? "Enabled" : "Disabled");
+	PLOG_INFO(PREFIX "      Size: " PRIu32,
+		m_UniqueId,
+		(uint32_t)m_AsyncQueueSize);
 	#pragma endregion Backend
 	#pragma region Frame
 	PLOG_INFO(PREFIX "  Frame:",
