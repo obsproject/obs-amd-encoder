@@ -627,7 +627,6 @@ static void obs_data_transfer_settings(obs_data_t * data) {
 
 bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *props,
 	obs_property_t *pmod, obs_data_t *data) {
-	const char* pmodname = obs_property_name(pmod);
 	bool result = false;
 	obs_property_t* p;
 
@@ -635,47 +634,46 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 	obs_data_transfer_settings(data);
 
 	#pragma region Video API & Adapter
-	if (strcmp(pmodname, P_VIDEO_API) == 0) { // Video API
-		const char
-			*videoAPI_last = obs_data_get_string(data, ("last" P_VIDEO_API)),
-			*videoAPI_cur = obs_data_get_string(data, P_VIDEO_API);
-		if (strlen(videoAPI_cur) == 0) {
-			p = obs_properties_get(props, P_VIDEO_API);
-			obs_data_set_string(data, P_VIDEO_API, obs_property_list_item_string(p, 0));
-			videoAPI_cur = obs_data_get_string(data, P_VIDEO_API);
+	// Video API
+	const char
+		*videoAPI_last = obs_data_get_string(data, ("last" P_VIDEO_API)),
+		*videoAPI_cur = obs_data_get_string(data, P_VIDEO_API);
+	if (strlen(videoAPI_cur) == 0) {
+		p = obs_properties_get(props, P_VIDEO_API);
+		obs_data_set_string(data, P_VIDEO_API, obs_property_list_item_string(p, 0));
+		videoAPI_cur = obs_data_get_string(data, P_VIDEO_API);
 
-			result = true;
-		}
-		/// If a different API was selected, rebuild the device list.
-		if (strcmp(videoAPI_last, videoAPI_cur) != 0) {
-			obs_data_set_string(data, ("last" P_VIDEO_API), videoAPI_cur);
-			fill_device_list(obs_properties_get(props, P_VIDEO_ADAPTER), videoAPI_cur);
-			result = true;
+		result = true;
+	}
+	/// If a different API was selected, rebuild the device list.
+	if (strcmp(videoAPI_last, videoAPI_cur) != 0) {
+		obs_data_set_string(data, ("last" P_VIDEO_API), videoAPI_cur);
+		fill_device_list(obs_properties_get(props, P_VIDEO_ADAPTER), videoAPI_cur);
+		result = true;
 
-			// Reset Video Adapter to first in list.
-			obs_data_set_int(data, P_VIDEO_ADAPTER,
-				obs_property_list_item_int(obs_properties_get(props, P_VIDEO_ADAPTER), 0));
-		}
+		// Reset Video Adapter to first in list.
+		obs_data_set_int(data, P_VIDEO_ADAPTER,
+			obs_property_list_item_int(obs_properties_get(props, P_VIDEO_ADAPTER), 0));
 	}
 
-	if (strcmp(pmodname, P_VIDEO_ADAPTER) == 0) { // Video Adapter
-		int64_t
-			videoAdapter_last = obs_data_get_int(data, ("last" P_VIDEO_ADAPTER)),
-			videoAdapter_cur = obs_data_get_int(data, P_VIDEO_ADAPTER);
-		if (videoAdapter_last != videoAdapter_cur) {
-			obs_data_set_int(data, ("last" P_VIDEO_ADAPTER), videoAdapter_cur);
-			result = true;
+	// Video Adapter
+	int64_t
+		videoAdapter_last = obs_data_get_int(data, ("last" P_VIDEO_ADAPTER)),
+		videoAdapter_cur = obs_data_get_int(data, P_VIDEO_ADAPTER);
+	if (videoAdapter_last != videoAdapter_cur) {
+		obs_data_set_int(data, ("last" P_VIDEO_ADAPTER), videoAdapter_cur);
+		result = true;
 
-			auto api = Plugin::API::GetAPI(obs_data_get_string(data, P_VIDEO_API));
-			union {
-				int64_t v;
-				uint32_t id[2];
-			} adapterid = { videoAdapter_cur };
-			auto adapter = api->GetAdapterById(adapterid.id[0], adapterid.id[1]);
-			try {
-				auto enc = EncoderH264(api, adapter);
+		auto api = Plugin::API::GetAPI(obs_data_get_string(data, P_VIDEO_API));
+		union {
+			int64_t v;
+			uint32_t id[2];
+		} adapterid = { videoAdapter_cur };
+		auto adapter = api->GetAdapterById(adapterid.id[0], adapterid.id[1]);
+		try {
+			auto enc = EncoderH264(api, adapter);
 
-				#define TEMP_LIMIT_DROPDOWN(func, enm, prop) { \
+			#define TEMP_LIMIT_DROPDOWN(func, enm, prop) { \
 				auto tmp_p = obs_properties_get(props, prop); \
 				auto tmp_l = enc.func(); \
 				enm tmp_s = static_cast<enm>(obs_data_get_int(data, obs_property_name(tmp_p))); \
@@ -693,45 +691,44 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 						obs_data_default_single(props, data, obs_property_name(tmp_p)); \
 				} \
 			}
-				#define TEMP_LIMIT_SLIDER(func, prop) { \
+			#define TEMP_LIMIT_SLIDER(func, prop) { \
 				auto tmp_p = obs_properties_get(props, prop); \
 				auto tmp_l = enc.func(); \
 				obs_property_int_set_limits(tmp_p, (int)tmp_l.first, (int)tmp_l.second, 1); \
 			}
-				#define TEMP_LIMIT_SLIDER_BITRATE(func, prop) { \
+			#define TEMP_LIMIT_SLIDER_BITRATE(func, prop) { \
 				auto tmp_p = obs_properties_get(props, prop); \
 				auto tmp_l = enc.func(); \
 				obs_property_int_set_limits(tmp_p, (int)tmp_l.first / 1000, (int)tmp_l.second / 1000, 1); \
 			}
 
 				//TEMP_LIMIT_DROPDOWN(CapsUsage, AMD::Usage, P_USAGE);
-				TEMP_LIMIT_DROPDOWN(CapsQualityPreset, AMD::QualityPreset, P_QUALITYPRESET);
-				TEMP_LIMIT_DROPDOWN(CapsProfile, AMD::Profile, P_PROFILE);
-				TEMP_LIMIT_DROPDOWN(CapsProfileLevel, AMD::ProfileLevel, P_PROFILELEVEL);
-				{
-					auto tmp_p = obs_properties_get(props, P_PROFILELEVEL);
-					obs_property_list_item_disable(tmp_p, 0, false);
-				}
-				// Aspect Ratio - No limits, only affects players/transcoders
-				TEMP_LIMIT_DROPDOWN(CapsCodingType, AMD::CodingType, P_CODINGTYPE);
-				TEMP_LIMIT_SLIDER(CapsMaximumReferenceFrames, P_MAXIMUMREFERENCEFRAMES);
-				TEMP_LIMIT_DROPDOWN(CapsRateControlMethod, AMD::RateControlMethod, P_RATECONTROLMETHOD);
-				TEMP_LIMIT_DROPDOWN(CapsPrePassMode, AMD::PrePassMode, P_PREPASSMODE);
-				TEMP_LIMIT_SLIDER_BITRATE(CapsTargetBitrate, P_BITRATE_TARGET);
-				TEMP_LIMIT_SLIDER_BITRATE(CapsPeakBitrate, P_BITRATE_PEAK);
-				TEMP_LIMIT_SLIDER_BITRATE(CapsVBVBufferSize, P_VBVBUFFER_SIZE);
-				{
-					auto bframep = obs_properties_get(props, P_BFRAME_PATTERN);
-					auto bframecaps = enc.CapsBFramePattern();
-					obs_property_int_set_limits(bframep, 0, (int)bframecaps, 1);
-					if (obs_data_get_int(data, obs_property_name(bframep)) > bframecaps) {
-						obs_data_set_int(data, obs_property_name(bframep), bframecaps);
-					}
-				}
-			} catch (const std::exception& e) {
-				PLOG_ERROR("Exception occured while updating capabilities: %s",
-					e.what());
+			TEMP_LIMIT_DROPDOWN(CapsQualityPreset, AMD::QualityPreset, P_QUALITYPRESET);
+			TEMP_LIMIT_DROPDOWN(CapsProfile, AMD::Profile, P_PROFILE);
+			TEMP_LIMIT_DROPDOWN(CapsProfileLevel, AMD::ProfileLevel, P_PROFILELEVEL);
+			{
+				auto tmp_p = obs_properties_get(props, P_PROFILELEVEL);
+				obs_property_list_item_disable(tmp_p, 0, false);
 			}
+			// Aspect Ratio - No limits, only affects players/transcoders
+			TEMP_LIMIT_DROPDOWN(CapsCodingType, AMD::CodingType, P_CODINGTYPE);
+			TEMP_LIMIT_SLIDER(CapsMaximumReferenceFrames, P_MAXIMUMREFERENCEFRAMES);
+			TEMP_LIMIT_DROPDOWN(CapsRateControlMethod, AMD::RateControlMethod, P_RATECONTROLMETHOD);
+			TEMP_LIMIT_DROPDOWN(CapsPrePassMode, AMD::PrePassMode, P_PREPASSMODE);
+			TEMP_LIMIT_SLIDER_BITRATE(CapsTargetBitrate, P_BITRATE_TARGET);
+			TEMP_LIMIT_SLIDER_BITRATE(CapsPeakBitrate, P_BITRATE_PEAK);
+			TEMP_LIMIT_SLIDER_BITRATE(CapsVBVBufferSize, P_VBVBUFFER_SIZE);
+			{
+				auto bframep = obs_properties_get(props, P_BFRAME_PATTERN);
+				auto bframecaps = enc.CapsBFramePattern();
+				obs_property_int_set_limits(bframep, 0, (int)bframecaps, 1);
+				if (obs_data_get_int(data, obs_property_name(bframep)) > bframecaps) {
+					obs_data_set_int(data, obs_property_name(bframep), bframecaps);
+				}
+			}
+		} catch (const std::exception& e) {
+			PLOG_ERROR("Exception occured while updating capabilities: %s",
+				e.what());
 		}
 	}
 	#pragma endregion Video API & Adapter
@@ -1266,7 +1263,7 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 	m_VideoEncoder = std::make_unique<EncoderH264>(api, adapter,
 		!!obs_data_get_int(data, P_OPENCL_TRANSFER), !!obs_data_get_int(data, P_OPENCL_CONVERSION),
 		colorFormat, colorSpace, voi->range == VIDEO_RANGE_FULL,
-		!!obs_data_get_int(data, P_ASYNCHRONOUSQUEUE), obs_data_get_int(data, P_ASYNCHRONOUSQUEUE_SIZE));
+		!!obs_data_get_int(data, P_ASYNCHRONOUSQUEUE), (size_t)obs_data_get_int(data, P_ASYNCHRONOUSQUEUE_SIZE));
 
 	/// Static Properties
 	m_VideoEncoder->SetUsage(Usage::Transcoding);
