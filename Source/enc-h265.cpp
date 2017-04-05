@@ -1085,7 +1085,6 @@ bool Plugin::Interface::H265Interface::update(void *ptr, obs_data_t *settings) {
 }
 
 bool Plugin::Interface::H265Interface::update(obs_data_t* data) {
-
 		// Rate Control
 	m_VideoEncoder->SetFrameSkippingEnabled(!!obs_data_get_int(data, P_FRAMESKIPPING));
 	m_VideoEncoder->SetEnforceHRDEnabled(!!obs_data_get_int(data, P_ENFORCEHRD));
@@ -1098,7 +1097,10 @@ bool Plugin::Interface::H265Interface::update(obs_data_t* data) {
 		case RateControlMethod::PeakConstrainedVariableBitrate:
 		case RateControlMethod::LatencyConstrainedVariableBitrate:
 			m_VideoEncoder->SetPeakBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_PEAK) * 1000));
+			m_VideoEncoder->SetTargetBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_TARGET) * 1000));
+			break;
 		case RateControlMethod::ConstantBitrate:
+			m_VideoEncoder->SetPeakBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_TARGET) * 1000));
 			m_VideoEncoder->SetTargetBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_TARGET) * 1000));
 			break;
 		case RateControlMethod::ConstantQP:
