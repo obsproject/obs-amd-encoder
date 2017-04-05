@@ -108,15 +108,16 @@ void Plugin::API::InitializeAPIs() {
 	}
 	#endif
 
-	// OpenGL
-	{
-		s_APIInstances.insert(s_APIInstances.end(), std::make_shared<OpenGL>());
-	}
+	// Mikhail says these are for compatibility only, not actually backends.
+	//// OpenGL
+	//{
+	//	s_APIInstances.insert(s_APIInstances.end(), std::make_shared<OpenGL>());
+	//}
 
-	// Host
-	{
-		s_APIInstances.insert(s_APIInstances.end(), std::make_shared<Host>());
-	}
+	//// Host
+	//{
+	//	s_APIInstances.insert(s_APIInstances.end(), std::make_shared<Host>());
+	//}
 }
 
 void Plugin::API::FinalizeAPIs() {
