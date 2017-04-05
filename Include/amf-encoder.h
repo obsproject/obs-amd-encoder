@@ -47,7 +47,7 @@ SOFTWARE.
 #define AMF_TIMESTAMP_QUERY		L"TS_Query"
 #define AMF_TIME_MAIN			L"T_Main" // Time between Submit and Query
 
-#define AMF_PRESENT_TIMESTAMP L"PTS"
+#define AMF_PRESENT_TIMESTAMP	L"PTS"
 
 #ifdef _DEBUG
 #define AMFTRACECALL { \
@@ -428,8 +428,11 @@ namespace Plugin {
 			bool m_FullColorRange;
 			std::pair<uint32_t, uint32_t> m_Resolution;
 			std::pair<uint32_t, uint32_t> m_FrameRate;
-			uint64_t m_FrameRateTimeStepI;
+			double_t m_FrameRateFraction;
 			double_t m_FrameRateTimeStep;
+			uint64_t m_FrameRateTimeStepInt;
+			std::chrono::nanoseconds m_SubmitQueryWaitTimer;
+			uint64_t m_SubmitQueryAttempts = 8;
 
 			// Threading
 			bool m_AsyncQueue;

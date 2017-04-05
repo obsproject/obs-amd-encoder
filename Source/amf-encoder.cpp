@@ -63,7 +63,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	m_Resolution = std::make_pair<uint32_t, uint32_t>(0, 0);
 	m_FrameRate = std::make_pair<uint32_t, uint32_t>(0, 0);
 	m_FrameRateTimeStep = 0;
-	m_FrameRateTimeStepI = 0;
+	m_FrameRateTimeStepInt = 0;
 	/// Flags
 	m_Initialized = true;
 	m_Started = false;
@@ -95,14 +95,23 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	}
 	/// Initialize Context using selected API
 	switch (m_API->GetType()) {
-		case API::Type::Host:
-			m_AMFMemoryType = amf::AMF_MEMORY_HOST;
-			m_OpenCLSubmission = false;
+		case API::Type::Direct3D11:
+		case API::Type::Direct3D9:
 			break;
-		case API::Type::OpenGL:
-			m_AMFMemoryType = amf::AMF_MEMORY_OPENGL;
-			res = m_AMFContext->InitOpenGL(m_APIDevice->GetContext(), 0, 0);
-			break;
+		default:
+			m_API = API::GetAPI(0);
+			switch (m_API->GetType()) {
+				case API::Type::Direct3D9:
+					m_APIAdapter = m_API->EnumerateAdapters()[0];
+					m_APIDevice = m_API->CreateInstance(m_APIAdapter);
+					break;
+				case API::Type::Direct3D11:
+					m_APIAdapter = m_API->EnumerateAdapters()[0];
+					m_APIDevice = m_API->CreateInstance(m_APIAdapter);
+					break;
+			}
+	}
+	switch (m_API->GetType()) {
 		case API::Type::Direct3D9:
 			m_AMFMemoryType = amf::AMF_MEMORY_DX9;
 			res = m_AMFContext->InitDX9(m_APIDevice->GetContext());
@@ -122,32 +131,33 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	}
 
 	// Initialize OpenCL (if possible)
-	if (m_OpenCLSubmission && m_OpenCLConversion)
+	if (m_OpenCLSubmission || m_OpenCLConversion) {
 		res = m_AMFContext->InitOpenCL();
-	if (res == AMF_OK) {
-		m_OpenCL = true;
+		if (res == AMF_OK) {
+			m_OpenCL = true;
 
-		res = m_AMFContext->GetCompute(amf::AMF_MEMORY_OPENCL, &m_AMFCompute);
-		if (res != AMF_OK) {
+			res = m_AMFContext->GetCompute(amf::AMF_MEMORY_OPENCL, &m_AMFCompute);
+			if (res != AMF_OK) {
+				m_OpenCLSubmission = false;
+				m_OpenCLConversion = false;
+
+				QUICK_FORMAT_MESSAGE(errMsg,
+					"<Id: %lld> Retrieving Compute object failed, error %ls (code %d)",
+					m_UniqueId,
+					m_AMF->GetTrace()->GetResultText(res), res);
+				PLOG_WARNING("%s", errMsg.data());
+			}
+		} else {
+			m_OpenCL = false;
 			m_OpenCLSubmission = false;
 			m_OpenCLConversion = false;
 
 			QUICK_FORMAT_MESSAGE(errMsg,
-				"<Id: %lld> Retrieving Compute object failed, error %ls (code %d)",
+				"<Id: %lld> Initialising OpenCL failed, error %ls (code %d)",
 				m_UniqueId,
 				m_AMF->GetTrace()->GetResultText(res), res);
 			PLOG_WARNING("%s", errMsg.data());
 		}
-	} else {
-		m_OpenCL = false;
-		m_OpenCLSubmission = false;
-		m_OpenCLConversion = false;
-
-		QUICK_FORMAT_MESSAGE(errMsg,
-			"<Id: %lld> Initialising OpenCL failed, error %ls (code %d)",
-			m_UniqueId,
-			m_AMF->GetTrace()->GetResultText(res), res);
-		PLOG_WARNING("%s", errMsg.data());
 	}
 
 	// Create Converter
@@ -275,8 +285,10 @@ void Plugin::AMD::Encoder::UpdateFrameRateValues() {
 	// 1000000		Microsecond
 	// 10000000		amf_pts
 	// 1000000000	Nanosecond
-	m_FrameRateTimeStep = 10000000.0 * ((double_t)m_FrameRate.first / (double_t)m_FrameRate.second);
-	m_FrameRateTimeStepI = (uint64_t)round(m_FrameRateTimeStep);
+	m_FrameRateFraction = ((double_t)m_FrameRate.first / (double_t)m_FrameRate.second);
+	m_FrameRateTimeStep = 10000000.0 * m_FrameRateFraction;
+	m_FrameRateTimeStepInt = (uint64_t)round(m_FrameRateTimeStep);
+	m_SubmitQueryWaitTimer = std::chrono::nanoseconds((uint64_t)round(m_FrameRateFraction * 1000 * 1000 * 1000 / m_SubmitQueryAttempts));
 }
 
 void Plugin::AMD::Encoder::SetVBVBufferStrictness(double_t v) {
@@ -543,7 +555,7 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struc
 		res = surface->Convert(amf::AMF_MEMORY_OPENCL);
 		if (res != AMF_OK) {
 			QUICK_FORMAT_MESSAGE(errMsg,
-				"<Id: %lld> Conversion of Surface to OpenCL failed, error %ls (code %d)",
+				"<Id: %lld> [Store] Conversion of Surface to OpenCL failed, error %ls (code %d)",
 				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 			PLOG_WARNING("%s", errMsg.data());
 			return false;
@@ -563,7 +575,7 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struc
 			res = m_AMFCompute->CopyPlaneFromHost(frame->data[i], l_origin, l_size, frame->linesize[i], surface->GetPlaneAt(i), false);
 			if (res != AMF_OK) {
 				QUICK_FORMAT_MESSAGE(errMsg,
-					"<Id: %lld> Unable to copy plane %d with OpenCL, error %ls (code %d)",
+					"<Id: %lld> [Store] Unable to copy plane %d with OpenCL, error %ls (code %d)",
 					m_UniqueId, i, m_AMF->GetTrace()->GetResultText(res), res);
 				PLOG_WARNING("%s", errMsg.data());
 				return false;
@@ -584,7 +596,7 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struc
 		res = m_AMFCompute->FinishQueue();
 		if (res != AMF_OK) {
 			QUICK_FORMAT_MESSAGE(errMsg,
-				"<Id: %lld> Failed to finish OpenCL queue, error %ls (code %d)",
+				"<Id: %lld> [Store] Failed to finish OpenCL queue, error %ls (code %d)",
 				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 			PLOG_WARNING("%s", errMsg.data());
 			return false;
@@ -594,7 +606,7 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struc
 	res = surface->Convert(m_AMFMemoryType);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg,
-			"<Id: %lld> Conversion of Surface failed, error %ls (code %d)",
+			"<Id: %lld> [Store] Conversion of Surface failed, error %ls (code %d)",
 			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 		PLOG_WARNING("%s", errMsg.data());
 		return false;
@@ -633,10 +645,20 @@ bool Plugin::AMD::Encoder::EncodeConvert(IN amf::AMFSurfacePtr& surface, OUT amf
 	AMF_RESULT res;
 	auto clk_start = std::chrono::high_resolution_clock::now();
 
+	if (m_OpenCLConversion) {
+		res = surface->Convert(amf::AMF_MEMORY_OPENCL);
+		if (res != AMF_OK) {
+			QUICK_FORMAT_MESSAGE(errMsg,
+				"<Id: %lld> [Convert] Conversion of Surface to OpenCL failed, error %ls (code %d)",
+				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+			PLOG_WARNING("%s", errMsg.data());
+			return false;
+		}
+	}
 	res = m_AMFConverter->SubmitInput(surface);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg,
-			"<Id: %lld> [Conversion Pass] Submit to converter failed, error %ls (code %d)",
+			"<Id: %lld> [Convert] Submit to converter failed, error %ls (code %d)",
 			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 		PLOG_WARNING("%s", errMsg.data());
 		return false;
@@ -644,10 +666,20 @@ bool Plugin::AMD::Encoder::EncodeConvert(IN amf::AMFSurfacePtr& surface, OUT amf
 	res = m_AMFConverter->QueryOutput(&data);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg,
-			"<Id: %lld> [Conversion Pass] Querying output from converter failed, error %ls (code %d)",
+			"<Id: %lld> [Convert] Querying output from converter failed, error %ls (code %d)",
 			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 		PLOG_WARNING("%s", errMsg.data());
 		return false;
+	}
+	if (m_OpenCLConversion) {
+		res = surface->Convert(m_AMFMemoryType);
+		if (res != AMF_OK) {
+			QUICK_FORMAT_MESSAGE(errMsg,
+				"<Id: %lld> [Convert] Conversion of Surface failed, error %ls (code %d)",
+				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+			PLOG_WARNING("%s", errMsg.data());
+			return false;
+		}
 	}
 
 	// Performance Tracking
@@ -664,12 +696,12 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 	AMFTRACECALL;
 
 	const uint64_t attempts = 16;
-	std::chrono::microseconds sleepTime = std::chrono::microseconds(500);//std::chrono::nanoseconds((uint64_t)ceil(m_FrameRateTimeStep / attempts));
+	std::chrono::nanoseconds sleepTime = std::chrono::nanoseconds((uint64_t)ceil(m_FrameRateTimeStep / attempts));
 
 	bool frameSubmitted = false,
 		packetRetrieved = false;
 
-	for (uint64_t attempt = 1; (attempt <= attempts) && (!frameSubmitted || !packetRetrieved); attempt++) {
+	for (uint64_t attempt = 1; ((attempt <= attempts) && !frameSubmitted) || (m_HaveFirstFrame && !packetRetrieved); attempt++) {
 		// Submit
 		if (!frameSubmitted) {
 			if (m_AsyncQueue) { // Asynchronous
@@ -694,15 +726,13 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 				switch (res) {
 					case AMF_INPUT_FULL: // TODO: We don't really have a way to call QueryOutput here...
 						break;
-					case AMF_REPEAT:
-						// Submitted, but need more data.
 					case AMF_OK:
 						frameSubmitted = true;
 						break;
 					default:
 						{
 							QUICK_FORMAT_MESSAGE(errMsg,
-								"<Id: %lld> Submitting Surface failed, error %ls (code %d)",
+								"<Id: %lld> [Main] Submitting Surface failed, error %ls (code %d)",
 								m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 							PLOG_ERROR("%s", errMsg.data());
 						}
@@ -710,7 +740,10 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 				}
 			}
 		}
-		
+
+		if (frameSubmitted)
+			std::this_thread::sleep_for(sleepTime);
+
 		// Retrieve
 		if (!packetRetrieved) {
 			if (m_AsyncQueue) {
@@ -724,13 +757,12 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 					m_AsyncRetrieve->condvar.notify_one();
 				}
 			} else {
-				AMF_RESULT res = m_AMFEncoder->QueryOutput(&packet);
+				AMF_RESULT res = m_AMFEncoder->QueryOutput(&data);
 				switch (res) {
-					case AMF_REPEAT:
-						packetRetrieved = true;
-						// Returned with B-Frames, means that we need more frames.
-					case AMF_NEED_MORE_INPUT:
-						packetRetrieved = true;
+					case AMF_REPEAT: // Returned with B-Frames, means that we need more frames.
+					case AMF_NEED_MORE_INPUT: // Same
+						if (!m_HaveFirstFrame)
+							packetRetrieved = true;
 						// TODO: Somehow call SubmitInput here.
 						break;
 					case AMF_OK:
@@ -742,17 +774,17 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 							auto clk = std::chrono::high_resolution_clock::now();
 							uint64_t pf_query = std::chrono::nanoseconds(clk.time_since_epoch()).count(),
 								pf_submit, pf_main;
-							packet->GetProperty(AMF_TIMESTAMP_SUBMIT, &pf_submit);
-							packet->SetProperty(AMF_TIMESTAMP_QUERY, pf_query);
+							data->GetProperty(AMF_TIMESTAMP_SUBMIT, &pf_submit);
+							data->SetProperty(AMF_TIMESTAMP_QUERY, pf_query);
 							pf_main = (pf_query - pf_submit);
-							packet->SetProperty(AMF_TIME_MAIN, pf_main);
+							data->SetProperty(AMF_TIME_MAIN, pf_main);
 						}
 
 						break;
 					default:
 						{
 							QUICK_FORMAT_MESSAGE(errMsg,
-								"<Id: %lld> Retrieving Packet failed, error %ls (code %d)",
+								"<Id: %lld> [Main] Retrieving Packet failed, error %ls (code %d)",
 								m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 							PLOG_ERROR("%s", errMsg.data());
 						}
@@ -917,16 +949,28 @@ int32_t Plugin::AMD::Encoder::AsyncRetrieveLocalMain() {
 		for (size_t attempt = 1; (attempt <= attempts) && !packetRetrieved; attempt++) {
 			AMF_RESULT res = m_AMFEncoder->QueryOutput(&data);
 			switch (res) {
-				case AMF_OK:
-					own->queue.push(data);
-					own->wakeupcount--;
-					packetRetrieved = true;
-					break;
+				case AMF_NEED_MORE_INPUT:
 				case AMF_REPEAT:
 					{
 						std::unique_lock<std::mutex> slock(m_AsyncSend->mutex);
 						if (!m_AsyncSend->queue.empty())
 							m_AsyncSend->condvar.notify_one();
+					}
+					break;
+				case AMF_OK:
+					own->queue.push(data);
+					own->wakeupcount--;
+					packetRetrieved = true;
+
+					// Performance Tracking
+					{
+						auto clk = std::chrono::high_resolution_clock::now();
+						uint64_t pf_query = std::chrono::nanoseconds(clk.time_since_epoch()).count(),
+							pf_submit, pf_main;
+						data->GetProperty(AMF_TIMESTAMP_SUBMIT, &pf_submit);
+						data->SetProperty(AMF_TIMESTAMP_QUERY, pf_query);
+						pf_main = (pf_query - pf_submit);
+						data->SetProperty(AMF_TIME_MAIN, pf_main);
 					}
 					break;
 				default:
@@ -938,7 +982,6 @@ int32_t Plugin::AMD::Encoder::AsyncRetrieveLocalMain() {
 					}
 					return -1;
 			}
-
 
 			if (!packetRetrieved)
 				std::this_thread::sleep_for(sleepTime);
