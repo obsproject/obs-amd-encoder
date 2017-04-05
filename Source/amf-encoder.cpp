@@ -32,6 +32,7 @@ SOFTWARE.
 #include "components/VideoEncoderHEVC.h"
 #endif
 #include <thread>
+#include "libobs/util/threading.h"
 
 using namespace Plugin;
 using namespace Plugin::AMD;
@@ -285,10 +286,10 @@ void Plugin::AMD::Encoder::UpdateFrameRateValues() {
 	// 1000000		Microsecond
 	// 10000000		amf_pts
 	// 1000000000	Nanosecond
-	m_FrameRateFraction = ((double_t)m_FrameRate.first / (double_t)m_FrameRate.second);
-	m_FrameRateTimeStep = 10000000.0 * m_FrameRateFraction;
+	m_FrameRateFraction = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
+	m_FrameRateTimeStep = AMF_SECOND * m_FrameRateFraction;
 	m_FrameRateTimeStepInt = (uint64_t)round(m_FrameRateTimeStep);
-	m_SubmitQueryWaitTimer = std::chrono::nanoseconds((uint64_t)round(m_FrameRateFraction * 1000 * 1000 * 1000 / m_SubmitQueryAttempts));
+	m_SubmitQueryWaitTimer = std::chrono::nanoseconds((uint64_t)round(m_FrameRateTimeStep / m_SubmitQueryAttempts));
 }
 
 void Plugin::AMD::Encoder::SetVBVBufferStrictness(double_t v) {
@@ -757,7 +758,7 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 					m_AsyncRetrieve->condvar.notify_one();
 				}
 			} else {
-				AMF_RESULT res = m_AMFEncoder->QueryOutput(&data);
+				AMF_RESULT res = m_AMFEncoder->QueryOutput(&packet);
 				switch (res) {
 					case AMF_REPEAT: // Returned with B-Frames, means that we need more frames.
 					case AMF_NEED_MORE_INPUT: // Same
@@ -774,10 +775,10 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 							auto clk = std::chrono::high_resolution_clock::now();
 							uint64_t pf_query = std::chrono::nanoseconds(clk.time_since_epoch()).count(),
 								pf_submit, pf_main;
-							data->GetProperty(AMF_TIMESTAMP_SUBMIT, &pf_submit);
-							data->SetProperty(AMF_TIMESTAMP_QUERY, pf_query);
+							packet->GetProperty(AMF_TIMESTAMP_SUBMIT, &pf_submit);
+							packet->SetProperty(AMF_TIMESTAMP_QUERY, pf_query);
 							pf_main = (pf_query - pf_submit);
-							data->SetProperty(AMF_TIME_MAIN, pf_main);
+							packet->SetProperty(AMF_TIME_MAIN, pf_main);
 						}
 
 						break;
@@ -877,6 +878,7 @@ bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encod
 }
 
 int32_t Plugin::AMD::Encoder::AsyncSendMain(Encoder* obj) {
+	os_set_thread_name("AMF Asynchronous Queue Sender");
 	return obj->AsyncSendLocalMain();
 }
 
@@ -927,6 +929,7 @@ int32_t Plugin::AMD::Encoder::AsyncSendLocalMain() {
 }
 
 int32_t Plugin::AMD::Encoder::AsyncRetrieveMain(Encoder* obj) {
+	os_set_thread_name("AMF Asynchronous Queue Retriever");
 	return obj->AsyncRetrieveLocalMain();
 }
 
