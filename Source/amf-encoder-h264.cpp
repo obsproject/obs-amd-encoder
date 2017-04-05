@@ -1649,7 +1649,7 @@ void Plugin::AMD::EncoderH264::LogProperties() {
 	PLOG_INFO(PREFIX "      Frame Skipping: %s",
 		m_UniqueId,
 		IsFrameSkippingEnabled() ? "Enabled" : "Disabled");
-	PLOG_INFO(PREFIX "      Variable Based Adaptive Quantization: %s",
+	PLOG_INFO(PREFIX "      Variance Based Adaptive Quantization: %s",
 		m_UniqueId,
 		IsVarianceBasedAdaptiveQuantizationEnabled() ? "Enabled" : "Disabled");
 	PLOG_INFO(PREFIX "      Enforce Hypothetical Reference Decoder: %s",
