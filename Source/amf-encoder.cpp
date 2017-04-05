@@ -289,7 +289,7 @@ void Plugin::AMD::Encoder::UpdateFrameRateValues() {
 	m_FrameRateFraction = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_FrameRateTimeStep = AMF_SECOND * m_FrameRateFraction;
 	m_FrameRateTimeStepInt = (uint64_t)round(m_FrameRateTimeStep);
-	m_SubmitQueryWaitTimer = std::chrono::nanoseconds((uint64_t)round(m_FrameRateTimeStep / m_SubmitQueryAttempts));
+	m_SubmitQueryWaitTimer = std::chrono::nanoseconds((uint64_t)round(m_FrameRateTimeStep / m_SubmitQueryAttempts / 2));
 }
 
 void Plugin::AMD::Encoder::SetVBVBufferStrictness(double_t v) {
@@ -696,13 +696,10 @@ bool Plugin::AMD::Encoder::EncodeConvert(IN amf::AMFSurfacePtr& surface, OUT amf
 bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFDataPtr& packet) {
 	AMFTRACECALL;
 
-	const uint64_t attempts = 16;
-	std::chrono::nanoseconds sleepTime = std::chrono::nanoseconds((uint64_t)ceil(m_FrameRateTimeStep / attempts));
-
 	bool frameSubmitted = false,
 		packetRetrieved = false;
 
-	for (uint64_t attempt = 1; ((attempt <= attempts) && !frameSubmitted) || (m_HaveFirstFrame && !packetRetrieved); attempt++) {
+	for (uint64_t attempt = 1; ((attempt <= m_SubmitQueryAttempts) && !frameSubmitted) || (m_HaveFirstFrame && !packetRetrieved); attempt++) {
 		// Submit
 		if (!frameSubmitted) {
 			if (m_AsyncQueue) { // Asynchronous
@@ -743,7 +740,7 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 		}
 
 		if (frameSubmitted)
-			std::this_thread::sleep_for(sleepTime);
+			std::this_thread::sleep_for(m_SubmitQueryWaitTimer);
 
 		// Retrieve
 		if (!packetRetrieved) {
@@ -795,7 +792,7 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 		}
 
 		if (!packetRetrieved)
-			std::this_thread::sleep_for(sleepTime);
+			std::this_thread::sleep_for(m_SubmitQueryWaitTimer);
 	}
 	if (!frameSubmitted) {
 		QUICK_FORMAT_MESSAGE(errMsg,
@@ -883,8 +880,6 @@ int32_t Plugin::AMD::Encoder::AsyncSendMain(Encoder* obj) {
 }
 
 int32_t Plugin::AMD::Encoder::AsyncSendLocalMain() {
-	size_t attempts = 5;
-	std::chrono::nanoseconds sleepTime = std::chrono::nanoseconds((uint64_t)ceil(m_FrameRateTimeStep / attempts / 3));
 	EncoderThreadingData* own = m_AsyncSend;
 
 	std::unique_lock<std::mutex> lock(own->mutex);
@@ -897,7 +892,7 @@ int32_t Plugin::AMD::Encoder::AsyncSendLocalMain() {
 			continue;
 
 		bool isFrameSubmitted = false;
-		for (size_t attempt = 1; (attempt <= attempts) && !isFrameSubmitted; attempt++) {
+		for (size_t attempt = 1; (attempt <= m_SubmitQueryAttempts) && !isFrameSubmitted; attempt++) {
 			AMF_RESULT res = m_AMFEncoder->SubmitInput(own->queue.front());
 			switch (res) {
 				case AMF_OK:
@@ -922,7 +917,7 @@ int32_t Plugin::AMD::Encoder::AsyncSendLocalMain() {
 			}
 
 			if (!isFrameSubmitted)
-				std::this_thread::sleep_for(sleepTime);
+				std::this_thread::sleep_for(m_SubmitQueryWaitTimer);
 		}
 	}
 	return 0;
@@ -934,8 +929,6 @@ int32_t Plugin::AMD::Encoder::AsyncRetrieveMain(Encoder* obj) {
 }
 
 int32_t Plugin::AMD::Encoder::AsyncRetrieveLocalMain() {
-	size_t attempts = 5;
-	std::chrono::nanoseconds sleepTime = std::chrono::nanoseconds((uint64_t)ceil(m_FrameRateTimeStep / attempts / 3));
 	EncoderThreadingData* own = m_AsyncRetrieve;
 
 	std::unique_lock<std::mutex> lock(own->mutex);
@@ -949,7 +942,7 @@ int32_t Plugin::AMD::Encoder::AsyncRetrieveLocalMain() {
 
 		amf::AMFDataPtr data;
 		bool packetRetrieved = false;
-		for (size_t attempt = 1; (attempt <= attempts) && !packetRetrieved; attempt++) {
+		for (size_t attempt = 1; (attempt <= m_SubmitQueryAttempts) && !packetRetrieved; attempt++) {
 			AMF_RESULT res = m_AMFEncoder->QueryOutput(&data);
 			switch (res) {
 				case AMF_NEED_MORE_INPUT:
@@ -987,7 +980,7 @@ int32_t Plugin::AMD::Encoder::AsyncRetrieveLocalMain() {
 			}
 
 			if (!packetRetrieved)
-				std::this_thread::sleep_for(sleepTime);
+				std::this_thread::sleep_for(m_SubmitQueryWaitTimer);
 		}
 	}
 	return 0;
