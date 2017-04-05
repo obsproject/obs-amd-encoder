@@ -1426,7 +1426,7 @@ uint32_t Plugin::AMD::EncoderH265::GetSliceControlSize() {
 void Plugin::AMD::EncoderH265::SetQPCBOffset(uint8_t v) {
 	AMFTRACECALL;
 
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"QPCBOffset", v);
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"QPCBOFFSET", v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set mode to %ld, error %ls (code %d)",
 			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
@@ -1438,7 +1438,7 @@ uint8_t Plugin::AMD::EncoderH265::GetQPCBOffset() {
 	AMFTRACECALL;
 
 	int64_t e;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"QPCBOffset", &e);
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"QPCBOFFSET", &e);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
 			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
@@ -1450,7 +1450,7 @@ uint8_t Plugin::AMD::EncoderH265::GetQPCBOffset() {
 void Plugin::AMD::EncoderH265::SetQPCROffset(uint8_t v) {
 	AMFTRACECALL;
 
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"QPCROffset", v);
+	AMF_RESULT res = m_AMFEncoder->SetProperty(L"QPCROFFSET", v);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set mode to %ld, error %ls (code %d)",
 			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
@@ -1462,7 +1462,7 @@ uint8_t Plugin::AMD::EncoderH265::GetQPCROffset() {
 	AMFTRACECALL;
 
 	int64_t e;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"QPCROffset", &e);
+	AMF_RESULT res = m_AMFEncoder->GetProperty(L"QPCROFFSET", &e);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
 			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
