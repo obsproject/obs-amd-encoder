@@ -891,34 +891,30 @@ int32_t Plugin::AMD::Encoder::AsyncSendLocalMain() {
 		if (own->queue.empty())
 			continue;
 
-		bool isFrameSubmitted = false;
-		for (size_t attempt = 1; (attempt <= m_SubmitQueryAttempts) && !isFrameSubmitted; attempt++) {
-			AMF_RESULT res = m_AMFEncoder->SubmitInput(own->queue.front());
-			switch (res) {
-				case AMF_OK:
-					own->queue.pop();
-					isFrameSubmitted = true;
-					// No break since the behaviour is identical here.
-				case AMF_INPUT_FULL:
-					{
-						std::unique_lock<std::mutex> rlock(m_AsyncRetrieve->mutex);
-						m_AsyncRetrieve->wakeupcount++;
-						m_AsyncRetrieve->condvar.notify_one();
-					}
-					break;
-				default:
-					{
-						QUICK_FORMAT_MESSAGE(errMsg,
-							"<Id: %lld> Submitting Surface failed, error %ls (code %d)",
-							m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-						PLOG_ERROR("%s", errMsg.data());
-					}
-					return -1;
-			}
-
-			if (!isFrameSubmitted)
-				std::this_thread::sleep_for(m_SubmitQueryWaitTimer);
+		AMF_RESULT res = m_AMFEncoder->SubmitInput(own->queue.front());
+		switch (res) {
+			case AMF_OK:
+				own->queue.pop();
+				own->wakeupcount--;
+				// No break since the behaviour is identical here.
+			case AMF_INPUT_FULL:
+				{
+					std::unique_lock<std::mutex> rlock(m_AsyncRetrieve->mutex);
+					m_AsyncRetrieve->wakeupcount++;
+					m_AsyncRetrieve->condvar.notify_one();
+				}
+				break;
+			default:
+				{
+					QUICK_FORMAT_MESSAGE(errMsg,
+						"<Id: %lld> Submitting Surface failed, error %ls (code %d)",
+						m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+					PLOG_ERROR("%s", errMsg.data());
+				}
+				return -1;
 		}
+
+		std::this_thread::sleep_for(m_SubmitQueryWaitTimer);
 	}
 	return 0;
 }
@@ -940,48 +936,43 @@ int32_t Plugin::AMD::Encoder::AsyncRetrieveLocalMain() {
 		if (own->wakeupcount == 0)
 			continue;
 
-		amf::AMFDataPtr data;
-		bool packetRetrieved = false;
-		for (size_t attempt = 1; (attempt <= m_SubmitQueryAttempts) && !packetRetrieved; attempt++) {
-			AMF_RESULT res = m_AMFEncoder->QueryOutput(&data);
-			switch (res) {
-				case AMF_NEED_MORE_INPUT:
-				case AMF_REPEAT:
-					{
-						std::unique_lock<std::mutex> slock(m_AsyncSend->mutex);
-						if (!m_AsyncSend->queue.empty())
-							m_AsyncSend->condvar.notify_one();
-					}
-					break;
-				case AMF_OK:
-					own->queue.push(data);
-					own->wakeupcount--;
-					packetRetrieved = true;
+		amf::AMFDataPtr packet;
+		AMF_RESULT res = m_AMFEncoder->QueryOutput(&packet);
+		switch (res) {
+			case AMF_NEED_MORE_INPUT:
+			case AMF_REPEAT:
+				{
+					std::unique_lock<std::mutex> slock(m_AsyncSend->mutex);
+					if (!m_AsyncSend->queue.empty())
+						m_AsyncSend->condvar.notify_one();
+				}
+				break;
+			case AMF_OK:
+				own->queue.push(packet);
+				own->wakeupcount--;
 
-					// Performance Tracking
-					{
-						auto clk = std::chrono::high_resolution_clock::now();
-						uint64_t pf_query = std::chrono::nanoseconds(clk.time_since_epoch()).count(),
-							pf_submit, pf_main;
-						data->GetProperty(AMF_TIMESTAMP_SUBMIT, &pf_submit);
-						data->SetProperty(AMF_TIMESTAMP_QUERY, pf_query);
-						pf_main = (pf_query - pf_submit);
-						data->SetProperty(AMF_TIME_MAIN, pf_main);
-					}
-					break;
-				default:
-					{
-						QUICK_FORMAT_MESSAGE(errMsg,
-							"<Id: %lld> Retrieving Packet failed, error %ls (code %d)",
-							m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-						PLOG_ERROR("%s", errMsg.data());
-					}
-					return -1;
-			}
-
-			if (!packetRetrieved)
-				std::this_thread::sleep_for(m_SubmitQueryWaitTimer);
+				// Performance Tracking
+				{
+					auto clk = std::chrono::high_resolution_clock::now();
+					uint64_t pf_query = std::chrono::nanoseconds(clk.time_since_epoch()).count(),
+						pf_submit, pf_main;
+					packet->GetProperty(AMF_TIMESTAMP_SUBMIT, &pf_submit);
+					packet->SetProperty(AMF_TIMESTAMP_QUERY, pf_query);
+					pf_main = (pf_query - pf_submit);
+					packet->SetProperty(AMF_TIME_MAIN, pf_main);
+				}
+				break;
+			default:
+				{
+					QUICK_FORMAT_MESSAGE(errMsg,
+						"<Id: %lld> Retrieving Packet failed, error %ls (code %d)",
+						m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+					PLOG_ERROR("%s", errMsg.data());
+				}
+				return -1;
 		}
+
+		std::this_thread::sleep_for(m_SubmitQueryWaitTimer);
 	}
 	return 0;
 }
