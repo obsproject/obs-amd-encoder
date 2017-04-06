@@ -7,7 +7,7 @@ PROJECT(enc-amf)
 SET(enc-amf_VERSION_MAJOR 1)
 SET(enc-amf_VERSION_MINOR 9)
 SET(enc-amf_VERSION_PATCH 9)
-SET(enc-amf_VERSION_BUILD 9)
+SET(enc-amf_VERSION_BUILD 10)
 configure_file(
 	"${PROJECT_SOURCE_DIR}/#Resources/package.in.bat"
 	"${PROJECT_SOURCE_DIR}/#Resources/package.bat"
@@ -217,7 +217,7 @@ else()
 		COMMAND ${CMAKE_COMMAND} -E copy
 		"$<TARGET_FILE:enc-amf>"
 		"${PROJECT_SOURCE_DIR}/#Build/obs-plugins/${BITS}bit/$<TARGET_FILE_NAME:enc-amf>"
-	)	
+	)
 	add_custom_command(TARGET enc-amf POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy
 		"$<TARGET_FILE_DIR:enc-amf>/enc-amf.pdb"
