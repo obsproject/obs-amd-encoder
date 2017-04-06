@@ -1539,7 +1539,7 @@ void Plugin::AMD::EncoderH264::LogProperties() {
 	PLOG_INFO(PREFIX "    OpenCL: %s",
 		m_UniqueId,
 		m_OpenCL ? "Supported" : "Not Supported");
-	PLOG_INFO(PREFIX "      Submission: %s",
+	PLOG_INFO(PREFIX "      Transfer: %s",
 		m_UniqueId,
 		m_OpenCLSubmission ? "Enabled" : "Disabled");
 	PLOG_INFO(PREFIX "      Conversion: %s",
@@ -1547,7 +1547,7 @@ void Plugin::AMD::EncoderH264::LogProperties() {
 		m_OpenCLConversion ? "Enabled" : "Disabled");
 	PLOG_INFO(PREFIX "    Async Queue: %s",
 		m_UniqueId,
-		m_OpenCL ? "Enabled" : "Disabled");
+		m_AsyncQueue ? "Enabled" : "Disabled");
 	PLOG_INFO(PREFIX "      Size: %" PRIu32,
 		m_UniqueId,
 		(uint32_t)m_AsyncQueueSize);
