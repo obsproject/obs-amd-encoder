@@ -699,7 +699,10 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 	bool frameSubmitted = false,
 		packetRetrieved = false;
 
-	for (uint64_t attempt = 1; ((attempt <= m_SubmitQueryAttempts) && !frameSubmitted) || (m_HaveFirstFrame && !packetRetrieved); attempt++) {
+	for (uint64_t attempt = 1; 
+		((attempt <= m_SubmitQueryAttempts) && (!frameSubmitted || !m_HaveFirstFrame)) 
+		|| (m_HaveFirstFrame && !packetRetrieved);
+		attempt++) {
 		// Submit
 		if (!frameSubmitted) {
 			if (m_AsyncQueue) { // Asynchronous
@@ -709,7 +712,6 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 					m_AsyncSend->wakeupcount++;
 					m_AsyncSend->condvar.notify_one();
 					frameSubmitted = true;
-					break;
 				} else {
 					m_AsyncSend->wakeupcount++;
 					m_AsyncSend->condvar.notify_one();
@@ -739,7 +741,7 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 			}
 		}
 
-		if (frameSubmitted)
+		if (!frameSubmitted)
 			std::this_thread::sleep_for(m_SubmitQueryWaitTimer);
 
 		// Retrieve
@@ -750,8 +752,9 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 					packet = m_AsyncRetrieve->queue.front();
 					m_AsyncRetrieve->queue.pop();
 					packetRetrieved = true;
+					m_HaveFirstFrame = true;
 				} else {
-					m_AsyncRetrieve->wakeupcount++;
+					//m_AsyncRetrieve->wakeupcount++;
 					m_AsyncRetrieve->condvar.notify_one();
 				}
 			} else {
@@ -936,40 +939,42 @@ int32_t Plugin::AMD::Encoder::AsyncRetrieveLocalMain() {
 		if (own->wakeupcount == 0)
 			continue;
 
-		amf::AMFDataPtr packet;
-		AMF_RESULT res = m_AMFEncoder->QueryOutput(&packet);
-		switch (res) {
-			case AMF_NEED_MORE_INPUT:
-			case AMF_REPEAT:
-				{
-					std::unique_lock<std::mutex> slock(m_AsyncSend->mutex);
-					if (!m_AsyncSend->queue.empty())
-						m_AsyncSend->condvar.notify_one();
-				}
-				break;
-			case AMF_OK:
-				own->queue.push(packet);
-				own->wakeupcount--;
+		if (own->queue.size() < m_AsyncQueueSize) {
+			amf::AMFDataPtr packet;
+			AMF_RESULT res = m_AMFEncoder->QueryOutput(&packet);
+			switch (res) {
+				case AMF_NEED_MORE_INPUT:
+				case AMF_REPEAT:
+					{
+						std::unique_lock<std::mutex> slock(m_AsyncSend->mutex);
+						if (!m_AsyncSend->queue.empty())
+							m_AsyncSend->condvar.notify_one();
+					}
+					break;
+				case AMF_OK:
+					own->queue.push(packet);
+					own->wakeupcount--;
 
-				// Performance Tracking
-				{
-					auto clk = std::chrono::high_resolution_clock::now();
-					uint64_t pf_query = std::chrono::nanoseconds(clk.time_since_epoch()).count(),
-						pf_submit, pf_main;
-					packet->GetProperty(AMF_TIMESTAMP_SUBMIT, &pf_submit);
-					packet->SetProperty(AMF_TIMESTAMP_QUERY, pf_query);
-					pf_main = (pf_query - pf_submit);
-					packet->SetProperty(AMF_TIME_MAIN, pf_main);
-				}
-				break;
-			default:
-				{
-					QUICK_FORMAT_MESSAGE(errMsg,
-						"<Id: %lld> Retrieving Packet failed, error %ls (code %d)",
-						m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-					PLOG_ERROR("%s", errMsg.data());
-				}
-				return -1;
+					// Performance Tracking
+					{
+						auto clk = std::chrono::high_resolution_clock::now();
+						uint64_t pf_query = std::chrono::nanoseconds(clk.time_since_epoch()).count(),
+							pf_submit, pf_main;
+						packet->GetProperty(AMF_TIMESTAMP_SUBMIT, &pf_submit);
+						packet->SetProperty(AMF_TIMESTAMP_QUERY, pf_query);
+						pf_main = (pf_query - pf_submit);
+						packet->SetProperty(AMF_TIME_MAIN, pf_main);
+					}
+					break;
+				default:
+					{
+						QUICK_FORMAT_MESSAGE(errMsg,
+							"<Id: %lld> Retrieving Packet failed, error %ls (code %d)",
+							m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+						PLOG_ERROR("%s", errMsg.data());
+					}
+					return -1;
+			}
 		}
 
 		std::this_thread::sleep_for(m_SubmitQueryWaitTimer);
