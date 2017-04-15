@@ -418,7 +418,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	#pragma endregion Keyframe Interval
 
 	#pragma region IDR Period
-	p = obs_properties_add_int(props, P_H264_IDRPERIOD, P_TRANSLATE(P_H264_IDRPERIOD), 1, 1000, 1);
+	p = obs_properties_add_int(props, P_H264_IDRPERIOD, P_TRANSLATE(P_H264_IDRPERIOD), 0, 1000, 1);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_H264_IDRPERIOD)));
 	#pragma endregion IDR Period
 
