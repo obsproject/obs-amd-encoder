@@ -362,7 +362,7 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void*) {
 	obs_property_list_add_int(p, P_TRANSLATE(P_UTIL_SWITCH_ENABLED), 1);
 	#pragma endregion VBAQ
 
-	#pragma region Enforce Hyptothetical Reference Decoder Restrictions
+	#pragma region Enforce Hypothetical Reference Decoder Restrictions
 	p = obs_properties_add_list(props, P_ENFORCEHRD, P_TRANSLATE(P_ENFORCEHRD), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_ENFORCEHRD)));
 	obs_property_list_add_int(p, P_TRANSLATE(P_UTIL_SWITCH_DISABLED), 0);
