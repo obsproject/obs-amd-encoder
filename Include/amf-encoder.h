@@ -218,11 +218,11 @@ namespace Plugin {
 			//void SetFullRangeColor(bool v);
 			bool IsFullRangeColor();
 
-			//void SetAsynchronousEncodeEnabled(bool v);
-			bool IsAsynchronousEncodeEnabled();
+			//void SetAsynchronousQueueEnabled(bool v);
+			bool IsAsynchronousQueueEnabled();
 
-			//void SetAsyncQueueSize(uint8_t v);
-			uint8_t GetAsyncQueueSize();
+			//void SetAsynchronousQueueSize(size_t v);
+			size_t GetAsynchronousQueueSize();
 
 			//bool Initialize();
 			#pragma endregion Initialization

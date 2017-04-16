@@ -280,6 +280,14 @@ bool Plugin::AMD::Encoder::IsFullRangeColor() {
 	return m_FullColorRange;
 }
 
+bool Plugin::AMD::Encoder::IsAsynchronousQueueEnabled() {
+	return m_AsyncQueue;
+}
+
+size_t Plugin::AMD::Encoder::GetAsynchronousQueueSize() {
+	return m_AsyncQueueSize;
+}
+
 void Plugin::AMD::Encoder::UpdateFrameRateValues() {
 	// 1			Second
 	// 1000			Millisecond
@@ -631,7 +639,8 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struc
 	surface->SetProperty(AMF_TIMESTAMP_STORE, pf_timestamp);
 	surface->SetProperty(AMF_TIME_STORE, pf_time);
 
-	PLOG_DEBUG("EncodeStore: PTS(%8lld) DTS(%8lld) TS(%16lld) Duration(%16lld)",
+	PLOG_DEBUG("<Id: %lld> EncodeStore: PTS(%8lld) DTS(%8lld) TS(%16lld) Duration(%16lld)",
+		m_UniqueId,
 		frame->pts,
 		frame->pts,
 		surface->GetPts(),
@@ -699,8 +708,8 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 	bool frameSubmitted = false,
 		packetRetrieved = false;
 
-	for (uint64_t attempt = 1; 
-		((attempt <= m_SubmitQueryAttempts) && (!frameSubmitted || !m_HaveFirstFrame)) 
+	for (uint64_t attempt = 1;
+		((attempt <= m_SubmitQueryAttempts) && (!frameSubmitted || !m_HaveFirstFrame))
 		|| (m_HaveFirstFrame && !packetRetrieved);
 		attempt++) {
 		// Submit
@@ -859,13 +868,15 @@ bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encod
 	pf_load_t = std::chrono::nanoseconds(clk_end - clk_start).count();
 
 	PLOG_DEBUG(
-		" EncodeLoad: PTS(%8lld) DTS(%8lld) TS(%16lld) Duration(%16lld) Size(%16lld)",
+		"<Id: %lld> EncodeLoad: PTS(%8lld) DTS(%8lld) TS(%16lld) Duration(%16lld) Size(%16lld)",
+		m_UniqueId,
 		packet->pts,
 		packet->dts,
 		data->GetPts(),
 		data->GetDuration(),
 		packet->size);
-	PLOG_DEBUG("   Timings: Allocate(%8lld ns) Store(%8lld ns) Convert(%8lld ns) Main(%8lld ns) Load(%8lld ns)",
+	PLOG_DEBUG("<Id: %lld>   Timings: Allocate(%8lld ns) Store(%8lld ns) Convert(%8lld ns) Main(%8lld ns) Load(%8lld ns)",
+		m_UniqueId,
 		pf_allocate_t,
 		pf_store_t,
 		pf_convert_t,
