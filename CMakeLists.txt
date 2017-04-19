@@ -4,10 +4,10 @@ PROJECT(enc-amf)
 ################################################################################
 # Version
 ################################################################################
-SET(enc-amf_VERSION_MAJOR 1)
-SET(enc-amf_VERSION_MINOR 9)
-SET(enc-amf_VERSION_PATCH 9)
-SET(enc-amf_VERSION_BUILD 11)
+SET(enc-amf_VERSION_MAJOR 2)
+SET(enc-amf_VERSION_MINOR 0)
+SET(enc-amf_VERSION_PATCH 0)
+SET(enc-amf_VERSION_BUILD 0)
 configure_file(
 	"${PROJECT_SOURCE_DIR}/#Resources/package.in.bat"
 	"${PROJECT_SOURCE_DIR}/#Resources/package.bat"
