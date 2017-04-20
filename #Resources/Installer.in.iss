@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "AMD Encoder for OBS Studio"
-#define MyAppVersion "@enc-amf_VERSION_MAJOR@.@enc-amf_VERSION_MINOR@.@enc-amf_VERSION_PATCH@.@enc-amf_VERSION_BUILD@"
+#define MyAppVersion "@enc-amf_VERSION_MAJOR@.@enc-amf_VERSION_MINOR@.@enc-amf_VERSION_PATCH@"
 #define MyAppPublisher "Xaymars Technology Workshop"
 #define MyAppURL "http://www.xaymar.com/portfolio/plugin-amd-vce-plugin-for-obs-studio/"
 

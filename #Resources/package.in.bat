@@ -1,7 +1,7 @@
 @ECHO OFF
 REM Shut up, I'm just as lazy as anyone else.
 SET "CURDIR=%~dp0"
-SET "FINALNAME=AMD-Encoder-for-OBS-Studio.@enc-amf_VERSION_MAJOR@.@enc-amf_VERSION_MINOR@.@enc-amf_VERSION_PATCH@.@enc-amf_VERSION_BUILD@"
+SET "FINALNAME=AMD-Encoder-for-OBS-Studio.@enc-amf_VERSION_MAJOR@.@enc-amf_VERSION_MINOR@.@enc-amf_VERSION_PATCH@"
 
 SET "SevenZip=C:\Program Files\7-Zip\7z.exe"
 SET "InnoSetup=C:\Program Files (x86)\Inno Setup 5\Compil32.exe"

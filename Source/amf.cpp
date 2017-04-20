@@ -199,11 +199,10 @@ Plugin::AMD::AMF::AMF() {
 	this->EnableDebugTrace(false);
 
 	// Log success
-	PLOG_INFO("Version %d.%d.%d.%d loaded (Compiled: %d.%d.%d.%d, Runtime: %d.%d.%d.%d, Library: %.*s).",
+	PLOG_INFO("Version %d.%d.%d loaded (Compiled: %d.%d.%d.%d, Runtime: %d.%d.%d.%d, Library: %.*s).",
 		PLUGIN_VERSION_MAJOR,
 		PLUGIN_VERSION_MINOR,
 		PLUGIN_VERSION_PATCH,
-		PLUGIN_VERSION_BUILD,
 		(uint16_t)((m_AMFVersion_Plugin >> 48ull) & 0xFFFF),
 		(uint16_t)((m_AMFVersion_Plugin >> 32ull) & 0xFFFF),
 		(uint16_t)((m_AMFVersion_Plugin >> 16ull) & 0xFFFF),
