@@ -763,7 +763,6 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 					packetRetrieved = true;
 					m_HaveFirstFrame = true;
 				} else {
-					//m_AsyncRetrieve->wakeupcount++;
 					m_AsyncRetrieve->condvar.notify_one();
 				}
 			} else {
@@ -875,7 +874,7 @@ bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encod
 		data->GetPts(),
 		data->GetDuration(),
 		packet->size);
-	PLOG_DEBUG("<Id: %lld>   Timings: Allocate(%8lld ns) Store(%8lld ns) Convert(%8lld ns) Main(%8lld ns) Load(%8lld ns)",
+	PLOG_DEBUG("<Id: %lld>    Timings: Allocate(%8lld ns) Store(%8lld ns) Convert(%8lld ns) Main(%8lld ns) Load(%8lld ns)",
 		m_UniqueId,
 		pf_allocate_t,
 		pf_store_t,
@@ -910,13 +909,13 @@ int32_t Plugin::AMD::Encoder::AsyncSendLocalMain() {
 			case AMF_OK:
 				own->queue.pop();
 				own->wakeupcount--;
-				// No break since the behaviour is identical here.
-			case AMF_INPUT_FULL:
 				{
 					std::unique_lock<std::mutex> rlock(m_AsyncRetrieve->mutex);
 					m_AsyncRetrieve->wakeupcount++;
-					m_AsyncRetrieve->condvar.notify_one();
 				}
+				m_AsyncRetrieve->condvar.notify_one();
+				break;
+			case AMF_INPUT_FULL:
 				break;
 			default:
 				{
@@ -943,12 +942,14 @@ int32_t Plugin::AMD::Encoder::AsyncRetrieveLocalMain() {
 
 	std::unique_lock<std::mutex> lock(own->mutex);
 	while (!own->shutdown) {
-		own->condvar.wait(lock, [&own] {
-			return own->shutdown || (own->wakeupcount > 0);
-		});
+		if (own->wakeupcount == 0) {
+			own->condvar.wait(lock, [&own] {
+				return own->shutdown || (own->wakeupcount > 0);
+			});
 
-		if (own->wakeupcount == 0)
-			continue;
+			if (own->wakeupcount == 0)
+				continue;
+		}
 
 		if (own->queue.size() < m_AsyncQueueSize) {
 			amf::AMFDataPtr packet;
