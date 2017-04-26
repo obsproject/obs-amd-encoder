@@ -22,6 +22,50 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+
+//////////////////////////////////////////////////////////////////////////
+// New UI Design
+//////////////////////////////////////////////////////////////////////////
+// All: Preset
+// ----------- Static Section
+// Mas: Usage
+// All: Quality Preset
+// Adv: Profile
+// Adv: Profile Level
+// Adv: Tier
+// Mas: Aspect Ratio
+// Exp: Coding Type
+// Exp: Maximum Reference Frames
+// ----------- Rate Control Section
+// All: Rate Control Method
+// Adv: Pre-Pass Encoding (if supported)
+// All, CBR&VBR: Target Bitrate
+// All, VBR: Peak Bitrate
+// All, CQP: QP I/P
+// Adv, CBR&VBR: Min/Max I/P-Frame QP
+// CBR: Filler Data
+// Adv: Frame Skipping
+// Exp: VBAQ
+// Exp: Enforce HRD 
+// ----------- VBV Buffer
+// Adv: VBV Buffer Size
+// Exp: VBV Buffer Initial Fullness
+// ----------- Picture Control
+// All: Keyframe Interval (Float, uses GOP Size Fixed/Min/Max)
+// Mas: IDR Period (in GOPs)
+// Exp: GOP Type
+// Exp: GOP Size
+// Exp: GOP Size Min/Max
+// Exp: Deblocking Filter
+// Exp: Motion Estimation (Dropdown)
+// ----------- Intra-Refresh
+// ToDo: Master Mode only?
+// ----------- System
+// Adv: API
+// Adv: Adapter
+// Exp: OpenCL
+// All: View
+
 #include "enc-h265.h"
 #include "amf-capabilities.h"
 #include "amf-encoder.h"
@@ -176,62 +220,10 @@ static void fill_device_list(obs_property_t* p, const char* apiname) {
 }
 
 obs_properties_t* Plugin::Interface::H265Interface::get_properties(void*) {
-	//////////////////////////////////////////////////////////////////////////
-	// New UI Design
-	//////////////////////////////////////////////////////////////////////////
-	// All: Preset
-	// ----------- Static Section
-	// Mas: Usage
-	// All: Quality Preset
-	// Adv: Profile
-	// Adv: Profile Level
-	// Adv: Tier
-	// Mas: Aspect Ratio
-	// Exp: Coding Type
-	// Exp: Maximum Reference Frames
-	// ----------- Rate Control Section
-	// All: Rate Control Method
-	// Adv: Pre-Pass Encoding (if supported)
-	// All, CBR&VBR: Target Bitrate
-	// All, VBR: Peak Bitrate
-	// All, CQP: QP I/P
-	// Adv, CBR&VBR: Min/Max I/P-Frame QP
-	// CBR: Filler Data
-	// Adv: Frame Skipping
-	// Exp: VBAQ
-	// Exp: Enforce HRD 
-	// ----------- VBV Buffer
-	// Adv: VBV Buffer Size
-	// Exp: VBV Buffer Initial Fullness
-	// ----------- Picture Control
-	// All: Keyframe Interval (Float, uses GOP Size Fixed/Min/Max)
-	// Mas: IDR Period (in GOPs)
-	// Exp: GOP Type
-	// Exp: GOP Size
-	// Exp: GOP Size Min/Max
-	// Exp: Deblocking Filter
-	// Exp: Motion Estimation (Dropdown)
-	// ----------- Intra-Refresh
-	// ToDo: Master Mode only?
-	// ----------- System
-	// Adv: API
-	// Adv: Adapter
-	// Exp: OpenCL
-	// All: View
-
 	obs_properties* props = obs_properties_create();
 	obs_property_t* p;
 
 	// Static Properties
-	//#pragma region Usage
-	//p = obs_properties_add_list(props, P_USAGE, P_TRANSLATE(P_USAGE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	//obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_USAGE)));
-	//obs_property_list_add_int(p, P_TRANSLATE(P_USAGE_TRANSCODING), static_cast<int32_t>(Usage::Transcoding));
-	//obs_property_list_add_int(p, P_TRANSLATE(P_USAGE_ULTRALOWLATENCY), static_cast<int32_t>(Usage::UltraLowLatency));
-	//obs_property_list_add_int(p, P_TRANSLATE(P_USAGE_LOWLATENCY), static_cast<int32_t>(Usage::LowLatency));
-	//obs_property_list_add_int(p, P_TRANSLATE(P_USAGE_WEBCAM), static_cast<int32_t>(Usage::Webcam));
-	//#pragma endregion Usage
-
 	#pragma region Quality Preset
 	p = obs_properties_add_list(props, P_QUALITYPRESET, P_TRANSLATE(P_QUALITYPRESET), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_QUALITYPRESET)));
@@ -243,28 +235,18 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void*) {
 	#pragma region Profile, Levels
 	p = obs_properties_add_list(props, P_PROFILE, P_TRANSLATE(P_PROFILE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_PROFILE)));
-	//obs_property_list_add_int(p, "Constrained Baseline", static_cast<int32_t>(Profile::ConstrainedBaseline));
-	//obs_property_list_add_int(p, "Baseline", static_cast<int32_t>(Profile::Baseline));
 	obs_property_list_add_int(p, "Main", static_cast<int32_t>(Profile::Main));
-	//obs_property_list_add_int(p, "Constrained High", static_cast<int32_t>(Profile::ConstrainedHigh));
-	//obs_property_list_add_int(p, "High", static_cast<int32_t>(Profile::High));
 
 	p = obs_properties_add_list(props, P_PROFILELEVEL, P_TRANSLATE(P_PROFILELEVEL), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_PROFILELEVEL)));
 	obs_property_list_add_int(p, P_TRANSLATE(P_UTIL_AUTOMATIC), static_cast<int32_t>(ProfileLevel::Automatic));
 	obs_property_list_add_int(p, "1.0", static_cast<int32_t>(ProfileLevel::L10));
-	//obs_property_list_add_int(p, "1.1", static_cast<int32_t>(ProfileLevel::L11));
-	//obs_property_list_add_int(p, "1.2", static_cast<int32_t>(ProfileLevel::L12));
-	//obs_property_list_add_int(p, "1.3", static_cast<int32_t>(ProfileLevel::L13));
 	obs_property_list_add_int(p, "2.0", static_cast<int32_t>(ProfileLevel::L20));
 	obs_property_list_add_int(p, "2.1", static_cast<int32_t>(ProfileLevel::L21));
-	//obs_property_list_add_int(p, "2.2", static_cast<int32_t>(ProfileLevel::L22));
 	obs_property_list_add_int(p, "3.0", static_cast<int32_t>(ProfileLevel::L30));
 	obs_property_list_add_int(p, "3.1", static_cast<int32_t>(ProfileLevel::L31));
-	//obs_property_list_add_int(p, "3.2", static_cast<int32_t>(ProfileLevel::L32));
 	obs_property_list_add_int(p, "4.0", static_cast<int32_t>(ProfileLevel::L40));
 	obs_property_list_add_int(p, "4.1", static_cast<int32_t>(ProfileLevel::L41));
-	//obs_property_list_add_int(p, "4.2", static_cast<int32_t>(ProfileLevel::L42));
 	obs_property_list_add_int(p, "5.0", static_cast<int32_t>(ProfileLevel::L50));
 	obs_property_list_add_int(p, "5.1", static_cast<int32_t>(ProfileLevel::L51));
 	obs_property_list_add_int(p, "5.2", static_cast<int32_t>(ProfileLevel::L52));
@@ -280,17 +262,11 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void*) {
 	obs_property_list_add_int(p, "High", static_cast<int32_t>(H265::Tier::High));
 	#pragma endregion Tier
 
-	//#pragma region Aspect Ratio
-	//p = obs_properties_add_frame_rate(props, P_ASPECTRATIO, P_TRANSLATE(P_ASPECTRATIO));
-	//obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_ASPECTRATIO)));
-	//#pragma endregion Aspect Ratio
-
 	#pragma region Coding Type
 	p = obs_properties_add_list(props, P_CODINGTYPE, P_TRANSLATE(P_CODINGTYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_CODINGTYPE)));
 	obs_property_list_add_int(p, P_TRANSLATE(P_UTIL_AUTOMATIC), static_cast<int32_t>(CodingType::Automatic));
 	obs_property_list_add_int(p, "CABAC", static_cast<int32_t>(CodingType::CABAC));
-	//obs_property_list_add_int(p, "CALVC", static_cast<int32_t>(CodingType::CALVC));
 	#pragma endregion Coding Type
 
 	#pragma region Maximum Reference Frames

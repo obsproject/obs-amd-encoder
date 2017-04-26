@@ -22,6 +22,49 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+//////////////////////////////////////////////////////////////////////////
+// New UI Design
+//////////////////////////////////////////////////////////////////////////
+// All: Preset
+// ----------- Static Section
+// Mas: Usage
+// All: Quality Preset
+// Adv: Profile
+// Adv: Profile Level
+// Mas: Aspect Ratio
+// Exp: Coding Type
+// Exp: Maximum Reference Frames
+// ----------- Rate Control Section
+// All: Rate Control Method
+// Adv: Pre-Pass Encoding (if supported)
+// All, CBR&VBR: Target Bitrate
+// All, VBR: Peak Bitrate
+// All, CQP: QP I/P/B
+// Adv, CBR&VBR: Min/Max QP
+// CBR: Filler Data
+// Adv: Frame Skipping
+// Exp: VBAQ
+// Exp: Enforce HRD 
+// ----------- VBV Buffer
+// Adv: VBV Buffer Size
+// Exp: VBV Buffer Initial Fullness
+// ----------- Picture Control
+// All: Keyframe Interval (Float)
+// Mas: IDR Period (Overrides Keyframe Interval if non-zero)
+// Adv: B-Frames (if supported)
+// Adv: B-Frame Delta QP (if supported, not CQP)
+// Adv: B-Frame Reference (if supported and B-Frames enabled)
+// Adv: B-Frame Reference Delta QP (if supported, not CQP)
+// Exp: Deblocking Filter
+// Exp: Motion Estimation (Dropdown)
+// ----------- Intra-Refresh
+// ToDo: Master Mode only?
+// ----------- System
+// Adv: API
+// Adv: Adapter
+// Exp: OpenCL
+// All: View
+
 #include "enc-h264.h"
 #include "amf-encoder-h264.h"
 #include "amf-capabilities.h"
@@ -195,49 +238,6 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	obs_properties* props = obs_properties_create();
 	obs_property_t* p;
 
-	//////////////////////////////////////////////////////////////////////////
-	// New UI Design
-	//////////////////////////////////////////////////////////////////////////
-	// All: Preset
-	// ----------- Static Section
-	// Mas: Usage
-	// All: Quality Preset
-	// Adv: Profile
-	// Adv: Profile Level
-	// Mas: Aspect Ratio
-	// Exp: Coding Type
-	// Exp: Maximum Reference Frames
-	// ----------- Rate Control Section
-	// All: Rate Control Method
-	// Adv: Pre-Pass Encoding (if supported)
-	// All, CBR&VBR: Target Bitrate
-	// All, VBR: Peak Bitrate
-	// All, CQP: QP I/P/B
-	// Adv, CBR&VBR: Min/Max QP
-	// CBR: Filler Data
-	// Adv: Frame Skipping
-	// Exp: VBAQ
-	// Exp: Enforce HRD 
-	// ----------- VBV Buffer
-	// Adv: VBV Buffer Size
-	// Exp: VBV Buffer Initial Fullness
-	// ----------- Picture Control
-	// All: Keyframe Interval (Float)
-	// Mas: IDR Period (Overrides Keyframe Interval if non-zero)
-	// Adv: B-Frames (if supported)
-	// Adv: B-Frame Delta QP (if supported, not CQP)
-	// Adv: B-Frame Reference (if supported and B-Frames enabled)
-	// Adv: B-Frame Reference Delta QP (if supported, not CQP)
-	// Exp: Deblocking Filter
-	// Exp: Motion Estimation (Dropdown)
-	// ----------- Intra-Refresh
-	// ToDo: Master Mode only?
-	// ----------- System
-	// Adv: API
-	// Adv: Adapter
-	// Exp: OpenCL
-	// All: View
-
 	#pragma region Preset
 	p = obs_properties_add_list(props, P_PRESET, P_TRANSLATE(P_PRESET), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_modified_callback(p, properties_modified);
@@ -252,14 +252,6 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	#pragma endregion Preset
 
 	// Static Properties
-	//#pragma region Usage
-	//p = obs_properties_add_list(props, P_USAGE, P_TRANSLATE(P_USAGE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	//obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_USAGE)));
-	//obs_property_list_add_int(p, P_TRANSLATE(P_USAGE_TRANSCODING), static_cast<int32_t>(Usage::Transcoding));
-	//obs_property_list_add_int(p, P_TRANSLATE(P_USAGE_ULTRALOWLATENCY), static_cast<int32_t>(Usage::UltraLowLatency));
-	//obs_property_list_add_int(p, P_TRANSLATE(P_USAGE_LOWLATENCY), static_cast<int32_t>(Usage::LowLatency));
-	//#pragma endregion Usage
-
 	#pragma region Quality Preset
 	p = obs_properties_add_list(props, P_QUALITYPRESET, P_TRANSLATE(P_QUALITYPRESET), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_QUALITYPRESET)));
@@ -297,11 +289,6 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	obs_property_list_add_int(p, "5.1", static_cast<int32_t>(ProfileLevel::L51));
 	obs_property_list_add_int(p, "5.2", static_cast<int32_t>(ProfileLevel::L52));
 	#pragma endregion Profile, Levels
-
-	//#pragma region Aspect Ratio
-	//p = obs_properties_add_frame_rate(props, P_ASPECTRATIO, P_TRANSLATE(P_ASPECTRATIO));
-	//obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_ASPECTRATIO)));
-	//#pragma endregion Aspect Ratio
 
 	#pragma region Coding Type
 	p = obs_properties_add_list(props, P_CODINGTYPE, P_TRANSLATE(P_CODINGTYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
