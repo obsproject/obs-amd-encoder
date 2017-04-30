@@ -99,13 +99,19 @@ SOFTWARE.
 #define P_VBVBUFFER_INITIALFULLNESS	"VBVBuffer.InitialFullness"
 
 // Picture Control
-#define P_KEYFRAMEINTERVAL			"KeyframeInterval" // H264
-#define P_H264_IDRPERIOD			"H264.IDRPeriod" // H264
-#define P_H265_IDRPERIOD			"H265.IDRPeriod" // H265
+#define P_INTERVAL_KEYFRAME			"Interval.Keyframe"
+#define P_INTERVAL_IFRAME			"Interval.IFrame"
+#define P_INTERVAL_PFRAME			"Interval.PFrame"
+#define P_INTERVAL_BFRAME			"Interval.BFrame"
+#define P_PERIOD_IDR_H264			"Period.IDR.H264" // H264
+#define P_PERIOD_IDR_H265			"Period.IDR.H265" // H265
+#define P_PERIOD_IFRAME				"Period.IFrame"
+#define P_PERIOD_PFRAME				"Period.PFrame"
+#define P_PERIOD_BFRAME				"Period.BFrame"
 #define P_GOP_TYPE					"GOP.Type" // H265
 #define P_GOP_TYPE_FIXED			"GOP.Type.Fixed" // H265
 #define P_GOP_TYPE_VARIABLE			"GOP.Type.Variable" // H265
-#define P_GOP_SIZE					"GOP.Size" // H265, AMD removed H264 support ("complicates IDR logic")
+#define P_GOP_SIZE					"GOP.Size" // H265
 #define P_GOP_SIZE_MINIMUM			"GOP.Size.Minimum" // H265
 #define P_GOP_SIZE_MAXIMUM			"GOP.Size.Maximum" // H265
 #define P_GOP_ALIGNMENT				"GOP.Alignment"	// Both?

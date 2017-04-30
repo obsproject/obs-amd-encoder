@@ -167,8 +167,8 @@ void Plugin::Interface::H265Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_double(data, P_VBVBUFFER_INITIALFULLNESS, 100);
 
 	// Picture Control
-	obs_data_set_default_double(data, P_KEYFRAMEINTERVAL, 2.0);
-	obs_data_set_default_int(data, P_H264_IDRPERIOD, 0);
+	obs_data_set_default_double(data, P_INTERVAL_KEYFRAME, 2.0);
+	obs_data_set_default_int(data, P_PERIOD_IDR_H264, 0);
 	obs_data_set_default_int(data, P_GOP_TYPE, static_cast<int64_t>(H265::GOPType::Fixed));
 	obs_data_set_default_int(data, P_GOP_SIZE, 60);
 	obs_data_set_default_int(data, P_GOP_SIZE_MINIMUM, 1);
@@ -371,13 +371,13 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void* data) {
 
 	// Picture Control
 	#pragma region Keyframe Interval
-	p = obs_properties_add_float(props, P_KEYFRAMEINTERVAL, P_TRANSLATE(P_KEYFRAMEINTERVAL), 0, 100, 0.001);
-	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_KEYFRAMEINTERVAL)));
+	p = obs_properties_add_float(props, P_INTERVAL_KEYFRAME, P_TRANSLATE(P_INTERVAL_KEYFRAME), 0, 100, 0.001);
+	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_INTERVAL_KEYFRAME)));
 	#pragma endregion Keyframe Interval
 
 	#pragma region IDR Period
-	p = obs_properties_add_int(props, P_H265_IDRPERIOD, P_TRANSLATE(P_H265_IDRPERIOD), 0, 1000, 1);
-	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_H265_IDRPERIOD)));
+	p = obs_properties_add_int(props, P_PERIOD_IDR_H265, P_TRANSLATE(P_PERIOD_IDR_H265), 0, 1000, 1);
+	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_PERIOD_IDR_H265)));
 	#pragma endregion IDR Period
 
 	#pragma region GOP Type
@@ -652,8 +652,8 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 		//std::make_pair(P_VBVBUFFER_SIZE, ViewMode::Advanced),
 		std::make_pair(P_VBVBUFFER_INITIALFULLNESS, ViewMode::Expert),
 		// ----------- Picture Control
-		std::make_pair(P_KEYFRAMEINTERVAL, ViewMode::Basic),
-		std::make_pair(P_H265_IDRPERIOD, ViewMode::Master),
+		std::make_pair(P_INTERVAL_KEYFRAME, ViewMode::Basic),
+		std::make_pair(P_PERIOD_IDR_H265, ViewMode::Master),
 		std::make_pair(P_GOP_TYPE, ViewMode::Expert),
 		//std::make_pair(P_GOP_SIZE, ViewMode::Expert),
 		//std::make_pair(P_GOP_SIZE_MINIMUM, ViewMode::Expert),
@@ -815,8 +815,8 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 			P_MAXIMUMREFERENCEFRAMES,
 			P_QUALITYPRESET,
 
-			P_KEYFRAMEINTERVAL,
-			P_H265_IDRPERIOD,
+			P_INTERVAL_KEYFRAME,
+			P_PERIOD_IDR_H265,
 			P_GOP_SIZE,
 			P_GOP_SIZE_MAXIMUM,
 			P_GOP_SIZE_MINIMUM,
@@ -962,11 +962,11 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 	} else {
 		gopsize = static_cast<uint32_t>(floor(obsFPSden / (double_t)obsFPSnum));
 	}
-	uint32_t idrperiod = (uint32_t)obs_data_get_int(data, P_H265_IDRPERIOD);
+	uint32_t idrperiod = (uint32_t)obs_data_get_int(data, P_PERIOD_IDR_H265);
 	if (idrperiod != 0 && static_cast<ViewMode>(obs_data_get_int(data, P_VIEW)) == ViewMode::Master) {
 		m_VideoEncoder->SetIDRPeriod(idrperiod);
 	} else {
-		double_t keyinterv = (double_t)obs_data_get_double(data, P_KEYFRAMEINTERVAL);
+		double_t keyinterv = (double_t)obs_data_get_double(data, P_INTERVAL_KEYFRAME);
 		idrperiod = (uint32_t)ceil((keyinterv * framerate) / gopsize);
 		m_VideoEncoder->SetIDRPeriod(idrperiod);
 	}
@@ -1055,8 +1055,8 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 		//if (obs_data_get_int(data, "keyint_sec") != -1) {
 		//	m_VideoEncoder->SetIDRPeriod(static_cast<uint32_t>(obs_data_get_int(data, "keyint_sec") * (static_cast<double_t>(fpsNum) / static_cast<double_t>(fpsDen))));
 
-		//	obs_data_set_double(data, P_KEYFRAMEINTERVAL, static_cast<double_t>(obs_data_get_int(data, "keyint_sec")));
-		//	obs_data_set_int(data, P_H264_IDRPERIOD, static_cast<uint32_t>(obs_data_get_int(data, "keyint_sec") *  (static_cast<double_t>(fpsNum) / static_cast<double_t>(fpsDen))));
+		//	obs_data_set_double(data, P_INTERVAL_KEYFRAME, static_cast<double_t>(obs_data_get_int(data, "keyint_sec")));
+		//	obs_data_set_int(data, P_PERIOD_IDR_H264, static_cast<uint32_t>(obs_data_get_int(data, "keyint_sec") *  (static_cast<double_t>(fpsNum) / static_cast<double_t>(fpsDen))));
 		//} else {
 		//	obs_data_set_int(data, "keyint_sec", static_cast<uint64_t>(m_VideoEncoder->GetIDRPeriod() / (static_cast<double_t>(fpsNum) / static_cast<double_t>(fpsDen))));
 		//}
