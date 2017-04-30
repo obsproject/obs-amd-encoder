@@ -44,7 +44,7 @@ using namespace Plugin::AMD;
 class CustomWriter : public amf::AMFTraceWriter {
 	public:
 
-	virtual void Write(const wchar_t* scope, const wchar_t* message) override {
+	virtual void __cdecl Write(const wchar_t* scope, const wchar_t* message) override {
 		const wchar_t* realmsg = &(message[(33 + wcslen(scope) + 2)]); // Skip Time & Scope
 		size_t msgLen = wcslen(realmsg) - (sizeof(wchar_t));
 
@@ -54,7 +54,7 @@ class CustomWriter : public amf::AMFTraceWriter {
 			msgLen, realmsg);
 	}
 
-	virtual void Flush() override {}
+	virtual void __cdecl Flush() override {}
 };
 
 #pragma region Singleton
@@ -133,7 +133,7 @@ Plugin::AMD::AMF::AMF() {
 		VerQueryValueA(pBlock, "\\VarFileInfo\\Translation", (LPVOID*)&lpTranslate, &cbTranslate);
 
 		std::vector<char> buf(1024);
-		std::snprintf(buf.data(), buf.size(), "%s%04x%04x%s",
+		snprintf(buf.data(), buf.size(), "%s%04x%04x%s",
 			"\\StringFileInfo\\",
 			lpTranslate[0].wLanguage,
 			lpTranslate[0].wCodePage,

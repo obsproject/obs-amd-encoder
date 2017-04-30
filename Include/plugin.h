@@ -29,6 +29,7 @@ SOFTWARE.
 #pragma warning (push)
 #pragma warning (disable: 4201)
 #include "libobs/obs-module.h"
+#include "libobs/util/platform.h"
 #pragma warning (pop)
 
 // Plugin
@@ -66,7 +67,7 @@ SOFTWARE.
 
 #define QUICK_FORMAT_MESSAGE(var, ...) std::string var = ""; { \
 		std::vector<char> QUICK_FORMAT_MESSAGE_buf(1024); \
-		std::snprintf(QUICK_FORMAT_MESSAGE_buf.data(), QUICK_FORMAT_MESSAGE_buf.size(), __VA_ARGS__); \
+		snprintf(QUICK_FORMAT_MESSAGE_buf.data(), QUICK_FORMAT_MESSAGE_buf.size(), __VA_ARGS__); \
 		var = std::string(QUICK_FORMAT_MESSAGE_buf.data()); \
 	}
 

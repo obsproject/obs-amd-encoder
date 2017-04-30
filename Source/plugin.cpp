@@ -61,51 +61,51 @@ static std::string fastPrintVariant(const char* text, amf::AMFVariantStruct vari
 	std::vector<char> buf(1024);
 	switch (variant.type) {
 		case amf::AMF_VARIANT_EMPTY:
-			std::snprintf(buf.data(), buf.size(), "%s%s", text, "Empty");
+			snprintf(buf.data(), buf.size(), "%s%s", text, "Empty");
 			break;
 		case amf::AMF_VARIANT_BOOL:
-			std::snprintf(buf.data(), buf.size(), "%s%s", text, variant.boolValue ? "true" : "false");
+			snprintf(buf.data(), buf.size(), "%s%s", text, variant.boolValue ? "true" : "false");
 			break;
 		case amf::AMF_VARIANT_INT64:
-			std::snprintf(buf.data(), buf.size(), "%s%lld", text, variant.int64Value);
+			snprintf(buf.data(), buf.size(), "%s%lld", text, variant.int64Value);
 			break;
 		case amf::AMF_VARIANT_DOUBLE:
-			std::snprintf(buf.data(), buf.size(), "%s%f", text, variant.doubleValue);
+			snprintf(buf.data(), buf.size(), "%s%f", text, variant.doubleValue);
 			break;
 		case amf::AMF_VARIANT_RECT:
-			std::snprintf(buf.data(), buf.size(), "%s[%ld,%ld,%ld,%ld]", text,
+			snprintf(buf.data(), buf.size(), "%s[%ld,%ld,%ld,%ld]", text,
 				variant.rectValue.top, variant.rectValue.left,
 				variant.rectValue.bottom, variant.rectValue.right);
 			break;
 		case amf::AMF_VARIANT_SIZE:
-			std::snprintf(buf.data(), buf.size(), "%s%ldx%ld", text,
+			snprintf(buf.data(), buf.size(), "%s%ldx%ld", text,
 				variant.sizeValue.width, variant.sizeValue.height);
 			break;
 		case amf::AMF_VARIANT_POINT:
-			std::snprintf(buf.data(), buf.size(), "%s[%ld,%ld]", text,
+			snprintf(buf.data(), buf.size(), "%s[%ld,%ld]", text,
 				variant.pointValue.x, variant.pointValue.y);
 			break;
 		case amf::AMF_VARIANT_RATE:
-			std::snprintf(buf.data(), buf.size(), "%s%ld/%ld", text,
+			snprintf(buf.data(), buf.size(), "%s%ld/%ld", text,
 				variant.rateValue.num, variant.rateValue.den);
 			break;
 		case amf::AMF_VARIANT_RATIO:
-			std::snprintf(buf.data(), buf.size(), "%s%ld:%ld", text,
+			snprintf(buf.data(), buf.size(), "%s%ld:%ld", text,
 				variant.ratioValue.num, variant.ratioValue.den);
 			break;
 		case amf::AMF_VARIANT_COLOR:
-			std::snprintf(buf.data(), buf.size(), "%s(%d,%d,%d,%d)", text,
+			snprintf(buf.data(), buf.size(), "%s(%d,%d,%d,%d)", text,
 				variant.colorValue.r,
 				variant.colorValue.g,
 				variant.colorValue.b,
 				variant.colorValue.a);
 			break;
 		case amf::AMF_VARIANT_STRING:
-			std::snprintf(buf.data(), buf.size(), "%s'%s'", text,
+			snprintf(buf.data(), buf.size(), "%s'%s'", text,
 				variant.stringValue);
 			break;
 		case amf::AMF_VARIANT_WSTRING:
-			std::snprintf(buf.data(), buf.size(), "%s'%ls'", text,
+			snprintf(buf.data(), buf.size(), "%s'%ls'", text,
 				variant.wstringValue);
 			break;
 	}
