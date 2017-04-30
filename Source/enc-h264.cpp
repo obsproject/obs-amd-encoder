@@ -234,7 +234,7 @@ static void fill_device_list(obs_property_t* p, const char* apiname) {
 	}
 }
 
-obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
+obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) {
 	obs_properties* props = obs_properties_create();
 	obs_property_t* p;
 
@@ -496,6 +496,9 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void*) {
 	/// Debug
 	p = obs_properties_add_bool(props, P_DEBUG, P_TRANSLATE(P_DEBUG));
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_DEBUG)));
+	
+	// Disable non-dynamic properties if we have an encoder.
+	obs_properties_set_param(props, data, nullptr);
 
 	return props;
 }
@@ -1172,6 +1175,42 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		obs_data_default_single(props, data, P_ASYNCHRONOUSQUEUE_SIZE);
 	#pragma endregion Asynchronous Queue
 	#pragma endregion View Mode
+
+	// Permanently disable static properties while encoding.
+	void* enc = obs_properties_get_param(props);
+	if (enc) {
+		std::vector<const char*> hiddenProperties = {
+			P_PROFILE,
+			//P_TIER,
+			P_PROFILELEVEL,
+			P_CODINGTYPE,
+
+			P_MAXIMUMREFERENCEFRAMES,
+			P_QUALITYPRESET,
+
+			P_KEYFRAMEINTERVAL,
+			P_H264_IDRPERIOD,
+			P_GOP_SIZE,
+			//P_GOP_SIZE_MAXIMUM,
+			//P_GOP_SIZE_MINIMUM,
+			//P_GOP_TYPE,
+			P_DEBLOCKINGFILTER,
+
+			P_RATECONTROLMETHOD,
+			P_VBVBUFFER,
+			P_VBVBUFFER_STRICTNESS,
+			P_VBVBUFFER_SIZE,
+			P_VBVBUFFER_INITIALFULLNESS,
+			P_PREPASSMODE,
+			P_VBAQ,
+
+			P_BFRAME_PATTERN,
+			P_BFRAME_REFERENCE,
+		};
+		for (const char* pr : hiddenProperties) {
+			obs_property_set_enabled(obs_properties_get(props, pr), false);
+		}
+	}
 
 	return result;
 }
