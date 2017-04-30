@@ -89,6 +89,10 @@ SOFTWARE.
 #define P_QP_BFRAME					"QP.BFrame" // H264
 #define P_FILLERDATA				"FillerData"
 #define P_FRAMESKIPPING				"FrameSkipping"
+#define P_FRAMESKIPPING_PERIOD		"FrameSkipping.Period"
+#define P_FRAMESKIPPING_BEHAVIOUR	"FrameSkipping.Behaviour"
+#define P_FRAMESKIPPING_SKIPNTH		"FrameSkipping.SkipNth"
+#define P_FRAMESKIPPING_KEEPNTH		"FrameSkipping.KeepNth"
 #define P_VBAQ						"VBAQ"
 #define P_ENFORCEHRD				"EnforceHRD"
 
@@ -100,13 +104,13 @@ SOFTWARE.
 
 // Picture Control
 #define P_INTERVAL_KEYFRAME			"Interval.Keyframe"
-#define P_INTERVAL_IFRAME			"Interval.IFrame"
-#define P_INTERVAL_PFRAME			"Interval.PFrame"
-#define P_INTERVAL_BFRAME			"Interval.BFrame"
 #define P_PERIOD_IDR_H264			"Period.IDR.H264" // H264
 #define P_PERIOD_IDR_H265			"Period.IDR.H265" // H265
+#define P_INTERVAL_IFRAME			"Interval.IFrame"
 #define P_PERIOD_IFRAME				"Period.IFrame"
+#define P_INTERVAL_PFRAME			"Interval.PFrame"
 #define P_PERIOD_PFRAME				"Period.PFrame"
+#define P_INTERVAL_BFRAME			"Interval.BFrame"
 #define P_PERIOD_BFRAME				"Period.BFrame"
 #define P_GOP_TYPE					"GOP.Type" // H265
 #define P_GOP_TYPE_FIXED			"GOP.Type.Fixed" // H265
