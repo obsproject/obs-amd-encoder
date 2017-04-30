@@ -343,6 +343,46 @@ void Plugin::AMD::Encoder::SetVBVBufferStrictness(double_t v) {
 	this->SetVBVBufferSize(vbvBufferSize);
 }
 
+void Plugin::AMD::Encoder::SetIFramePeriod(uint32_t v) {
+	m_PeriodIFrame = v;
+}
+
+uint32_t Plugin::AMD::Encoder::GetIFramePeriod() {
+	return m_PeriodIFrame;
+}
+
+void Plugin::AMD::Encoder::SetPFramePeriod(uint32_t v) {
+	m_PeriodPFrame = v;
+}
+
+uint32_t Plugin::AMD::Encoder::GetPFramePeriod() {
+	return m_PeriodPFrame;
+}
+
+void Plugin::AMD::Encoder::SetBFramePeriod(uint32_t v) {
+	m_PeriodBFrame = v;
+}
+
+uint32_t Plugin::AMD::Encoder::GetBFramePeriod() {
+	return m_PeriodBFrame;
+}
+
+void Plugin::AMD::Encoder::SetSkipFramePeriod(uint32_t v) {
+	m_FrameSkipPeriod = v;
+}
+
+uint32_t Plugin::AMD::Encoder::GetSkipFramePeriod() {
+	return m_FrameSkipPeriod;
+}
+
+void Plugin::AMD::Encoder::SetSkipFrameInverted(bool v) {
+	m_FrameSkipInverted = v;
+}
+
+bool Plugin::AMD::Encoder::IsSkipFrameInverted() {
+	return m_FrameSkipInverted;
+}
+
 void Plugin::AMD::Encoder::Start() {
 	AMFTRACECALL;
 
@@ -632,6 +672,50 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struc
 	surface->SetProperty(AMF_PRESENT_TIMESTAMP, frame->pts);
 	/// Duration
 	surface->SetDuration(tsNow - tsLast);
+	/// Type override
+	{
+		AMF_VIDEO_ENCODER_PICTURE_TYPE_ENUM type = AMF_VIDEO_ENCODER_PICTURE_TYPE_NONE;
+		if ((m_Codec != Codec::HEVC) && (m_PeriodBFrame != 0) && ((frame->pts % m_PeriodBFrame) == 0)) {
+			type = AMF_VIDEO_ENCODER_PICTURE_TYPE_B;
+		}
+		if ((m_PeriodPFrame != 0) && ((frame->pts % m_PeriodPFrame) == 0)) {
+			type = AMF_VIDEO_ENCODER_PICTURE_TYPE_P;
+		}
+		if ((m_PeriodIFrame != 0) && ((frame->pts % m_PeriodIFrame) == 0)) {
+			type = AMF_VIDEO_ENCODER_PICTURE_TYPE_I;
+		}
+		if (type != AMF_VIDEO_ENCODER_PICTURE_TYPE_NONE) {
+			if ((frame->pts % m_PeriodIDR) == 0) {
+				type = AMF_VIDEO_ENCODER_PICTURE_TYPE_IDR;
+			}
+		}
+		/// Handle Frame Skipping with hopefully safe logic.
+		if (m_FrameSkipPeriod != 0) {
+			bool shouldSkip = m_FrameSkipInverted
+				? (frame->pts % m_FrameSkipPeriod) == 0
+				: (frame->pts % m_FrameSkipPeriod) != 0;
+			if (shouldSkip) {
+				if ((type < m_FrameSkipType) && (type != AMF_VIDEO_ENCODER_PICTURE_TYPE_NONE))
+					m_FrameSkipType = type;
+				type = AMF_VIDEO_ENCODER_PICTURE_TYPE_SKIP;
+			} else {
+				if (m_FrameSkipType < type)
+					type = m_FrameSkipType;
+				m_FrameSkipType = AMF_VIDEO_ENCODER_PICTURE_TYPE_NONE;
+			}
+		}
+
+		#ifdef WITH_AVC
+		if (m_Codec != Codec::HEVC) {
+			surface->SetProperty(AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE, type);
+		}
+		#endif
+		#ifdef WITH_HEVC
+		if (m_Codec == Codec::HEVC) {
+			surface->SetProperty(AMF_VIDEO_ENCODER_HEVC_FORCE_PICTURE_TYPE, type);
+		}
+		#endif
+	}
 
 	// Performance Tracking
 	auto clk_end = std::chrono::high_resolution_clock::now();

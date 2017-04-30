@@ -324,6 +324,21 @@ namespace Plugin {
 			virtual void SetIDRPeriod(uint32_t v) = 0;
 			virtual uint32_t GetIDRPeriod() = 0;
 
+			virtual void SetIFramePeriod(uint32_t v);
+			virtual uint32_t GetIFramePeriod();
+
+			virtual void SetPFramePeriod(uint32_t v);
+			virtual uint32_t GetPFramePeriod();
+
+			virtual void SetBFramePeriod(uint32_t v);
+			virtual uint32_t GetBFramePeriod();
+
+			virtual void SetSkipFramePeriod(uint32_t v);
+			virtual uint32_t GetSkipFramePeriod();
+
+			virtual void SetSkipFrameInverted(bool v);
+			virtual bool IsSkipFrameInverted();
+
 			virtual void SetGOPAlignmentEnabled(bool v) = 0;
 			virtual bool IsGOPAlignmentEnabled() = 0;
 
@@ -434,6 +449,13 @@ namespace Plugin {
 			uint64_t m_TimestampOffset = 0;
 			std::chrono::nanoseconds m_SubmitQueryWaitTimer;
 			uint64_t m_SubmitQueryAttempts = 8;
+			uint32_t m_PeriodIDR = 1;
+			uint32_t m_PeriodIFrame = 0;
+			uint32_t m_PeriodPFrame = 0;
+			uint32_t m_PeriodBFrame = 0;
+			uint32_t m_FrameSkipPeriod = 0;
+			bool m_FrameSkipInverted = false; // false = drop every xth frame, true = drop all but every xth frame
+			AMF_VIDEO_ENCODER_PICTURE_TYPE_ENUM m_FrameSkipType = AMF_VIDEO_ENCODER_PICTURE_TYPE_NONE;
 
 			// Threading
 			bool m_AsyncQueue;
