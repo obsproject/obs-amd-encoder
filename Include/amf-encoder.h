@@ -429,8 +429,9 @@ namespace Plugin {
 			std::pair<uint32_t, uint32_t> m_Resolution;
 			std::pair<uint32_t, uint32_t> m_FrameRate;
 			double_t m_FrameRateFraction;
-			double_t m_FrameRateTimeStep;
-			uint64_t m_FrameRateTimeStepInt;
+			double_t m_TimestampStep;
+			uint64_t m_TimestampStepRounded;
+			uint64_t m_TimestampOffset = 0;
 			std::chrono::nanoseconds m_SubmitQueryWaitTimer;
 			uint64_t m_SubmitQueryAttempts = 8;
 

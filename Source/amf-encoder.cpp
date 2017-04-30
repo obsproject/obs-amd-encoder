@@ -63,8 +63,9 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	m_FullColorRange = fullRangeColor;
 	m_Resolution = std::make_pair<uint32_t, uint32_t>(0, 0);
 	m_FrameRate = std::make_pair<uint32_t, uint32_t>(0, 0);
-	m_FrameRateTimeStep = 0;
-	m_FrameRateTimeStepInt = 0;
+	m_TimestampStep = 0;
+	m_TimestampStepRounded = 0;
+	m_TimestampOffset = 0;
 	/// Flags
 	m_Initialized = true;
 	m_Started = false;
@@ -295,9 +296,9 @@ void Plugin::AMD::Encoder::UpdateFrameRateValues() {
 	// 10000000		amf_pts
 	// 1000000000	Nanosecond
 	m_FrameRateFraction = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
-	m_FrameRateTimeStep = AMF_SECOND * m_FrameRateFraction;
-	m_FrameRateTimeStepInt = (uint64_t)round(m_FrameRateTimeStep);
-	m_SubmitQueryWaitTimer = std::chrono::nanoseconds((uint64_t)round(m_FrameRateTimeStep / m_SubmitQueryAttempts / 2));
+	m_TimestampStep = AMF_SECOND * m_FrameRateFraction;
+	m_TimestampStepRounded = (uint64_t)round(m_TimestampStep);
+	m_SubmitQueryWaitTimer = std::chrono::nanoseconds((uint64_t)round(m_TimestampStep / m_SubmitQueryAttempts / 2));
 }
 
 void Plugin::AMD::Encoder::SetVBVBufferStrictness(double_t v) {
@@ -622,8 +623,8 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struc
 	}
 
 	// Data Stuff
-	int64_t tsLast = (int64_t)round((frame->pts - 1) * m_FrameRateTimeStep);
-	int64_t tsNow = (int64_t)round(frame->pts * m_FrameRateTimeStep);
+	int64_t tsLast = (int64_t)round((frame->pts - 1) * m_TimestampStep);
+	int64_t tsNow = (int64_t)round(frame->pts * m_TimestampStep);
 
 	/// Decode Timestamp
 	surface->SetPts(tsNow);
@@ -834,7 +835,7 @@ bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encod
 	/// Present Timestamp
 	data->GetProperty(AMF_PRESENT_TIMESTAMP, &packet->pts);
 	/// Decode Timestamp
-	packet->dts = (int64_t)round((double_t)data->GetPts() / m_FrameRateTimeStep);
+	packet->dts = (int64_t)round((double_t)data->GetPts() / m_TimestampStep) - m_TimestampOffset;
 	/// Data
 	PacketPriorityAndKeyframe(data, packet);
 	packet->size = pBuffer->GetSize();

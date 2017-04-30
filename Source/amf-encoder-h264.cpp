@@ -1078,6 +1078,7 @@ void Plugin::AMD::EncoderH264::SetBFramePattern(uint8_t v) {
 			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.c_str());
 	}
+	m_TimestampOffset = v;
 }
 
 uint8_t Plugin::AMD::EncoderH264::GetBFramePattern() {
