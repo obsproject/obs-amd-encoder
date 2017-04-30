@@ -965,6 +965,7 @@ void Plugin::AMD::EncoderH264::SetIDRPeriod(uint32_t v) {
 			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.c_str());
 	}
+	m_PeriodIDR = v;
 }
 
 uint32_t Plugin::AMD::EncoderH264::GetIDRPeriod() {
@@ -978,6 +979,7 @@ uint32_t Plugin::AMD::EncoderH264::GetIDRPeriod() {
 			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.c_str());
 	}
+	m_PeriodIDR = (uint32_t)e;
 	return (uint32_t)e;
 }
 
