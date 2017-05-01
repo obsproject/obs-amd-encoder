@@ -286,6 +286,12 @@ namespace Plugin {
 			virtual void SetFrameSkippingEnabled(bool v) = 0;
 			virtual bool IsFrameSkippingEnabled() = 0;
 
+			virtual void SetFrameSkippingPeriod(uint32_t v);
+			virtual uint32_t GetFrameSkippingPeriod();
+
+			virtual void SetFrameSkippingBehaviour(bool v);
+			virtual bool GetFrameSkippingBehaviour();
+
 			/// Enforce Hypothethical Reference Decoder Restrictions
 			virtual void SetEnforceHRDEnabled(bool v) = 0;
 			virtual bool IsEnforceHRDEnabled() = 0;
@@ -332,12 +338,6 @@ namespace Plugin {
 
 			virtual void SetBFramePeriod(uint32_t v);
 			virtual uint32_t GetBFramePeriod();
-
-			virtual void SetSkipFramePeriod(uint32_t v);
-			virtual uint32_t GetSkipFramePeriod();
-
-			virtual void SetSkipFrameInverted(bool v);
-			virtual bool IsSkipFrameInverted();
 
 			virtual void SetGOPAlignmentEnabled(bool v) = 0;
 			virtual bool IsGOPAlignmentEnabled() = 0;
@@ -395,6 +395,7 @@ namespace Plugin {
 			private:
 			virtual void PacketPriorityAndKeyframe(amf::AMFDataPtr& d, struct encoder_packet* p) = 0;
 			virtual AMF_RESULT GetExtraDataInternal(amf::AMFVariant* p) = 0;
+			virtual std::string HandleTypeOverride(amf::AMFSurfacePtr& d, uint64_t index) = 0;
 
 			bool EncodeAllocate(OUT amf::AMFSurfacePtr& surface);
 			bool EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struct encoder_frame* frame);
@@ -454,9 +455,8 @@ namespace Plugin {
 			uint32_t m_PeriodPFrame = 0;
 			uint32_t m_PeriodBFrame = 0;
 			uint32_t m_FrameSkipPeriod = 0;
-			bool m_FrameSkipInverted = false; // false = drop every xth frame, true = drop all but every xth frame
-			AMF_VIDEO_ENCODER_PICTURE_TYPE_ENUM m_FrameSkipType = AMF_VIDEO_ENCODER_PICTURE_TYPE_NONE;
-
+			bool m_FrameSkipKeepOnlyNth = false; // false = drop every xth frame, true = drop all but every xth frame
+			
 			// Threading
 			bool m_AsyncQueue;
 			size_t m_AsyncQueueSize;

@@ -232,7 +232,9 @@ namespace Plugin {
 			protected:
 			virtual void PacketPriorityAndKeyframe(amf::AMFDataPtr& d, struct encoder_packet* p) override;
 			virtual AMF_RESULT GetExtraDataInternal(amf::AMFVariant* p) override;
+			virtual std::string HandleTypeOverride(amf::AMFSurfacePtr& d, uint64_t index) override;
 
+			AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_ENUM m_FrameSkipType = AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_NONE;
 
 
 

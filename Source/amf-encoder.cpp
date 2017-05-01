@@ -367,20 +367,20 @@ uint32_t Plugin::AMD::Encoder::GetBFramePeriod() {
 	return m_PeriodBFrame;
 }
 
-void Plugin::AMD::Encoder::SetSkipFramePeriod(uint32_t v) {
+void Plugin::AMD::Encoder::SetFrameSkippingPeriod(uint32_t v) {
 	m_FrameSkipPeriod = v;
 }
 
-uint32_t Plugin::AMD::Encoder::GetSkipFramePeriod() {
+uint32_t Plugin::AMD::Encoder::GetFrameSkippingPeriod() {
 	return m_FrameSkipPeriod;
 }
 
-void Plugin::AMD::Encoder::SetSkipFrameInverted(bool v) {
-	m_FrameSkipInverted = v;
+void Plugin::AMD::Encoder::SetFrameSkippingBehaviour(bool v) {
+	m_FrameSkipKeepOnlyNth = v;
 }
 
-bool Plugin::AMD::Encoder::IsSkipFrameInverted() {
-	return m_FrameSkipInverted;
+bool Plugin::AMD::Encoder::GetFrameSkippingBehaviour() {
+	return m_FrameSkipKeepOnlyNth;
 }
 
 void Plugin::AMD::Encoder::Start() {
@@ -673,50 +673,8 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struc
 	/// Duration
 	surface->SetDuration(tsNow - tsLast);
 	/// Type override
-	{
-		AMF_VIDEO_ENCODER_PICTURE_TYPE_ENUM type = AMF_VIDEO_ENCODER_PICTURE_TYPE_NONE;
-		if ((m_Codec != Codec::HEVC) && (m_PeriodBFrame != 0) && ((frame->pts % m_PeriodBFrame) == 0)) {
-			type = AMF_VIDEO_ENCODER_PICTURE_TYPE_B;
-		}
-		if ((m_PeriodPFrame != 0) && ((frame->pts % m_PeriodPFrame) == 0)) {
-			type = AMF_VIDEO_ENCODER_PICTURE_TYPE_P;
-		}
-		if ((m_PeriodIFrame != 0) && ((frame->pts % m_PeriodIFrame) == 0)) {
-			type = AMF_VIDEO_ENCODER_PICTURE_TYPE_I;
-		}
-		if (type != AMF_VIDEO_ENCODER_PICTURE_TYPE_NONE) {
-			if ((frame->pts % m_PeriodIDR) == 0) {
-				type = AMF_VIDEO_ENCODER_PICTURE_TYPE_IDR;
-			}
-		}
-		/// Handle Frame Skipping with hopefully safe logic.
-		if (m_FrameSkipPeriod != 0) {
-			bool shouldSkip = m_FrameSkipInverted
-				? (frame->pts % m_FrameSkipPeriod) == 0
-				: (frame->pts % m_FrameSkipPeriod) != 0;
-			if (shouldSkip) {
-				if ((type < m_FrameSkipType) && (type != AMF_VIDEO_ENCODER_PICTURE_TYPE_NONE))
-					m_FrameSkipType = type;
-				type = AMF_VIDEO_ENCODER_PICTURE_TYPE_SKIP;
-			} else {
-				if (m_FrameSkipType < type)
-					type = m_FrameSkipType;
-				m_FrameSkipType = AMF_VIDEO_ENCODER_PICTURE_TYPE_NONE;
-			}
-		}
-
-		#ifdef WITH_AVC
-		if (m_Codec != Codec::HEVC) {
-			surface->SetProperty(AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE, type);
-		}
-		#endif
-		#ifdef WITH_HEVC
-		if (m_Codec == Codec::HEVC) {
-			surface->SetProperty(AMF_VIDEO_ENCODER_HEVC_FORCE_PICTURE_TYPE, type);
-		}
-		#endif
-	}
-
+	std::string printableType = HandleTypeOverride(surface, frame->pts);
+	
 	// Performance Tracking
 	auto clk_end = std::chrono::high_resolution_clock::now();
 	uint64_t pf_timestamp = std::chrono::nanoseconds(clk_end.time_since_epoch()).count();
@@ -724,12 +682,13 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struc
 	surface->SetProperty(AMF_TIMESTAMP_STORE, pf_timestamp);
 	surface->SetProperty(AMF_TIME_STORE, pf_time);
 
-	PLOG_DEBUG("<Id: %lld> EncodeStore: PTS(%8lld) DTS(%8lld) TS(%16lld) Duration(%16lld)",
+	PLOG_DEBUG("<Id: %lld> EncodeStore: PTS(%8lld) DTS(%8lld) TS(%16lld) Duration(%16lld) Type(%s)",
 		m_UniqueId,
 		frame->pts,
 		frame->pts,
 		surface->GetPts(),
-		surface->GetDuration());
+		surface->GetDuration(),
+		printableType.c_str());
 
 	return true;
 }
@@ -951,14 +910,51 @@ bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encod
 	pf_load_ts = std::chrono::nanoseconds(clk_end.time_since_epoch()).count();
 	pf_load_t = std::chrono::nanoseconds(clk_end - clk_start).count();
 
+	std::string printableType = "Unknown";
+	#ifdef WITH_AVC
+	if (m_Codec != Codec::HEVC) {
+		uint64_t type = AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR;
+		data->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &type);
+		switch ((AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)type) {
+			case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR:
+				printableType = "IDR";
+				break;
+			case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_I:
+				printableType = "I";
+				break;
+			case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_P:
+				printableType = "P";
+				break;
+			case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_B:
+				printableType = "B";
+				break;
+		}
+	}
+	#endif
+	#ifdef WITH_HEVC
+	if (m_Codec == Codec::HEVC) {
+		uint64_t type = AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_I;
+		data->GetProperty(AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE, &type);
+		switch ((AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_ENUM)type) {
+			case AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_I:
+				printableType = "I";
+				break;
+			case AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_P:
+				printableType = "P";
+				break;
+		}
+	}
+	#endif	
+
 	PLOG_DEBUG(
-		"<Id: %lld> EncodeLoad: PTS(%8lld) DTS(%8lld) TS(%16lld) Duration(%16lld) Size(%16lld)",
+		"<Id: %lld> EncodeLoad: PTS(%8lld) DTS(%8lld) TS(%16lld) Duration(%16lld) Size(%16lld) Type(%s)",
 		m_UniqueId,
 		packet->pts,
 		packet->dts,
 		data->GetPts(),
 		data->GetDuration(),
-		packet->size);
+		packet->size,
+		printableType.c_str());
 	PLOG_DEBUG("<Id: %lld>    Timings: Allocate(%8lld ns) Store(%8lld ns) Convert(%8lld ns) Main(%8lld ns) Load(%8lld ns)",
 		m_UniqueId,
 		pf_allocate_t,

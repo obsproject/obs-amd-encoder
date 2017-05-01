@@ -1583,6 +1583,58 @@ AMF_RESULT Plugin::AMD::EncoderH265::GetExtraDataInternal(amf::AMFVariant* p) {
 	return m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_HEVC_EXTRADATA, p);
 }
 
+std::string Plugin::AMD::EncoderH265::HandleTypeOverride(amf::AMFSurfacePtr & d, uint64_t index) {
+	AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_ENUM type = AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_NONE;
+
+	if ((m_PeriodPFrame > 0) && ((index % m_PeriodPFrame) == 0)) {
+		type = AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_P;
+	}
+	if ((m_PeriodIFrame > 0) && ((index % m_PeriodIFrame) == 0)) {
+		type = AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_I;
+	}
+	uint64_t realIPeriod = m_PeriodIDR * GetGOPSize();
+	if ((type != AMF_VIDEO_ENCODER_PICTURE_TYPE_NONE) && (realIPeriod > 0) && ((index % realIPeriod) == 0)) {
+		type = AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_IDR;
+	}
+	if (m_FrameSkipPeriod > 0) {
+		bool shouldSkip = m_FrameSkipKeepOnlyNth
+			? (index % m_FrameSkipPeriod) != 0
+			: (index % m_FrameSkipPeriod) == 0;
+
+		if (shouldSkip) {
+			if ((m_FrameSkipType <= AMF_VIDEO_ENCODER_PICTURE_TYPE_SKIP) || (type < m_FrameSkipType))
+				m_FrameSkipType = type;
+			type = AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_SKIP;
+		} else if (m_FrameSkipType != AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_NONE) {
+			type = m_FrameSkipType; // Hopefully fixes the crash.
+			m_FrameSkipType = AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_NONE;
+		}
+	}
+	d->SetProperty(AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE, type);
+
+	switch (type) {
+		case AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_NONE:
+			return "Automatic";
+			break;
+		case AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_SKIP:
+			return "Skip";
+			break;
+		case AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_IDR:
+			return "IDR";
+			break;
+		case AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_I:
+			return "I";
+			break;
+		case AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_P:
+			return "P";
+			break;
+		//case AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_B:
+		//	return "B";
+		//	break;
+	}
+	return "Unknown";
+}
+
 void Plugin::AMD::EncoderH265::LogProperties() {
 	AMFTRACECALL;
 
@@ -1713,6 +1765,12 @@ void Plugin::AMD::EncoderH265::LogProperties() {
 	PLOG_INFO(PREFIX "      Frame Skipping: %s",
 		m_UniqueId,
 		IsFrameSkippingEnabled() ? "Enabled" : "Disabled");
+	PLOG_INFO(PREFIX "        Period: %" PRIu32 " Frames",
+		m_UniqueId,
+		GetFrameSkippingPeriod());
+	PLOG_INFO(PREFIX "        Behaviour: %s",
+		m_UniqueId,
+		GetFrameSkippingBehaviour() ? "Keep every Nth frame" : "Skip every Nth frame");
 	PLOG_INFO(PREFIX "      Variance Based Adaptive Quantization: %s",
 		m_UniqueId,
 		IsVarianceBasedAdaptiveQuantizationEnabled() ? "Enabled" : "Disabled");
@@ -1738,9 +1796,20 @@ void Plugin::AMD::EncoderH265::LogProperties() {
 	#pragma region Picture Control
 	PLOG_INFO(PREFIX "  Picture Control:",
 		m_UniqueId);
-	PLOG_INFO(PREFIX "    IDR Period: %" PRIu32 " Frames",
+	PLOG_INFO(PREFIX "    Period:",
+		m_UniqueId);
+	PLOG_INFO(PREFIX "      IDR: %" PRIu32 " GOPs",
 		m_UniqueId,
 		GetIDRPeriod());
+	PLOG_INFO(PREFIX "      I: %" PRIu32 " Frames",
+		m_UniqueId,
+		GetIFramePeriod());
+	PLOG_INFO(PREFIX "      P: %" PRIu32 " Frames",
+		m_UniqueId,
+		GetPFramePeriod());
+	PLOG_INFO(PREFIX "      B: %" PRIu32 " Frames",
+		m_UniqueId,
+		GetBFramePeriod());
 	PLOG_INFO(PREFIX "    GOP:",
 		m_UniqueId);
 	PLOG_INFO(PREFIX "      Type: %s",
@@ -1761,7 +1830,7 @@ void Plugin::AMD::EncoderH265::LogProperties() {
 		IsDeblockingFilterEnabled() ? "Enabled" : "Disabled");
 	PLOG_INFO(PREFIX "    Motion Estimation: %s%s",
 		m_UniqueId,
-		IsMotionEstimationQuarterPixelEnabled() ? (IsMotionEstimationHalfPixelEnabled() ? "Quarter" : "Quarter, ") : "",
+		IsMotionEstimationQuarterPixelEnabled() ? (IsMotionEstimationHalfPixelEnabled() ? "Quarter, " : "Quarter") : "",
 		IsMotionEstimationHalfPixelEnabled() ? "Half" : "");
 	#pragma endregion Picture Control
 
