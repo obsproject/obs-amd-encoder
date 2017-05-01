@@ -126,12 +126,14 @@ void* Plugin::Interface::H264Interface::create(obs_data_t* settings, obs_encoder
 }
 
 void Plugin::Interface::H264Interface::destroy(void* data) {
-	delete static_cast<Plugin::Interface::H264Interface*>(data);
+	if (data)
+		delete static_cast<Plugin::Interface::H264Interface*>(data);
 }
 
 bool Plugin::Interface::H264Interface::encode(void *data, struct encoder_frame *frame, struct encoder_packet *packet, bool *received_packet) {
 	try {
-		return static_cast<Plugin::Interface::H264Interface*>(data)->encode(frame, packet, received_packet);
+		if (data)
+			return static_cast<Plugin::Interface::H264Interface*>(data)->encode(frame, packet, received_packet);
 	} catch (std::exception e) {
 		PLOG_ERROR("%s", e.what());
 	}
@@ -1265,15 +1267,20 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 }
 
 bool Plugin::Interface::H264Interface::update(void *data, obs_data_t *settings) {
-	return static_cast<Plugin::Interface::H264Interface*>(data)->update(settings);
+	if (data)
+		return static_cast<Plugin::Interface::H264Interface*>(data)->update(settings);
+	return false;
 }
 
 void Plugin::Interface::H264Interface::get_video_info(void *data, struct video_scale_info *info) {
-	return static_cast<Plugin::Interface::H264Interface*>(data)->get_video_info(info);
+	if (data)
+		return static_cast<Plugin::Interface::H264Interface*>(data)->get_video_info(info);
 }
 
 bool Plugin::Interface::H264Interface::get_extra_data(void *data, uint8_t** extra_data, size_t* size) {
-	return static_cast<Plugin::Interface::H264Interface*>(data)->get_extra_data(extra_data, size);
+	if (data)
+		return static_cast<Plugin::Interface::H264Interface*>(data)->get_extra_data(extra_data, size);
+	return false;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1437,7 +1444,7 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 	}
 
 	// Dynamic Properties (Can be changed during Encoding)
-	this->update(data);
+	//this->update(data);
 
 	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Complete.");
 }
@@ -1523,8 +1530,8 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	}
 	{
 		uint32_t period = static_cast<uint32_t>(obs_data_get_int(data, P_FRAMESKIPPING_PERIOD));
-		m_VideoEncoder->SetSkipFramePeriod(period);
-		m_VideoEncoder->SetSkipFrameInverted(!!obs_data_get_int(data, P_FRAMESKIPPING_BEHAVIOUR));
+		m_VideoEncoder->SetFrameSkippingPeriod(period);
+		m_VideoEncoder->SetFrameSkippingBehaviour(!!obs_data_get_int(data, P_FRAMESKIPPING_BEHAVIOUR));
 	}
 	m_VideoEncoder->SetDeblockingFilterEnabled(!!obs_data_get_int(data, P_DEBLOCKINGFILTER));
 
