@@ -5,7 +5,7 @@ PROJECT(enc-amf)
 # Version
 ################################################################################
 SET(enc-amf_VERSION_MAJOR 2)
-SET(enc-amf_VERSION_MINOR 0)
+SET(enc-amf_VERSION_MINOR 1)
 SET(enc-amf_VERSION_PATCH 0)
 configure_file(
 	"${PROJECT_SOURCE_DIR}/#Resources/package.in.bat"
@@ -165,7 +165,7 @@ if(BUILD_AMF_AVC)
 endif()
 
 # HEVC Encoding
-OPTION(BUILD_AMF_HEVC "AMF Plugin: Build HEVC support" OFF)
+OPTION(BUILD_AMF_HEVC "AMF Plugin: Build HEVC support" ON)
 if(BUILD_AMF_HEVC)
 	add_definitions(-DWITH_HEVC)
 	LIST(APPEND enc-amf_HEADERS
