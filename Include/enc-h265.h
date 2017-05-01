@@ -62,6 +62,7 @@ namespace Plugin {
 			//////////////////////////////////////////////////////////////////////////
 			private:
 			std::unique_ptr<Plugin::AMD::EncoderH265> m_VideoEncoder;
+			obs_encoder_t* m_Encoder;
 		};
 	}
 }

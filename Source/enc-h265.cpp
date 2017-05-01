@@ -168,7 +168,13 @@ void Plugin::Interface::H265Interface::get_defaults(obs_data_t *data) {
 
 	// Picture Control
 	obs_data_set_default_double(data, P_INTERVAL_KEYFRAME, 2.0);
-	obs_data_set_default_int(data, P_PERIOD_IDR_H264, 0);
+	obs_data_set_default_int(data, P_PERIOD_IDR_H265, 0);
+	obs_data_set_default_double(data, P_INTERVAL_IFRAME, 0.0);
+	obs_data_set_default_int(data, P_PERIOD_IFRAME, 0);
+	obs_data_set_default_double(data, P_INTERVAL_PFRAME, 0.0);
+	obs_data_set_default_int(data, P_PERIOD_PFRAME, 0);
+	obs_data_set_default_int(data, P_FRAMESKIPPING_PERIOD, 0);
+	obs_data_set_default_int(data, P_FRAMESKIPPING_BEHAVIOUR, 0);
 	obs_data_set_default_int(data, P_GOP_TYPE, static_cast<int64_t>(H265::GOPType::Fixed));
 	obs_data_set_default_int(data, P_GOP_SIZE, 60);
 	obs_data_set_default_int(data, P_GOP_SIZE_MINIMUM, 1);
@@ -271,7 +277,7 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void* data) {
 
 	#pragma region Maximum Reference Frames
 	p = obs_properties_add_int_slider(props, P_MAXIMUMREFERENCEFRAMES, P_TRANSLATE(P_MAXIMUMREFERENCEFRAMES),
-		1, 16, 1);
+									  1, 16, 1);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_MAXIMUMREFERENCEFRAMES)));
 	#pragma endregion Maximum Reference Frames
 
@@ -329,6 +335,12 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void* data) {
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_FRAMESKIPPING)));
 	obs_property_list_add_int(p, P_TRANSLATE(P_UTIL_SWITCH_DISABLED), 0);
 	obs_property_list_add_int(p, P_TRANSLATE(P_UTIL_SWITCH_ENABLED), 1);
+	p = obs_properties_add_int(props, P_FRAMESKIPPING_PERIOD, P_TRANSLATE(P_FRAMESKIPPING_PERIOD), 0, 1000, 1);
+	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_FRAMESKIPPING_PERIOD)));
+	p = obs_properties_add_list(props, P_FRAMESKIPPING_BEHAVIOUR, P_TRANSLATE(P_FRAMESKIPPING_BEHAVIOUR), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_FRAMESKIPPING_BEHAVIOUR)));
+	obs_property_list_add_int(p, P_TRANSLATE(P_FRAMESKIPPING_SKIPNTH), 0);
+	obs_property_list_add_int(p, P_TRANSLATE(P_FRAMESKIPPING_KEEPNTH), 1);
 	#pragma endregion Frame Skipping
 
 	#pragma region VBAQ
@@ -370,15 +382,23 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void* data) {
 	#pragma endregion VBV Buffer Initial Fullness
 
 	// Picture Control
-	#pragma region Keyframe Interval
+	#pragma region Interval and Periods
+	/// Keyframe, IDR
 	p = obs_properties_add_float(props, P_INTERVAL_KEYFRAME, P_TRANSLATE(P_INTERVAL_KEYFRAME), 0, 100, 0.001);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_INTERVAL_KEYFRAME)));
-	#pragma endregion Keyframe Interval
-
-	#pragma region IDR Period
 	p = obs_properties_add_int(props, P_PERIOD_IDR_H265, P_TRANSLATE(P_PERIOD_IDR_H265), 0, 1000, 1);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_PERIOD_IDR_H265)));
-	#pragma endregion IDR Period
+	/// I-Frame
+	p = obs_properties_add_float(props, P_INTERVAL_IFRAME, P_TRANSLATE(P_INTERVAL_IFRAME), 0, 100, 0.001);
+	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_INTERVAL_IFRAME)));
+	p = obs_properties_add_int(props, P_PERIOD_IFRAME, P_TRANSLATE(P_PERIOD_IFRAME), 0, 1000, 1);
+	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_PERIOD_IFRAME)));
+	/// P-Frame
+	p = obs_properties_add_float(props, P_INTERVAL_PFRAME, P_TRANSLATE(P_INTERVAL_PFRAME), 0, 100, 0.001);
+	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_INTERVAL_PFRAME)));
+	p = obs_properties_add_int(props, P_PERIOD_PFRAME, P_TRANSLATE(P_PERIOD_PFRAME), 0, 1000, 1);
+	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_PERIOD_PFRAME)));
+	#pragma endregion Interval and Periods
 
 	#pragma region GOP Type
 	p = obs_properties_add_list(props, P_GOP_TYPE, P_TRANSLATE(P_GOP_TYPE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
@@ -466,10 +486,10 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void* data) {
 	/// Debug
 	p = obs_properties_add_bool(props, P_DEBUG, P_TRANSLATE(P_DEBUG));
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_DEBUG)));
-	
+
 	// Disable non-dynamic properties if we have an encoder.
 	obs_properties_set_param(props, data, nullptr);
-	
+
 	return props;
 }
 
@@ -540,7 +560,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 
 		// Reset Video Adapter to first in list.
 		obs_data_set_int(data, P_VIDEO_ADAPTER,
-			obs_property_list_item_int(obs_properties_get(props, P_VIDEO_ADAPTER), 0));
+						 obs_property_list_item_int(obs_properties_get(props, P_VIDEO_ADAPTER), 0));
 	}
 
 	// Video Adapter
@@ -608,7 +628,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 			TEMP_LIMIT_SLIDER_BITRATE(CapsVBVBufferSize, P_VBVBUFFER_SIZE);
 		} catch (const std::exception& e) {
 			PLOG_ERROR("Exception occured while updating capabilities: %s",
-				e.what());
+					   e.what());
 		}
 	}
 	#pragma endregion Video API & Adapter
@@ -644,6 +664,8 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 		//std::make_pair(P_QP_MAXIMUM, ViewMode::Advanced),
 		//std::make_pair(P_FILLERDATA, ViewMode::Basic),
 		std::make_pair(P_FRAMESKIPPING, ViewMode::Advanced),
+		std::make_pair(P_FRAMESKIPPING_PERIOD, ViewMode::Master),
+		std::make_pair(P_FRAMESKIPPING_BEHAVIOUR, ViewMode::Master),
 		//std::make_pair(P_VBAQ, ViewMode::Expert),
 		std::make_pair(P_ENFORCEHRD, ViewMode::Expert),
 		// ----------- VBV Buffer
@@ -654,6 +676,10 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 		// ----------- Picture Control
 		std::make_pair(P_INTERVAL_KEYFRAME, ViewMode::Basic),
 		std::make_pair(P_PERIOD_IDR_H265, ViewMode::Master),
+		std::make_pair(P_INTERVAL_IFRAME, ViewMode::Master),
+		std::make_pair(P_PERIOD_IFRAME, ViewMode::Master),
+		std::make_pair(P_INTERVAL_PFRAME, ViewMode::Master),
+		std::make_pair(P_PERIOD_PFRAME, ViewMode::Master),
 		std::make_pair(P_GOP_TYPE, ViewMode::Expert),
 		//std::make_pair(P_GOP_SIZE, ViewMode::Expert),
 		//std::make_pair(P_GOP_SIZE_MINIMUM, ViewMode::Expert),
@@ -665,7 +691,10 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 		// ----------- System
 		std::make_pair(P_VIDEO_API, ViewMode::Advanced),
 		std::make_pair(P_VIDEO_ADAPTER, ViewMode::Advanced),
-		//std::make_pair(P_OPENCL, ViewMode::Expert),
+		std::make_pair(P_OPENCL_TRANSFER, ViewMode::Advanced),
+		std::make_pair(P_OPENCL_CONVERSION, ViewMode::Advanced),
+		std::make_pair(P_ASYNCHRONOUSQUEUE, ViewMode::Expert),
+		std::make_pair(P_ASYNCHRONOUSQUEUE_SIZE, ViewMode::Expert),
 		std::make_pair(P_VIEW, ViewMode::Basic),
 		std::make_pair(P_DEBUG, ViewMode::Basic),
 	};
@@ -777,52 +806,22 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 		obs_data_default_single(props, data, P_GOP_SIZE_MAXIMUM);
 	}
 	#pragma endregion GOP
-
-	bool isnothostmode = strcmp(obs_data_get_string(data, P_VIDEO_API), "Host") != 0;
-	/// Video Adapter
-	obs_property_set_visible(obs_properties_get(props, P_VIDEO_ADAPTER), (curView >= ViewMode::Advanced) && isnothostmode);
-	if (!(curView >= ViewMode::Advanced) || !isnothostmode)
-		obs_data_default_single(props, data, P_VIDEO_ADAPTER);
-
-	#pragma region OpenCL
-	obs_property_set_visible(obs_properties_get(props, P_OPENCL_TRANSFER), (curView >= ViewMode::Advanced) && isnothostmode);
-	if (!(curView >= ViewMode::Advanced) || !isnothostmode)
-		obs_data_default_single(props, data, P_OPENCL_TRANSFER);
-	obs_property_set_visible(obs_properties_get(props, P_OPENCL_CONVERSION), (curView >= ViewMode::Advanced));// && isnothostmode);
-	if (!(curView >= ViewMode::Advanced))// || !isnothostmode)
-		obs_data_default_single(props, data, P_OPENCL_CONVERSION);
-	#pragma endregion OpenCL
-
-	#pragma region Asynchronous Queue
-	obs_property_set_visible(obs_properties_get(props, P_ASYNCHRONOUSQUEUE), (curView >= ViewMode::Expert));
-	if (!(curView >= ViewMode::Expert))
-		obs_data_default_single(props, data, P_ASYNCHRONOUSQUEUE);
-	obs_property_set_visible(obs_properties_get(props, P_ASYNCHRONOUSQUEUE_SIZE), (curView >= ViewMode::Expert));
-	if (!(curView >= ViewMode::Expert))
-		obs_data_default_single(props, data, P_ASYNCHRONOUSQUEUE_SIZE);
-	#pragma endregion Asynchronous Queue
 	#pragma endregion View Mode
 
 	// Permanently disable static properties while encoding.
 	void* enc = obs_properties_get_param(props);
 	if (enc) {
 		std::vector<const char*> hiddenProperties = {
-			P_PROFILE,
-			P_TIER,
-			P_PROFILELEVEL,
-			P_CODINGTYPE,
-
-			P_MAXIMUMREFERENCEFRAMES,
+			// Static
+			///P_USAGE,
 			P_QUALITYPRESET,
+			P_PROFILE,
+			P_PROFILELEVEL,
+			P_TIER,
+			P_CODINGTYPE,
+			P_MAXIMUMREFERENCEFRAMES,
 
-			P_INTERVAL_KEYFRAME,
-			P_PERIOD_IDR_H265,
-			P_GOP_SIZE,
-			P_GOP_SIZE_MAXIMUM,
-			P_GOP_SIZE_MINIMUM,
-			P_GOP_TYPE,
-			P_DEBLOCKINGFILTER,
-
+			/// Rate Control
 			P_RATECONTROLMETHOD,
 			P_VBVBUFFER,
 			P_VBVBUFFER_STRICTNESS,
@@ -830,6 +829,25 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 			P_VBVBUFFER_INITIALFULLNESS,
 			P_PREPASSMODE,
 			P_VBAQ,
+
+			/// Picture Control
+			P_GOP_SIZE,
+			P_GOP_SIZE_MAXIMUM,
+			P_GOP_SIZE_MINIMUM,
+			P_GOP_TYPE,
+			P_INTERVAL_KEYFRAME,
+			P_PERIOD_IDR_H265,
+			P_DEBLOCKINGFILTER,			
+			P_MOTIONESTIMATION,
+
+			// System
+			P_VIDEO_API,
+			P_VIDEO_ADAPTER,
+			P_OPENCL_TRANSFER,
+			P_OPENCL_CONVERSION,
+			P_ASYNCHRONOUSQUEUE,
+			P_ASYNCHRONOUSQUEUE_SIZE,
+			P_DEBUG,
 		};
 		for (const char* pr : hiddenProperties) {
 			obs_property_set_enabled(obs_properties_get(props, pr), false);
@@ -850,6 +868,8 @@ void* Plugin::Interface::H265Interface::create(obs_data_t* data, obs_encoder_t* 
 
 Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t* encoder) {
 	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Initializing...");
+
+	m_Encoder = encoder;
 
 	// OBS Settings
 	uint32_t obsWidth = obs_encoder_get_width(encoder);
@@ -904,9 +924,9 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 	auto adapter = api->GetAdapterById(adapterid.id[0], adapterid.id[1]);
 
 	m_VideoEncoder = std::make_unique<EncoderH265>(api, adapter,
-		!!obs_data_get_int(data, P_OPENCL_TRANSFER), !!obs_data_get_int(data, P_OPENCL_CONVERSION),
-		colorFormat, colorSpace, voi->range == VIDEO_RANGE_FULL,
-		!!obs_data_get_int(data, P_ASYNCHRONOUSQUEUE), (size_t)obs_data_get_int(data, P_ASYNCHRONOUSQUEUE_SIZE));
+												   !!obs_data_get_int(data, P_OPENCL_TRANSFER), !!obs_data_get_int(data, P_OPENCL_CONVERSION),
+												   colorFormat, colorSpace, voi->range == VIDEO_RANGE_FULL,
+												   !!obs_data_get_int(data, P_ASYNCHRONOUSQUEUE), (size_t)obs_data_get_int(data, P_ASYNCHRONOUSQUEUE_SIZE));
 
 	/// Static Properties
 	m_VideoEncoder->SetUsage(Usage::Transcoding);
@@ -924,50 +944,49 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 
 	try {
 		m_VideoEncoder->SetCodingType(static_cast<CodingType>(obs_data_get_int(data, P_CODINGTYPE)));
-	} catch (...) {}
+	} catch (...) {
+	}
 	try {
 		m_VideoEncoder->SetMaximumReferenceFrames(obs_data_get_int(data, P_MAXIMUMREFERENCEFRAMES));
-	} catch (...) {}
+	} catch (...) {
+	}
 
 	// Rate Control	
-	double_t framerate = (double_t)obsFPSnum / (double_t)obsFPSden;
 	m_VideoEncoder->SetRateControlMethod(static_cast<RateControlMethod>(obs_data_get_int(data, P_RATECONTROLMETHOD)));
-	m_VideoEncoder->SetPrePassMode(static_cast<PrePassMode>(obs_data_get_int(data, P_PREPASSMODE)));
-	if (m_VideoEncoder->GetRateControlMethod() != RateControlMethod::ConstantQP)
-		m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled(!!obs_data_get_int(data, P_VBAQ));
-	m_VideoEncoder->SetVBVBufferInitialFullness(obs_data_get_double(data, P_VBVBUFFER_INITIALFULLNESS) / 100.0f);
 	if (obs_data_get_int(data, P_VBVBUFFER) == 0) {
 		m_VideoEncoder->SetVBVBufferStrictness(obs_data_get_double(data, P_VBVBUFFER_STRICTNESS) / 100.0);
 	} else {
 		m_VideoEncoder->SetVBVBufferSize(static_cast<uint32_t>(obs_data_get_int(data, P_VBVBUFFER_SIZE) * 1000));
 	}
-	m_VideoEncoder->SetFillerDataEnabled(!!obs_data_get_int(data, P_FILLERDATA));
+	m_VideoEncoder->SetVBVBufferInitialFullness(obs_data_get_double(data, P_VBVBUFFER_INITIALFULLNESS) / 100.0f);
+	m_VideoEncoder->SetPrePassMode(static_cast<PrePassMode>(obs_data_get_int(data, P_PREPASSMODE)));
+	m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled((!!obs_data_get_int(data, P_VBAQ)) && (m_VideoEncoder->GetRateControlMethod() != RateControlMethod::ConstantQP));
 
 	// Picture Control
-	uint32_t gopsize = 0;
+	uint32_t gopSize = static_cast<uint32_t>(floor(obsFPSden / (double_t)obsFPSnum));
+	H265::GOPType gopType = static_cast<H265::GOPType>(obs_data_get_int(data, P_GOP_TYPE));
+	m_VideoEncoder->SetGOPType(gopType);
 	if (static_cast<ViewMode>(obs_data_get_int(data, P_VIEW)) >= ViewMode::Expert) {
-		H265::GOPType goptype = static_cast<H265::GOPType>(obs_data_get_int(data, P_GOP_TYPE));
-		m_VideoEncoder->SetGOPType(goptype);
-		switch (goptype) {
+		switch (gopType) {
 			case H265::GOPType::Fixed:
-				gopsize = (uint32_t)obs_data_get_int(data, P_GOP_SIZE);
-				m_VideoEncoder->SetGOPSize(gopsize);
+				gopSize = (uint32_t)obs_data_get_int(data, P_GOP_SIZE);
 				break;
 			case H265::GOPType::Variable:
-				gopsize = (uint32_t)(obs_data_get_int(data, P_GOP_SIZE_MINIMUM) + obs_data_get_int(data, P_GOP_SIZE_MAXIMUM)) / 2;
+				gopSize = (uint32_t)(obs_data_get_int(data, P_GOP_SIZE_MINIMUM) + obs_data_get_int(data, P_GOP_SIZE_MAXIMUM)) / 2;
 				m_VideoEncoder->SetGOPSizeMin((uint32_t)obs_data_get_int(data, P_GOP_SIZE_MINIMUM));
 				m_VideoEncoder->SetGOPSizeMax((uint32_t)obs_data_get_int(data, P_GOP_SIZE_MAXIMUM));
 				break;
 		}
-	} else {
-		gopsize = static_cast<uint32_t>(floor(obsFPSden / (double_t)obsFPSnum));
 	}
-	uint32_t idrperiod = (uint32_t)obs_data_get_int(data, P_PERIOD_IDR_H265);
-	if (idrperiod != 0 && static_cast<ViewMode>(obs_data_get_int(data, P_VIEW)) == ViewMode::Master) {
-		m_VideoEncoder->SetIDRPeriod(idrperiod);
-	} else {
-		double_t keyinterv = (double_t)obs_data_get_double(data, P_INTERVAL_KEYFRAME);
-		idrperiod = (uint32_t)ceil((keyinterv * framerate) / gopsize);
+	m_VideoEncoder->SetGOPSize(gopSize);
+	/// Keyframe Interval/Period
+	double_t framerate = (double_t)obsFPSnum / (double_t)obsFPSden;
+	{
+		uint32_t idrperiod = static_cast<uint32_t>(obs_data_get_int(data, P_PERIOD_IDR_H265));
+		if (idrperiod == 0) {
+			double_t keyinterv = obs_data_get_double(data, P_INTERVAL_KEYFRAME);
+			idrperiod = static_cast<uint32_t>(ceil((keyinterv * framerate) / gopSize));
+		}
 		m_VideoEncoder->SetIDRPeriod(idrperiod);
 	}
 	m_VideoEncoder->SetDeblockingFilterEnabled(!!obs_data_get_int(data, P_DEBLOCKINGFILTER));
@@ -1032,21 +1051,20 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 
 			obs_data_set_int(data, P_RATECONTROLMETHOD, (int32_t)m_VideoEncoder->GetRateControlMethod());
 		} else {
-			if (m_VideoEncoder->GetUsage() != Usage::UltraLowLatency)
-				switch (m_VideoEncoder->GetRateControlMethod()) {
-					case RateControlMethod::ConstantBitrate:
-						obs_data_set_string(data, "rate_control", "CBR");
-						break;
-					case RateControlMethod::PeakConstrainedVariableBitrate:
-						obs_data_set_string(data, "rate_control", "VBR");
-						break;
-					case RateControlMethod::LatencyConstrainedVariableBitrate:
-						obs_data_set_string(data, "rate_control", "VBR_LAT");
-						break;
-					case RateControlMethod::ConstantQP:
-						obs_data_set_string(data, "rate_control", "CQP");
-						break;
-				}
+			switch (m_VideoEncoder->GetRateControlMethod()) {
+				case RateControlMethod::ConstantBitrate:
+					obs_data_set_string(data, "rate_control", "CBR");
+					break;
+				case RateControlMethod::PeakConstrainedVariableBitrate:
+					obs_data_set_string(data, "rate_control", "VBR");
+					break;
+				case RateControlMethod::LatencyConstrainedVariableBitrate:
+					obs_data_set_string(data, "rate_control", "VBR_LAT");
+					break;
+				case RateControlMethod::ConstantQP:
+					obs_data_set_string(data, "rate_control", "CQP");
+					break;
+			}
 		}
 
 		// IDR-Period (Keyframes)
@@ -1074,13 +1092,14 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 	}
 
 	// Dynamic Properties (Can be changed during Encoding)
-	this->update(data);
+	//this->update(data);
 
 	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Complete.");
 }
 
 void Plugin::Interface::H265Interface::destroy(void* ptr) {
-	delete static_cast<H265Interface*>(ptr);
+	if (ptr)
+		delete static_cast<H265Interface*>(ptr);
 }
 
 Plugin::Interface::H265Interface::~H265Interface() {
@@ -1093,14 +1112,18 @@ Plugin::Interface::H265Interface::~H265Interface() {
 }
 
 bool Plugin::Interface::H265Interface::update(void *ptr, obs_data_t *settings) {
-	return static_cast<H265Interface*>(ptr)->update(settings);
+	if (ptr)
+		return static_cast<H265Interface*>(ptr)->update(settings);
+	return false;
 }
 
 bool Plugin::Interface::H265Interface::update(obs_data_t* data) {
-		// Rate Control
-	m_VideoEncoder->SetFrameSkippingEnabled(!!obs_data_get_int(data, P_FRAMESKIPPING));
-	m_VideoEncoder->SetEnforceHRDEnabled(!!obs_data_get_int(data, P_ENFORCEHRD));
+	const video_t *obsVideoInfo = obs_encoder_video(m_Encoder);
+	const struct video_output_info *voi = video_output_get_info(obsVideoInfo);
+	uint32_t obsFPSnum = voi->fps_num;
+	uint32_t obsFPSden = voi->fps_den;
 
+	// Rate Control
 	m_VideoEncoder->SetIFrameQPMinimum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_IFRAME_MINIMUM)));
 	m_VideoEncoder->SetIFrameQPMaximum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_IFRAME_MAXIMUM)));
 	m_VideoEncoder->SetPFrameQPMinimum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_PFRAME_MINIMUM)));
@@ -1120,7 +1143,34 @@ bool Plugin::Interface::H265Interface::update(obs_data_t* data) {
 			m_VideoEncoder->SetPFrameQP(static_cast<uint8_t>(obs_data_get_int(data, P_QP_PFRAME)));
 			break;
 	}
+	m_VideoEncoder->SetFrameSkippingEnabled(!!obs_data_get_int(data, P_FRAMESKIPPING));
+	m_VideoEncoder->SetEnforceHRDEnabled(!!obs_data_get_int(data, P_ENFORCEHRD));
+	m_VideoEncoder->SetFillerDataEnabled(!!obs_data_get_int(data, P_FILLERDATA));
 
+	// Picture Control
+	double_t framerate = (double_t)obsFPSnum / (double_t)obsFPSden;
+	/// I/P/Skip Frame Interval/Period
+	{
+		uint32_t period = static_cast<uint32_t>(obs_data_get_double(data, P_INTERVAL_IFRAME) * framerate);
+		period = max(period, static_cast<uint32_t>(obs_data_get_int(data, P_PERIOD_IFRAME)));
+		m_VideoEncoder->SetIFramePeriod(period);
+	}
+	{
+		uint32_t period = static_cast<uint32_t>(obs_data_get_double(data, P_INTERVAL_PFRAME) * framerate);
+		period = max(period, static_cast<uint32_t>(obs_data_get_int(data, P_PERIOD_PFRAME)));
+		m_VideoEncoder->SetPFramePeriod(period);
+	}
+	{
+		uint32_t period = static_cast<uint32_t>(obs_data_get_double(data, P_INTERVAL_BFRAME) * framerate);
+		period = max(period, static_cast<uint32_t>(obs_data_get_int(data, P_PERIOD_BFRAME)));
+		m_VideoEncoder->SetBFramePeriod(period);
+	}
+	{
+		uint32_t period = static_cast<uint32_t>(obs_data_get_int(data, P_FRAMESKIPPING_PERIOD));
+		m_VideoEncoder->SetFrameSkippingPeriod(period);
+		m_VideoEncoder->SetFrameSkippingBehaviour(!!obs_data_get_int(data, P_FRAMESKIPPING_BEHAVIOUR));
+	}
+	
 	if (m_VideoEncoder->IsStarted()) {
 		m_VideoEncoder->LogProperties();
 		if (static_cast<ViewMode>(obs_data_get_int(data, P_VIEW)) >= ViewMode::Master)
@@ -1131,7 +1181,9 @@ bool Plugin::Interface::H265Interface::update(obs_data_t* data) {
 }
 
 bool Plugin::Interface::H265Interface::encode(void *ptr, struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
-	return static_cast<H265Interface*>(ptr)->encode(frame, packet, received_packet);
+	if (ptr)
+		return static_cast<H265Interface*>(ptr)->encode(frame, packet, received_packet);
+	return false;
 }
 
 bool Plugin::Interface::H265Interface::encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet) {
@@ -1149,7 +1201,8 @@ bool Plugin::Interface::H265Interface::encode(struct encoder_frame * frame, stru
 }
 
 void Plugin::Interface::H265Interface::get_video_info(void *ptr, struct video_scale_info *info) {
-	return static_cast<H265Interface*>(ptr)->get_video_info(info);
+	if (ptr)
+		static_cast<H265Interface*>(ptr)->get_video_info(info);
 }
 
 void Plugin::Interface::H265Interface::get_video_info(struct video_scale_info* info) {
@@ -1157,7 +1210,9 @@ void Plugin::Interface::H265Interface::get_video_info(struct video_scale_info* i
 }
 
 bool Plugin::Interface::H265Interface::get_extra_data(void *ptr, uint8_t** extra_data, size_t* size) {
-	return static_cast<H265Interface*>(ptr)->get_extra_data(extra_data, size);
+	if (ptr)
+		return static_cast<H265Interface*>(ptr)->get_extra_data(extra_data, size);
+	return false;
 }
 
 bool Plugin::Interface::H265Interface::get_extra_data(uint8_t** extra_data, size_t* size) {
