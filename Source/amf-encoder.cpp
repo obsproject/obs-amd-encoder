@@ -42,8 +42,9 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	bool useOpenCLSubmission, bool useOpenCLConversion,
 	ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor,
 	bool useAsyncQueue, size_t asyncQueueSize) {
-	#pragma region Null Values
 	m_UniqueId = Utility::GetUniqueIdentifier();
+
+	#pragma region Null Values
 	/// AMF Internals
 	m_AMF = nullptr;
 	m_AMFFactory = nullptr;
@@ -52,30 +53,55 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	m_AMFConverter = nullptr;
 	m_AMFMemoryType = amf::AMF_MEMORY_UNKNOWN;
 	m_AMFSurfaceFormat = Utility::ColorFormatToAMF(colorFormat);
+
 	/// API Related
 	m_API = nullptr;
 	m_APIDevice = nullptr;
 	m_OpenCLSubmission = false;
-	/// Properties
-	m_Codec = codec;
-	m_ColorFormat = colorFormat;
-	m_ColorSpace = colorSpace;
-	m_FullColorRange = fullRangeColor;
+
+	/// Resolution + Rate
 	m_Resolution = std::make_pair<uint32_t, uint32_t>(0, 0);
 	m_FrameRate = std::make_pair<uint32_t, uint32_t>(0, 0);
-	m_TimestampStep = 0;
-	m_TimestampStepRounded = 0;
-	m_TimestampOffset = 0;
+	m_FrameRateFraction = 0;
+
 	/// Flags
 	m_Initialized = true;
 	m_Started = false;
 	m_OpenCL = false;
-	m_OpenCLSubmission = useOpenCLSubmission;
-	m_OpenCLConversion = useOpenCLConversion;
 	m_HaveFirstFrame = false;
+
+	/// Timings
+	m_TimestampStep = 0;
+	m_TimestampStepRounded = 0;
+	m_TimestampOffset = 0;
+	m_SubmitQueryWaitTimer = std::chrono::nanoseconds(0);
+	m_SubmitQueryAttempts = 8;
+	m_InitialFrameLatency = 0;
+
+	/// Periods
+	m_PeriodIDR = 0;
+	m_PeriodIFrame = 0;
+	m_PeriodPFrame = 0;
+	m_PeriodBFrame = 0;
+	m_FrameSkipPeriod = 0;
+	m_FrameSkipKeepOnlyNth = false;
+
+	/// Asynchronous Queue
 	m_AsyncQueue = useAsyncQueue;
 	m_AsyncQueueSize = asyncQueueSize;
+	m_AsyncRetrieve->shutdown = false;
+	m_AsyncRetrieve->wakeupcount = 0;
+	m_AsyncSend->shutdown = false;
+	m_AsyncSend->wakeupcount = 0;
 	#pragma endregion Null Values
+
+	// Setup
+	m_Codec = codec;
+	m_ColorFormat = colorFormat;
+	m_ColorSpace = colorSpace;
+	m_FullColorRange = fullRangeColor;
+	m_OpenCLSubmission = useOpenCLSubmission;
+	m_OpenCLConversion = useOpenCLConversion;
 
 	// Initialize selected API on Video Adapter
 	m_API = videoAPI;
@@ -84,7 +110,6 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 
 	// Initialize Advanced Media Framework
 	m_AMF = AMF::Instance();
-	/// Retrieve Factory
 	m_AMFFactory = m_AMF->GetFactory();
 
 	// Create Context for Conversion and Encoding
@@ -829,8 +854,10 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 								pf_submit, pf_main;
 							packet->GetProperty(AMF_TIMESTAMP_SUBMIT, &pf_submit);
 							packet->SetProperty(AMF_TIMESTAMP_QUERY, pf_query);
-							pf_main = (pf_query - pf_submit);
+							pf_main = (pf_query - pf_submit) - m_InitialFrameLatency;
 							packet->SetProperty(AMF_TIME_MAIN, pf_main);
+							if (m_InitialFrameLatency == 0)
+								m_InitialFrameLatency = pf_main;
 						}
 
 						break;

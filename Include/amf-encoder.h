@@ -442,22 +442,29 @@ namespace Plugin {
 			ColorFormat m_ColorFormat;
 			ColorSpace m_ColorSpace;
 			bool m_FullColorRange;
+
+			/// Resolution + Rate
 			std::pair<uint32_t, uint32_t> m_Resolution;
 			std::pair<uint32_t, uint32_t> m_FrameRate;
 			double_t m_FrameRateFraction;
+
+			/// Timings
 			double_t m_TimestampStep;
 			uint64_t m_TimestampStepRounded;
-			uint64_t m_TimestampOffset = 0;
+			uint64_t m_TimestampOffset;
 			std::chrono::nanoseconds m_SubmitQueryWaitTimer;
-			uint64_t m_SubmitQueryAttempts = 8;
-			uint32_t m_PeriodIDR = 1;
-			uint32_t m_PeriodIFrame = 0;
-			uint32_t m_PeriodPFrame = 0;
-			uint32_t m_PeriodBFrame = 0;
-			uint32_t m_FrameSkipPeriod = 0;
-			bool m_FrameSkipKeepOnlyNth = false; // false = drop every xth frame, true = drop all but every xth frame
-			
-			// Threading
+			uint64_t m_SubmitQueryAttempts;
+			uint64_t m_InitialFrameLatency;
+
+			/// Periods
+			uint32_t m_PeriodIDR;
+			uint32_t m_PeriodIFrame;
+			uint32_t m_PeriodPFrame;
+			uint32_t m_PeriodBFrame;
+			uint32_t m_FrameSkipPeriod;
+			bool m_FrameSkipKeepOnlyNth; // false = drop every xth frame, true = drop all but every xth frame
+
+			/// Asynchronous Queue
 			bool m_AsyncQueue;
 			size_t m_AsyncQueueSize;
 			struct EncoderThreadingData {
