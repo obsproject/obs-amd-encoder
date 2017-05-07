@@ -1569,10 +1569,10 @@ void Plugin::AMD::EncoderH265::PacketPriorityAndKeyframe(amf::AMFDataPtr& pData,
 	switch ((AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_ENUM)pktType) {
 		case AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_I:
 			packet->keyframe = true;
-			packet->priority = 3;
+			packet->priority = 1;
 			break;
 		case AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_P:
-			packet->priority = 1;
+			packet->priority = 0;
 			break;
 	}
 }
