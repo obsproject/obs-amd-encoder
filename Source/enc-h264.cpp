@@ -1444,7 +1444,7 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 	}
 
 	// Dynamic Properties (Can be changed during Encoding)
-	//this->update(data);
+	this->update(data);
 
 	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Complete.");
 }
