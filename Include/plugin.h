@@ -23,6 +23,8 @@ SOFTWARE.
 */
 
 #pragma once
+#include <inttypes.h>
+
 #define NOMINMAX
 #define NOINOUT
 
