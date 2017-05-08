@@ -89,10 +89,8 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	/// Asynchronous Queue
 	m_AsyncQueue = useAsyncQueue;
 	m_AsyncQueueSize = asyncQueueSize;
-	m_AsyncRetrieve->shutdown = false;
-	m_AsyncRetrieve->wakeupcount = 0;
-	m_AsyncSend->shutdown = false;
-	m_AsyncSend->wakeupcount = 0;
+	m_AsyncRetrieve = nullptr;
+	m_AsyncSend = nullptr;
 	#pragma endregion Null Values
 
 	// Setup
