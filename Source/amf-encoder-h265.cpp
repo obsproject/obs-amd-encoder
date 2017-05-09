@@ -49,6 +49,7 @@ Plugin::AMD::EncoderH265::EncoderH265(
 		colorFormat, colorSpace, fullRangeColor,
 		useAsyncQueue, asyncQueueSize) {
 	AMFTRACECALL;
+	this->SetUsage(Usage::Transcoding);
 }
 
 
