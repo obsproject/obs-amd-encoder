@@ -50,20 +50,9 @@ Plugin::AMD::EncoderH264::EncoderH264(
 		colorFormat, colorSpace, fullRangeColor,
 		useAsyncQueue, asyncQueueSize) {
 	AMFTRACECALL;
+	this->SetUsage(Usage::Transcoding);
 
-	AMF_RESULT res = AMF_UNEXPECTED;
-
-	/// Full Range Color Stuff
-	static const wchar_t* fullColorParams[] = {
-		L"FullRangeColor",
-		L"NominalRange",
-	};
-	for (const wchar_t* par : fullColorParams) {
-		res = m_AMFConverter->SetProperty(par, m_FullColorRange);
-		res = m_AMFEncoder->SetProperty(par, m_FullColorRange);
-		if (res == AMF_OK)
-			break;
-	}
+	AMF_RESULT res = res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FULL_RANGE_COLOR, m_FullColorRange);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg,
 			PREFIX "Failed to set encoder color range, error %ls (code %d)",
