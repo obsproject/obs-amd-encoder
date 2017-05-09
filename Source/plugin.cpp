@@ -56,6 +56,7 @@ OBS_MODULE_USE_DEFAULT_LOCALE("enc-amf", "en-US");
 #ifdef _DEBUG
 #include "components/VideoEncoderVCE.h"
 #include "components/VideoEncoderHEVC.h"
+#include "components/VideoConverter.h"
 
 static std::string fastPrintVariant(const char* text, amf::AMFVariantStruct variant) {
 	std::vector<char> buf(1024);
@@ -115,7 +116,7 @@ static std::string fastPrintVariant(const char* text, amf::AMFVariantStruct vari
 static void printDebugInfo(amf::AMFComponentPtr m_AMFEncoder) {
 	amf::AMFPropertyInfo* pInfo;
 	size_t propCount = m_AMFEncoder->GetPropertyCount();
-	PLOG_INFO("-- Internal AMF Encoder Properties --");
+	//PLOG_INFO("-- Internal AMF Encoder Properties --");
 	for (size_t propIndex = 0; propIndex < propCount; propIndex++) {
 		static const char* typeToString[] = {
 			"Empty",
@@ -229,16 +230,18 @@ MODULE_EXPORT bool obs_module_load(void) {
 		m_AMFFactory->GetDebug(&m_AMFDebug);
 		m_AMFDebug->AssertsEnable(true);
 		m_AMFDebug->EnablePerformanceMonitor(true);
+		m_AMFTrace->SetGlobalLevel(AMF_TRACE_TEST);
+		m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_CONSOLE, AMF_TRACE_TEST);
+		m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_FILE, AMF_TRACE_TEST);
+		m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, AMF_TRACE_TEST);
+		m_AMFTrace->SetPath(L"AMFTrace.log");
 		m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_FILE, true);
 		m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, true);
-		m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_FILE, 99);
-		m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, 99);
-		m_AMFTrace->SetPath(L"C:\\AMFTrace.log");
+		m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, true);
 		m_AMFTrace->TraceEnableAsync(true);
-		m_AMFTrace->SetGlobalLevel(99);
-		for (auto enc : encoders) {
-			amf::AMFContextPtr m_AMFContext;
-			if (m_AMFFactory->CreateContext(&m_AMFContext) == AMF_OK) {
+		amf::AMFContextPtr m_AMFContext;
+		if (m_AMFFactory->CreateContext(&m_AMFContext) == AMF_OK) {
+			for (auto enc : encoders) {
 				m_AMFContext->InitDX11(nullptr);
 				amf::AMFComponentPtr m_AMFComponent;
 				if (m_AMFFactory->CreateComponent(m_AMFContext, enc, &m_AMFComponent) == AMF_OK) {
@@ -246,9 +249,21 @@ MODULE_EXPORT bool obs_module_load(void) {
 					printDebugInfo(m_AMFComponent);
 					m_AMFComponent->Terminate();
 				}
-				m_AMFContext->Terminate();
 			}
+			amf::AMFComponentPtr m_AMFComponent, m_AMFComponent2;
+			if (m_AMFFactory->CreateComponent(m_AMFContext, AMFVideoConverter, &m_AMFComponent) == AMF_OK) {
+				m_AMFComponent->Init(amf::AMF_SURFACE_NV12, 1280, 720);
+				if (m_AMFFactory->CreateComponent(m_AMFContext, AMFVideoEncoderVCE_AVC, &m_AMFComponent2) == AMF_OK) {
+					PLOG_INFO("-- %s --", "Converter");
+					m_AMFComponent->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE, AMF_VIDEO_CONVERTER_COLOR_PROFILE_JPEG);
+					printDebugInfo(m_AMFComponent);
+					m_AMFComponent2->Terminate();
+				}
+				m_AMFComponent->Terminate();
+			}
+			m_AMFContext->Terminate();
 		}
+
 	}
 	#endif
 
