@@ -434,7 +434,6 @@ namespace Plugin {
 			bool m_OpenCL;
 			bool m_OpenCLSubmission; // Submit Frames using OpenCL
 			bool m_OpenCLConversion; // Convert Frames using OpenCL instead of DirectCompute
-			bool m_HaveFirstFrame;
 
 			// Properties
 			uint64_t m_UniqueId;
@@ -455,6 +454,10 @@ namespace Plugin {
 			std::chrono::nanoseconds m_SubmitQueryWaitTimer;
 			uint64_t m_SubmitQueryAttempts;
 			uint64_t m_InitialFrameLatency;
+
+			/// Status
+			uint64_t m_SubmittedFrameCount;
+			bool m_HaveFirstFrame;			
 
 			/// Periods
 			uint32_t m_PeriodIDR;

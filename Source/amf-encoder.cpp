@@ -77,6 +77,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	m_SubmitQueryWaitTimer = std::chrono::nanoseconds(0);
 	m_SubmitQueryAttempts = 8;
 	m_InitialFrameLatency = 0;
+	m_SubmittedFrameCount = 0;
 
 	/// Periods
 	m_PeriodIDR = 0;
@@ -321,7 +322,7 @@ void Plugin::AMD::Encoder::UpdateFrameRateValues() {
 	m_FrameRateFraction = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_TimestampStep = AMF_SECOND * m_FrameRateFraction;
 	m_TimestampStepRounded = (uint64_t)round(m_TimestampStep);
-	m_SubmitQueryWaitTimer = std::chrono::nanoseconds((uint64_t)round(m_TimestampStep / m_SubmitQueryAttempts / 2));
+	m_SubmitQueryWaitTimer = std::chrono::nanoseconds((uint64_t)round(m_TimestampStep / m_SubmitQueryAttempts));
 }
 
 void Plugin::AMD::Encoder::SetVBVBufferStrictness(double_t v) {
@@ -697,7 +698,7 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struc
 	surface->SetDuration(tsNow - tsLast);
 	/// Type override
 	std::string printableType = HandleTypeOverride(surface, frame->pts);
-	
+
 	// Performance Tracking
 	auto clk_end = std::chrono::high_resolution_clock::now();
 	uint64_t pf_timestamp = std::chrono::nanoseconds(clk_end.time_since_epoch()).count();
@@ -775,10 +776,18 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 	bool frameSubmitted = false,
 		packetRetrieved = false;
 
-	for (uint64_t attempt = 1;
-		((attempt <= m_SubmitQueryAttempts) && (!frameSubmitted || !m_HaveFirstFrame))
-		|| (m_HaveFirstFrame && !packetRetrieved);
-		attempt++) {
+	/* Logic Time
+	- No B-Frames: Submit and don't return until we have our first frame.
+	- B-Frames: Submit at least three frames, then don't return until we have our first frame.
+	= ((m_SubmittedFrameCount == m_TimestampOffset) && (!m_HaveFirstFrame))
+	- Runtime: Return if we have submitted and retrieved data.
+	- Runtime: Return if we have attempted to submit or retrieve data for over 1/Framerate time.
+	*/
+
+	for (uint64_t attempt = 1; (
+		(!m_HaveFirstFrame && (m_SubmittedFrameCount == m_TimestampOffset))
+		|| ((!frameSubmitted || !packetRetrieved) && (attempt <= m_SubmitQueryAttempts))
+		); attempt++) {
 		// Submit
 		if (!frameSubmitted) {
 			if (m_AsyncQueue) { // Asynchronous
@@ -799,26 +808,18 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 				data->SetProperty(AMF_TIMESTAMP_SUBMIT, pf_ts);
 
 				AMF_RESULT res = m_AMFEncoder->SubmitInput(data);
-				switch (res) {
-					case AMF_INPUT_FULL: // TODO: We don't really have a way to call QueryOutput here...
-						break;
-					case AMF_OK:
-						frameSubmitted = true;
-						break;
-					default:
-						{
-							QUICK_FORMAT_MESSAGE(errMsg,
-								"<Id: %lld> [Main] Submitting Surface failed, error %ls (code %d)",
-								m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-							PLOG_ERROR("%s", errMsg.data());
-						}
-						return false;
+				if (res == AMF_OK) {
+					frameSubmitted = true;
+					m_SubmittedFrameCount++;
+				} else if (res != AMF_INPUT_FULL) {
+					QUICK_FORMAT_MESSAGE(errMsg,
+						"<Id: %lld> [Main] Submitting Surface failed, error %ls (code %d)",
+						m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+					PLOG_ERROR("%s", errMsg.data());
+					return false;
 				}
 			}
 		}
-
-		if (!frameSubmitted)
-			std::this_thread::sleep_for(m_SubmitQueryWaitTimer);
 
 		// Retrieve
 		if (!packetRetrieved) {
@@ -834,39 +835,28 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 				}
 			} else {
 				AMF_RESULT res = m_AMFEncoder->QueryOutput(&packet);
-				switch (res) {
-					case AMF_REPEAT: // Returned with B-Frames, means that we need more frames.
-					case AMF_NEED_MORE_INPUT: // Same
-						if (!m_HaveFirstFrame)
-							packetRetrieved = true;
-						// TODO: Somehow call SubmitInput here.
-						break;
-					case AMF_OK:
-						m_HaveFirstFrame = true;
+				if (res == AMF_OK) {
+					m_HaveFirstFrame = true;
+					packetRetrieved = true;
+
+					// Performance Tracking
+					auto clk = std::chrono::high_resolution_clock::now();
+					uint64_t pf_query = std::chrono::nanoseconds(clk.time_since_epoch()).count(),
+						pf_submit, pf_main;
+					packet->GetProperty(AMF_TIMESTAMP_SUBMIT, &pf_submit);
+					packet->SetProperty(AMF_TIMESTAMP_QUERY, pf_query);
+					pf_main = (pf_query - pf_submit);
+					packet->SetProperty(AMF_TIME_MAIN, pf_main);
+				} else if (res == AMF_NEED_MORE_INPUT) {
+					// Returned with B-Frames, means that we need more frames.
+					if (!m_HaveFirstFrame)
 						packetRetrieved = true;
-
-						// Performance Tracking
-						{
-							auto clk = std::chrono::high_resolution_clock::now();
-							uint64_t pf_query = std::chrono::nanoseconds(clk.time_since_epoch()).count(),
-								pf_submit, pf_main;
-							packet->GetProperty(AMF_TIMESTAMP_SUBMIT, &pf_submit);
-							packet->SetProperty(AMF_TIMESTAMP_QUERY, pf_query);
-							pf_main = (pf_query - pf_submit) - m_InitialFrameLatency;
-							packet->SetProperty(AMF_TIME_MAIN, pf_main);
-							if (m_InitialFrameLatency == 0)
-								m_InitialFrameLatency = pf_main;
-						}
-
-						break;
-					default:
-						{
-							QUICK_FORMAT_MESSAGE(errMsg,
-								"<Id: %lld> [Main] Retrieving Packet failed, error %ls (code %d)",
-								m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-							PLOG_ERROR("%s", errMsg.data());
-						}
-						return false;
+				} else if (res != AMF_REPEAT) {
+					QUICK_FORMAT_MESSAGE(errMsg,
+						"<Id: %lld> [Main] Retrieving Packet failed, error %ls (code %d)",
+						m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+					PLOG_ERROR("%s", errMsg.data());
+					return false;
 				}
 			}
 		}
@@ -879,6 +869,12 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 			"<Id: %lld> Input Queue is full, encoder is overloaded!",
 			m_UniqueId);
 		PLOG_WARNING("%s", errMsg.data());
+	}
+	if (!m_HaveFirstFrame) {
+		QUICK_FORMAT_MESSAGE(errMsg,
+			"<Id: %lld> Waiting for initial frame...",
+			m_UniqueId);
+		PLOG_DEBUG("%s", errMsg.data());
 	}
 	if (m_HaveFirstFrame && !packetRetrieved) {
 		QUICK_FORMAT_MESSAGE(errMsg,
@@ -972,7 +968,7 @@ bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encod
 	#endif	
 
 	PLOG_DEBUG(
-		"<Id: %lld> EncodeLoad: PTS(%8lld) DTS(%8lld) TS(%16lld) Duration(%16lld) Size(%16lld) Type(%s)",
+		"<Id: %" PRIu64 "> EncodeLoad: PTS(%8" PRIu64 ") DTS(%8" PRIu64 ") TS(%16" PRIu64 ") Duration(%16" PRIu64 ") Size(%16" PRIu64 ") Type(%s)",
 		m_UniqueId,
 		packet->pts,
 		packet->dts,
@@ -980,13 +976,19 @@ bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encod
 		data->GetDuration(),
 		packet->size,
 		printableType.c_str());
-	PLOG_DEBUG("<Id: %lld>    Timings: Allocate(%8lld ns) Store(%8lld ns) Convert(%8lld ns) Main(%8lld ns) Load(%8lld ns)",
+	PLOG_DEBUG("<Id: %" PRIu64 ">    Timings: Allocate(%8" PRIu64 " ns) Store(%8" PRIu64 " ns) Convert(%8" PRIu64 " ns) Main(%8" PRIu64 " ns) Load(%8" PRIu64 " ns)",
 		m_UniqueId,
 		pf_allocate_t,
 		pf_store_t,
 		pf_convert_t,
 		pf_main_t,
 		pf_load_t);
+	if (m_InitialFrameLatency == 0) {
+		m_InitialFrameLatency = pf_main_t;
+		PLOG_INFO("<Id: %" PRIu64 "> Initial Frame Latency is %" PRIu64 " nanoseconds.",
+			m_UniqueId,
+			m_InitialFrameLatency);
+	}
 
 	*received_packet = true;
 
@@ -1018,6 +1020,7 @@ int32_t Plugin::AMD::Encoder::AsyncSendLocalMain() {
 				{
 					std::unique_lock<std::mutex> rlock(m_AsyncRetrieve->mutex);
 					m_AsyncRetrieve->wakeupcount++;
+					m_SubmittedFrameCount++;
 				}
 				m_AsyncRetrieve->condvar.notify_one();
 				break;
