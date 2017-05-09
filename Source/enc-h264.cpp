@@ -1349,7 +1349,6 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 		!!obs_data_get_int(data, P_ASYNCHRONOUSQUEUE), (size_t)obs_data_get_int(data, P_ASYNCHRONOUSQUEUE_SIZE));
 
 	/// Static Properties
-	m_VideoEncoder->SetUsage(Usage::Transcoding);
 	m_VideoEncoder->SetQualityPreset(static_cast<QualityPreset>(obs_data_get_int(data, P_QUALITYPRESET)));
 
 	/// Frame
