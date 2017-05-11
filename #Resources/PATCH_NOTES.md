@@ -1,13 +1,22 @@
-# 2.0.0.0 - The 'Ashes of the Phoenix' Update
-The plugin rises from the no-update-phase back to bring you an even better experience with High Efficiency Video Coding (HEVC) encoding, Variance Based Adaptive Quantitization (VBAQ), Pre-Pass support and Asynchronous Queue mode.
-
-High Efficiency Video Coding (H265/HEVC) is available on the Polaris architecture and offers massively better quality for the same bitrate, essentially resulting in lower bitrates looking much better. This means that at 1000 kbit H265/HEVC you can get close or surpass the quality of 2500 kbit H264/AVC in many types of scenes and motion. Unfortunately it never took off as it only got slightly better quality than VP9 and AV1 is already beating it in terms of speed and quality.
-
-Variance Based Adaptive Quantitization (VBAQ) and Pre-Pass are both methods to better distribute the Bitrate in a given frame. VBAQ works on the principle of visual perception, while Pre-Pass looks at which areas need more Bitrate to not end up being blocky. Enabling both will result in a much better output with no change in Bitrate.
-
-Asynchronous Queue is a new feature that used to be the standard behaviour in earlier versions. Since no two CPUs are the same, Asynchronous Queue offers a way to use multiple cores of the CPU for the encoding task, instead of just handling everything on a single core. This feature is in very early stages, so it will probably cause issues unless absolutely needed.
+# 2.1.2 - Now with full-range colors!
+Gone are the days of boring bland partial range recordings, here are the days of full range videos! With 2.1 the plugin implements several much wanted features, upgrading a few features from experimental to normal use and fixing a bunch of potential bugs.
 
 ## Changelog
+### 2.1.2
+* Fixed full range color causing crushed blacks and whites.
+* Further improved the internal main encoding loop code.
+
+### 2.1.1
+* Updated Translations from CrowdIn.
+* Fixed plugin starting encoding before encoder is actually ready.
+* Fixed some properties not being applied.
+
+### 2.1.0
+* Fixed B-Frames not working properly. (#234)
+* Added experimental I/P/B/Skip Period and Interval. (#220)
+* Fixed a possible crash with OBS calling functions on a destroyed instance.
+
+### 2.0.0
 * Redesigned the internal structure to be much faster for much less CPU usage.
 * Fixed several object lifetime issues that were only visible while debugging.
 * Massively improved capability testing which now allows us to see the exact limits of the encoder.
