@@ -457,7 +457,8 @@ namespace Plugin {
 
 			/// Status
 			uint64_t m_SubmittedFrameCount;
-			bool m_HaveFirstFrame;			
+			bool m_InitialFramesSent;
+			bool m_InitialPacketRetrieved;
 
 			/// Periods
 			uint32_t m_PeriodIDR;

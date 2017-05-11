@@ -68,14 +68,14 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	m_Initialized = true;
 	m_Started = false;
 	m_OpenCL = false;
-	m_HaveFirstFrame = false;
+	m_InitialPacketRetrieved = false;
 
 	/// Timings
 	m_TimestampStep = 0;
 	m_TimestampStepRounded = 0;
 	m_TimestampOffset = 0;
 	m_SubmitQueryWaitTimer = std::chrono::nanoseconds(0);
-	m_SubmitQueryAttempts = 8;
+	m_SubmitQueryAttempts = 16;
 	m_InitialFrameLatency = 0;
 	m_SubmittedFrameCount = 0;
 
@@ -776,18 +776,25 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 	bool frameSubmitted = false,
 		packetRetrieved = false;
 
-	/* Logic Time
-	- No B-Frames: Submit and don't return until we have our first frame.
-	- B-Frames: Submit at least three frames, then don't return until we have our first frame.
-	= ((m_SubmittedFrameCount == m_TimestampOffset) && (!m_HaveFirstFrame))
-	- Runtime: Return if we have submitted and retrieved data.
-	- Runtime: Return if we have attempted to submit or retrieve data for over 1/Framerate time.
-	*/
+	bool keepLooping = true;
+	for (uint64_t attempt = 1; keepLooping; attempt++) {
+		// Lets just change the stupid huge bitwise and/or into proper ifs.
+		// Since this is rather small and can be kept in L1 we should not see
+		// any differences in performance.
+		if (m_InitialFramesSent) {
+			if (m_InitialPacketRetrieved) {
+				if (attempt <= m_SubmitQueryAttempts) {
+					keepLooping = (!frameSubmitted || !packetRetrieved);
+				} else {
+					keepLooping = false;
+				}
+			} else {
+				keepLooping = !frameSubmitted || !packetRetrieved;
+			}
+		} else {
+			keepLooping = !frameSubmitted;
+		}
 
-	for (uint64_t attempt = 1; (
-		(!m_HaveFirstFrame && (m_SubmittedFrameCount == m_TimestampOffset))
-		|| ((!frameSubmitted || !packetRetrieved) && (attempt <= m_SubmitQueryAttempts))
-		); attempt++) {
 		// Submit
 		if (!frameSubmitted) {
 			if (m_AsyncQueue) { // Asynchronous
@@ -811,6 +818,8 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 				if (res == AMF_OK) {
 					frameSubmitted = true;
 					m_SubmittedFrameCount++;
+					if (m_SubmittedFrameCount >= m_TimestampOffset)
+						m_InitialFramesSent = true;
 				} else if (res != AMF_INPUT_FULL) {
 					QUICK_FORMAT_MESSAGE(errMsg,
 						"<Id: %lld> [Main] Submitting Surface failed, error %ls (code %d)",
@@ -829,14 +838,14 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 					packet = m_AsyncRetrieve->queue.front();
 					m_AsyncRetrieve->queue.pop();
 					packetRetrieved = true;
-					m_HaveFirstFrame = true;
+					m_InitialPacketRetrieved = true;
 				} else {
 					m_AsyncRetrieve->condvar.notify_one();
 				}
 			} else {
 				AMF_RESULT res = m_AMFEncoder->QueryOutput(&packet);
 				if (res == AMF_OK) {
-					m_HaveFirstFrame = true;
+					m_InitialPacketRetrieved = true;
 					packetRetrieved = true;
 
 					// Performance Tracking
@@ -849,7 +858,7 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 					packet->SetProperty(AMF_TIME_MAIN, pf_main);
 				} else if (res == AMF_NEED_MORE_INPUT) {
 					// Returned with B-Frames, means that we need more frames.
-					if (!m_HaveFirstFrame)
+					if (!m_InitialPacketRetrieved)
 						packetRetrieved = true;
 				} else if (res != AMF_REPEAT) {
 					QUICK_FORMAT_MESSAGE(errMsg,
@@ -870,13 +879,13 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 			m_UniqueId);
 		PLOG_WARNING("%s", errMsg.data());
 	}
-	if (!m_HaveFirstFrame) {
+	if (!m_InitialPacketRetrieved) {
 		QUICK_FORMAT_MESSAGE(errMsg,
 			"<Id: %lld> Waiting for initial frame...",
 			m_UniqueId);
 		PLOG_DEBUG("%s", errMsg.data());
 	}
-	if (m_HaveFirstFrame && !packetRetrieved) {
+	if (m_InitialPacketRetrieved && !packetRetrieved) {
 		QUICK_FORMAT_MESSAGE(errMsg,
 			"<Id: %lld> No output Packet, encoder is overloaded!",
 			m_UniqueId);
