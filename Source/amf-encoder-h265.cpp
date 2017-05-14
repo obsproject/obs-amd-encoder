@@ -1659,12 +1659,12 @@ void Plugin::AMD::EncoderH265::LogProperties() {
 	PLOG_INFO(PREFIX "      Conversion: %s",
 		m_UniqueId,
 		m_OpenCLConversion ? "Enabled" : "Disabled");
-	PLOG_INFO(PREFIX "    Async Queue: %s",
+	PLOG_INFO(PREFIX "    Multi-Threading: %s",
 		m_UniqueId,
-		m_AsyncQueue ? "Enabled" : "Disabled");
-	PLOG_INFO(PREFIX "      Size: %" PRIu32,
+		m_MultiThreading ? "Enabled" : "Disabled");
+	PLOG_INFO(PREFIX "    Queue Size: %" PRIu32,
 		m_UniqueId,
-		(uint32_t)m_AsyncQueueSize);
+		(uint32_t)GetQueueSize());
 	#pragma endregion Backend
 	#pragma region Frame
 	PLOG_INFO(PREFIX "  Frame:",

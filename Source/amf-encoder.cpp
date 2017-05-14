@@ -41,7 +41,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter,
 	bool useOpenCLSubmission, bool useOpenCLConversion,
 	ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor,
-	bool useAsyncQueue, size_t asyncQueueSize) {
+	bool multiThreading, size_t queueSize) {
 	m_UniqueId = Utility::GetUniqueIdentifier();
 
 	#pragma region Null Values
@@ -69,15 +69,17 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	m_Started = false;
 	m_OpenCL = false;
 	m_InitialPacketRetrieved = false;
+	m_Debug = false;
 
 	/// Timings
 	m_TimestampStep = 0;
 	m_TimestampStepRounded = 0;
 	m_TimestampOffset = 0;
-	m_SubmitQueryWaitTimer = std::chrono::nanoseconds(0);
+	m_SubmitQueryWaitTimer = std::chrono::milliseconds(1);
 	m_SubmitQueryAttempts = 16;
 	m_InitialFrameLatency = 0;
 	m_SubmittedFrameCount = 0;
+	m_QueueSize = queueSize;
 
 	/// Periods
 	m_PeriodIDR = 0;
@@ -87,9 +89,8 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	m_FrameSkipPeriod = 0;
 	m_FrameSkipKeepOnlyNth = false;
 
-	/// Asynchronous Queue
-	m_AsyncQueue = useAsyncQueue;
-	m_AsyncQueueSize = asyncQueueSize;
+	/// Multi-Threading
+	m_MultiThreading = multiThreading;
 	m_AsyncRetrieve = nullptr;
 	m_AsyncSend = nullptr;
 	#pragma endregion Null Values
@@ -109,6 +110,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 
 	// Initialize Advanced Media Framework
 	m_AMF = AMF::Instance();
+	m_AMF->EnableDebugTrace(m_Debug);
 	m_AMFFactory = m_AMF->GetFactory();
 
 	// Create Context for Conversion and Encoding
@@ -305,12 +307,21 @@ bool Plugin::AMD::Encoder::IsFullRangeColor() {
 	return m_FullColorRange;
 }
 
-bool Plugin::AMD::Encoder::IsAsynchronousQueueEnabled() {
-	return m_AsyncQueue;
+bool Plugin::AMD::Encoder::IsMultiThreaded() {
+	return m_MultiThreading;
 }
 
-size_t Plugin::AMD::Encoder::GetAsynchronousQueueSize() {
-	return m_AsyncQueueSize;
+size_t Plugin::AMD::Encoder::GetQueueSize() {
+	return m_QueueSize;
+}
+
+void Plugin::AMD::Encoder::SetDebug(bool v) {
+	m_Debug = v;
+	m_AMF->EnableDebugTrace(m_Debug);
+}
+
+bool Plugin::AMD::Encoder::IsDebug() {
+	return m_Debug;
 }
 
 void Plugin::AMD::Encoder::UpdateFrameRateValues() {
@@ -322,7 +333,7 @@ void Plugin::AMD::Encoder::UpdateFrameRateValues() {
 	m_FrameRateFraction = ((double_t)m_FrameRate.second / (double_t)m_FrameRate.first);
 	m_TimestampStep = AMF_SECOND * m_FrameRateFraction;
 	m_TimestampStepRounded = (uint64_t)round(m_TimestampStep);
-	m_SubmitQueryWaitTimer = std::chrono::nanoseconds((uint64_t)round(m_TimestampStep / m_SubmitQueryAttempts));
+	m_SubmitQueryWaitTimer = std::chrono::milliseconds(1);// std::chrono::nanoseconds((uint64_t)round(m_TimestampStep / m_SubmitQueryAttempts));
 }
 
 void Plugin::AMD::Encoder::SetVBVBufferStrictness(double_t v) {
@@ -432,7 +443,7 @@ void Plugin::AMD::Encoder::Start() {
 	}
 
 	// Threading
-	if (m_AsyncQueue) {
+	if (m_MultiThreading) {
 		m_AsyncSend = new EncoderThreadingData;
 		m_AsyncSend->shutdown = false;
 		m_AsyncSend->wakeupcount = 0;// 2 ^ 32;
@@ -471,7 +482,7 @@ void Plugin::AMD::Encoder::Stop() {
 	m_AMFEncoder->Flush();
 
 	// Threading
-	if (m_AsyncQueue) {
+	if (m_MultiThreading) {
 		{
 			std::unique_lock<std::mutex> lock(m_AsyncRetrieve->mutex);
 			m_AsyncRetrieve->shutdown = true;
@@ -706,13 +717,15 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struc
 	surface->SetProperty(AMF_TIMESTAMP_STORE, pf_timestamp);
 	surface->SetProperty(AMF_TIME_STORE, pf_time);
 
-	PLOG_DEBUG("<Id: %lld> EncodeStore: PTS(%8lld) DTS(%8lld) TS(%16lld) Duration(%16lld) Type(%s)",
-		m_UniqueId,
-		frame->pts,
-		frame->pts,
-		surface->GetPts(),
-		surface->GetDuration(),
-		printableType.c_str());
+	if (m_Debug) {
+		PLOG_DEBUG("<Id: %lld> EncodeStore: PTS(%8lld) DTS(%8lld) TS(%16lld) Duration(%16lld) Type(%s)",
+			m_UniqueId,
+			frame->pts,
+			frame->pts,
+			surface->GetPts(),
+			surface->GetDuration(),
+			printableType.c_str());
+	}
 
 	return true;
 }
@@ -797,16 +810,14 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 
 		// Submit
 		if (!frameSubmitted) {
-			if (m_AsyncQueue) { // Asynchronous
+			if (m_MultiThreading) { // Asynchronous
 				std::unique_lock<std::mutex> slock(m_AsyncSend->mutex);
-				if (m_AsyncSend->queue.size() < m_AsyncQueueSize) {
-					m_AsyncSend->queue.push(data);
-					m_AsyncSend->wakeupcount++;
-					m_AsyncSend->condvar.notify_one();
+				if (m_AsyncSend->data == nullptr) {
+					m_AsyncSend->data = data;
+					m_AsyncSend->condvar.notify_all();
 					frameSubmitted = true;
 				} else {
-					m_AsyncSend->wakeupcount++;
-					m_AsyncSend->condvar.notify_one();
+					m_AsyncSend->condvar.notify_all();
 				}
 			} else {
 				// Performance Tracking
@@ -815,12 +826,25 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 				data->SetProperty(AMF_TIMESTAMP_SUBMIT, pf_ts);
 
 				AMF_RESULT res = m_AMFEncoder->SubmitInput(data);
+				if (m_Debug) {
+					QUICK_FORMAT_MESSAGE(errMsg,
+						"<Id: %lld> [Main/Submit] SubmitInput returned %ls (code %d).",
+						m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+					PLOG_WARNING("%s", errMsg.c_str());
+				}
+
 				if (res == AMF_OK) {
 					frameSubmitted = true;
 					m_SubmittedFrameCount++;
-					if (m_SubmittedFrameCount >= m_TimestampOffset)
+				} else if (res == AMF_INPUT_FULL) {
+					if (m_InitialFramesSent == false) {
+						QUICK_FORMAT_MESSAGE(errMsg,
+							"<Id: %lld> Queue Size is too large, starting to query for packets...",
+							m_UniqueId);
+						PLOG_ERROR("%s", errMsg.data());
 						m_InitialFramesSent = true;
-				} else if (res != AMF_INPUT_FULL) {
+					}
+				} else {
 					QUICK_FORMAT_MESSAGE(errMsg,
 						"<Id: %lld> [Main] Submitting Surface failed, error %ls (code %d)",
 						m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
@@ -831,19 +855,28 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 		}
 
 		// Retrieve
-		if (!packetRetrieved) {
-			if (m_AsyncQueue) {
+		if (m_InitialFramesSent && !packetRetrieved) {
+			if (m_MultiThreading) {
 				std::unique_lock<std::mutex> rlock(m_AsyncRetrieve->mutex);
-				if (m_AsyncRetrieve->queue.size() > 0) {
-					packet = m_AsyncRetrieve->queue.front();
-					m_AsyncRetrieve->queue.pop();
+				if (m_AsyncRetrieve->data != nullptr) {
+					packet = m_AsyncRetrieve->data;
+					m_AsyncRetrieve->data = nullptr;
 					packetRetrieved = true;
 					m_InitialPacketRetrieved = true;
 				} else {
-					m_AsyncRetrieve->condvar.notify_one();
+					m_AsyncRetrieve->condvar.notify_all();
+					if (m_AsyncRetrieve == 0)
+						m_AsyncRetrieve->wakeupcount = 1;
 				}
 			} else {
 				AMF_RESULT res = m_AMFEncoder->QueryOutput(&packet);
+				if (m_Debug) {
+					QUICK_FORMAT_MESSAGE(errMsg,
+						"<Id: %lld> [Main/Query] QueryOutput returned %ls (code %d).",
+						m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+					PLOG_WARNING("%s", errMsg.c_str());
+				}
+
 				if (res == AMF_OK) {
 					m_InitialPacketRetrieved = true;
 					packetRetrieved = true;
@@ -870,7 +903,7 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 			}
 		}
 
-		if (!packetRetrieved)
+		if (!packetRetrieved || !frameSubmitted)
 			std::this_thread::sleep_for(m_SubmitQueryWaitTimer);
 	}
 	if (!frameSubmitted) {
@@ -891,6 +924,8 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 			m_UniqueId);
 		PLOG_WARNING("%s", errMsg.data());
 	}
+	if (m_SubmittedFrameCount >= (m_TimestampOffset + m_QueueSize))
+		m_InitialFramesSent = true;
 	return true;
 }
 
@@ -940,58 +975,60 @@ bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encod
 	pf_load_ts = std::chrono::nanoseconds(clk_end.time_since_epoch()).count();
 	pf_load_t = std::chrono::nanoseconds(clk_end - clk_start).count();
 
-	std::string printableType = "Unknown";
-	#ifdef WITH_AVC
-	if (m_Codec != Codec::HEVC) {
-		uint64_t type = AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR;
-		data->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &type);
-		switch ((AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)type) {
-			case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR:
-				printableType = "IDR";
-				break;
-			case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_I:
-				printableType = "I";
-				break;
-			case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_P:
-				printableType = "P";
-				break;
-			case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_B:
-				printableType = "B";
-				break;
+	if (m_Debug) {
+		std::string printableType = "Unknown";
+		#ifdef WITH_AVC
+		if (m_Codec != Codec::HEVC) {
+			uint64_t type = AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR;
+			data->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &type);
+			switch ((AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)type) {
+				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR:
+					printableType = "IDR";
+					break;
+				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_I:
+					printableType = "I";
+					break;
+				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_P:
+					printableType = "P";
+					break;
+				case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_B:
+					printableType = "B";
+					break;
+			}
 		}
-	}
-	#endif
-	#ifdef WITH_HEVC
-	if (m_Codec == Codec::HEVC) {
-		uint64_t type = AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_I;
-		data->GetProperty(AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE, &type);
-		switch ((AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_ENUM)type) {
-			case AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_I:
-				printableType = "I";
-				break;
-			case AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_P:
-				printableType = "P";
-				break;
+		#endif
+		#ifdef WITH_HEVC
+		if (m_Codec == Codec::HEVC) {
+			uint64_t type = AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_I;
+			data->GetProperty(AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE, &type);
+			switch ((AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_ENUM)type) {
+				case AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_I:
+					printableType = "I";
+					break;
+				case AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_P:
+					printableType = "P";
+					break;
+			}
 		}
-	}
-	#endif	
+		#endif
 
-	PLOG_DEBUG(
-		"<Id: %" PRIu64 "> EncodeLoad: PTS(%8" PRIu64 ") DTS(%8" PRIu64 ") TS(%16" PRIu64 ") Duration(%16" PRIu64 ") Size(%16" PRIu64 ") Type(%s)",
-		m_UniqueId,
-		packet->pts,
-		packet->dts,
-		data->GetPts(),
-		data->GetDuration(),
-		packet->size,
-		printableType.c_str());
-	PLOG_DEBUG("<Id: %" PRIu64 ">    Timings: Allocate(%8" PRIu64 " ns) Store(%8" PRIu64 " ns) Convert(%8" PRIu64 " ns) Main(%8" PRIu64 " ns) Load(%8" PRIu64 " ns)",
-		m_UniqueId,
-		pf_allocate_t,
-		pf_store_t,
-		pf_convert_t,
-		pf_main_t,
-		pf_load_t);
+		PLOG_DEBUG(
+			"<Id: %" PRIu64 "> EncodeLoad: PTS(%8" PRIu64 ") DTS(%8" PRIu64 ") TS(%16" PRIu64 ") Duration(%16" PRIu64 ") Size(%16" PRIu64 ") Type(%s)",
+			m_UniqueId,
+			packet->pts,
+			packet->dts,
+			data->GetPts(),
+			data->GetDuration(),
+			packet->size,
+			printableType.c_str());
+		PLOG_DEBUG("<Id: %" PRIu64 ">    Timings: Allocate(%8" PRIu64 " ns) Store(%8" PRIu64 " ns) Convert(%8" PRIu64 " ns) Main(%8" PRIu64 " ns) Load(%8" PRIu64 " ns)",
+			m_UniqueId,
+			pf_allocate_t,
+			pf_store_t,
+			pf_convert_t,
+			pf_main_t,
+			pf_load_t);
+	}
 	if (m_InitialFrameLatency == 0) {
 		m_InitialFrameLatency = pf_main_t;
 		PLOG_INFO("<Id: %" PRIu64 "> Initial Frame Latency is %" PRIu64 " nanoseconds.",
@@ -1015,34 +1052,45 @@ int32_t Plugin::AMD::Encoder::AsyncSendLocalMain() {
 	std::unique_lock<std::mutex> lock(own->mutex);
 	while (!own->shutdown) {
 		own->condvar.wait(lock, [&own] {
-			return own->shutdown || !own->queue.empty();
+			return own->shutdown || (own->data != nullptr);
 		});
 
-		if (own->queue.empty())
+		if (own->data == nullptr)
 			continue;
 
-		AMF_RESULT res = m_AMFEncoder->SubmitInput(own->queue.front());
-		switch (res) {
-			case AMF_OK:
-				own->queue.pop();
-				own->wakeupcount--;
-				{
-					std::unique_lock<std::mutex> rlock(m_AsyncRetrieve->mutex);
-					m_AsyncRetrieve->wakeupcount++;
-					m_SubmittedFrameCount++;
-				}
-				m_AsyncRetrieve->condvar.notify_one();
-				break;
-			case AMF_INPUT_FULL:
-				break;
-			default:
-				{
-					QUICK_FORMAT_MESSAGE(errMsg,
-						"<Id: %lld> Submitting Surface failed, error %ls (code %d)",
-						m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-					PLOG_ERROR("%s", errMsg.data());
-				}
-				return -1;
+		amf::AMFDataPtr data = own->data;
+		{
+			// Performance Tracking
+			auto clk = std::chrono::high_resolution_clock::now();
+			uint64_t pf_ts = std::chrono::nanoseconds(clk.time_since_epoch()).count();
+			data->SetProperty(AMF_TIMESTAMP_SUBMIT, pf_ts);
+		}
+
+		AMF_RESULT res = m_AMFEncoder->SubmitInput(data);
+		if (m_Debug) {
+			QUICK_FORMAT_MESSAGE(errMsg,
+				"<Id: %lld> [Main/Submit] SubmitInput returned %ls (code %d).",
+				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+			PLOG_WARNING("%s", errMsg.c_str());
+		}
+
+		if (res == AMF_OK) {
+			own->data = nullptr;
+			m_SubmittedFrameCount++;
+		} else if (res == AMF_INPUT_FULL) {
+			if (m_InitialFramesSent == false) {
+				QUICK_FORMAT_MESSAGE(errMsg,
+					"<Id: %lld> Queue Size is too large, starting to query for packets...",
+					m_UniqueId);
+				PLOG_ERROR("%s", errMsg.data());
+				m_InitialFramesSent = true;
+			}
+		} else {
+			QUICK_FORMAT_MESSAGE(errMsg,
+				"<Id: %lld> Submitting Surface failed, error %ls (code %d)",
+				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+			PLOG_ERROR("%s", errMsg.data());
+			return -1;
 		}
 
 		std::this_thread::sleep_for(m_SubmitQueryWaitTimer);
@@ -1060,51 +1108,53 @@ int32_t Plugin::AMD::Encoder::AsyncRetrieveLocalMain() {
 
 	std::unique_lock<std::mutex> lock(own->mutex);
 	while (!own->shutdown) {
-		if (own->wakeupcount == 0) {
-			own->condvar.wait(lock, [&own] {
-				return own->shutdown || (own->wakeupcount > 0);
-			});
+		own->condvar.wait(lock, [&own] {
+			return own->shutdown || (own->wakeupcount > 0);
+		});
 
-			if (own->wakeupcount == 0)
-				continue;
+		if (own->wakeupcount == 0)
+			continue;
+
+		if (own->data != nullptr)
+			continue;
+
+		amf::AMFDataPtr packet;
+		AMF_RESULT res = m_AMFEncoder->QueryOutput(&packet);
+		if (m_Debug) {
+			QUICK_FORMAT_MESSAGE(errMsg,
+				"<Id: %lld> [Main/Query] QueryOutput returned %ls (code %d).",
+				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+			PLOG_WARNING("%s", errMsg.c_str());
 		}
 
-		if (own->queue.size() < m_AsyncQueueSize) {
-			amf::AMFDataPtr packet;
-			AMF_RESULT res = m_AMFEncoder->QueryOutput(&packet);
-			switch (res) {
-				case AMF_NEED_MORE_INPUT:
-				case AMF_REPEAT:
-					{
-						std::unique_lock<std::mutex> slock(m_AsyncSend->mutex);
-						if (!m_AsyncSend->queue.empty())
-							m_AsyncSend->condvar.notify_one();
-					}
-					break;
-				case AMF_OK:
-					own->queue.push(packet);
-					own->wakeupcount--;
+		if (res == AMF_OK) {
+			own->data = packet;
+			own->wakeupcount--;
 
-					// Performance Tracking
-					{
-						auto clk = std::chrono::high_resolution_clock::now();
-						uint64_t pf_query = std::chrono::nanoseconds(clk.time_since_epoch()).count(),
-							pf_submit, pf_main;
-						packet->GetProperty(AMF_TIMESTAMP_SUBMIT, &pf_submit);
-						packet->SetProperty(AMF_TIMESTAMP_QUERY, pf_query);
-						pf_main = (pf_query - pf_submit);
-						packet->SetProperty(AMF_TIME_MAIN, pf_main);
-					}
-					break;
-				default:
-					{
-						QUICK_FORMAT_MESSAGE(errMsg,
-							"<Id: %lld> Retrieving Packet failed, error %ls (code %d)",
-							m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-						PLOG_ERROR("%s", errMsg.data());
-					}
-					return -1;
+			// Performance Tracking
+			{
+				auto clk = std::chrono::high_resolution_clock::now();
+				uint64_t pf_query = std::chrono::nanoseconds(clk.time_since_epoch()).count(),
+					pf_submit, pf_main;
+				packet->GetProperty(AMF_TIMESTAMP_SUBMIT, &pf_submit);
+				packet->SetProperty(AMF_TIMESTAMP_QUERY, pf_query);
+				pf_main = (pf_query - pf_submit);
+				packet->SetProperty(AMF_TIME_MAIN, pf_main);
 			}
+		} else if (res == AMF_REPEAT) {
+			m_AsyncRetrieve->condvar.notify_all();
+		} else if (res == AMF_NEED_MORE_INPUT) {
+			{
+				std::unique_lock<std::mutex> slock(m_AsyncSend->mutex);
+				if (m_AsyncSend->data != nullptr)
+					m_AsyncSend->condvar.notify_all();
+			}
+		} else {
+			QUICK_FORMAT_MESSAGE(errMsg,
+				"<Id: %lld> Retrieving Packet failed, error %ls (code %d)",
+				m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+			PLOG_ERROR("%s", errMsg.data());
+			return -1;
 		}
 
 		std::this_thread::sleep_for(m_SubmitQueryWaitTimer);

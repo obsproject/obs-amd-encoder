@@ -188,7 +188,7 @@ namespace Plugin {
 				std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter,
 				bool useOpenCLSubmission, bool useOpenCLConversion,
 				ColorFormat colorFormat, ColorSpace colorSpace, bool fullRangeColor,
-				bool useAsyncQueue, size_t asyncQueueSize);
+				bool multiThreaded, size_t queueSize);
 			public:
 			virtual ~Encoder();
 
@@ -219,10 +219,13 @@ namespace Plugin {
 			bool IsFullRangeColor();
 
 			//void SetAsynchronousQueueEnabled(bool v);
-			bool IsAsynchronousQueueEnabled();
+			bool IsMultiThreaded();
 
 			//void SetAsynchronousQueueSize(size_t v);
-			size_t GetAsynchronousQueueSize();
+			size_t GetQueueSize();
+
+			void SetDebug(bool v);
+			bool IsDebug();
 
 			//bool Initialize();
 			#pragma endregion Initialization
@@ -434,6 +437,7 @@ namespace Plugin {
 			bool m_OpenCL;
 			bool m_OpenCLSubmission; // Submit Frames using OpenCL
 			bool m_OpenCLConversion; // Convert Frames using OpenCL instead of DirectCompute
+			bool m_Debug;
 
 			// Properties
 			uint64_t m_UniqueId;
@@ -469,8 +473,8 @@ namespace Plugin {
 			bool m_FrameSkipKeepOnlyNth; // false = drop every xth frame, true = drop all but every xth frame
 
 			/// Asynchronous Queue
-			bool m_AsyncQueue;
-			size_t m_AsyncQueueSize;
+			bool m_MultiThreading;
+			size_t m_QueueSize;
 			struct EncoderThreadingData {
 				// Thread
 				std::thread worker;
@@ -480,7 +484,7 @@ namespace Plugin {
 				std::condition_variable condvar;
 				std::mutex mutex;
 				// Data
-				std::queue<amf::AMFDataPtr> queue;
+				amf::AMFDataPtr data;
 			} *m_AsyncSend, *m_AsyncRetrieve;
 		};
 	}
