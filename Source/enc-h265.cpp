@@ -191,8 +191,8 @@ void Plugin::Interface::H265Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, P_VIDEO_ADAPTER, 0);
 	obs_data_set_default_int(data, P_OPENCL_TRANSFER, 0);
 	obs_data_set_default_int(data, P_OPENCL_CONVERSION, 0);
-	obs_data_set_default_int(data, P_ASYNCHRONOUSQUEUE, 0);
-	obs_data_set_default_int(data, P_ASYNCHRONOUSQUEUE_SIZE, 4);
+	obs_data_set_default_int(data, P_MULTITHREADING, 0);
+	obs_data_set_default_int(data, P_QUEUESIZE, 4);
 	obs_data_set_int(data, ("last" P_VIEW), -1);
 	obs_data_set_default_int(data, ("last" P_VIEW), -1);
 	obs_data_set_default_int(data, P_VIEW, static_cast<int64_t>(ViewMode::Basic));
@@ -464,13 +464,13 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void* data) {
 	#pragma endregion OpenCL
 
 	#pragma region Asynchronous Queue
-	p = obs_properties_add_list(props, P_ASYNCHRONOUSQUEUE, P_TRANSLATE(P_ASYNCHRONOUSQUEUE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_ASYNCHRONOUSQUEUE)));
+	p = obs_properties_add_list(props, P_MULTITHREADING, P_TRANSLATE(P_MULTITHREADING), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_MULTITHREADING)));
 	obs_property_list_add_int(p, P_TRANSLATE(P_UTIL_SWITCH_DISABLED), 0);
 	obs_property_list_add_int(p, P_TRANSLATE(P_UTIL_SWITCH_ENABLED), 1);
 
-	p = obs_properties_add_int_slider(props, P_ASYNCHRONOUSQUEUE_SIZE, P_TRANSLATE(P_ASYNCHRONOUSQUEUE_SIZE), 1, 32, 1);
-	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_ASYNCHRONOUSQUEUE_SIZE)));
+	p = obs_properties_add_int_slider(props, P_QUEUESIZE, P_TRANSLATE(P_QUEUESIZE), 1, 32, 1);
+	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_QUEUESIZE)));
 	#pragma endregion Asynchronous Queue
 
 	#pragma region View Mode
@@ -693,8 +693,8 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 		std::make_pair(P_VIDEO_ADAPTER, ViewMode::Advanced),
 		std::make_pair(P_OPENCL_TRANSFER, ViewMode::Advanced),
 		std::make_pair(P_OPENCL_CONVERSION, ViewMode::Advanced),
-		std::make_pair(P_ASYNCHRONOUSQUEUE, ViewMode::Expert),
-		std::make_pair(P_ASYNCHRONOUSQUEUE_SIZE, ViewMode::Expert),
+		std::make_pair(P_MULTITHREADING, ViewMode::Expert),
+		std::make_pair(P_QUEUESIZE, ViewMode::Expert),
 		std::make_pair(P_VIEW, ViewMode::Basic),
 		std::make_pair(P_DEBUG, ViewMode::Basic),
 	};
@@ -845,8 +845,8 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 			P_VIDEO_ADAPTER,
 			P_OPENCL_TRANSFER,
 			P_OPENCL_CONVERSION,
-			P_ASYNCHRONOUSQUEUE,
-			P_ASYNCHRONOUSQUEUE_SIZE,
+			P_MULTITHREADING,
+			P_QUEUESIZE,
 			P_DEBUG,
 		};
 		for (const char* pr : hiddenProperties) {
@@ -926,7 +926,7 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 	m_VideoEncoder = std::make_unique<EncoderH265>(api, adapter,
 												   !!obs_data_get_int(data, P_OPENCL_TRANSFER), !!obs_data_get_int(data, P_OPENCL_CONVERSION),
 												   colorFormat, colorSpace, voi->range == VIDEO_RANGE_FULL,
-												   !!obs_data_get_int(data, P_ASYNCHRONOUSQUEUE), (size_t)obs_data_get_int(data, P_ASYNCHRONOUSQUEUE_SIZE));
+												   !!obs_data_get_int(data, P_MULTITHREADING), (size_t)obs_data_get_int(data, P_QUEUESIZE));
 
 	/// Static Properties
 	//m_VideoEncoder->SetUsage(Usage::Transcoding);
@@ -1170,6 +1170,8 @@ bool Plugin::Interface::H265Interface::update(obs_data_t* data) {
 		m_VideoEncoder->SetFrameSkippingPeriod(period);
 		m_VideoEncoder->SetFrameSkippingBehaviour(!!obs_data_get_int(data, P_FRAMESKIPPING_BEHAVIOUR));
 	}
+
+	m_VideoEncoder->SetDebug(obs_data_get_bool(data, P_DEBUG));
 	
 	if (m_VideoEncoder->IsStarted()) {
 		m_VideoEncoder->LogProperties();
