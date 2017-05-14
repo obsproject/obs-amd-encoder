@@ -134,8 +134,8 @@ SOFTWARE.
 #define P_VIDEO_ADAPTER				"Video.Adapter"
 #define P_OPENCL_TRANSFER			"OpenCL.Transfer"
 #define P_OPENCL_CONVERSION			"OpenCL.Conversion"
-#define P_ASYNCHRONOUSQUEUE			"AsynchronousQueue"
-#define P_ASYNCHRONOUSQUEUE_SIZE	"AsynchronousQueue.Size"
+#define P_MULTITHREADING			"MultiThreading"
+#define P_QUEUESIZE					"QueueSize"
 #define P_DEBUG						"Debug"
 
 #define P_VIEW						"View"
