@@ -261,18 +261,23 @@ void Plugin::AMD::AMF::EnableDebugTrace(bool enable) {
 	if (!m_AMFDebug)
 		throw std::exception("<" __FUNCTION_NAME__ "> called without a AMFDebug object!");
 
+	// Console
 	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, false);
-	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_CONSOLE, AMF_TRACE_ERROR);
+	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_CONSOLE, AMF_TRACE_NOLOG);
+
+	// File
+	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_FILE, false);
+	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_FILE, AMF_TRACE_NOLOG);
+	m_AMFTrace->SetPath(L"C:\\AMFTrace.log");
+
+	// Debug Output
 	#ifdef _DEBUG
 	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, true);
 	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, AMF_TRACE_TEST);
-	m_AMFTrace->SetPath(L"C:/AMFTrace.log");
 	#else
 	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, false);
-	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, AMF_TRACE_ERROR);
+	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, AMF_TRACE_NOLOG);
 	#endif
-	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_FILE, false);
-	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_FILE, AMF_TRACE_ERROR);
 
 	if (enable) {
 		m_AMFDebug->AssertsEnable(true);
