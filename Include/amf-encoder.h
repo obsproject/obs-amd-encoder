@@ -292,6 +292,7 @@ namespace Plugin {
 			virtual void SetFrameSkippingPeriod(uint32_t v);
 			virtual uint32_t GetFrameSkippingPeriod();
 
+			/// false skips every nth frame, true keeps every nth frame.
 			virtual void SetFrameSkippingBehaviour(bool v);
 			virtual bool GetFrameSkippingBehaviour();
 

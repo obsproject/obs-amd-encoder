@@ -1543,7 +1543,8 @@ std::string Plugin::AMD::EncoderH264::HandleTypeOverride(amf::AMFSurfacePtr & d,
 			m_FrameSkipType = AMF_VIDEO_ENCODER_PICTURE_TYPE_NONE;
 		}
 	}
-	d->SetProperty(AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE, type);
+	if (type != AMF_VIDEO_ENCODER_PICTURE_TYPE_NONE)
+		d->SetProperty(AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE, type);
 
 	switch (type) {
 		case AMF_VIDEO_ENCODER_PICTURE_TYPE_NONE:
