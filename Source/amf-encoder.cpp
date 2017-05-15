@@ -59,6 +59,9 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	m_APIDevice = nullptr;
 	m_OpenCLSubmission = false;
 
+	/// Properties
+	m_QueueSize = queueSize;
+
 	/// Resolution + Rate
 	m_Resolution = std::make_pair<uint32_t, uint32_t>(0, 0);
 	m_FrameRate = std::make_pair<uint32_t, uint32_t>(0, 0);
@@ -68,7 +71,6 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	m_Initialized = true;
 	m_Started = false;
 	m_OpenCL = false;
-	m_InitialPacketRetrieved = false;
 	m_Debug = false;
 
 	/// Timings
@@ -78,8 +80,11 @@ Plugin::AMD::Encoder::Encoder(Codec codec,
 	m_SubmitQueryWaitTimer = std::chrono::milliseconds(1);
 	m_SubmitQueryAttempts = 16;
 	m_InitialFrameLatency = 0;
+
+	/// Status
 	m_SubmittedFrameCount = 0;
-	m_QueueSize = queueSize;
+	m_InitialFramesSent = false;
+	m_InitialPacketRetrieved = false;
 
 	/// Periods
 	m_PeriodIDR = 0;
@@ -447,10 +452,12 @@ void Plugin::AMD::Encoder::Start() {
 		m_AsyncSend = new EncoderThreadingData;
 		m_AsyncSend->shutdown = false;
 		m_AsyncSend->wakeupcount = 0;// 2 ^ 32;
+		m_AsyncSend->data = nullptr;
 		m_AsyncSend->worker = std::thread(AsyncSendMain, this);
 		m_AsyncRetrieve = new EncoderThreadingData;
 		m_AsyncRetrieve->shutdown = false;
 		m_AsyncRetrieve->wakeupcount = 0;
+		m_AsyncRetrieve->data = nullptr;
 		m_AsyncRetrieve->worker = std::thread(AsyncRetrieveMain, this);
 	}
 
@@ -488,6 +495,7 @@ void Plugin::AMD::Encoder::Stop() {
 			m_AsyncRetrieve->shutdown = true;
 			m_AsyncRetrieve->wakeupcount = 2 ^ 32;
 			m_AsyncRetrieve->condvar.notify_all();
+			m_AsyncRetrieve->data = nullptr;
 		}
 		m_AsyncRetrieve->worker.join();
 		delete m_AsyncRetrieve;
@@ -496,6 +504,7 @@ void Plugin::AMD::Encoder::Stop() {
 			m_AsyncSend->shutdown = true;
 			m_AsyncSend->wakeupcount = 2 ^ 32;
 			m_AsyncSend->condvar.notify_all();
+			m_AsyncSend->data = nullptr;
 		}
 		m_AsyncSend->worker.join();
 		delete m_AsyncSend;
@@ -865,7 +874,7 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 					m_InitialPacketRetrieved = true;
 				} else {
 					m_AsyncRetrieve->condvar.notify_all();
-					if (m_AsyncRetrieve == 0)
+					if (m_AsyncRetrieve->wakeupcount == 0)
 						m_AsyncRetrieve->wakeupcount = 1;
 				}
 			} else {
@@ -1058,15 +1067,14 @@ int32_t Plugin::AMD::Encoder::AsyncSendLocalMain() {
 		if (own->data == nullptr)
 			continue;
 
-		amf::AMFDataPtr data = own->data;
 		{
 			// Performance Tracking
 			auto clk = std::chrono::high_resolution_clock::now();
 			uint64_t pf_ts = std::chrono::nanoseconds(clk.time_since_epoch()).count();
-			data->SetProperty(AMF_TIMESTAMP_SUBMIT, pf_ts);
+			own->data->SetProperty(AMF_TIMESTAMP_SUBMIT, pf_ts);
 		}
 
-		AMF_RESULT res = m_AMFEncoder->SubmitInput(data);
+		AMF_RESULT res = m_AMFEncoder->SubmitInput(own->data);
 		if (m_Debug) {
 			QUICK_FORMAT_MESSAGE(errMsg,
 				"<Id: %lld> [Main/Submit] SubmitInput returned %ls (code %d).",

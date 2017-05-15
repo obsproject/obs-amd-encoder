@@ -446,6 +446,7 @@ namespace Plugin {
 			ColorFormat m_ColorFormat;
 			ColorSpace m_ColorSpace;
 			bool m_FullColorRange;
+			size_t m_QueueSize;
 
 			/// Resolution + Rate
 			std::pair<uint32_t, uint32_t> m_Resolution;
@@ -473,9 +474,8 @@ namespace Plugin {
 			uint32_t m_FrameSkipPeriod;
 			bool m_FrameSkipKeepOnlyNth; // false = drop every xth frame, true = drop all but every xth frame
 
-			/// Asynchronous Queue
+			/// Multi-Threading
 			bool m_MultiThreading;
-			size_t m_QueueSize;
 			struct EncoderThreadingData {
 				// Thread
 				std::thread worker;
