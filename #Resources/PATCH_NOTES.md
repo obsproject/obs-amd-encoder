@@ -1,7 +1,14 @@
-# 2.1.2 - Now with full-range colors!
+# 2.1.3 - Now with full-range colors! (Hotfix 1)
 Gone are the days of boring bland partial range recordings, here are the days of full range videos! With 2.1 the plugin implements several much wanted features, upgrading a few features from experimental to normal use and fixing a bunch of potential bugs.
 
+Hotfix 1: 'Encoding overloaded!' should no longer show up for systems which were perfectly capable recording at the same fps in versions before 2.x. Also fixed debug log lines showing up without the Debug option being checked.
+
 ## Changelog
+### 2.1.3
+* Fixed debug log lines showing up even though 'Debug' wasn't checked.
+* Fixed 'Encoding overloaded!' by making Asynchronous Queue the default behaviour and removing that option.
+* Added 'Multi-Threading' and 'Queue Size' option which can be used to fine-tune the Asynchronous Queue behaviour.
+
 ### 2.1.2
 * Fixed full range color causing crushed blacks and whites.
 * Further improved the internal main encoding loop code.
