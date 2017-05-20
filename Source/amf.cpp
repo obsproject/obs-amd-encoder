@@ -194,8 +194,10 @@ Plugin::AMD::AMF::AMF() {
 	}
 
 	/// Register Trace Writer and disable Debug Tracing.
+	#ifdef _WIN64
 	m_TraceWriter = new CustomWriter();
 	m_AMFTrace->RegisterWriter(L"OBSWriter", m_TraceWriter, true);
+	#endif
 	this->EnableDebugTrace(false);
 
 	// Log success
@@ -260,6 +262,20 @@ void Plugin::AMD::AMF::EnableDebugTrace(bool enable) {
 		throw std::exception("<" __FUNCTION_NAME__ "> called without a AMFTrace object!");
 	if (!m_AMFDebug)
 		throw std::exception("<" __FUNCTION_NAME__ "> called without a AMFDebug object!");
+
+	#ifndef _WIN64
+	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, false);
+	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_CONSOLE, AMF_TRACE_NOLOG);
+	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_FILE, false);
+	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_FILE, AMF_TRACE_NOLOG);
+	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, false);
+	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, AMF_TRACE_NOLOG);
+	m_AMFDebug->AssertsEnable(false);
+	m_AMFDebug->EnablePerformanceMonitor(false);
+	m_AMFTrace->TraceEnableAsync(false);
+	m_AMFTrace->SetGlobalLevel(AMF_TRACE_NOLOG);
+	return;
+	#endif
 
 	// Console
 	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, false);
