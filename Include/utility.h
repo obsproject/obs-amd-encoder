@@ -26,14 +26,10 @@ SOFTWARE.
 #include "amf.h"
 #include "amf-encoder.h"
 #include "components/VideoConverter.h"
-#ifdef WITH_AVC
 #include "amf-encoder-h264.h"
 #include "components/VideoEncoderVCE.h"
-#endif
-#ifdef WITH_HEVC
 #include "amf-encoder-h265.h"
 #include "components/VideoEncoderHEVC.h"
-#endif
 
 namespace Utility {
 	uint64_t GetUniqueIdentifier();
@@ -53,92 +49,60 @@ namespace Utility {
 
 	// Usage
 	const char* UsageToString(Plugin::AMD::Usage v);
-	#ifdef WITH_AVC
 	AMF_VIDEO_ENCODER_USAGE_ENUM UsageToAMFH264(Plugin::AMD::Usage v);
 	Plugin::AMD::Usage UsageFromAMFH264(AMF_VIDEO_ENCODER_USAGE_ENUM v);
-	#endif
-	#ifdef WITH_HEVC
 	AMF_VIDEO_ENCODER_HEVC_USAGE_ENUM UsageToAMFH265(Plugin::AMD::Usage v);
 	Plugin::AMD::Usage UsageFromAMFH265(AMF_VIDEO_ENCODER_HEVC_USAGE_ENUM v);
-	#endif
 
 	// Quality Preset
 	const char* QualityPresetToString(Plugin::AMD::QualityPreset v);
-	#ifdef WITH_AVC
 	AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM QualityPresetToAMFH264(Plugin::AMD::QualityPreset v);
 	Plugin::AMD::QualityPreset QualityPresetFromAMFH264(AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM v);
-	#endif
-	#ifdef WITH_HEVC
 	AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_ENUM QualityPresetToAMFH265(Plugin::AMD::QualityPreset v);
 	Plugin::AMD::QualityPreset QualityPresetFromAMFH265(AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_ENUM v);
-	#endif
 
 	// Profile
 	const char* ProfileToString(Plugin::AMD::Profile v);
-	#ifdef WITH_AVC
 	AMF_VIDEO_ENCODER_PROFILE_ENUM ProfileToAMFH264(Plugin::AMD::Profile v);
 	Plugin::AMD::Profile ProfileFromAMFH264(AMF_VIDEO_ENCODER_PROFILE_ENUM v);
-	#endif
-	#ifdef WITH_HEVC
 	AMF_VIDEO_ENCODER_HEVC_PROFILE_ENUM ProfileToAMFH265(Plugin::AMD::Profile v);
 	Plugin::AMD::Profile ProfileFromAMFH265(AMF_VIDEO_ENCODER_HEVC_PROFILE_ENUM v);
-	#endif
 
 	// Tier
-	#ifdef WITH_HEVC
 	const char* TierToString(Plugin::AMD::H265::Tier v);
 	AMF_VIDEO_ENCODER_HEVC_TIER_ENUM TierToAMFH265(Plugin::AMD::H265::Tier v);
 	Plugin::AMD::H265::Tier TierFromAMFH265(AMF_VIDEO_ENCODER_HEVC_TIER_ENUM v);
-	#endif
 
 	// Coding Type
 	const char* CodingTypeToString(Plugin::AMD::CodingType v);
-	#ifdef WITH_AVC
 	AMF_VIDEO_ENCODER_CODING_ENUM CodingTypeToAMFH264(Plugin::AMD::CodingType v);
 	Plugin::AMD::CodingType CodingTypeFromAMFH264(AMF_VIDEO_ENCODER_CODING_ENUM v);
-	#endif
-	#ifdef WITH_HEVC
 	int64_t CodingTypeToAMFH265(Plugin::AMD::CodingType v);
 	Plugin::AMD::CodingType CodingTypeFromAMFH265(int64_t v);
-	#endif
 
 	// Rate Control Method
 	const char* RateControlMethodToString(Plugin::AMD::RateControlMethod v);
-	#ifdef WITH_AVC
 	AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM RateControlMethodToAMFH264(Plugin::AMD::RateControlMethod v);
 	Plugin::AMD::RateControlMethod RateControlMethodFromAMFH264(AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM v);
-	#endif
-	#ifdef WITH_HEVC
 	AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_ENUM RateControlMethodToAMFH265(Plugin::AMD::RateControlMethod v);
 	Plugin::AMD::RateControlMethod RateControlMethodFromAMFH265(AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_ENUM v);
-	#endif
 
 	// Pre-Pass Method
 	const char* PrePassModeToString(Plugin::AMD::PrePassMode v);
-	#ifdef WITH_AVC
 	AMF_VIDEO_ENCODER_PREENCODE_MODE_ENUM PrePassModeToAMFH264(Plugin::AMD::PrePassMode v);
 	Plugin::AMD::PrePassMode PrePassModeFromAMFH264(AMF_VIDEO_ENCODER_PREENCODE_MODE_ENUM v);
-	#endif
 
 	// GOP Type
-	#ifdef WITH_HEVC
 	const char* GOPTypeToString(Plugin::AMD::H265::GOPType v);
 	Plugin::AMD::H265::GOPType GOPTypeFromAMFH265(int64_t v);
 	int64_t GOPTypeToAMFH265(Plugin::AMD::H265::GOPType v);
-	#endif
 
 	// Slicing
-	#ifdef WITH_AVC
 	const char* SliceModeToString(Plugin::AMD::H264::SliceMode v);
-	#endif
 	const char* SliceControlModeToString(Plugin::AMD::SliceControlMode v);
 
-	#ifdef WITH_AVC
 	Plugin::AMD::ProfileLevel H264ProfileLevel(std::pair<uint32_t, uint32_t> resolution, std::pair<uint32_t, uint32_t> frameRate);
-	#endif
-	#ifdef WITH_HEVC
 	Plugin::AMD::ProfileLevel H265ProfileLevel(std::pair<uint32_t, uint32_t> resolution, std::pair<uint32_t, uint32_t> frameRate);
-	#endif
 
 	//////////////////////////////////////////////////////////////////////////
 	// Threading Specific

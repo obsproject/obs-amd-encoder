@@ -27,6 +27,10 @@ SET(enc-amf_HEADERS
 	"Include/amf.h"
 	"Include/amf-capabilities.h"
 	"Include/amf-encoder.h"
+	"Include/amf-encoder-h264.h"
+	"Include/enc-h264.h"
+	"Include/amf-encoder-h265.h"
+	"Include/enc-h265.h"
 	"Include/api-base.h"
 	"Include/api-host.h"
 	"Include/api-opengl.h"
@@ -39,6 +43,10 @@ SET(enc-amf_SOURCES
 	"Source/amf.cpp"
 	"Source/amf-capabilities.cpp"
 	"Source/amf-encoder.cpp"
+	"Source/amf-encoder-h264.cpp"
+	"Source/enc-h264.cpp"
+	"Source/amf-encoder-h265.cpp"
+	"Source/enc-h265.cpp"
 	"Source/api-base.cpp"
 	"Source/api-host.cpp"
 	"Source/api-opengl.cpp"
@@ -144,38 +152,6 @@ else()
 		"${PATH_OBSStudio}/"
 	)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-endif()
-
-################################################################################
-# Optional Features
-################################################################################
-# AVC Encoding
-OPTION(BUILD_AMF_AVC "AMF Plugin: Build AVC (H264) support" ON)
-
-if(BUILD_AMF_AVC)
-	add_definitions(-DWITH_AVC)
-	LIST(APPEND enc-amf_HEADERS
-		"Include/amf-encoder-h264.h"
-		"Include/enc-h264.h"
-	)
-	LIST(APPEND enc-amf_SOURCES
-		"Source/amf-encoder-h264.cpp"
-		"Source/enc-h264.cpp"
-	)
-endif()
-
-# HEVC Encoding
-OPTION(BUILD_AMF_HEVC "AMF Plugin: Build HEVC support" ON)
-if(BUILD_AMF_HEVC)
-	add_definitions(-DWITH_HEVC)
-	LIST(APPEND enc-amf_HEADERS
-		"Include/amf-encoder-h265.h"
-		"Include/enc-h265.h"
-	)
-	LIST(APPEND enc-amf_SOURCES
-		"Source/amf-encoder-h265.cpp"
-		"Source/enc-h265.cpp"
-	)
 endif()
 
 ################################################################################

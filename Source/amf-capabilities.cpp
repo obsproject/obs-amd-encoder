@@ -64,16 +64,12 @@ Plugin::AMD::CapabilityManager::CapabilityManager() {
 				try {
 					std::unique_ptr<AMD::Encoder> enc;
 
-					#ifdef WITH_AVC
 					if (codec == Codec::AVC || codec == Codec::SVC) {
 						enc = std::make_unique<AMD::EncoderH264>(api, adapter);
 					}
-					#endif
-					#ifdef WITH_HEVC
 					if (codec == Codec::HEVC) {
 						enc = std::make_unique<AMD::EncoderH265>(api, adapter);
 					}
-					#endif
 					if (enc != nullptr)
 						isSupported = true;
 				} catch (const std::exception& e) {

@@ -25,12 +25,8 @@ SOFTWARE.
 #include "amf-encoder.h"
 #include "utility.h"
 #include "components/VideoConverter.h"
-#ifdef WITH_AVC
 #include "components/VideoEncoderVCE.h"
-#endif
-#ifdef WITH_HEVC
 #include "components/VideoEncoderHEVC.h"
-#endif
 #include <thread>
 #include "libobs/util/threading.h"
 
@@ -986,7 +982,6 @@ bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encod
 
 	if (m_Debug) {
 		std::string printableType = "Unknown";
-		#ifdef WITH_AVC
 		if (m_Codec != Codec::HEVC) {
 			uint64_t type = AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR;
 			data->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &type);
@@ -1005,8 +1000,6 @@ bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encod
 					break;
 			}
 		}
-		#endif
-		#ifdef WITH_HEVC
 		if (m_Codec == Codec::HEVC) {
 			uint64_t type = AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_I;
 			data->GetProperty(AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE, &type);
@@ -1019,7 +1012,6 @@ bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encod
 					break;
 			}
 		}
-		#endif
 
 		PLOG_DEBUG(
 			"<Id: %" PRIu64 "> EncodeLoad: PTS(%8" PRIu64 ") DTS(%8" PRIu64 ") TS(%16" PRIu64 ") Duration(%16" PRIu64 ") Size(%16" PRIu64 ") Type(%s)",
