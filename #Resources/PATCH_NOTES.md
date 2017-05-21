@@ -1,9 +1,16 @@
-# 2.1.3 - Now with full-range colors! (Hotfix 1)
+# 2.1.5 - Now with full-range colors! (Hotfix 2)
 Gone are the days of boring bland partial range recordings, here are the days of full range videos! With 2.1 the plugin implements several much wanted features, upgrading a few features from experimental to normal use and fixing a bunch of potential bugs.
 
 Hotfix 1: 'Encoding overloaded!' should no longer show up for systems which were perfectly capable recording at the same fps in versions before 2.x. Also fixed debug log lines showing up without the Debug option being checked.
+Hotfix 2: Added a workaround for a Driver-induced crash when running 32-bit OBS Studio.
 
 ## Changelog
+### 2.1.5
+* Added a workaround for a 32-bit crash caused by AMD Driver 17.5.2 and earlier.
+
+### 2.1.4
+* Updated translations from CrowdIn and fixed a typo in en-US.
+
 ### 2.1.3
 * Fixed debug log lines showing up even though 'Debug' wasn't checked.
 * Fixed 'Encoding overloaded!' by making Asynchronous Queue the default behaviour and removing that option.
