@@ -141,12 +141,19 @@ bool Plugin::Interface::H264Interface::encode(void *data, struct encoder_frame *
 }
 
 void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
+	obs_data_clear(data);
+
 	#pragma region OBS - Enforce Streaming Service Restrictions
 	obs_data_set_default_int(data, "bitrate", -1);
+	obs_data_set_int(data, "bitrate", 0);
 	obs_data_set_default_int(data, "keyint_sec", -1);
+	obs_data_set_int(data, "keyint_sec", 0);
 	obs_data_set_default_string(data, "rate_control", "");
+	obs_data_set_string(data, "rate_control", "");
 	obs_data_set_default_string(data, "profile", "");
+	obs_data_set_string(data, "profile", "");
 	obs_data_set_default_string(data, "preset", "");
+	obs_data_set_string(data, "preset", "");
 	#pragma endregion OBS - Enforce Streaming Service Restrictions
 
 	// Preset
@@ -1385,24 +1392,6 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 			} else if (strcmp(p_str, "high")) {
 				m_VideoEncoder->SetProfile(Profile::High);
 			}
-		} else {
-			switch (m_VideoEncoder->GetProfile()) {
-				case Profile::ConstrainedBaseline:
-					obs_data_set_string(data, "profile", "constrained_baseline");
-					break;
-				case Profile::Baseline:
-					obs_data_set_string(data, "profile", "baseline");
-					break;
-				case Profile::Main:
-					obs_data_set_string(data, "profile", "main");
-					break;
-				case Profile::ConstrainedHigh:
-					obs_data_set_string(data, "profile", "constrained_high");
-					break;
-				case Profile::High:
-					obs_data_set_string(data, "profile", "high");
-					break;
-			}
 		}
 
 		// Preset
@@ -1416,18 +1405,6 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 				m_VideoEncoder->SetQualityPreset(QualityPreset::Quality);
 			}
 			obs_data_set_int(data, P_QUALITYPRESET, (int32_t)m_VideoEncoder->GetQualityPreset());
-		} else {
-			switch (m_VideoEncoder->GetQualityPreset()) {
-				case QualityPreset::Speed:
-					obs_data_set_string(data, "preset", "speed");
-					break;
-				case QualityPreset::Balanced:
-					obs_data_set_string(data, "preset", "balanced");
-					break;
-				case QualityPreset::Quality:
-					obs_data_set_string(data, "preset", "quality");
-					break;
-			}
 		}
 	}
 	#pragma endregion OBS - Enforce Streaming Service Restrictions
@@ -1504,7 +1481,7 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	double_t framerate = (double_t)obsFPSnum / (double_t)obsFPSden;
 	/// Keyframe Interval/Period
 	{
-		uint32_t idrperiod = static_cast<uint32_t>(obs_data_get_int(data, P_PERIOD_IDR_H265));
+		uint32_t idrperiod = static_cast<uint32_t>(obs_data_get_int(data, P_PERIOD_IDR_H264));
 		if (idrperiod == 0) {
 			double_t keyinterv = obs_data_get_double(data, P_INTERVAL_KEYFRAME);
 			idrperiod = static_cast<uint32_t>(ceil((keyinterv * framerate)));
@@ -1584,50 +1561,28 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 			}
 
 			obs_data_set_int(data, P_RATECONTROLMETHOD, (int32_t)m_VideoEncoder->GetRateControlMethod());
-		} else {
-			if (m_VideoEncoder->GetUsage() != Usage::UltraLowLatency)
-				switch (m_VideoEncoder->GetRateControlMethod()) {
-					case RateControlMethod::ConstantBitrate:
-						obs_data_set_string(data, "rate_control", "CBR");
-						break;
-					case RateControlMethod::PeakConstrainedVariableBitrate:
-						obs_data_set_string(data, "rate_control", "VBR");
-						break;
-					case RateControlMethod::LatencyConstrainedVariableBitrate:
-						obs_data_set_string(data, "rate_control", "VBR_LAT");
-						break;
-					case RateControlMethod::ConstantQP:
-						obs_data_set_string(data, "rate_control", "CQP");
-						break;
-				}
 		}
 
 		// Bitrate
 		uint64_t bitrateOvr = obs_data_get_int(data, "bitrate") * 1000;
-		if (bitrateOvr != -1) {
+		if (bitrateOvr > 0) {
 			if (m_VideoEncoder->GetTargetBitrate() > bitrateOvr)
 				m_VideoEncoder->SetTargetBitrate(static_cast<uint32_t>(bitrateOvr));
 			if (m_VideoEncoder->GetPeakBitrate() > bitrateOvr)
 				m_VideoEncoder->SetPeakBitrate(static_cast<uint32_t>(bitrateOvr));
 
-			obs_data_set_int(data, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
-
 			obs_data_set_int(data, P_BITRATE_TARGET, m_VideoEncoder->GetTargetBitrate() / 1000);
 			obs_data_set_int(data, P_BITRATE_PEAK, m_VideoEncoder->GetPeakBitrate() / 1000);
-		} else {
-			obs_data_set_int(data, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
 		}
 
 		// IDR-Period (Keyframes)
 		uint32_t fpsNum = m_VideoEncoder->GetFrameRate().first;
 		uint32_t fpsDen = m_VideoEncoder->GetFrameRate().second;
-		if (obs_data_get_int(data, "keyint_sec") != -1) {
+		if (obs_data_get_int(data, "keyint_sec") > 0) {
 			m_VideoEncoder->SetIDRPeriod(static_cast<uint32_t>(obs_data_get_int(data, "keyint_sec") * (static_cast<double_t>(fpsNum) / static_cast<double_t>(fpsDen))));
 
 			obs_data_set_double(data, P_INTERVAL_KEYFRAME, static_cast<double_t>(obs_data_get_int(data, "keyint_sec")));
 			obs_data_set_int(data, P_PERIOD_IDR_H264, static_cast<uint32_t>(obs_data_get_int(data, "keyint_sec") *  (static_cast<double_t>(fpsNum) / static_cast<double_t>(fpsDen))));
-		} else {
-			obs_data_set_int(data, "keyint_sec", static_cast<uint64_t>(m_VideoEncoder->GetIDRPeriod() / (static_cast<double_t>(fpsNum) / static_cast<double_t>(fpsDen))));
 		}
 	}
 	#pragma endregion OBS Enforce Streaming Service Settings

@@ -948,7 +948,7 @@ float Plugin::AMD::EncoderH264::GetInitialVBVBufferFullness() {
 void Plugin::AMD::EncoderH264::SetIDRPeriod(uint32_t v) {
 	AMFTRACECALL;
 
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, (int64_t)v);
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, (int64_t)clamp(v, 1, 1000000));
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, PREFIX "<" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
 			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
@@ -969,7 +969,7 @@ uint32_t Plugin::AMD::EncoderH264::GetIDRPeriod() {
 		throw std::exception(errMsg.c_str());
 	}
 	m_PeriodIDR = (uint32_t)e;
-	return (uint32_t)e;
+	return m_PeriodIDR;
 }
 
 void Plugin::AMD::EncoderH264::SetHeaderInsertionSpacing(uint32_t v) {
