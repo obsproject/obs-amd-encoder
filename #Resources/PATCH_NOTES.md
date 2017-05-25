@@ -1,10 +1,14 @@
-# 2.1.5 - Now with full-range colors! (Hotfix 2)
+# 2.1.6 - Now with full-range colors! (Hotfix 2)
 Gone are the days of boring bland partial range recordings, here are the days of full range videos! With 2.1 the plugin implements several much wanted features, upgrading a few features from experimental to normal use and fixing a bunch of potential bugs.
 
 Hotfix 1: 'Encoding overloaded!' should no longer show up for systems which were perfectly capable recording at the same fps in versions before 2.x. Also fixed debug log lines showing up without the Debug option being checked.
 Hotfix 2: Added a workaround for a Driver-induced crash when running 32-bit OBS Studio.
+Hotfix 3: Fixed a bug with the code handling the 'Enforce Streaming Service Settings' option which caused some settings to no longer work as intended.
 
 ## Changelog
+### 2.1.6
+* Fixed a bug that causes 'Enforce Streaming Service Settings' to always be applied to Target Bitrate, Peak Bitrate, Rate Control Method, Profile, Quality Preset and Keyframe Interval. (#228)
+
 ### 2.1.5
 * Added a workaround for a 32-bit crash caused by AMD Driver 17.5.2 and earlier.
 
