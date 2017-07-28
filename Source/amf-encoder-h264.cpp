@@ -47,13 +47,23 @@ Plugin::AMD::EncoderH264::EncoderH264(
 	AMFTRACECALL;
 	this->SetUsage(Usage::Transcoding);
 
-	AMF_RESULT res = res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FULL_RANGE_COLOR, m_FullColorRange);
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg,
-			PREFIX "Failed to set encoder color range, error %ls (code %d)",
-			m_UniqueId,
-			m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.c_str());
+	if (m_AMF->GetRuntimeVersion() < AMF_MAKE_FULL_VERSION(1, 4, 0, 0)) {
+		// Support for 1.3.x drivers.
+		AMF_RESULT res = res = m_AMFEncoder->SetProperty(L"NominalRange", m_FullColorRange);
+		if (res != AMF_OK) {
+			QUICK_FORMAT_MESSAGE(errMsg,
+				PREFIX "Failed to set encoder color range, error %ls (code %d)",
+				m_UniqueId,
+				m_AMF->GetTrace()->GetResultText(res), res);
+		}
+	} else {
+		AMF_RESULT res = res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_FULL_RANGE_COLOR, m_FullColorRange);
+		if (res != AMF_OK) {
+			QUICK_FORMAT_MESSAGE(errMsg,
+				PREFIX "Failed to set encoder color range, error %ls (code %d)",
+				m_UniqueId,
+				m_AMF->GetTrace()->GetResultText(res), res);
+		}
 	}
 }
 
@@ -1520,7 +1530,7 @@ std::string Plugin::AMD::EncoderH264::HandleTypeOverride(amf::AMFSurfacePtr & d,
 	}
 	if ((m_PeriodIFrame > 0) && ((index % m_PeriodIFrame) == 0)) {
 		type = AMF_VIDEO_ENCODER_PICTURE_TYPE_I;
-	}	
+	}
 	if ((type != AMF_VIDEO_ENCODER_PICTURE_TYPE_NONE) && (m_PeriodIDR > 0) && ((index % m_PeriodIDR) == 0)) {
 		type = AMF_VIDEO_ENCODER_PICTURE_TYPE_IDR;
 	}
