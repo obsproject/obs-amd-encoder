@@ -52,7 +52,6 @@ Plugin::AMD::EncoderH265::EncoderH265(
 			PREFIX "Failed to set encoder color range, error %ls (code %d)",
 			m_UniqueId,
 			m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.c_str());
 	}
 }
 
