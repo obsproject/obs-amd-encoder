@@ -977,7 +977,7 @@ bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encod
 
 	if (m_Debug) {
 		std::string printableType = "Unknown";
-		if (m_Codec != Codec::HEVC) {
+		if (m_Codec == Codec::AVC || m_Codec == Codec::SVC) {
 			uint64_t type = AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR;
 			data->GetProperty(AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE, &type);
 			switch ((AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_ENUM)type) {
