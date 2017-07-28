@@ -65,6 +65,9 @@ namespace Plugin {
 
 			void EnableDebugTrace(bool enable);
 
+			uint64_t GetPluginVersion();
+			uint64_t GetRuntimeVersion();
+
 			private:
 			uint32_t m_TimerPeriod; /// High-Precision Timer Accuracy (nanoseconds)
 			

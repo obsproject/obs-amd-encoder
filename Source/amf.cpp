@@ -304,3 +304,11 @@ void Plugin::AMD::AMF::EnableDebugTrace(bool enable) {
 		m_AMFTrace->SetWriterLevel(L"OBSWriter", AMF_TRACE_WARNING);
 	}
 }
+
+uint64_t Plugin::AMD::AMF::GetPluginVersion() {
+	return m_AMFVersion_Plugin;
+}
+
+uint64_t Plugin::AMD::AMF::GetRuntimeVersion() {
+	return m_AMFVersion_Runtime;
+}
