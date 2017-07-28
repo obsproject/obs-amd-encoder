@@ -996,9 +996,12 @@ bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encod
 			}
 		}
 		if (m_Codec == Codec::HEVC) {
-			uint64_t type = AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_I;
+			uint64_t type = AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_IDR;
 			data->GetProperty(AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE, &type);
 			switch ((AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_ENUM)type) {
+				case AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_IDR:
+					printableType = "IDR";
+					break;
 				case AMF_VIDEO_ENCODER_HEVC_OUTPUT_DATA_TYPE_I:
 					printableType = "I";
 					break;
