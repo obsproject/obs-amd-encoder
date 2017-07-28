@@ -1335,15 +1335,15 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 		// Profile
 		const char* p_str = obs_data_get_string(data, "profile");
 		if (strcmp(p_str, "") != 0) {
-			if (strcmp(p_str, "constrained_baseline")) {
+			if (strcmp(p_str, "constrained_baseline") == 0) {
 				m_VideoEncoder->SetProfile(Profile::ConstrainedBaseline);
-			} else if (strcmp(p_str, "baseline")) {
+			} else if (strcmp(p_str, "baseline") == 0) {
 				m_VideoEncoder->SetProfile(Profile::Baseline);
-			} else if (strcmp(p_str, "main")) {
+			} else if (strcmp(p_str, "main") == 0) {
 				m_VideoEncoder->SetProfile(Profile::Main);
-			} else if (strcmp(p_str, "constrained_high")) {
+			} else if (strcmp(p_str, "constrained_high") == 0) {
 				m_VideoEncoder->SetProfile(Profile::ConstrainedHigh);
-			} else if (strcmp(p_str, "high")) {
+			} else if (strcmp(p_str, "high") == 0) {
 				m_VideoEncoder->SetProfile(Profile::High);
 			}
 		}
