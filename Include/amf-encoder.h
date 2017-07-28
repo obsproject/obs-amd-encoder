@@ -167,6 +167,8 @@ namespace Plugin {
 		enum class PrePassMode : uint8_t {
 			Disabled,
 			Enabled,
+			EnabledAtHalfScale,
+			EnabledAtQuarterScale,
 		};
 		enum class SliceControlMode : uint8_t {
 			Unknown0,
