@@ -259,17 +259,20 @@ void Plugin::AMD::AMF::EnableDebugTrace(bool enable) {
 		throw std::exception("<" __FUNCTION_NAME__ "> called without a AMFDebug object!");
 
 	#ifndef _WIN64
-	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, false);
-	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_CONSOLE, AMF_TRACE_NOLOG);
-	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_FILE, false);
-	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_FILE, AMF_TRACE_NOLOG);
-	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, false);
-	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, AMF_TRACE_NOLOG);
-	m_AMFDebug->AssertsEnable(false);
-	m_AMFDebug->EnablePerformanceMonitor(false);
-	m_AMFTrace->TraceEnableAsync(false);
-	m_AMFTrace->SetGlobalLevel(AMF_TRACE_NOLOG);
-	return;
+	// Older drivers crash due to using the wrong calling standard.
+	if (m_AMFVersion_Runtime < AMF_MAKE_FULL_VERSION(1, 4, 4, 0)) {
+		m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, false);
+		m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_CONSOLE, AMF_TRACE_NOLOG);
+		m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_FILE, false);
+		m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_FILE, AMF_TRACE_NOLOG);
+		m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, false);
+		m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, AMF_TRACE_NOLOG);
+		m_AMFDebug->AssertsEnable(false);
+		m_AMFDebug->EnablePerformanceMonitor(false);
+		m_AMFTrace->TraceEnableAsync(false);
+		m_AMFTrace->SetGlobalLevel(AMF_TRACE_NOLOG);
+		return;
+	}
 	#endif
 
 	// Console
