@@ -526,49 +526,6 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) {
 	return props;
 }
 
-static void obs_data_default_single(obs_properties_t *props, obs_data_t *data, const char* name) {
-	obs_property_t *p = obs_properties_get(props, name);
-	switch (obs_property_get_type(p)) {
-		case OBS_PROPERTY_INVALID:
-			break;
-		case OBS_PROPERTY_BOOL:
-			obs_data_set_bool(data, name, obs_data_get_default_bool(data, name));
-			break;
-		case OBS_PROPERTY_INT:
-			obs_data_set_int(data, name, obs_data_get_default_int(data, name));
-			break;
-		case OBS_PROPERTY_FLOAT:
-			obs_data_set_double(data, name, obs_data_get_default_double(data, name));
-			break;
-		case OBS_PROPERTY_TEXT:
-		case OBS_PROPERTY_PATH:
-			obs_data_set_string(data, name, obs_data_get_default_string(data, name));
-			break;
-		case OBS_PROPERTY_LIST:
-		case OBS_PROPERTY_EDITABLE_LIST:
-			switch (obs_property_list_format(p)) {
-				case OBS_COMBO_FORMAT_INT:
-					obs_data_set_int(data, name, obs_data_get_default_int(data, name));
-					break;
-				case OBS_COMBO_FORMAT_FLOAT:
-					obs_data_set_double(data, name, obs_data_get_default_double(data, name));
-					break;
-				case OBS_COMBO_FORMAT_STRING:
-					obs_data_set_string(data, name, obs_data_get_default_string(data, name));
-					break;
-			}
-			break;
-		case OBS_PROPERTY_COLOR:
-			break;
-		case OBS_PROPERTY_BUTTON:
-			break;
-		case OBS_PROPERTY_FONT:
-			break;
-		case OBS_PROPERTY_FRAME_RATE:
-			break;
-	}
-}
-
 static void obs_data_transfer_settings(obs_data_t * data) {
 	#define TRANSFER_STRING(xold, xnew) obs_data_set_string(data, xnew, obs_data_get_string(data, xold))
 	#define TRANSFER_FLOAT(xold, xnew) obs_data_set_double(data, xnew, obs_data_get_double(data, xold))
@@ -704,7 +661,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 										} \
 					obs_property_list_item_disable(tmp_p, idx, !enabled); \
 					if ((enabled == false) && (tmp_s == tmp_v)) \
-						obs_data_default_single(props, data, obs_property_name(tmp_p)); \
+						obs_data_erase(data, obs_property_name(tmp_p)); \
 								} \
 						}
 			#define TEMP_LIMIT_SLIDER(func, prop) { \
@@ -822,9 +779,9 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 			obs_property_set_enabled(obs_properties_get(props, P_RATECONTROLMETHOD), false);
 			if (obs_data_get_int(data, P_BITRATE_TARGET) < 10000)
 				obs_data_set_int(data, P_BITRATE_TARGET, 10000);
-			obs_data_default_single(props, data, P_QP_MINIMUM);
+			obs_data_erase(data, P_QP_MINIMUM);
 			obs_property_set_enabled(obs_properties_get(props, P_QP_MINIMUM), false);
-			obs_data_default_single(props, data, P_QP_MAXIMUM);
+			obs_data_erase(data, P_QP_MAXIMUM);
 			obs_property_set_enabled(obs_properties_get(props, P_QP_MAXIMUM), false);
 			obs_data_set_int(data, P_FILLERDATA, 0);
 			obs_property_set_enabled(obs_properties_get(props, P_FILLERDATA), false);
@@ -942,9 +899,9 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 			obs_property_set_enabled(obs_properties_get(props, P_RATECONTROLMETHOD), false);
 			if (obs_data_get_int(data, P_BITRATE_TARGET) < 500)
 				obs_data_set_int(data, P_BITRATE_TARGET, 500);
-			obs_data_default_single(props, data, P_QP_MINIMUM);
+			obs_data_erase(data, P_QP_MINIMUM);
 			obs_property_set_enabled(obs_properties_get(props, P_QP_MINIMUM), false);
-			obs_data_default_single(props, data, P_QP_MAXIMUM);
+			obs_data_erase(data, P_QP_MAXIMUM);
 			obs_property_set_enabled(obs_properties_get(props, P_QP_MAXIMUM), false);
 			obs_data_set_int(data, P_FILLERDATA, 1);
 			obs_property_set_enabled(obs_properties_get(props, P_FILLERDATA), false);
@@ -973,9 +930,9 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 			obs_property_set_enabled(obs_properties_get(props, P_RATECONTROLMETHOD), false);
 			if (obs_data_get_int(data, P_BITRATE_TARGET) < 500)
 				obs_data_set_int(data, P_BITRATE_TARGET, 500);
-			obs_data_default_single(props, data, P_QP_MINIMUM);
+			obs_data_erase(data, P_QP_MINIMUM);
 			obs_property_set_enabled(obs_properties_get(props, P_QP_MINIMUM), false);
-			obs_data_default_single(props, data, P_QP_MAXIMUM);
+			obs_data_erase(data, P_QP_MAXIMUM);
 			obs_property_set_enabled(obs_properties_get(props, P_QP_MAXIMUM), false);
 			obs_data_set_int(data, P_FILLERDATA, 1);
 			obs_property_set_enabled(obs_properties_get(props, P_FILLERDATA), false);
@@ -1064,7 +1021,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		if (visp != nullptr) {
 			obs_property_set_visible(visp, vis);
 			if (!vis)
-				obs_data_default_single(props, data, kv.first);
+				obs_data_erase(data, kv.first);
 		}
 	}
 
@@ -1077,7 +1034,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 	/// Pattern
 	obs_property_set_visible(bframeProperty, (curView >= ViewMode::Advanced) && bframeSupported);
 	if (!bframeVisible)
-		obs_data_default_single(props, data, P_BFRAME_PATTERN);
+		obs_data_erase(data, P_BFRAME_PATTERN);
 	bool lastUsingBFrames = obs_data_get_int(data, ("last" P_BFRAME_PATTERN)) != 0,
 		usingBFrames = obs_data_get_int(data, P_BFRAME_PATTERN) != 0;
 	if (usingBFrames != lastUsingBFrames) {
@@ -1089,7 +1046,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 	bool bframeReferenceVisible = (curView >= ViewMode::Advanced) && bframeSupported && usingBFrames;
 	obs_property_set_visible(obs_properties_get(props, P_BFRAME_REFERENCE), bframeReferenceVisible);
 	if (!bframeReferenceVisible)
-		obs_data_default_single(props, data, P_BFRAME_REFERENCE);
+		obs_data_erase(data, P_BFRAME_REFERENCE);
 	bool lastUsingBFrameReference = obs_data_get_int(data, ("last" P_BFRAME_REFERENCE)) != 0,
 		usingBFrameReference = obs_data_get_int(data, P_BFRAME_REFERENCE) == 1;
 	if (usingBFrameReference != lastUsingBFrameReference) {
@@ -1100,10 +1057,10 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 	/// QP Delta
 	obs_property_set_visible(obs_properties_get(props, P_BFRAME_DELTAQP), bframeVisible && usingBFrames);
 	if (!bframeVisible || !usingBFrames)
-		obs_data_default_single(props, data, P_BFRAME_DELTAQP);
+		obs_data_erase(data, P_BFRAME_DELTAQP);
 	obs_property_set_visible(obs_properties_get(props, P_BFRAME_REFERENCEDELTAQP), bframeVisible && usingBFrames && usingBFrameReference);
 	if (!bframeVisible || !usingBFrames || !usingBFrameReference)
-		obs_data_default_single(props, data, P_BFRAME_REFERENCEDELTAQP);
+		obs_data_erase(data, P_BFRAME_REFERENCEDELTAQP);
 	#pragma endregion B-Frames
 
 	#pragma region Rate Control
@@ -1141,28 +1098,28 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 	/// Bitrate
 	obs_property_set_visible(obs_properties_get(props, P_BITRATE_TARGET), vis_rcm_bitrate_target);
 	if (!vis_rcm_bitrate_target)
-		obs_data_default_single(props, data, P_BITRATE_TARGET);
+		obs_data_erase(data, P_BITRATE_TARGET);
 	obs_property_set_visible(obs_properties_get(props, P_BITRATE_PEAK), vis_rcm_bitrate_peak);
 	if (!vis_rcm_bitrate_peak)
-		obs_data_default_single(props, data, P_BITRATE_PEAK);
+		obs_data_erase(data, P_BITRATE_PEAK);
 
 	/// QP
 	obs_property_set_visible(obs_properties_get(props, P_QP_IFRAME), vis_rcm_qp);
 	obs_property_set_visible(obs_properties_get(props, P_QP_PFRAME), vis_rcm_qp);
 	if (!vis_rcm_qp) {
-		obs_data_default_single(props, data, P_QP_IFRAME);
-		obs_data_default_single(props, data, P_QP_PFRAME);
+		obs_data_erase(data, P_QP_IFRAME);
+		obs_data_erase(data, P_QP_PFRAME);
 	}
 	obs_property_set_visible(obs_properties_get(props, P_QP_BFRAME), vis_rcm_qp_b);
 	if (!vis_rcm_qp_b)
-		obs_data_default_single(props, data, P_QP_BFRAME);
+		obs_data_erase(data, P_QP_BFRAME);
 
 	/// QP Min/Max
 	obs_property_set_visible(obs_properties_get(props, P_QP_MINIMUM), (curView >= ViewMode::Advanced) && !vis_rcm_qp);
 	obs_property_set_visible(obs_properties_get(props, P_QP_MAXIMUM), (curView >= ViewMode::Advanced) && !vis_rcm_qp);
 	if (!(curView >= ViewMode::Advanced) || vis_rcm_qp) {
-		obs_data_default_single(props, data, P_QP_MINIMUM);
-		obs_data_default_single(props, data, P_QP_MAXIMUM);
+		obs_data_erase(data, P_QP_MINIMUM);
+		obs_data_erase(data, P_QP_MAXIMUM);
 	}
 
 	/// Pre-Pass
@@ -1178,7 +1135,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 	/// Filler Data (CBR only at the moment)
 	obs_property_set_visible(obs_properties_get(props, P_FILLERDATA), vis_rcm_fillerdata);
 	if (!vis_rcm_fillerdata)
-		obs_data_default_single(props, data, P_FILLERDATA);
+		obs_data_erase(data, P_FILLERDATA);
 	#pragma endregion Rate Control
 
 	#pragma region VBV Buffer
@@ -1194,9 +1151,9 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 	obs_property_set_visible(obs_properties_get(props, P_VBVBUFFER_STRICTNESS), vbvBufferVisible && (vbvBufferMode == 0));
 	obs_property_set_visible(obs_properties_get(props, P_VBVBUFFER_SIZE), vbvBufferVisible && (vbvBufferMode == 1));
 	if (!vbvBufferVisible || vbvBufferMode == 0)
-		obs_data_default_single(props, data, P_VBVBUFFER_SIZE);
+		obs_data_erase(data, P_VBVBUFFER_SIZE);
 	if (!vbvBufferVisible || vbvBufferMode == 1)
-		obs_data_default_single(props, data, P_VBVBUFFER_STRICTNESS);
+		obs_data_erase(data, P_VBVBUFFER_STRICTNESS);
 	#pragma endregion VBV Buffer
 
 	#pragma region B-Frame Interval
@@ -1204,8 +1161,8 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 	obs_property_set_visible(obs_properties_get(props, P_PERIOD_BFRAME), bframeIntervalVisible);
 	obs_property_set_visible(obs_properties_get(props, P_INTERVAL_BFRAME), bframeIntervalVisible);
 	if (!bframeIntervalVisible) {
-		obs_data_default_single(props, data, P_PERIOD_BFRAME);
-		obs_data_default_single(props, data, P_INTERVAL_BFRAME);
+		obs_data_erase(data, P_PERIOD_BFRAME);
+		obs_data_erase(data, P_INTERVAL_BFRAME);
 	}
 	#pragma endregion B-Frame Interval
 	#pragma endregion View Mode
