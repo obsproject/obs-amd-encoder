@@ -1012,7 +1012,7 @@ bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encod
 		}
 
 		PLOG_DEBUG(
-			"<Id: %" PRIu64 "> EncodeLoad: PTS(%8" PRIu64 ") DTS(%8" PRIu64 ") TS(%16" PRIu64 ") Duration(%16" PRIu64 ") Size(%16" PRIu64 ") Type(%s)",
+			"<Id: %" PRIu64 "> EncodeLoad: PTS(%8" PRIu64 ") DTS(%8" PRIu64 ") TS(%16" PRIu64 ") Duration(%16" PRIu64 ") Size(%16" PRIuPTR ") Type(%s)",
 			m_UniqueId,
 			packet->pts,
 			packet->dts,
