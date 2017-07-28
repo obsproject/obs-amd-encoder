@@ -204,7 +204,7 @@ Plugin::API::Direct3D11Instance::Direct3D11Instance(Direct3D11* api, Adapter ada
 	adapterLUID.HighPart = adapter.idHigh;
 
 	HRESULT hr = E_FAIL;
-	ATL::CComPtr<IDXGIAdapter> dxgiAdapter;
+	IDXGIAdapter* dxgiAdapter;
 	for (size_t adapterIndex = 0;
 		!FAILED(api->m_DXGIFactory->EnumAdapters((UINT)adapterIndex, &dxgiAdapter));
 		adapterIndex++) {
