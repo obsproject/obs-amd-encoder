@@ -45,6 +45,15 @@ Plugin::AMD::EncoderH265::EncoderH265(
 		useAsyncQueue, asyncQueueSize) {
 	AMFTRACECALL;
 	this->SetUsage(Usage::Transcoding);
+
+	AMF_RESULT res = res = m_AMFEncoder->SetProperty(L"NominalRange", m_FullColorRange);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg,
+			PREFIX "Failed to set encoder color range, error %ls (code %d)",
+			m_UniqueId,
+			m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.c_str());
+	}
 }
 
 
@@ -1271,53 +1280,6 @@ uint32_t Plugin::AMD::EncoderH265::GetMaximumAccessUnitSize() {
 }
 
 // Intra-Refresh
-void Plugin::AMD::EncoderH265::SetIntraRefreshMode(uint32_t v) {
-	AMFTRACECALL;
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"IntraRefreshMode", (int64_t)v);
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
-			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.c_str());
-	}
-}
-
-uint32_t Plugin::AMD::EncoderH265::GetIntraRefreshMode() {
-	AMFTRACECALL;
-
-	int64_t e;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"IntraRefreshMode", &e);
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
-			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.c_str());
-	}
-	return (uint32_t)e;
-}
-
-void Plugin::AMD::EncoderH265::SetIntraRefreshFrameNum(uint32_t v) {
-	AMFTRACECALL;
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"HevcIntraRefreshFrameNum", (int64_t)v);
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
-			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.c_str());
-	}
-}
-
-uint32_t Plugin::AMD::EncoderH265::GetIntraRefreshFrameNum() {
-	AMFTRACECALL;
-
-	int64_t e;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"HevcIntraRefreshFrameNum", &e);
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
-			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.c_str());
-	}
-	return (uint32_t)e;
-}
 
 // Properties - Slicing
 std::pair<uint32_t, uint32_t> Plugin::AMD::EncoderH265::CapsSlicesPerFrame() {
@@ -1830,18 +1792,7 @@ void Plugin::AMD::EncoderH265::LogProperties() {
 		IsMotionEstimationQuarterPixelEnabled() ? (IsMotionEstimationHalfPixelEnabled() ? "Quarter, " : "Quarter") : "",
 		IsMotionEstimationHalfPixelEnabled() ? "Half" : "");
 	#pragma endregion Picture Control
-
-	#pragma region Intra-Refresh
-	PLOG_INFO(PREFIX "  Intra-Refresh:",
-		m_UniqueId);
-	PLOG_INFO(PREFIX "    Mode: %" PRIu32,
-		m_UniqueId,
-		GetIntraRefreshMode());
-	PLOG_INFO(PREFIX "    Frame Number: %" PRIu32,
-		m_UniqueId,
-		GetIntraRefreshFrameNum());
-	#pragma endregion Intra-Refresh
-
+	
 	#pragma region Slicing
 	PLOG_INFO(PREFIX "  Slicing:",
 		m_UniqueId);

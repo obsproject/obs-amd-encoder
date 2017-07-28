@@ -185,14 +185,7 @@ namespace Plugin {
 
 			virtual void SetMaximumAccessUnitSize(uint32_t v) override;
 			virtual uint32_t GetMaximumAccessUnitSize() override;
-
-			/// Intra-Refresh
-			void SetIntraRefreshMode(uint32_t v);	// Description is identical to IntraRefreshNumMBsPerSlot?
-			uint32_t GetIntraRefreshMode();			// Does not seem to be an actual property yet.
 			
-			void SetIntraRefreshFrameNum(uint32_t v);
-			uint32_t GetIntraRefreshFrameNum();
-
 			/// Slicing
 			virtual std::pair<uint32_t, uint32_t> CapsSlicesPerFrame() override;
 			virtual void SetSlicesPerFrame(uint32_t v) override;
