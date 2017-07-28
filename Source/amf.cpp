@@ -74,6 +74,8 @@ void Plugin::AMD::AMF::Finalize() {
 }
 #pragma endregion Singleton
 
+const wchar_t* loggername = L"OBSWriter";
+
 Plugin::AMD::AMF::AMF() {
 	AMF_RESULT res = AMF_OK;
 
@@ -189,10 +191,15 @@ Plugin::AMD::AMF::AMF() {
 	}
 
 	/// Register Trace Writer and disable Debug Tracing.
-	#ifdef _WIN64
-	m_TraceWriter = new CustomWriter();
-	m_AMFTrace->RegisterWriter(L"OBSWriter", m_TraceWriter, true);
-	#endif
+#ifndef _WIN64
+	// Older drivers crash due to using the wrong calling standard.
+	if (m_AMFVersion_Runtime >= AMF_MAKE_FULL_VERSION(1, 4, 4, 0)) {
+#endif
+		m_TraceWriter = new CustomWriter();
+		m_AMFTrace->RegisterWriter(loggername, m_TraceWriter, true);
+#ifndef _WIN64
+	}
+#endif
 	this->EnableDebugTrace(false);
 
 	// Log success
@@ -217,7 +224,7 @@ Plugin::AMD::AMF::AMF() {
 Plugin::AMD::AMF::~AMF() {
 	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Finalizing.");
 	if (m_TraceWriter) {
-		//m_AMFTrace->UnregisterWriter(L"OBSWriter");
+		m_AMFTrace->UnregisterWriter(loggername);
 		delete m_TraceWriter;
 		m_TraceWriter = nullptr;
 	}
