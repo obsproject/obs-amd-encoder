@@ -172,7 +172,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, P_FRAMESKIPPING, 0);
 	obs_data_set_default_int(data, P_FRAMESKIPPING_PERIOD, 0);
 	obs_data_set_default_int(data, P_FRAMESKIPPING_BEHAVIOUR, 0);
-	obs_data_set_default_int(data, P_VBAQ, 1);
+	obs_data_set_default_int(data, P_VBAQ, 0);
 	obs_data_set_default_int(data, P_ENFORCEHRD, 1);
 
 	// VBV Buffer
@@ -208,7 +208,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, P_OPENCL_TRANSFER, 0);
 	obs_data_set_default_int(data, P_OPENCL_CONVERSION, 0);
 	obs_data_set_default_int(data, P_MULTITHREADING, 0);
-	obs_data_set_default_int(data, P_QUEUESIZE, 4);
+	obs_data_set_default_int(data, P_QUEUESIZE, 8);
 	obs_data_set_default_int(data, ("last" P_VIEW), -1);
 	obs_data_set_default_int(data, P_VIEW, static_cast<int64_t>(ViewMode::Basic));
 	obs_data_set_default_bool(data, P_DEBUG, false);
