@@ -517,11 +517,7 @@ const char* Utility::PrePassModeToString(Plugin::AMD::PrePassMode v) {
 		case PrePassMode::Disabled:
 			return "Disabled";
 		case PrePassMode::Enabled:
-			return "Enabled (Full Scale)";
-		case PrePassMode::EnabledAtHalfScale:
-			return "Enabled (Half Scale)";
-		case PrePassMode::EnabledAtQuarterScale:
-			return "Enabled (Quarter Scale)";
+			return "Enabled";
 	}
 	throw std::runtime_error("Invalid Parameter");
 }
@@ -531,10 +527,6 @@ AMF_VIDEO_ENCODER_PREENCODE_MODE_ENUM Utility::PrePassModeToAMFH264(Plugin::AMD:
 			return AMF_VIDEO_ENCODER_PREENCODE_DISABLED;
 		case PrePassMode::Enabled:
 			return AMF_VIDEO_ENCODER_PREENCODE_ENABLED;
-		case PrePassMode::EnabledAtHalfScale:
-			return AMF_VIDEO_ENCODER_PREENCODE_ENABLED_DOWNSCALEFACTOR_2;
-		case PrePassMode::EnabledAtQuarterScale:
-			return AMF_VIDEO_ENCODER_PREENCODE_ENABLED_DOWNSCALEFACTOR_4;
 	}
 	throw std::runtime_error("Invalid Parameter");
 }
@@ -544,10 +536,6 @@ Plugin::AMD::PrePassMode Utility::PrePassModeFromAMFH264(AMF_VIDEO_ENCODER_PREEN
 			return PrePassMode::Disabled;
 		case AMF_VIDEO_ENCODER_PREENCODE_ENABLED:
 			return PrePassMode::Enabled;
-		case AMF_VIDEO_ENCODER_PREENCODE_ENABLED_DOWNSCALEFACTOR_2:
-			return PrePassMode::EnabledAtHalfScale;
-		case AMF_VIDEO_ENCODER_PREENCODE_ENABLED_DOWNSCALEFACTOR_4:
-			return PrePassMode::EnabledAtQuarterScale;
 	}
 	throw std::runtime_error("Invalid Parameter");
 }

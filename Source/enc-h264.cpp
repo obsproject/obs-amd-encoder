@@ -325,9 +325,7 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) {
 	p = obs_properties_add_list(props, P_PREPASSMODE, P_TRANSLATE(P_PREPASSMODE), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_PREPASSMODE)));
 	obs_property_list_add_int(p, P_TRANSLATE(P_UTIL_SWITCH_DISABLED), static_cast<int32_t>(PrePassMode::Disabled));
-	obs_property_list_add_int(p, P_TRANSLATE(P_PREPASSMODE_QUARTER), static_cast<int32_t>(PrePassMode::EnabledAtQuarterScale));
-	obs_property_list_add_int(p, P_TRANSLATE(P_PREPASSMODE_HALF), static_cast<int32_t>(PrePassMode::EnabledAtHalfScale));
-	obs_property_list_add_int(p, P_TRANSLATE(P_PREPASSMODE_FULL), static_cast<int32_t>(PrePassMode::Enabled));
+	obs_property_list_add_int(p, P_TRANSLATE(P_UTIL_SWITCH_ENABLED), static_cast<int32_t>(PrePassMode::Enabled));
 	#pragma endregion Pre-Pass
 
 	#pragma region Parameters
