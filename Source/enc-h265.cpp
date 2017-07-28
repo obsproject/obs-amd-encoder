@@ -542,7 +542,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 					} \
 					obs_property_list_item_disable(tmp_p, idx, !enabled); \
 					if ((enabled == false) && (tmp_s == tmp_v)) \
-						obs_data_erase(data, obs_property_name(tmp_p)); \
+						obs_data_unset_user_value(data, obs_property_name(tmp_p)); \
 				} \
 			}
 			#define TEMP_LIMIT_SLIDER(func, prop) { \
@@ -649,7 +649,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 		bool vis = curView >= kv.second;
 		obs_property_set_visible(obs_properties_get(props, kv.first), vis);
 		if (!vis)
-			obs_data_erase(data, kv.first);
+			obs_data_unset_user_value(data, kv.first);
 	}
 
 	#pragma region Rate Control
@@ -685,17 +685,17 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 	/// Bitrate
 	obs_property_set_visible(obs_properties_get(props, P_BITRATE_TARGET), vis_rcm_bitrate_target);
 	if (!vis_rcm_bitrate_target)
-		obs_data_erase(data, P_BITRATE_TARGET);
+		obs_data_unset_user_value(data, P_BITRATE_TARGET);
 	obs_property_set_visible(obs_properties_get(props, P_BITRATE_PEAK), vis_rcm_bitrate_peak);
 	if (!vis_rcm_bitrate_peak)
-		obs_data_erase(data, P_BITRATE_PEAK);
+		obs_data_unset_user_value(data, P_BITRATE_PEAK);
 
 	/// QP
 	obs_property_set_visible(obs_properties_get(props, P_QP_IFRAME), vis_rcm_qp);
 	obs_property_set_visible(obs_properties_get(props, P_QP_PFRAME), vis_rcm_qp);
 	if (!vis_rcm_qp) {
-		obs_data_erase(data, P_QP_IFRAME);
-		obs_data_erase(data, P_QP_PFRAME);
+		obs_data_unset_user_value(data, P_QP_IFRAME);
+		obs_data_unset_user_value(data, P_QP_PFRAME);
 	}
 
 	/// QP Min/Max
@@ -704,27 +704,27 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 	obs_property_set_visible(obs_properties_get(props, P_QP_PFRAME_MINIMUM), (curView >= ViewMode::Advanced) && !vis_rcm_qp);
 	obs_property_set_visible(obs_properties_get(props, P_QP_PFRAME_MAXIMUM), (curView >= ViewMode::Advanced) && !vis_rcm_qp);
 	if (!(curView >= ViewMode::Advanced) || vis_rcm_qp) {
-		obs_data_erase(data, P_QP_IFRAME_MINIMUM);
-		obs_data_erase(data, P_QP_IFRAME_MAXIMUM);
-		obs_data_erase(data, P_QP_PFRAME_MINIMUM);
-		obs_data_erase(data, P_QP_PFRAME_MAXIMUM);
+		obs_data_unset_user_value(data, P_QP_IFRAME_MINIMUM);
+		obs_data_unset_user_value(data, P_QP_IFRAME_MAXIMUM);
+		obs_data_unset_user_value(data, P_QP_PFRAME_MINIMUM);
+		obs_data_unset_user_value(data, P_QP_PFRAME_MAXIMUM);
 	}
 
 	/// Filler Data (CBR only at the moment)
 	obs_property_set_visible(obs_properties_get(props, P_FILLERDATA), vis_rcm_fillerdata);
 	if (!vis_rcm_fillerdata)
-		obs_data_erase(data, P_FILLERDATA);
+		obs_data_unset_user_value(data, P_FILLERDATA);
 
 	/// Pre-Pass
 	obs_property_set_visible(obs_properties_get(props, P_PREPASSMODE), (curView >= ViewMode::Basic) && !vis_rcm_qp);
 	if (!(curView >= ViewMode::Basic) || vis_rcm_qp) {
-		obs_data_erase(data, P_PREPASSMODE);
+		obs_data_unset_user_value(data, P_PREPASSMODE);
 	}
 
 	/// VBAQ
 	obs_property_set_visible(obs_properties_get(props, P_VBAQ), (curView >= ViewMode::Expert) && !vis_rcm_qp);
 	if (!(curView >= ViewMode::Expert) || vis_rcm_qp) {
-		obs_data_erase(data, P_VBAQ);
+		obs_data_unset_user_value(data, P_VBAQ);
 	}
 	#pragma endregion Rate Control
 
@@ -741,9 +741,9 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 	obs_property_set_visible(obs_properties_get(props, P_VBVBUFFER_STRICTNESS), vbvBufferVisible && (vbvBufferMode == 0));
 	obs_property_set_visible(obs_properties_get(props, P_VBVBUFFER_SIZE), vbvBufferVisible && (vbvBufferMode == 1));
 	if (!vbvBufferVisible || vbvBufferMode == 0)
-		obs_data_erase(data, P_VBVBUFFER_SIZE);
+		obs_data_unset_user_value(data, P_VBVBUFFER_SIZE);
 	if (!vbvBufferVisible || vbvBufferMode == 1)
-		obs_data_erase(data, P_VBVBUFFER_STRICTNESS);
+		obs_data_unset_user_value(data, P_VBVBUFFER_STRICTNESS);
 	#pragma endregion VBV Buffer
 
 	#pragma region GOP
@@ -753,10 +753,10 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 	obs_property_set_visible(obs_properties_get(props, P_GOP_SIZE_MINIMUM), !goptype_fixed && gopvisible);
 	obs_property_set_visible(obs_properties_get(props, P_GOP_SIZE_MAXIMUM), !goptype_fixed && gopvisible);
 	if (!goptype_fixed) {
-		obs_data_erase(data, P_GOP_SIZE);
+		obs_data_unset_user_value(data, P_GOP_SIZE);
 	} else if (goptype_fixed) {
-		obs_data_erase(data, P_GOP_SIZE_MINIMUM);
-		obs_data_erase(data, P_GOP_SIZE_MAXIMUM);
+		obs_data_unset_user_value(data, P_GOP_SIZE_MINIMUM);
+		obs_data_unset_user_value(data, P_GOP_SIZE_MAXIMUM);
 	}
 	#pragma endregion GOP
 	#pragma endregion View Mode
