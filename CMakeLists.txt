@@ -70,11 +70,18 @@ SET(enc-amf_SOURCES
 	"${PROJECT_SOURCE_DIR}/Source/utility.cpp"
 	"${PROJECT_SOURCE_DIR}/Source/plugin.cpp"
 )
-
+SET(enc-amf_DATA
+	"${PROJECT_SOURCE_DIR}/Resources/locale/en-US.ini"
+	"${PROJECT_SOURCE_DIR}/LICENSE"
+	"${PROJECT_SOURCE_DIR}/AUTHORS"
+)
 SET(enc-amf_LIBRARIES
 	version
 	winmm
 )
+
+# Source Grouping
+source_group("Data Files" FILES ${enc-amf_DATA})
 
 # Windows Only
 if (WIN32)
@@ -178,6 +185,7 @@ endif()
 ADD_LIBRARY(enc-amf MODULE
 	${enc-amf_HEADERS}
 	${enc-amf_SOURCES}
+	${enc-amf_DATA}
 )
 TARGET_LINK_LIBRARIES(enc-amf
 	${LIBOBS_LIBRARIES}
