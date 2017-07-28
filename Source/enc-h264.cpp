@@ -1012,7 +1012,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		std::make_pair(P_MAXIMUMREFERENCEFRAMES, ViewMode::Expert),
 		// ----------- Rate Control Section
 		std::make_pair(P_RATECONTROLMETHOD, ViewMode::Basic),
-		std::make_pair(P_PREPASSMODE, ViewMode::Basic),
+		//std::make_pair(P_PREPASSMODE, ViewMode::Basic),
 		//std::make_pair(P_BITRATE_TARGET, ViewMode::Basic),
 		//std::make_pair(P_BITRATE_PEAK, ViewMode::Basic),
 		//std::make_pair(P_QP_IFRAME, ViewMode::Basic),
@@ -1024,7 +1024,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		std::make_pair(P_FRAMESKIPPING, ViewMode::Advanced),
 		std::make_pair(P_FRAMESKIPPING_PERIOD, ViewMode::Master),
 		std::make_pair(P_FRAMESKIPPING_BEHAVIOUR, ViewMode::Master),
-		std::make_pair(P_VBAQ, ViewMode::Expert),
+		//std::make_pair(P_VBAQ, ViewMode::Expert),
 		std::make_pair(P_ENFORCEHRD, ViewMode::Expert),
 		// ----------- VBV Buffer
 		std::make_pair(P_VBVBUFFER, ViewMode::Advanced),
@@ -1164,6 +1164,16 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *pro
 		obs_data_default_single(props, data, P_QP_MINIMUM);
 		obs_data_default_single(props, data, P_QP_MAXIMUM);
 	}
+
+	/// Pre-Pass
+	obs_property_set_visible(obs_properties_get(props, P_PREPASSMODE), (curView >= ViewMode::Basic) && !vis_rcm_qp);
+	if (!(curView >= ViewMode::Basic) || vis_rcm_qp)
+		obs_data_erase(data, P_PREPASSMODE);
+
+	/// VBAQ
+	obs_property_set_visible(obs_properties_get(props, P_VBAQ), (curView >= ViewMode::Expert) && !vis_rcm_qp);
+	if (!(curView >= ViewMode::Expert) || vis_rcm_qp)
+		obs_data_erase(data, P_VBAQ);
 
 	/// Filler Data (CBR only at the moment)
 	obs_property_set_visible(obs_properties_get(props, P_FILLERDATA), vis_rcm_fillerdata);
@@ -1454,6 +1464,8 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 				m_VideoEncoder->SetBFrameQP(static_cast<uint8_t>(obs_data_get_int(data, P_QP_BFRAME)));
 			} catch (...) {
 			}
+			m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled(false);
+			m_VideoEncoder->SetFillerDataEnabled(false);
 			break;
 	}
 
@@ -1512,7 +1524,7 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	}
 	#pragma endregion B-Frames
 
-	// Motion Estimation
+	// Motion Estimation																								    
 	m_VideoEncoder->SetMotionEstimationHalfPixelEnabled(!!(obs_data_get_int(data, P_MOTIONESTIMATION) & 1));
 	m_VideoEncoder->SetMotionEstimationQuarterPixelEnabled(!!(obs_data_get_int(data, P_MOTIONESTIMATION) & 2));
 

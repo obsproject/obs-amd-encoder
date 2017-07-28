@@ -644,7 +644,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 		std::make_pair(P_MAXIMUMREFERENCEFRAMES, ViewMode::Expert),
 		// ----------- Rate Control Section
 		std::make_pair(P_RATECONTROLMETHOD, ViewMode::Basic),
-		std::make_pair(P_PREPASSMODE, ViewMode::Basic),
+		//std::make_pair(P_PREPASSMODE, ViewMode::Basic),
 		//std::make_pair(P_BITRATE_TARGET, ViewMode::Basic),
 		//std::make_pair(P_BITRATE_PEAK, ViewMode::Basic),
 		//std::make_pair(P_QP_IFRAME, ViewMode::Basic),
@@ -758,7 +758,13 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 	if (!vis_rcm_fillerdata)
 		obs_data_default_single(props, data, P_FILLERDATA);
 
-	/// VBAQ (Causes issues with Constant QP)
+	/// Pre-Pass
+	obs_property_set_visible(obs_properties_get(props, P_PREPASSMODE), (curView >= ViewMode::Basic) && !vis_rcm_qp);
+	if (!(curView >= ViewMode::Basic) || vis_rcm_qp) {
+		obs_data_erase(data, P_PREPASSMODE);
+	}
+
+	/// VBAQ
 	obs_property_set_visible(obs_properties_get(props, P_VBAQ), (curView >= ViewMode::Expert) && !vis_rcm_qp);
 	if (!(curView >= ViewMode::Expert) || vis_rcm_qp) {
 		obs_data_default_single(props, data, P_VBAQ);
