@@ -151,7 +151,7 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 	// Static Properties
 	//obs_data_set_default_int(data, P_USAGE, static_cast<int64_t>(Usage::Transcoding));
 	obs_data_set_default_int(data, P_QUALITYPRESET, static_cast<int64_t>(QualityPreset::Balanced));
-	obs_data_set_default_int(data, P_PROFILE, static_cast<int64_t>(Profile::Main));
+	obs_data_set_default_int(data, P_PROFILE, static_cast<int64_t>(Profile::High));
 	obs_data_set_default_int(data, P_PROFILELEVEL, static_cast<int64_t>(ProfileLevel::Automatic));
 	//obs_data_set_default_frames_per_second(data, P_ASPECTRATIO, media_frames_per_second{ 1, 1 }, "");
 	obs_data_set_default_int(data, P_CODINGTYPE, static_cast<int64_t>(CodingType::Automatic));
