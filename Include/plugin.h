@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-*/
+ */
 
 #pragma once
 #include <inttypes.h>
@@ -29,7 +29,7 @@
 #include "libobs/util/platform.h"
 #pragma warning (pop)
 
-// Plugin
+ // Plugin
 #define PLUGIN_NAME				"AMD Advanced Media Framework"
 #include "Version.h"
 
@@ -70,9 +70,9 @@
 
 #ifndef __FUNCTION_NAME__
 #if defined(_WIN32) || defined(_WIN64)   //WINDOWS
-#define __FUNCTION_NAME__   __FUNCTION__  
+#define __FUNCTION_NAME__   __FUNCTION__
 #else          //*NIX
-#define __FUNCTION_NAME__   __func__ 
+#define __FUNCTION_NAME__   __func__
 #endif
 #endif
 
@@ -85,4 +85,11 @@ enum class Presets : int8_t {
 	Lossless,
 	Twitch,
 	YouTube,
+};
+
+enum class ViewMode : uint8_t {
+	Basic,
+	Advanced,
+	Expert,
+	Master
 };

@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-*/
+ */
 
 #include "amf-encoder-h265.h"
 #include "utility.h"
@@ -1586,9 +1586,9 @@ std::string Plugin::AMD::EncoderH265::HandleTypeOverride(amf::AMFSurfacePtr & d,
 		case AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_P:
 			return "P";
 			break;
-		//case AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_B:
-		//	return "B";
-		//	break;
+			//case AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_B:
+			//	return "B";
+			//	break;
 	}
 	return "Unknown";
 }
@@ -1791,7 +1791,7 @@ void Plugin::AMD::EncoderH265::LogProperties() {
 		IsMotionEstimationQuarterPixelEnabled() ? (IsMotionEstimationHalfPixelEnabled() ? "Quarter, " : "Quarter") : "",
 		IsMotionEstimationHalfPixelEnabled() ? "Half" : "");
 	#pragma endregion Picture Control
-	
+
 	#pragma region Slicing
 	PLOG_INFO(PREFIX "  Slicing:",
 		m_UniqueId);

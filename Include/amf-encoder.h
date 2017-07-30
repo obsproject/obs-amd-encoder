@@ -15,21 +15,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-*/
+ */
 
 #pragma once
-
 #include <vector>
 #include <queue>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
-
 #include "plugin.h"
 #include "amf.h"
 #include "api-base.h"
-
 #include "components/Component.h"
 
 #define AMF_TIMESTAMP_ALLOCATE	L"TS_Allocate"

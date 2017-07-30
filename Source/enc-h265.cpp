@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-*/
+ */
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -267,7 +267,7 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void* data) {
 
 	#pragma region Maximum Reference Frames
 	p = obs_properties_add_int_slider(props, P_MAXIMUMREFERENCEFRAMES, P_TRANSLATE(P_MAXIMUMREFERENCEFRAMES),
-									  1, 16, 1);
+		1, 16, 1);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_MAXIMUMREFERENCEFRAMES)));
 	#pragma endregion Maximum Reference Frames
 
@@ -507,7 +507,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 
 		// Reset Video Adapter to first in list.
 		obs_data_set_int(data, P_VIDEO_ADAPTER,
-						 obs_property_list_item_int(obs_properties_get(props, P_VIDEO_ADAPTER), 0));
+			obs_property_list_item_int(obs_properties_get(props, P_VIDEO_ADAPTER), 0));
 	}
 
 	// Video Adapter
@@ -575,7 +575,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 			TEMP_LIMIT_SLIDER_BITRATE(CapsVBVBufferSize, P_VBVBUFFER_SIZE);
 		} catch (const std::exception& e) {
 			PLOG_ERROR("Exception occured while updating capabilities: %s",
-					   e.what());
+				e.what());
 		}
 	}
 	#pragma endregion Video API & Adapter
@@ -790,7 +790,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 			P_GOP_TYPE,
 			P_INTERVAL_KEYFRAME,
 			P_PERIOD_IDR_H265,
-			P_DEBLOCKINGFILTER,			
+			P_DEBLOCKINGFILTER,
 			P_MOTIONESTIMATION,
 
 			// System
@@ -877,9 +877,9 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 	auto adapter = api->GetAdapterById(adapterid.id[0], adapterid.id[1]);
 
 	m_VideoEncoder = std::make_unique<EncoderH265>(api, adapter,
-												   !!obs_data_get_int(data, P_OPENCL_TRANSFER), !!obs_data_get_int(data, P_OPENCL_CONVERSION),
-												   colorFormat, colorSpace, voi->range == VIDEO_RANGE_FULL,
-												   !!obs_data_get_int(data, P_MULTITHREADING), (size_t)obs_data_get_int(data, P_QUEUESIZE));
+		!!obs_data_get_int(data, P_OPENCL_TRANSFER), !!obs_data_get_int(data, P_OPENCL_CONVERSION),
+		colorFormat, colorSpace, voi->range == VIDEO_RANGE_FULL,
+		!!obs_data_get_int(data, P_MULTITHREADING), (size_t)obs_data_get_int(data, P_QUEUESIZE));
 
 	/// Static Properties
 	//m_VideoEncoder->SetUsage(Usage::Transcoding);
@@ -904,7 +904,7 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 	} catch (...) {
 	}
 
-	// Rate Control	
+	// Rate Control
 	m_VideoEncoder->SetRateControlMethod(static_cast<RateControlMethod>(obs_data_get_int(data, P_RATECONTROLMETHOD)));
 	if (obs_data_get_int(data, P_VBVBUFFER) == 0) {
 		m_VideoEncoder->SetVBVBufferStrictness(obs_data_get_double(data, P_VBVBUFFER_STRICTNESS) / 100.0);
@@ -1125,7 +1125,7 @@ bool Plugin::Interface::H265Interface::update(obs_data_t* data) {
 	}
 
 	m_VideoEncoder->SetDebug(obs_data_get_bool(data, P_DEBUG));
-	
+
 	if (m_VideoEncoder->IsStarted()) {
 		m_VideoEncoder->LogProperties();
 		if (static_cast<ViewMode>(obs_data_get_int(data, P_VIEW)) >= ViewMode::Master)

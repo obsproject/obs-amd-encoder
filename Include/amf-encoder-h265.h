@@ -15,10 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-*/
+ */
 
 #pragma once
-
 #include "plugin.h"
 #include "amf-encoder.h"
 #include "components/VideoEncoderHEVC.h"
@@ -185,7 +184,7 @@ namespace Plugin {
 
 			virtual void SetMaximumAccessUnitSize(uint32_t v) override;
 			virtual uint32_t GetMaximumAccessUnitSize() override;
-			
+
 			/// Slicing
 			virtual std::pair<uint32_t, uint32_t> CapsSlicesPerFrame() override;
 			virtual void SetSlicesPerFrame(uint32_t v) override;
@@ -197,7 +196,7 @@ namespace Plugin {
 			virtual std::pair<uint32_t, uint32_t> CapsSliceControlSize() override;
 			virtual void SetSliceControlSize(uint32_t v) override;
 			virtual uint32_t GetSliceControlSize() override;
-			
+
 			// Experimental
 			void SetQPCBOffset(uint8_t v);
 			uint8_t GetQPCBOffset();

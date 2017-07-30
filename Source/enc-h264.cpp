@@ -15,8 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-*/
-
+ */
 
 //////////////////////////////////////////////////////////////////////////
 // New UI Design
@@ -40,7 +39,7 @@
 // CBR: Filler Data
 // Adv: Frame Skipping
 // Exp: VBAQ
-// Exp: Enforce HRD 
+// Exp: Enforce HRD
 // ----------- VBV Buffer
 // Adv: VBV Buffer Size
 // Exp: VBV Buffer Initial Fullness
@@ -1480,7 +1479,7 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	}
 	#pragma endregion B-Frames
 
-	// Motion Estimation																								    
+	// Motion Estimation
 	m_VideoEncoder->SetMotionEstimationHalfPixelEnabled(!!(obs_data_get_int(data, P_MOTIONESTIMATION) & 1));
 	m_VideoEncoder->SetMotionEstimationQuarterPixelEnabled(!!(obs_data_get_int(data, P_MOTIONESTIMATION) & 2));
 

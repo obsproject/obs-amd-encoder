@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-*/
+ */
 
 #pragma once
 //////////////////////////////////////////////////////////////////////////
@@ -27,7 +27,7 @@
 // Plugin
 #include "plugin.h"
 
-// AMD AMF SDK 
+// AMD AMF SDK
 #pragma warning( push )
 #pragma warning( disable: 4458 )
 #include "core\Factory.h"
@@ -70,7 +70,7 @@ namespace Plugin {
 
 			private:
 			uint32_t m_TimerPeriod; /// High-Precision Timer Accuracy (nanoseconds)
-			
+
 			/// AMF Values
 			HMODULE m_AMFModule;
 			uint64_t m_AMFVersion_Plugin;

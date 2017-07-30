@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-*/
+ */
 
 //////////////////////////////////////////////////////////////////////////
 // Includes
@@ -113,7 +113,7 @@ Plugin::AMD::AMF::AMF() {
 	}
 
 	// Windows: Get Product Version for Driver Matching
-	#ifdef _WIN32 
+	#ifdef _WIN32
 	{
 		verbuf.resize(GetFileVersionInfoSizeW(AMF_DLL_NAME, nullptr) * 2);
 		GetFileVersionInfoW(AMF_DLL_NAME, 0, (DWORD)verbuf.size(), verbuf.data());
@@ -136,7 +136,7 @@ Plugin::AMD::AMF::AMF() {
 			lpTranslate[0].wCodePage,
 			"\\ProductVersion");
 
-		// Retrieve file description for language and code page "i". 
+		// Retrieve file description for language and code page "i".
 		VerQueryValueA(pBlock, buf.data(), &pProductVersion, &lProductVersionSize);
 	}
 	#endif _WIN32
@@ -191,15 +191,15 @@ Plugin::AMD::AMF::AMF() {
 	}
 
 	/// Register Trace Writer and disable Debug Tracing.
-#ifndef _WIN64
-	// Older drivers crash due to using the wrong calling standard.
+	#ifndef _WIN64
+		// Older drivers crash due to using the wrong calling standard.
 	if (m_AMFVersion_Runtime >= AMF_MAKE_FULL_VERSION(1, 4, 4, 0)) {
-#endif
+		#endif
 		m_TraceWriter = new CustomWriter();
 		m_AMFTrace->RegisterWriter(loggername, m_TraceWriter, true);
-#ifndef _WIN64
+		#ifndef _WIN64
 	}
-#endif
+	#endif
 	this->EnableDebugTrace(false);
 
 	// Log success

@@ -15,10 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-*/
+ */
 
 #pragma once
-
 #include "plugin.h"
 #include "amf-encoder.h"
 #include "components/VideoEncoderVCE.h"
@@ -195,7 +194,7 @@ namespace Plugin {
 			void SetMaximumSliceSize(uint32_t v);
 			uint32_t GetMaximumSliceSize();
 
-			// Properties - Experimental			
+			// Properties - Experimental
 			virtual void SetLowLatencyInternal(bool v) override;
 			virtual bool GetLowLatencyInternal() override;
 

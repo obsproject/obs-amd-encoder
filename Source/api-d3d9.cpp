@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-*/
+ */
 
 #include "api-d3d9.h"
 #include <mutex>
@@ -27,7 +27,7 @@ Plugin::API::Direct3D9::Direct3D9() {
 	HRESULT hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &m_Direct3D9Ex);
 	if (FAILED(hr))
 		throw std::exception("<" __FUNCTION_NAME__ "> Failed to create D3D9Ex, error code %X.", hr);
-	
+
 	std::list<LUID> enumeratedLUIDs;
 	D3DADAPTER_IDENTIFIER9 adapterIdentifier;
 	for (size_t adapterIndex = 0;
@@ -58,10 +58,10 @@ Plugin::API::Direct3D9::Direct3D9() {
 		snprintf(buf.data(), buf.size(), "%s [%s] (VEN_%04x/DEV_%04x/SUB_%04x/REV_%04x)",
 			adapterIdentifier.Description,
 			adapterIdentifier.DeviceName,
-			
+
 			adapterIdentifier.VendorId,
-			adapterIdentifier.DeviceId, 
-			adapterIdentifier.SubSysId, 
+			adapterIdentifier.DeviceId,
+			adapterIdentifier.SubSysId,
 			adapterIdentifier.Revision);
 
 		m_Adapters.emplace_back(
@@ -123,7 +123,7 @@ Plugin::API::Direct3D9Instance::Direct3D9Instance(Direct3D9* api, Adapter adapte
 	}
 	if (adapterNum == -1)
 		throw std::invalid_argument("adapter");
-	
+
 	D3DPRESENT_PARAMETERS presentParameters;
 	std::memset(&presentParameters, 0, sizeof(D3DPRESENT_PARAMETERS));
 	presentParameters.BackBufferWidth = 0;
@@ -170,7 +170,7 @@ Plugin::API::Direct3D9Instance::Direct3D9Instance(Direct3D9* api, Adapter adapte
 Plugin::API::Direct3D9Instance::~Direct3D9Instance() {
 	//std::pair<int32_t, int32_t> key = std::make_pair(m_Adapter.idLow, m_Adapter.idHigh);
 	//m_API->m_InstanceMap.erase(key);
-	
+
 	//m_Device->Release(); // Can't release/free on AMD hardware?
 }
 

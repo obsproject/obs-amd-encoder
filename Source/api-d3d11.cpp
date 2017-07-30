@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-*/
+ */
 
 #include "api-d3d11.h"
 #include <sstream>
@@ -165,8 +165,7 @@ Plugin::API::Direct3D11::Direct3D11() {
 	}
 }
 
-Plugin::API::Direct3D11::~Direct3D11() {
-}
+Plugin::API::Direct3D11::~Direct3D11() {}
 
 std::string Plugin::API::Direct3D11::GetName() {
 	return std::string("Direct3D 11");

@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-*/
+ */
 
 #pragma once
 #include "amf-encoder-h264.h"
@@ -29,7 +29,7 @@ namespace Plugin {
 			static const char* get_name(void* type_data);
 			static void get_defaults(obs_data_t *settings);
 			static obs_properties_t* get_properties(void* data);
-			
+
 			static bool properties_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data);
 
 			static void* create(obs_data_t* settings, obs_encoder_t* encoder);
