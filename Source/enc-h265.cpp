@@ -41,7 +41,7 @@
 // CBR: Filler Data
 // Adv: Frame Skipping
 // Exp: VBAQ
-// Exp: Enforce HRD 
+// Exp: Enforce HRD
 // ----------- VBV Buffer
 // Adv: VBV Buffer Size
 // Exp: VBV Buffer Initial Fullness
@@ -146,7 +146,7 @@ void Plugin::Interface::H265Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, P_FILLERDATA, 1);
 	obs_data_set_default_int(data, P_FRAMESKIPPING, 0);
 	obs_data_set_default_int(data, P_VBAQ, 0);
-	obs_data_set_default_int(data, P_ENFORCEHRD, 0);
+	obs_data_set_default_int(data, P_ENFORCEHRD, 1);
 
 	// VBV Buffer
 	obs_data_set_int(data, ("last" P_VBVBUFFER), -1);
