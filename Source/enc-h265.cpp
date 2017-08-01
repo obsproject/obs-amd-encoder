@@ -912,8 +912,13 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 		m_VideoEncoder->SetVBVBufferSize(static_cast<uint32_t>(obs_data_get_int(data, P_VBVBUFFER_SIZE) * 1000));
 	}
 	m_VideoEncoder->SetVBVBufferInitialFullness(obs_data_get_double(data, P_VBVBUFFER_INITIALFULLNESS) / 100.0f);
-	m_VideoEncoder->SetPrePassMode(static_cast<PrePassMode>(obs_data_get_int(data, P_PREPASSMODE)));
-	m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled((!!obs_data_get_int(data, P_VBAQ)) && (m_VideoEncoder->GetRateControlMethod() != RateControlMethod::ConstantQP));
+	if (m_VideoEncoder->GetRateControlMethod() != RateControlMethod::ConstantQP) {
+		m_VideoEncoder->SetPrePassMode(static_cast<PrePassMode>(obs_data_get_int(data, P_PREPASSMODE)));
+		m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled((!!obs_data_get_int(data, P_VBAQ)));
+	} else {
+		m_VideoEncoder->SetPrePassMode(PrePassMode::Disabled);
+		m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled(false);
+	}
 
 	// Picture Control
 	uint32_t gopSize = static_cast<uint32_t>(floor(obsFPSden / (double_t)obsFPSnum));
@@ -1096,9 +1101,13 @@ bool Plugin::Interface::H265Interface::update(obs_data_t* data) {
 			m_VideoEncoder->SetPFrameQP(static_cast<uint8_t>(obs_data_get_int(data, P_QP_PFRAME)));
 			break;
 	}
+	if (m_VideoEncoder->GetRateControlMethod() == RateControlMethod::ConstantBitrate) {
+		m_VideoEncoder->SetFillerDataEnabled(!!obs_data_get_int(data, P_FILLERDATA));
+	} else {
+		m_VideoEncoder->SetFillerDataEnabled(false);
+	}
 	m_VideoEncoder->SetFrameSkippingEnabled(!!obs_data_get_int(data, P_FRAMESKIPPING));
 	m_VideoEncoder->SetEnforceHRDEnabled(!!obs_data_get_int(data, P_ENFORCEHRD));
-	m_VideoEncoder->SetFillerDataEnabled(!!obs_data_get_int(data, P_FILLERDATA));
 
 	// Picture Control
 	double_t framerate = (double_t)obsFPSnum / (double_t)obsFPSden;
