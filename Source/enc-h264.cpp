@@ -1393,16 +1393,11 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	uint32_t obsFPSden = voi->fps_den;
 
 	// Rate Control
-	m_VideoEncoder->SetRateControlMethod(static_cast<RateControlMethod>(obs_data_get_int(data, P_RATECONTROLMETHOD)));
-	m_VideoEncoder->SetPrePassMode(static_cast<PrePassMode>(obs_data_get_int(data, P_PREPASSMODE)));
-	m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled(!!obs_data_get_int(data, P_VBAQ));
-	m_VideoEncoder->SetFrameSkippingEnabled(!!obs_data_get_int(data, P_FRAMESKIPPING));
-	m_VideoEncoder->SetEnforceHRDEnabled(!!obs_data_get_int(data, P_ENFORCEHRD));
-	m_VideoEncoder->SetFillerDataEnabled(!!obs_data_get_int(data, P_FILLERDATA));
-
+	RateControlMethod rcm = static_cast<RateControlMethod>(obs_data_get_int(data, P_RATECONTROLMETHOD));
+	m_VideoEncoder->SetRateControlMethod(rcm);
 	m_VideoEncoder->SetQPMinimum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_MINIMUM)));
 	m_VideoEncoder->SetQPMaximum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_MAXIMUM)));
-	switch (m_VideoEncoder->GetRateControlMethod()) {
+	switch (rcm) {
 		case RateControlMethod::PeakConstrainedVariableBitrate:
 		case RateControlMethod::LatencyConstrainedVariableBitrate:
 			m_VideoEncoder->SetPeakBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_PEAK) * 1000));
@@ -1419,9 +1414,21 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 				m_VideoEncoder->SetBFrameQP(static_cast<uint8_t>(obs_data_get_int(data, P_QP_BFRAME)));
 			} catch (...) {
 			}
-			m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled(false);
-			m_VideoEncoder->SetFillerDataEnabled(false);
 			break;
+	}
+	m_VideoEncoder->SetFrameSkippingEnabled(!!obs_data_get_int(data, P_FRAMESKIPPING));
+	m_VideoEncoder->SetEnforceHRDEnabled(!!obs_data_get_int(data, P_ENFORCEHRD));
+	if (rcm == RateControlMethod::ConstantBitrate) {
+		m_VideoEncoder->SetFillerDataEnabled(!!obs_data_get_int(data, P_FILLERDATA));
+	} else {
+		m_VideoEncoder->SetFillerDataEnabled(false);
+	}
+	if (rcm != RateControlMethod::ConstantQP) {
+		m_VideoEncoder->SetPrePassMode(static_cast<PrePassMode>(obs_data_get_int(data, P_PREPASSMODE)));
+		m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled(!!obs_data_get_int(data, P_VBAQ));
+	} else {
+		m_VideoEncoder->SetPrePassMode(PrePassMode::Disabled);
+		m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled(false);
 	}
 
 	m_VideoEncoder->SetVBVBufferInitialFullness((float)obs_data_get_double(data, P_VBVBUFFER_INITIALFULLNESS) / 100.0f);
