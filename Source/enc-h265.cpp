@@ -169,7 +169,7 @@ void Plugin::Interface::H265Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, P_GOP_SIZE, 60);
 	obs_data_set_default_int(data, P_GOP_SIZE_MINIMUM, 1);
 	obs_data_set_default_int(data, P_GOP_SIZE_MAXIMUM, 16);
-	obs_data_set_default_int(data, P_DEBLOCKINGFILTER, 1);
+	obs_data_set_default_int(data, P_DEBLOCKINGFILTER, 0);
 	obs_data_set_default_int(data, P_MOTIONESTIMATION, 3);
 
 	// System Properties
