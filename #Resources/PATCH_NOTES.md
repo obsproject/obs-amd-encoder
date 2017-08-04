@@ -1,4 +1,4 @@
-# 2.2.0 - Pre-Pass, VBAQ and more fixes!
+# 2.2.1 - Pre-Pass, VBAQ and more fixes! (Hotfix 1)
 With the newly released Driver 17.7.2, AMD fixed many reported issues and added some much wanted features:
 
 - Pre-Pass and VBAQ are finally working,
@@ -8,7 +8,15 @@ With the newly released Driver 17.7.2, AMD fixed many reported issues and added 
 
 And now it's time for the plugin to also be updated! This release primarily aims at adding support for AMF 1.4.4 and improving support for older drivers, with some of the recently discovered bugs and crashes fixed.
 
+Hotfix 1: Fixed VBAQ and Pre-Pass being used with Constant QP, causing significant corruption issues and changed some default values for H265.
+
 ## Changelog
+### 2.2.1
+* Fixed a frame corruption bug with Constant QP caused by toggling VBAQ and Pre-Pass after it had already been applied.
+* Changed the default value of 'Enforce HRD' to 'Enabled' for H265/HEVC encoding.
+* Changed the default value of 'Deblocking Filter' to 'Disabled' for H265/HEVC encoding to fix corruption in strict decoders. (Premiere Pro, After Effects, Vegas, VLC (Software))
+
+### 2.2.0
 * Added support for AMF 1.4.4 and improved support for older drivers like 16.11.5 and 16.12.1.
 * Fixed a memory corruption crash due to misuse of managed DirectX 11 objects.
 * Fixed a frame corruption bug caused by applying 'VBAQ' and 'Pre-Pass' when using 'Constant QP' Rate Control Method.
