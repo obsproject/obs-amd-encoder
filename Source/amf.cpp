@@ -90,6 +90,8 @@ Plugin::AMD::AMF::AMF() {
 	m_AMFDebug = nullptr;
 	AMFQueryVersion = nullptr;
 	AMFInit = nullptr;
+	m_TraceWriter = nullptr;
+	m_TimerPeriod = 0;
 	#pragma endregion Null Class Members
 
 	#ifdef _WIN32
@@ -223,14 +225,16 @@ Plugin::AMD::AMF::AMF() {
 
 Plugin::AMD::AMF::~AMF() {
 	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Finalizing.");
-	if (m_TraceWriter) {
-		m_AMFTrace->UnregisterWriter(loggername);
-		delete m_TraceWriter;
-		m_TraceWriter = nullptr;
-	}
+	if (m_AMFModule) {
+		if (m_TraceWriter) {
+			if (m_AMFTrace)
+				m_AMFTrace->UnregisterWriter(loggername);
+			delete m_TraceWriter;
+			m_TraceWriter = nullptr;
+		}
 
-	if (m_AMFModule)
 		FreeLibrary(m_AMFModule);
+	}
 	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Finalized.");
 
 	#pragma region Null Class Members
@@ -298,21 +302,14 @@ void Plugin::AMD::AMF::EnableDebugTrace(bool enable) {
 	#else
 	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, false);
 	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, AMF_TRACE_NOLOG);
-	#endif
+#endif
 
-	if (enable) {
-		m_AMFDebug->AssertsEnable(true);
-		m_AMFDebug->EnablePerformanceMonitor(true);
-		m_AMFTrace->TraceEnableAsync(true);
-		m_AMFTrace->SetGlobalLevel(AMF_TRACE_TEST);
-		m_AMFTrace->SetWriterLevel(L"OBSWriter", AMF_TRACE_TEST);
-	} else {
-		m_AMFDebug->AssertsEnable(false);
-		m_AMFDebug->EnablePerformanceMonitor(false);
-		m_AMFTrace->TraceEnableAsync(true);
-		m_AMFTrace->SetGlobalLevel(AMF_TRACE_WARNING);
-		m_AMFTrace->SetWriterLevel(L"OBSWriter", AMF_TRACE_WARNING);
-	}
+	m_AMFDebug->AssertsEnable(enable);
+	m_AMFDebug->EnablePerformanceMonitor(enable);
+	//m_AMFTrace->TraceEnableAsync(true);
+	uint32_t loglevel = enable ? AMF_TRACE_TEST : AMF_TRACE_WARNING;
+	m_AMFTrace->SetGlobalLevel(loglevel);
+	m_AMFTrace->SetWriterLevel(L"OBSWriter", loglevel);
 }
 
 uint64_t Plugin::AMD::AMF::GetPluginVersion() {
