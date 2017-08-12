@@ -1082,26 +1082,25 @@ bool Plugin::Interface::H265Interface::update(obs_data_t* data) {
 	uint32_t obsFPSden = voi->fps_den;
 
 	// Rate Control
-	m_VideoEncoder->SetIFrameQPMinimum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_IFRAME_MINIMUM)));
-	m_VideoEncoder->SetIFrameQPMaximum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_IFRAME_MAXIMUM)));
-	m_VideoEncoder->SetPFrameQPMinimum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_PFRAME_MINIMUM)));
-	m_VideoEncoder->SetPFrameQPMaximum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_PFRAME_MAXIMUM)));
-	switch (m_VideoEncoder->GetRateControlMethod()) {
-		case RateControlMethod::PeakConstrainedVariableBitrate:
-		case RateControlMethod::LatencyConstrainedVariableBitrate:
-			m_VideoEncoder->SetPeakBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_PEAK) * 1000));
-			m_VideoEncoder->SetTargetBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_TARGET) * 1000));
-			break;
-		case RateControlMethod::ConstantBitrate:
-			m_VideoEncoder->SetPeakBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_TARGET) * 1000));
-			m_VideoEncoder->SetTargetBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_TARGET) * 1000));
-			break;
-		case RateControlMethod::ConstantQP:
-			m_VideoEncoder->SetIFrameQP(static_cast<uint8_t>(obs_data_get_int(data, P_QP_IFRAME)));
-			m_VideoEncoder->SetPFrameQP(static_cast<uint8_t>(obs_data_get_int(data, P_QP_PFRAME)));
-			break;
+	RateControlMethod rcm = m_VideoEncoder->GetRateControlMethod();
+	if (rcm == RateControlMethod::ConstantQP) {
+		m_VideoEncoder->SetIFrameQPMinimum(m_VideoEncoder->CapsIFrameQPMinimum().first);
+		m_VideoEncoder->SetIFrameQPMaximum(m_VideoEncoder->CapsIFrameQPMaximum().second);
+		m_VideoEncoder->SetPFrameQPMinimum(m_VideoEncoder->CapsPFrameQPMinimum().first);
+		m_VideoEncoder->SetPFrameQPMaximum(m_VideoEncoder->CapsPFrameQPMaximum().second);
+		m_VideoEncoder->SetIFrameQP(static_cast<uint8_t>(obs_data_get_int(data, P_QP_IFRAME)));
+		m_VideoEncoder->SetPFrameQP(static_cast<uint8_t>(obs_data_get_int(data, P_QP_PFRAME)));
+		m_VideoEncoder->SetFillerDataEnabled(false);
+	} else {
+		m_VideoEncoder->SetIFrameQPMinimum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_IFRAME_MINIMUM)));
+		m_VideoEncoder->SetIFrameQPMaximum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_IFRAME_MAXIMUM)));
+		m_VideoEncoder->SetPFrameQPMinimum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_PFRAME_MINIMUM)));
+		m_VideoEncoder->SetPFrameQPMaximum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_PFRAME_MAXIMUM)));
+		m_VideoEncoder->SetTargetBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_TARGET) * 1000));
+		m_VideoEncoder->SetPeakBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_PEAK) * 1000));
 	}
-	if (m_VideoEncoder->GetRateControlMethod() == RateControlMethod::ConstantBitrate) {
+	if (rcm == RateControlMethod::ConstantBitrate) {
+		m_VideoEncoder->SetPeakBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_TARGET) * 1000));
 		m_VideoEncoder->SetFillerDataEnabled(!!obs_data_get_int(data, P_FILLERDATA));
 	} else {
 		m_VideoEncoder->SetFillerDataEnabled(false);
