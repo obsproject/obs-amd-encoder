@@ -303,9 +303,11 @@ namespace Plugin {
 			virtual void SetPeakBitrate(uint64_t v) = 0;
 			virtual uint64_t GetPeakBitrate() = 0;
 
+			virtual std::pair<uint8_t, uint8_t> CapsIFrameQP() = 0;
 			virtual void SetIFrameQP(uint8_t v) = 0;
 			virtual uint8_t GetIFrameQP() = 0;
 
+			virtual std::pair<uint8_t, uint8_t> CapsPFrameQP() = 0;
 			virtual void SetPFrameQP(uint8_t v) = 0;
 			virtual uint8_t GetPFrameQP() = 0;
 

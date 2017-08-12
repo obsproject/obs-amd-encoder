@@ -658,6 +658,20 @@ bool Plugin::AMD::EncoderH264::IsFillerDataEnabled() {
 	return e;
 }
 
+std::pair<uint8_t, uint8_t> Plugin::AMD::EncoderH264::CapsQPMinimum() {
+	AMFTRACECALL;
+
+	const amf::AMFPropertyInfo* var;
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_MIN_QP, &var);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.c_str());
+	}
+
+	return std::make_pair((uint8_t)var->minValue.int64Value, (uint8_t)var->maxValue.int64Value);
+}
+
 void Plugin::AMD::EncoderH264::SetQPMinimum(uint8_t v) {
 	AMFTRACECALL;
 
@@ -681,6 +695,20 @@ uint8_t Plugin::AMD::EncoderH264::GetQPMinimum() {
 		throw std::exception(errMsg.c_str());
 	}
 	return (uint8_t)e;
+}
+
+std::pair<uint8_t, uint8_t> Plugin::AMD::EncoderH264::CapsQPMaximum() {
+	AMFTRACECALL;
+
+	const amf::AMFPropertyInfo* var;
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_MAX_QP, &var);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.c_str());
+	}
+
+	return std::make_pair((uint8_t)var->minValue.int64Value, (uint8_t)var->maxValue.int64Value);
 }
 
 void Plugin::AMD::EncoderH264::SetQPMaximum(uint8_t v) {
@@ -786,6 +814,20 @@ uint64_t Plugin::AMD::EncoderH264::GetPeakBitrate() {
 	return e;
 }
 
+std::pair<uint8_t, uint8_t> Plugin::AMD::EncoderH264::CapsIFrameQP() {
+	AMFTRACECALL;
+
+	const amf::AMFPropertyInfo* var;
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_QP_I, &var);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.c_str());
+	}
+
+	return std::make_pair((uint8_t)var->minValue.int64Value, (uint8_t)var->maxValue.int64Value);
+}
+
 void Plugin::AMD::EncoderH264::SetIFrameQP(uint8_t v) {
 	AMFTRACECALL;
 
@@ -811,6 +853,20 @@ uint8_t Plugin::AMD::EncoderH264::GetIFrameQP() {
 	return (uint8_t)e;
 }
 
+std::pair<uint8_t, uint8_t> Plugin::AMD::EncoderH264::CapsPFrameQP() {
+	AMFTRACECALL;
+
+	const amf::AMFPropertyInfo* var;
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_QP_P, &var);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.c_str());
+	}
+
+	return std::make_pair((uint8_t)var->minValue.int64Value, (uint8_t)var->maxValue.int64Value);
+}
+
 void Plugin::AMD::EncoderH264::SetPFrameQP(uint8_t v) {
 	AMFTRACECALL;
 
@@ -834,6 +890,20 @@ uint8_t Plugin::AMD::EncoderH264::GetPFrameQP() {
 		throw std::exception(errMsg.c_str());
 	}
 	return (uint8_t)e;
+}
+
+std::pair<uint8_t, uint8_t> Plugin::AMD::EncoderH264::CapsBFrameQP() {
+	AMFTRACECALL;
+
+	const amf::AMFPropertyInfo* var;
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_QP_B, &var);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.c_str());
+	}
+
+	return std::make_pair((uint8_t)var->minValue.int64Value, (uint8_t)var->maxValue.int64Value);
 }
 
 void Plugin::AMD::EncoderH264::SetBFrameQP(uint8_t v) {

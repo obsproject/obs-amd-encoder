@@ -101,9 +101,11 @@ namespace Plugin {
 			virtual void SetFillerDataEnabled(bool v) override;
 			virtual bool IsFillerDataEnabled() override;
 
+			virtual std::pair<uint8_t, uint8_t> CapsQPMinimum();
 			void SetQPMinimum(uint8_t v);
 			uint8_t GetQPMinimum();
 
+			virtual std::pair<uint8_t, uint8_t> CapsQPMaximum();
 			void SetQPMaximum(uint8_t v);
 			uint8_t GetQPMaximum();
 
@@ -115,12 +117,15 @@ namespace Plugin {
 			virtual void SetPeakBitrate(uint64_t v) override;
 			virtual uint64_t GetPeakBitrate() override;
 
+			virtual std::pair<uint8_t, uint8_t> CapsIFrameQP();
 			virtual void SetIFrameQP(uint8_t v) override;
 			virtual uint8_t GetIFrameQP() override;
 
+			virtual std::pair<uint8_t, uint8_t> CapsPFrameQP();
 			virtual void SetPFrameQP(uint8_t v) override;
 			virtual uint8_t GetPFrameQP() override;
 
+			virtual std::pair<uint8_t, uint8_t> CapsBFrameQP();
 			virtual void SetBFrameQP(uint8_t v);
 			virtual uint8_t GetBFrameQP();
 

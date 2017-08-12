@@ -1026,6 +1026,20 @@ bool Plugin::AMD::EncoderH265::IsFillerDataEnabled() {
 	return e;
 }
 
+std::pair<uint8_t, uint8_t> Plugin::AMD::EncoderH265::CapsIFrameQPMinimum() {
+	AMFTRACECALL;
+
+	const amf::AMFPropertyInfo* var;
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_HEVC_MIN_QP_I, &var);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.c_str());
+	}
+
+	return std::make_pair((uint8_t)var->minValue.int64Value, (uint8_t)var->maxValue.int64Value);
+}
+
 void Plugin::AMD::EncoderH265::SetIFrameQPMinimum(uint8_t v) {
 	AMFTRACECALL;
 
@@ -1049,6 +1063,20 @@ uint8_t Plugin::AMD::EncoderH265::GetIFrameQPMinimum() {
 		throw std::exception(errMsg.c_str());
 	}
 	return (uint8_t)e;
+}
+
+std::pair<uint8_t, uint8_t> Plugin::AMD::EncoderH265::CapsIFrameQPMaximum() {
+	AMFTRACECALL;
+
+	const amf::AMFPropertyInfo* var;
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_HEVC_MAX_QP_I, &var);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.c_str());
+	}
+
+	return std::make_pair((uint8_t)var->minValue.int64Value, (uint8_t)var->maxValue.int64Value);
 }
 
 void Plugin::AMD::EncoderH265::SetIFrameQPMaximum(uint8_t v) {
@@ -1076,6 +1104,20 @@ uint8_t Plugin::AMD::EncoderH265::GetIFrameQPMaximum() {
 	return (uint8_t)e;
 }
 
+std::pair<uint8_t, uint8_t> Plugin::AMD::EncoderH265::CapsPFrameQPMinimum() {
+	AMFTRACECALL;
+
+	const amf::AMFPropertyInfo* var;
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_HEVC_MIN_QP_P, &var);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.c_str());
+	}
+
+	return std::make_pair((uint8_t)var->minValue.int64Value, (uint8_t)var->maxValue.int64Value);
+}
+
 void Plugin::AMD::EncoderH265::SetPFrameQPMinimum(uint8_t v) {
 	AMFTRACECALL;
 
@@ -1099,6 +1141,20 @@ uint8_t Plugin::AMD::EncoderH265::GetPFrameQPMinimum() {
 		throw std::exception(errMsg.c_str());
 	}
 	return (uint8_t)e;
+}
+
+std::pair<uint8_t, uint8_t> Plugin::AMD::EncoderH265::CapsPFrameQPMaximum() {
+	AMFTRACECALL;
+
+	const amf::AMFPropertyInfo* var;
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_HEVC_MAX_QP_P, &var);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.c_str());
+	}
+
+	return std::make_pair((uint8_t)var->minValue.int64Value, (uint8_t)var->maxValue.int64Value);
 }
 
 void Plugin::AMD::EncoderH265::SetPFrameQPMaximum(uint8_t v) {
@@ -1204,6 +1260,20 @@ uint64_t Plugin::AMD::EncoderH265::GetPeakBitrate() {
 	return e;
 }
 
+std::pair<uint8_t, uint8_t> Plugin::AMD::EncoderH265::CapsIFrameQP() {
+	AMFTRACECALL;
+
+	const amf::AMFPropertyInfo* var;
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_HEVC_QP_I, &var);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.c_str());
+	}
+
+	return std::make_pair((uint8_t)var->minValue.int64Value, (uint8_t)var->maxValue.int64Value);
+}
+
 void Plugin::AMD::EncoderH265::SetIFrameQP(uint8_t v) {
 	AMFTRACECALL;
 
@@ -1227,6 +1297,20 @@ uint8_t Plugin::AMD::EncoderH265::GetIFrameQP() {
 		throw std::exception(errMsg.c_str());
 	}
 	return (uint8_t)e;
+}
+
+std::pair<uint8_t, uint8_t> Plugin::AMD::EncoderH265::CapsPFrameQP() {
+	AMFTRACECALL;
+
+	const amf::AMFPropertyInfo* var;
+	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(AMF_VIDEO_ENCODER_HEVC_QP_P, &var);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
+			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.c_str());
+	}
+
+	return std::make_pair((uint8_t)var->minValue.int64Value, (uint8_t)var->maxValue.int64Value);
 }
 
 void Plugin::AMD::EncoderH265::SetPFrameQP(uint8_t v) {
