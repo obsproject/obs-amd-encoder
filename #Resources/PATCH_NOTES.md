@@ -1,4 +1,4 @@
-# 2.2.2 - Pre-Pass, VBAQ and more fixes! (Hotfix 2)
+# 2.2.3 - Pre-Pass, VBAQ and more fixes! (Hotfix 3)
 With the newly released Driver 17.7.2, AMD fixed many reported issues and added some much wanted features:
 
 - Pre-Pass and VBAQ are finally working,
@@ -10,8 +10,12 @@ And now it's time for the plugin to also be updated! This release primarily aims
 
 Hotfix 1: Fixed VBAQ and Pre-Pass being used with Constant QP, causing significant corruption issues and changed some default values for H265.
 Hotfix 2: Fixed an at-exit crash caused by an AMF trace function.
+Hotfix 3: Fixed an issue with Constant QP that caused it to incorrectly use Minimum/Maximum QP.
 
 ## Changelog
+### 2.2.3
+* Fixed Minimum/Maximum QP incorrectly being applied to Constant QP.
+
 ### 2.2.2
 * Fixed an at-exit crash caused by calling amf::AMFTrace::TraceEnableAsync(true).
 
