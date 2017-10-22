@@ -1515,54 +1515,54 @@ uint32_t Plugin::AMD::EncoderH264::GetMaximumSliceSize() {
 }
 
 // Properties - Experimental
-void Plugin::AMD::EncoderH264::SetLowLatencyInternal(bool v) {
-	AMFTRACECALL;
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"LowLatencyInternal", v);
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, PREFIX "<" __FUNCTION_NAME__ "> Failed to set mode to %s, error %ls (code %d)",
-			m_UniqueId, v ? "Enabled" : "Disabled", m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.c_str());
-	}
-}
-
-bool Plugin::AMD::EncoderH264::GetLowLatencyInternal() {
-	AMFTRACECALL;
-
-	bool e;
-
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"LowLatencyInternal", &e);
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, PREFIX "<" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
-			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.c_str());
-	}
-	return e;
-}
-
-void Plugin::AMD::EncoderH264::SetCommonLowLatencyInternal(bool v) {
-	AMFTRACECALL;
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"CommonLowLatencyInternal", v);
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, PREFIX "<" __FUNCTION_NAME__ "> Failed to set mode to %s, error %ls (code %d)",
-			m_UniqueId, v ? "Enabled" : "Disabled", m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.c_str());
-	}
-}
-
-bool Plugin::AMD::EncoderH264::GetCommonLowLatencyInternal() {
-	AMFTRACECALL;
-
-	bool e;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"CommonLowLatencyInternal", &e);
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, PREFIX "<" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
-			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.c_str());
-	}
-	return e;
-}
+//void Plugin::AMD::EncoderH264::SetLowLatencyInternal(bool v) {
+//	AMFTRACECALL;
+//
+//	AMF_RESULT res = m_AMFEncoder->SetProperty(L"LowLatencyInternal", v);
+//	if (res != AMF_OK) {
+//		QUICK_FORMAT_MESSAGE(errMsg, PREFIX "<" __FUNCTION_NAME__ "> Failed to set mode to %s, error %ls (code %d)",
+//			m_UniqueId, v ? "Enabled" : "Disabled", m_AMF->GetTrace()->GetResultText(res), res);
+//		throw std::exception(errMsg.c_str());
+//	}
+//}
+//
+//bool Plugin::AMD::EncoderH264::GetLowLatencyInternal() {
+//	AMFTRACECALL;
+//
+//	bool e;
+//
+//	AMF_RESULT res = m_AMFEncoder->GetProperty(L"LowLatencyInternal", &e);
+//	if (res != AMF_OK) {
+//		QUICK_FORMAT_MESSAGE(errMsg, PREFIX "<" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+//			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+//		throw std::exception(errMsg.c_str());
+//	}
+//	return e;
+//}
+//
+//void Plugin::AMD::EncoderH264::SetCommonLowLatencyInternal(bool v) {
+//	AMFTRACECALL;
+//
+//	AMF_RESULT res = m_AMFEncoder->SetProperty(L"CommonLowLatencyInternal", v);
+//	if (res != AMF_OK) {
+//		QUICK_FORMAT_MESSAGE(errMsg, PREFIX "<" __FUNCTION_NAME__ "> Failed to set mode to %s, error %ls (code %d)",
+//			m_UniqueId, v ? "Enabled" : "Disabled", m_AMF->GetTrace()->GetResultText(res), res);
+//		throw std::exception(errMsg.c_str());
+//	}
+//}
+//
+//bool Plugin::AMD::EncoderH264::GetCommonLowLatencyInternal() {
+//	AMFTRACECALL;
+//
+//	bool e;
+//	AMF_RESULT res = m_AMFEncoder->GetProperty(L"CommonLowLatencyInternal", &e);
+//	if (res != AMF_OK) {
+//		QUICK_FORMAT_MESSAGE(errMsg, PREFIX "<" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
+//			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+//		throw std::exception(errMsg.c_str());
+//	}
+//	return e;
+//}
 
 // Internal
 void Plugin::AMD::EncoderH264::PacketPriorityAndKeyframe(amf::AMFDataPtr& pData, struct encoder_packet* packet) {
@@ -1897,14 +1897,14 @@ void Plugin::AMD::EncoderH264::LogProperties() {
 	#pragma endregion Slicing
 
 	#pragma region Experimental
-	PLOG_INFO(PREFIX "  Experimental:",
-		m_UniqueId);
-	PLOG_INFO(PREFIX "    Low Latency: %s",
-		m_UniqueId,
-		GetLowLatencyInternal() ? "Enabled" : "Disabled");
-	PLOG_INFO(PREFIX "    Ultra Low Latency: %s",
-		m_UniqueId,
-		GetCommonLowLatencyInternal() ? "Enabled" : "Disabled");
+	//PLOG_INFO(PREFIX "  Experimental:",
+	//	m_UniqueId);
+	//PLOG_INFO(PREFIX "    Low Latency: %s",
+	//	m_UniqueId,
+	//	GetLowLatencyInternal() ? "Enabled" : "Disabled");
+	//PLOG_INFO(PREFIX "    Ultra Low Latency: %s",
+	//	m_UniqueId,
+	//	GetCommonLowLatencyInternal() ? "Enabled" : "Disabled");
 	#pragma endregion Experimental
 
 	//PLOG_INFO(PREFIX "  ");

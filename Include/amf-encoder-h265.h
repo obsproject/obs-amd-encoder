@@ -204,21 +204,21 @@ namespace Plugin {
 			virtual uint32_t GetSliceControlSize() override;
 
 			// Experimental
-			void SetQPCBOffset(uint8_t v);
-			uint8_t GetQPCBOffset();
+			//void SetQPCBOffset(uint8_t v);
+			//uint8_t GetQPCBOffset();
 
-			void SetQPCROffset(uint8_t v);
-			uint8_t GetQPCROffset();
+			//void SetQPCROffset(uint8_t v);
+			//uint8_t GetQPCROffset();
 
 			std::pair<uint32_t, uint32_t> CapsInputQueueSize();
 			void SetInputQueueSize(uint32_t v);
 			uint32_t GetInputQueueSize();
 
-			virtual void SetLowLatencyInternal(bool v) override;
-			virtual bool GetLowLatencyInternal() override;
+			//virtual void SetLowLatencyInternal(bool v) override;
+			//virtual bool GetLowLatencyInternal() override;
 
-			virtual void SetCommonLowLatencyInternal(bool v) override;
-			virtual bool GetCommonLowLatencyInternal() override;
+			//virtual void SetCommonLowLatencyInternal(bool v) override;
+			//virtual bool GetCommonLowLatencyInternal() override;
 
 			// Internal
 			virtual void LogProperties() override;

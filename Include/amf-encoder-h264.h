@@ -200,11 +200,11 @@ namespace Plugin {
 			uint32_t GetMaximumSliceSize();
 
 			// Properties - Experimental
-			virtual void SetLowLatencyInternal(bool v) override;
-			virtual bool GetLowLatencyInternal() override;
+			//virtual void SetLowLatencyInternal(bool v) override;
+			//virtual bool GetLowLatencyInternal() override;
 
-			virtual void SetCommonLowLatencyInternal(bool v) override;
-			virtual bool GetCommonLowLatencyInternal() override;
+			//virtual void SetCommonLowLatencyInternal(bool v) override;
+			//virtual bool GetCommonLowLatencyInternal() override;
 
 			// Internal
 			virtual void LogProperties() override;

@@ -366,11 +366,11 @@ namespace Plugin {
 			#pragma endregion Slicing
 
 			#pragma region Internal
-			virtual void SetLowLatencyInternal(bool v) = 0;
-			virtual bool GetLowLatencyInternal() = 0;
+			//virtual void SetLowLatencyInternal(bool v) = 0;
+			//virtual bool GetLowLatencyInternal() = 0;
 
-			virtual void SetCommonLowLatencyInternal(bool v) = 0;
-			virtual bool GetCommonLowLatencyInternal() = 0;
+			//virtual void SetCommonLowLatencyInternal(bool v) = 0;
+			//virtual bool GetCommonLowLatencyInternal() = 0;
 			#pragma endregion Internal
 			#pragma endregion Settings
 
