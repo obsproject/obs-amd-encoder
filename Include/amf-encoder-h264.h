@@ -179,33 +179,7 @@ namespace Plugin {
 
 			void SetIntraRefreshNumOfStripes(uint32_t v);
 			uint32_t GetIntraRefreshNumOfStripes();
-
-			// Properties - Slicing
-			void SetSliceMode(H264::SliceMode v);
-			H264::SliceMode GetSliceMode();
-
-			virtual std::pair<uint32_t, uint32_t> CapsSlicesPerFrame() override;
-			virtual void SetSlicesPerFrame(uint32_t v) override;
-			virtual uint32_t GetSlicesPerFrame() override;
-
-			virtual void SetSliceControlMode(SliceControlMode v) override;
-			virtual SliceControlMode GetSliceControlMode() override;
-
-			virtual std::pair<uint32_t, uint32_t> CapsSliceControlSize() override;
-			virtual void SetSliceControlSize(uint32_t v) override;
-			virtual uint32_t GetSliceControlSize() override;
-
-			std::pair<uint32_t, uint32_t> CapsMaximumSliceSize();
-			void SetMaximumSliceSize(uint32_t v);
-			uint32_t GetMaximumSliceSize();
-
-			// Properties - Experimental
-			//virtual void SetLowLatencyInternal(bool v) override;
-			//virtual bool GetLowLatencyInternal() override;
-
-			//virtual void SetCommonLowLatencyInternal(bool v) override;
-			//virtual bool GetCommonLowLatencyInternal() override;
-
+			
 			// Internal
 			virtual void LogProperties() override;
 			protected:

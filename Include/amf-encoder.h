@@ -351,27 +351,6 @@ namespace Plugin {
 			virtual void SetMotionEstimationHalfPixelEnabled(bool v) = 0;
 			virtual bool IsMotionEstimationHalfPixelEnabled() = 0;
 			#pragma endregion Motion Estimation
-
-			#pragma region Slicing
-			virtual std::pair<uint32_t, uint32_t> CapsSlicesPerFrame() = 0;
-			virtual void SetSlicesPerFrame(uint32_t v) = 0;
-			virtual uint32_t GetSlicesPerFrame() = 0;
-
-			virtual void SetSliceControlMode(SliceControlMode v) = 0; // 0-1 range, Horz/Vert perhaps?
-			virtual SliceControlMode GetSliceControlMode() = 0;
-
-			virtual std::pair<uint32_t, uint32_t> CapsSliceControlSize() = 0;
-			virtual void SetSliceControlSize(uint32_t v) = 0;
-			virtual uint32_t GetSliceControlSize() = 0;
-			#pragma endregion Slicing
-
-			#pragma region Internal
-			//virtual void SetLowLatencyInternal(bool v) = 0;
-			//virtual bool GetLowLatencyInternal() = 0;
-
-			//virtual void SetCommonLowLatencyInternal(bool v) = 0;
-			//virtual bool GetCommonLowLatencyInternal() = 0;
-			#pragma endregion Internal
 			#pragma endregion Settings
 
 			#pragma region Control

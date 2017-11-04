@@ -190,35 +190,10 @@ namespace Plugin {
 
 			virtual void SetMaximumAccessUnitSize(uint32_t v) override;
 			virtual uint32_t GetMaximumAccessUnitSize() override;
-
-			/// Slicing
-			virtual std::pair<uint32_t, uint32_t> CapsSlicesPerFrame() override;
-			virtual void SetSlicesPerFrame(uint32_t v) override;
-			virtual uint32_t GetSlicesPerFrame() override;
-
-			virtual void SetSliceControlMode(SliceControlMode v) override;
-			virtual SliceControlMode GetSliceControlMode() override;
-
-			virtual std::pair<uint32_t, uint32_t> CapsSliceControlSize() override;
-			virtual void SetSliceControlSize(uint32_t v) override;
-			virtual uint32_t GetSliceControlSize() override;
-
-			// Experimental
-			//void SetQPCBOffset(uint8_t v);
-			//uint8_t GetQPCBOffset();
-
-			//void SetQPCROffset(uint8_t v);
-			//uint8_t GetQPCROffset();
-
+			
 			std::pair<uint32_t, uint32_t> CapsInputQueueSize();
 			void SetInputQueueSize(uint32_t v);
 			uint32_t GetInputQueueSize();
-
-			//virtual void SetLowLatencyInternal(bool v) override;
-			//virtual bool GetLowLatencyInternal() override;
-
-			//virtual void SetCommonLowLatencyInternal(bool v) override;
-			//virtual bool GetCommonLowLatencyInternal() override;
 
 			// Internal
 			virtual void LogProperties() override;

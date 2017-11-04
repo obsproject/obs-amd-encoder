@@ -1362,158 +1362,6 @@ uint32_t Plugin::AMD::EncoderH265::GetMaximumAccessUnitSize() {
 	return (uint32_t)e;
 }
 
-// Intra-Refresh
-
-// Properties - Slicing
-std::pair<uint32_t, uint32_t> Plugin::AMD::EncoderH265::CapsSlicesPerFrame() {
-	AMFTRACECALL;
-
-	const amf::AMFPropertyInfo* var;
-	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(L"HevcSlicesPerFrame", &var);
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
-			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.c_str());
-	}
-
-	return std::make_pair((uint32_t)var->minValue.int64Value, (uint32_t)var->maxValue.int64Value);
-}
-
-void Plugin::AMD::EncoderH265::SetSlicesPerFrame(uint32_t v) {
-	AMFTRACECALL;
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"HevcSlicesPerFrame", (int64_t)v);
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
-			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.c_str());
-	}
-}
-
-uint32_t Plugin::AMD::EncoderH265::GetSlicesPerFrame() {
-	AMFTRACECALL;
-
-	int64_t e;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"HevcSlicesPerFrame", &e);
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
-			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.c_str());
-	}
-	return (uint32_t)e;
-}
-
-void Plugin::AMD::EncoderH265::SetSliceControlMode(SliceControlMode v) {
-	AMFTRACECALL;
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"SliceControlMode", static_cast<int64_t>(v));
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
-			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.c_str());
-	}
-}
-
-Plugin::AMD::SliceControlMode Plugin::AMD::EncoderH265::GetSliceControlMode() {
-	AMFTRACECALL;
-
-	int64_t e;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"SliceControlMode", &e);
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
-			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.c_str());
-	}
-	return static_cast<SliceControlMode>(e);
-}
-
-std::pair<uint32_t, uint32_t> Plugin::AMD::EncoderH265::CapsSliceControlSize() {
-	AMFTRACECALL;
-
-	const amf::AMFPropertyInfo* var;
-	AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(L"SliceControlSize", &var);
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Querying capabilities failed, error %ls (code %d)",
-			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.c_str());
-	}
-
-	return std::make_pair((uint32_t)var->minValue.int64Value, (uint32_t)var->maxValue.int64Value);
-}
-
-void Plugin::AMD::EncoderH265::SetSliceControlSize(uint32_t v) {
-	AMFTRACECALL;
-
-	AMF_RESULT res = m_AMFEncoder->SetProperty(L"SliceControlSize", (int64_t)v);
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %ld, error %ls (code %d)",
-			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.c_str());
-	}
-}
-
-uint32_t Plugin::AMD::EncoderH265::GetSliceControlSize() {
-	AMFTRACECALL;
-
-	int64_t e;
-	AMF_RESULT res = m_AMFEncoder->GetProperty(L"SliceControlSize", &e);
-	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
-			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-		throw std::exception(errMsg.c_str());
-	}
-	return (uint32_t)e;
-}
-
-// Experimental
-//void Plugin::AMD::EncoderH265::SetQPCBOffset(uint8_t v) {
-//	AMFTRACECALL;
-//
-//	AMF_RESULT res = m_AMFEncoder->SetProperty(L"QPCBOFFSET", v);
-//	if (res != AMF_OK) {
-//		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set mode to %ld, error %ls (code %d)",
-//			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
-//		throw std::exception(errMsg.c_str());
-//	}
-//}
-//
-//uint8_t Plugin::AMD::EncoderH265::GetQPCBOffset() {
-//	AMFTRACECALL;
-//
-//	int64_t e;
-//	AMF_RESULT res = m_AMFEncoder->GetProperty(L"QPCBOFFSET", &e);
-//	if (res != AMF_OK) {
-//		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
-//			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-//		throw std::exception(errMsg.c_str());
-//	}
-//	return (uint8_t)e;
-//}
-//
-//void Plugin::AMD::EncoderH265::SetQPCROffset(uint8_t v) {
-//	AMFTRACECALL;
-//
-//	AMF_RESULT res = m_AMFEncoder->SetProperty(L"QPCROFFSET", v);
-//	if (res != AMF_OK) {
-//		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set mode to %ld, error %ls (code %d)",
-//			m_UniqueId, v, m_AMF->GetTrace()->GetResultText(res), res);
-//		throw std::exception(errMsg.c_str());
-//	}
-//}
-//
-//uint8_t Plugin::AMD::EncoderH265::GetQPCROffset() {
-//	AMFTRACECALL;
-//
-//	int64_t e;
-//	AMF_RESULT res = m_AMFEncoder->GetProperty(L"QPCROFFSET", &e);
-//	if (res != AMF_OK) {
-//		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
-//			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-//		throw std::exception(errMsg.c_str());
-//	}
-//	return (uint8_t)e;
-//}
-
 std::pair<uint32_t, uint32_t> Plugin::AMD::EncoderH265::CapsInputQueueSize() {
 	AMFTRACECALL;
 
@@ -1551,55 +1399,6 @@ uint32_t Plugin::AMD::EncoderH265::GetInputQueueSize() {
 	}
 	return (uint32_t)e;
 }
-
-//void Plugin::AMD::EncoderH265::SetLowLatencyInternal(bool v) {
-//	AMFTRACECALL;
-//
-//	AMF_RESULT res = m_AMFEncoder->SetProperty(L"LowLatencyInternal", v);
-//	if (res != AMF_OK) {
-//		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set mode to %s, error %ls (code %d)",
-//			m_UniqueId, v ? "Enabled" : "Disabled", m_AMF->GetTrace()->GetResultText(res), res);
-//		throw std::exception(errMsg.c_str());
-//	}
-//}
-//
-//bool Plugin::AMD::EncoderH265::GetLowLatencyInternal() {
-//	AMFTRACECALL;
-//
-//	bool e;
-//
-//	AMF_RESULT res = m_AMFEncoder->GetProperty(L"LowLatencyInternal", &e);
-//	if (res != AMF_OK) {
-//		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
-//			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-//		throw std::exception(errMsg.c_str());
-//	}
-//	return e;
-//}
-//
-//void Plugin::AMD::EncoderH265::SetCommonLowLatencyInternal(bool v) {
-//	AMFTRACECALL;
-//
-//	AMF_RESULT res = m_AMFEncoder->SetProperty(L"CommonLowLatencyInternal", v);
-//	if (res != AMF_OK) {
-//		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set mode to %s, error %ls (code %d)",
-//			m_UniqueId, v ? "Enabled" : "Disabled", m_AMF->GetTrace()->GetResultText(res), res);
-//		throw std::exception(errMsg.c_str());
-//	}
-//}
-//
-//bool Plugin::AMD::EncoderH265::GetCommonLowLatencyInternal() {
-//	AMFTRACECALL;
-//
-//	bool e;
-//	AMF_RESULT res = m_AMFEncoder->GetProperty(L"CommonLowLatencyInternal", &e);
-//	if (res != AMF_OK) {
-//		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to retrieve value, error %ls (code %d)",
-//			m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
-//		throw std::exception(errMsg.c_str());
-//	}
-//	return e;
-//}
 
 // Internal
 void Plugin::AMD::EncoderH265::PacketPriorityAndKeyframe(amf::AMFDataPtr& pData, struct encoder_packet* packet) {
@@ -1875,41 +1674,12 @@ void Plugin::AMD::EncoderH265::LogProperties() {
 		IsMotionEstimationQuarterPixelEnabled() ? (IsMotionEstimationHalfPixelEnabled() ? "Quarter, " : "Quarter") : "",
 		IsMotionEstimationHalfPixelEnabled() ? "Half" : "");
 	#pragma endregion Picture Control
-
-	#pragma region Slicing
-	PLOG_INFO(PREFIX "  Slicing:",
-		m_UniqueId);
-	PLOG_INFO(PREFIX "    Slices Per Frame: %" PRIu32,
-		m_UniqueId,
-		GetSlicesPerFrame());
-	PLOG_INFO(PREFIX "    Control Mode: %s",
-		m_UniqueId,
-		Utility::SliceControlModeToString(GetSliceControlMode()));
-	PLOG_INFO(PREFIX "    Control Size: %" PRIu32,
-		m_UniqueId,
-		GetSliceControlSize());
-	#pragma endregion Slicing
-
+	
 	#pragma region Experimental
 	PLOG_INFO(PREFIX "  Experimental:",
 		m_UniqueId);
-	//PLOG_INFO(PREFIX "    QPCBOffset: %" PRIu32,
-	//	m_UniqueId,
-	//	GetQPCBOffset());
-	//PLOG_INFO(PREFIX "    QPCROffset: %" PRIu32,
-	//	m_UniqueId,
-	//	GetQPCROffset());
 	PLOG_INFO(PREFIX "    Input Queue: %" PRIu32,
 		m_UniqueId,
 		GetInputQueueSize());
-	//PLOG_INFO(PREFIX "    Low Latency: %s",
-	//	m_UniqueId,
-	//	GetLowLatencyInternal() ? "Enabled" : "Disabled");
-	//PLOG_INFO(PREFIX "    Ultra Low Latency: %s",
-	//	m_UniqueId,
-	//	GetCommonLowLatencyInternal() ? "Enabled" : "Disabled");
 	#pragma endregion Experimental
-
-	//PLOG_INFO(PREFIX "  ");
-	//PLOG_INFO(PREFIX "    ");
 }
