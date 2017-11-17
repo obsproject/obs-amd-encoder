@@ -159,6 +159,12 @@ Plugin::AMD::AMF::AMF() {
 		}
 	}
 
+	/// Blacklist Drivers with older SDK.
+	if (m_AMFVersion_Runtime < AMF_MAKE_FULL_VERSION(1,4,6,0)) {
+		QUICK_FORMAT_MESSAGE(msg, "AMF Runtime Version is too old, please update your drivers.");
+		throw std::exception(msg.data());
+	}
+
 	/// Initialize AMF
 	AMFInit = (AMFInit_Fn)GetProcAddress(m_AMFModule, AMF_INIT_FUNCTION_NAME);
 	if (!AMFInit) {
