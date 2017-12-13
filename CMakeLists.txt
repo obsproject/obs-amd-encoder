@@ -98,7 +98,7 @@ endif()
 ################################################################################
 # Standalone and OBS Studio Build Data
 ################################################################################
-if(BUILD_AMF_ENCODER)
+if(TARGET obs)
 	# OBS Studio Specific
 	
 	# Variables
@@ -205,7 +205,7 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
 endif()
 
-if(BUILD_AMF_ENCODER)
+if(TARGET obs)
 	install_obs_plugin_with_data(enc-amf Resources)
 else()
 	math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
