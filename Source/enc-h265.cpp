@@ -134,7 +134,7 @@ void Plugin::Interface::H265Interface::get_defaults(obs_data_t *data) {
 	obs_data_set_default_int(data, ("last" P_RATECONTROLMETHOD), -1);
 	obs_data_set_default_int(data, P_RATECONTROLMETHOD, static_cast<int64_t>(RateControlMethod::ConstantBitrate));
 	obs_data_set_default_int(data, P_PREPASSMODE, static_cast<int64_t>(PrePassMode::Disabled));
-	obs_data_set_default_int(data, P_BITRATE_TARGET, 3500);
+	obs_data_set_default_int(data, "bitrate", 3500);
 	obs_data_set_default_int(data, P_BITRATE_PEAK, 9000);
 	obs_data_set_default_int(data, P_QP_IFRAME, 22);
 	obs_data_set_default_int(data, P_QP_PFRAME, 22);
@@ -291,7 +291,7 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void* data) {
 
 	#pragma region Parameters
 	/// Bitrate Constraints
-	p = obs_properties_add_int(props, P_BITRATE_TARGET, P_TRANSLATE(P_BITRATE_TARGET), 0, 1, 1);
+	p = obs_properties_add_int(props, "bitrate", P_TRANSLATE(P_BITRATE_TARGET), 0, 1, 1);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_BITRATE_TARGET)));
 	p = obs_properties_add_int(props, P_BITRATE_PEAK, P_TRANSLATE(P_BITRATE_PEAK), 0, 1, 1);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_BITRATE_PEAK)));
@@ -483,9 +483,29 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void* data) {
 	return props;
 }
 
+static void obs_data_transfer_settings(obs_data_t * data) {
+#define TRANSFER_STRING(xold, xnew) obs_data_set_string(data, xnew, obs_data_get_string(data, xold))
+#define TRANSFER_FLOAT(xold, xnew) obs_data_set_double(data, xnew, obs_data_get_double(data, xold))
+#define TRANSFER_INT(xold, xnew) obs_data_set_int(data, xnew, obs_data_get_int(data, xold))
+#define TRANSFER_BOOL(xold, xnew) obs_data_set_bool(data, xnew, obs_data_get_bool(data, xold))
+
+	uint64_t version = obs_data_get_int(data, P_VERSION);
+	switch (version) {
+		case (((uint64_t)(2 & 0xFFFF) << 48ull) | ((uint64_t)(3 & 0xFFFF) << 32ull) | ((uint64_t)(0) & 0xFFFFFFFF)):
+			TRANSFER_INT(P_BITRATE_TARGET, "bitrate");
+			break;
+		case PLUGIN_VERSION_FULL:
+			obs_data_set_int(data, P_VERSION, PLUGIN_VERSION_FULL);
+			break;
+	}
+}
+
 bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data) {
 	bool result = false;
 	obs_property_t* p;
+
+	// Transfer settings from older Plugin versions to newer ones.
+	obs_data_transfer_settings(data);
 
 	#pragma region Video API & Adapter
 	// Video API
@@ -570,7 +590,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 			TEMP_LIMIT_SLIDER(CapsMaximumReferenceFrames, P_MAXIMUMREFERENCEFRAMES);
 			TEMP_LIMIT_DROPDOWN(CapsRateControlMethod, AMD::RateControlMethod, P_RATECONTROLMETHOD);
 			TEMP_LIMIT_DROPDOWN(CapsPrePassMode, AMD::PrePassMode, P_PREPASSMODE);
-			TEMP_LIMIT_SLIDER_BITRATE(CapsTargetBitrate, P_BITRATE_TARGET);
+			TEMP_LIMIT_SLIDER_BITRATE(CapsTargetBitrate, "bitrate");
 			TEMP_LIMIT_SLIDER_BITRATE(CapsPeakBitrate, P_BITRATE_PEAK);
 			TEMP_LIMIT_SLIDER_BITRATE(CapsVBVBufferSize, P_VBVBUFFER_SIZE);
 		} catch (const std::exception& e) {
@@ -683,9 +703,9 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t *pro
 	}
 
 	/// Bitrate
-	obs_property_set_visible(obs_properties_get(props, P_BITRATE_TARGET), vis_rcm_bitrate_target);
+	obs_property_set_visible(obs_properties_get(props, "bitrate"), vis_rcm_bitrate_target);
 	if (!vis_rcm_bitrate_target)
-		obs_data_unset_user_value(data, P_BITRATE_TARGET);
+		obs_data_unset_user_value(data, "bitrate");
 	obs_property_set_visible(obs_properties_get(props, P_BITRATE_PEAK), vis_rcm_bitrate_peak);
 	if (!vis_rcm_bitrate_peak)
 		obs_data_unset_user_value(data, P_BITRATE_PEAK);
@@ -1096,11 +1116,11 @@ bool Plugin::Interface::H265Interface::update(obs_data_t* data) {
 		m_VideoEncoder->SetIFrameQPMaximum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_IFRAME_MAXIMUM)));
 		m_VideoEncoder->SetPFrameQPMinimum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_PFRAME_MINIMUM)));
 		m_VideoEncoder->SetPFrameQPMaximum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_PFRAME_MAXIMUM)));
-		m_VideoEncoder->SetTargetBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_TARGET) * 1000));
+		m_VideoEncoder->SetTargetBitrate(static_cast<uint32_t>(obs_data_get_int(data, "bitrate") * 1000));
 		m_VideoEncoder->SetPeakBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_PEAK) * 1000));
 	}
 	if (rcm == RateControlMethod::ConstantBitrate) {
-		m_VideoEncoder->SetPeakBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_TARGET) * 1000));
+		m_VideoEncoder->SetPeakBitrate(static_cast<uint32_t>(obs_data_get_int(data, "bitrate") * 1000));
 		m_VideoEncoder->SetFillerDataEnabled(!!obs_data_get_int(data, P_FILLERDATA));
 	} else {
 		m_VideoEncoder->SetFillerDataEnabled(false);
