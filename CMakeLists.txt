@@ -103,7 +103,7 @@ if(BUILD_AMF_ENCODER)
 	
 	# Variables
 	OPTION(AMDAMF_Disable "Disable AMD Advanced Media Framework support" OFF)
-	SET(AMDAMF_SDKDir "" CACHE PATH "AMD Advanced Media Framework SDK Directory")
+	SET(AMDAMF_SDKDir "${PROJECT_SOURCE_DIR}/AMF/" CACHE PATH "AMD Advanced Media Framework SDK Directory")
 
 	# Tests
 	if(AMDAMF_Disable)
@@ -137,7 +137,7 @@ else()
 	# Standlone Specific
 
 	# Variables
-	SET(PATH_AMDAMFSDK "" CACHE PATH "AMD Advanced Media Framework SDK Directory")
+	SET(PATH_AMDAMFSDK "${PROJECT_SOURCE_DIR}/AMF/" CACHE PATH "AMD Advanced Media Framework SDK Directory")
 	SET(PATH_OBSStudio "" CACHE PATH "OBS Studio Source Code Directory")
 	
 	# Tests

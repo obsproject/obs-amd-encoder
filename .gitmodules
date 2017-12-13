@@ -1,0 +1,3 @@
+[submodule "AMF"]
+	path = AMF
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/AMF.git
