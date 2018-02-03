@@ -941,7 +941,7 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 	}
 
 	// Picture Control
-	uint32_t gopSize = static_cast<uint32_t>(floor(obsFPSden / (double_t)obsFPSnum));
+	uint32_t gopSize = static_cast<uint32_t>(clamp(floor(obsFPSnum / (double_t)obsFPSden), 1, 1000));
 	H265::GOPType gopType = static_cast<H265::GOPType>(obs_data_get_int(data, P_GOP_TYPE));
 	m_VideoEncoder->SetGOPType(gopType);
 	if (static_cast<ViewMode>(obs_data_get_int(data, P_VIEW)) >= ViewMode::Expert) {
@@ -965,7 +965,7 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 			double_t keyinterv = obs_data_get_double(data, P_INTERVAL_KEYFRAME);
 			idrperiod = static_cast<uint32_t>(ceil((keyinterv * framerate) / gopSize));
 		}
-		m_VideoEncoder->SetIDRPeriod(idrperiod);
+		m_VideoEncoder->SetIDRPeriod(clamp(idrperiod, 1, 1000));
 	}
 	m_VideoEncoder->SetDeblockingFilterEnabled(!!obs_data_get_int(data, P_DEBLOCKINGFILTER));
 	m_VideoEncoder->SetMotionEstimationHalfPixelEnabled(!!(obs_data_get_int(data, P_MOTIONESTIMATION) & 1));
