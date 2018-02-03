@@ -332,7 +332,7 @@ AMF_VIDEO_ENCODER_PROFILE_ENUM Utility::ProfileToAMFH264(Plugin::AMD::Profile v)
 	throw std::runtime_error("Invalid Parameter");
 }
 Plugin::AMD::Profile Utility::ProfileFromAMFH264(AMF_VIDEO_ENCODER_PROFILE_ENUM v) {
-	#pragma warning( disable: 4063 ) // Developer Note: I know better, Compiler.
+#pragma warning( disable: 4063 ) // Developer Note: I know better, Compiler.
 	switch (v) {
 		case (AMF_VIDEO_ENCODER_PROFILE_ENUM)256:
 			return Profile::ConstrainedBaseline;
