@@ -979,12 +979,7 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 			if (strcmp(p_str, "main")) {
 				m_VideoEncoder->SetProfile(Profile::Main);
 			}
-		} else {
-			switch (m_VideoEncoder->GetProfile()) {
-				case Profile::Main:
-					obs_data_set_string(data, "profile", "main");
-					break;
-			}
+			obs_data_unset_user_value(data, "profile");
 		}
 
 		// Preset
@@ -998,18 +993,7 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 				m_VideoEncoder->SetQualityPreset(QualityPreset::Quality);
 			}
 			obs_data_set_int(data, P_QUALITYPRESET, (int32_t)m_VideoEncoder->GetQualityPreset());
-		} else {
-			switch (m_VideoEncoder->GetQualityPreset()) {
-				case QualityPreset::Speed:
-					obs_data_set_string(data, "preset", "speed");
-					break;
-				case QualityPreset::Balanced:
-					obs_data_set_string(data, "preset", "balanced");
-					break;
-				case QualityPreset::Quality:
-					obs_data_set_string(data, "preset", "quality");
-					break;
-			}
+			obs_data_unset_user_value(data, "preset");
 		}
 
 		// Rate Control Method
@@ -1027,34 +1011,8 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 			}
 
 			obs_data_set_int(data, P_RATECONTROLMETHOD, (int32_t)m_VideoEncoder->GetRateControlMethod());
-		} else {
-			switch (m_VideoEncoder->GetRateControlMethod()) {
-				case RateControlMethod::ConstantBitrate:
-					obs_data_set_string(data, "rate_control", "CBR");
-					break;
-				case RateControlMethod::PeakConstrainedVariableBitrate:
-					obs_data_set_string(data, "rate_control", "VBR");
-					break;
-				case RateControlMethod::LatencyConstrainedVariableBitrate:
-					obs_data_set_string(data, "rate_control", "VBR_LAT");
-					break;
-				case RateControlMethod::ConstantQP:
-					obs_data_set_string(data, "rate_control", "CQP");
-					break;
-			}
+			obs_data_unset_user_value(data, "rate_control");
 		}
-
-		// IDR-Period (Keyframes)
-		//uint32_t fpsNum = m_VideoEncoder->GetFrameRate().first;
-		//uint32_t fpsDen = m_VideoEncoder->GetFrameRate().second;
-		//if (obs_data_get_int(data, "keyint_sec") != -1) {
-		//	m_VideoEncoder->SetIDRPeriod(static_cast<uint32_t>(obs_data_get_int(data, "keyint_sec") * (static_cast<double_t>(fpsNum) / static_cast<double_t>(fpsDen))));
-
-		//	obs_data_set_double(data, P_INTERVAL_KEYFRAME, static_cast<double_t>(obs_data_get_int(data, "keyint_sec")));
-		//	obs_data_set_int(data, P_PERIOD_IDR_H264, static_cast<uint32_t>(obs_data_get_int(data, "keyint_sec") *  (static_cast<double_t>(fpsNum) / static_cast<double_t>(fpsDen))));
-		//} else {
-		//	obs_data_set_int(data, "keyint_sec", static_cast<uint64_t>(m_VideoEncoder->GetIDRPeriod() / (static_cast<double_t>(fpsNum) / static_cast<double_t>(fpsDen))));
-		//}
 	}
 #pragma endregion OBS - Enforce Streaming Service Restrictions
 
