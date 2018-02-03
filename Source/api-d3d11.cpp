@@ -27,7 +27,7 @@ using namespace Plugin::API;
 class SingletonDXGI {
 	public:
 
-	#pragma region Singleton
+#pragma region Singleton
 	static std::shared_ptr<SingletonDXGI> GetInstance() {
 		static std::shared_ptr<SingletonDXGI> __instance = std::make_shared<SingletonDXGI>();
 		static std::mutex __mutex;
@@ -35,7 +35,7 @@ class SingletonDXGI {
 		const std::lock_guard<std::mutex> lock(__mutex);
 		return __instance;
 	}
-	#pragma endregion Singleton
+#pragma endregion Singleton
 
 	SingletonDXGI() {
 		hModule = LoadLibrary(TEXT("dxgi.dll"));
@@ -80,7 +80,7 @@ class SingletonDXGI {
 class SingletonD3D11 {
 	public:
 
-	#pragma region Singleton
+#pragma region Singleton
 	static std::shared_ptr<SingletonD3D11> GetInstance() {
 		static std::shared_ptr<SingletonD3D11> __instance = std::make_shared<SingletonD3D11>();
 		static std::mutex __mutex;
@@ -88,7 +88,7 @@ class SingletonD3D11 {
 		const std::lock_guard<std::mutex> lock(__mutex);
 		return __instance;
 	}
-	#pragma endregion Singleton
+#pragma endregion Singleton
 
 	SingletonD3D11() {
 		hModule = LoadLibrary(TEXT("d3d11.dll"));
@@ -230,32 +230,34 @@ Plugin::API::Direct3D11Instance::Direct3D11Instance(Direct3D11* api, Adapter ada
 		D3D_FEATURE_LEVEL_11_1,
 		D3D_FEATURE_LEVEL_11_0
 	};
-	for (size_t c = 0; c < 3; c++) {
-		uint32_t flags = 0;
+	for (size_t featureLevel = 0; featureLevel < _countof(featureLevels); featureLevel++) {
+		for (size_t enabledFlags = 0; enabledFlags < 3; enabledFlags++) {
+			uint32_t flags = 0;
 
-		switch (c) {
-			case 0:
-				flags |= D3D11_CREATE_DEVICE_VIDEO_SUPPORT;
-			case 1:
-				flags |= D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-			case 2:
+			switch (enabledFlags) {
+				case 0:
+					flags |= D3D11_CREATE_DEVICE_VIDEO_SUPPORT;
+				case 1:
+					flags |= D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+				case 2:
+					break;
+			}
+
+			hr = d3dInst->D3D11CreateDevice(
+				dxgiAdapter,
+				dxgiAdapter == NULL ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN,
+				NULL,
+				flags,
+				featureLevels + featureLevel, _countof(featureLevels) - featureLevel,
+				D3D11_SDK_VERSION,
+				&m_Device,
+				NULL,
+				&m_DeviceContext);
+			if (SUCCEEDED(hr)) {
 				break;
-		}
-
-		hr = d3dInst->D3D11CreateDevice(
-			dxgiAdapter,
-			dxgiAdapter == NULL ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN,
-			NULL,
-			flags,
-			featureLevels + 1, _countof(featureLevels) - 1,
-			D3D11_SDK_VERSION,
-			&m_Device,
-			NULL,
-			&m_DeviceContext);
-		if (SUCCEEDED(hr)) {
-			break;
-		} else {
-			PLOG_WARNING("<" __FUNCTION_NAME__ "> Unable to create D3D11 device, error code %X (mode %d).", hr, c);
+			} else {
+				PLOG_DEBUG("<" __FUNCTION_NAME__ "> Unable to create D3D11 device, error code %X (mode %lld, level %lld).", hr, enabledFlags, featureLevel);
+			}
 		}
 	}
 	if (FAILED(hr)) {
