@@ -1409,15 +1409,21 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 			} catch (...) {
 			}
 		}
-		m_VideoEncoder->SetPrePassMode(PrePassMode::Disabled);
-		m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled(false);
+		try {
+			m_VideoEncoder->SetPrePassMode(PrePassMode::Disabled);
+			m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled(false);
+		} catch (...) {
+		}
 	} else {
 		m_VideoEncoder->SetQPMinimum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_MINIMUM)));
 		m_VideoEncoder->SetQPMaximum(static_cast<uint8_t>(obs_data_get_int(data, P_QP_MAXIMUM)));
 		m_VideoEncoder->SetTargetBitrate(static_cast<uint32_t>(obs_data_get_int(data, "bitrate") * 1000));
 		m_VideoEncoder->SetPeakBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_PEAK) * 1000));
-		m_VideoEncoder->SetPrePassMode(static_cast<PrePassMode>(obs_data_get_int(data, P_PREPASSMODE)));
-		m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled(!!obs_data_get_int(data, P_VBAQ));
+		try {
+			m_VideoEncoder->SetPrePassMode(static_cast<PrePassMode>(obs_data_get_int(data, P_PREPASSMODE)));
+			m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled(!!obs_data_get_int(data, P_VBAQ));
+		} catch (...) {
+		}
 	}
 	if (rcm == RateControlMethod::ConstantBitrate) {
 		m_VideoEncoder->SetPeakBitrate(static_cast<uint32_t>(obs_data_get_int(data, "bitrate") * 1000));
@@ -1485,7 +1491,7 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 	// Motion Estimation
 	m_VideoEncoder->SetMotionEstimationHalfPixelEnabled(!!(obs_data_get_int(data, P_MOTIONESTIMATION) & 1));
 	m_VideoEncoder->SetMotionEstimationQuarterPixelEnabled(!!(obs_data_get_int(data, P_MOTIONESTIMATION) & 2));
-	
+
 #pragma region OBS Enforce Streaming Service Settings
 	{
 		// Rate Control Method
