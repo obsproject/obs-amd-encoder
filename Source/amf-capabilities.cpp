@@ -20,11 +20,6 @@
 #include "amf-capabilities.h"
 #include "utility.h"
 
-//#ifdef _WIN32
-//#include <windows.h>
-//#include <VersionHelpers.h>
-//#endif
-
 using namespace Plugin;
 using namespace Plugin::AMD;
 
@@ -51,6 +46,9 @@ void Plugin::AMD::CapabilityManager::Finalize() {
 #pragma endregion Singleton
 
 Plugin::AMD::CapabilityManager::CapabilityManager() {
+	// Potential fix for unintended crashes by AMD including asserts in release builds.
+	AMD::AMF::Instance()->EnableDebugTrace(false);
+
 	// Key order: API, Adapter, Codec
 	for (auto api : API::EnumerateAPIs()) {
 		for (auto adapter : api->EnumerateAdapters()) {
