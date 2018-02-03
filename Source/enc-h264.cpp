@@ -1520,18 +1520,6 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data) {
 			obs_data_set_int(data, P_RATECONTROLMETHOD, (int32_t)m_VideoEncoder->GetRateControlMethod());
 		}
 
-		// Bitrate
-		uint64_t bitrateOvr = obs_data_get_int(data, "bitrate") * 1000;
-		if (bitrateOvr > 0) {
-			if (m_VideoEncoder->GetTargetBitrate() > bitrateOvr)
-				m_VideoEncoder->SetTargetBitrate(static_cast<uint32_t>(bitrateOvr));
-			if (m_VideoEncoder->GetPeakBitrate() > bitrateOvr)
-				m_VideoEncoder->SetPeakBitrate(static_cast<uint32_t>(bitrateOvr));
-
-			obs_data_set_int(data, "bitrate", m_VideoEncoder->GetTargetBitrate() / 1000);
-			obs_data_set_int(data, P_BITRATE_PEAK, m_VideoEncoder->GetPeakBitrate() / 1000);
-		}
-
 		// IDR-Period (Keyframes)
 		uint32_t fpsNum = m_VideoEncoder->GetFrameRate().first;
 		uint32_t fpsDen = m_VideoEncoder->GetFrameRate().second;
