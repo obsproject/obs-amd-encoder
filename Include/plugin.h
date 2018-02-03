@@ -62,6 +62,12 @@
 #endif
 #define OUT
 
+#ifdef _WIN64
+#define BIT_STR "64"
+#else
+#define BIT_STR "32"
+#endif
+
 #define QUICK_FORMAT_MESSAGE(var, ...) std::string var = ""; { \
 		std::vector<char> QUICK_FORMAT_MESSAGE_buf(1024); \
 		snprintf(QUICK_FORMAT_MESSAGE_buf.data(), QUICK_FORMAT_MESSAGE_buf.size(), __VA_ARGS__); \

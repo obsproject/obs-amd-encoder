@@ -22,10 +22,12 @@
 #include "api-base.h"
 #include "amf.h"
 #include "amf-capabilities.h"
-#include <sstream>
-
 #include "enc-h264.h"
 #include "enc-h265.h"
+#include <sstream>
+#include <libobs/util/pipe.h>
+#include <libobs/util/platform.h>
+#include <libobs/util/util.hpp>
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -33,12 +35,52 @@
 using namespace Plugin;
 using namespace Plugin::AMD;
 
-//////////////////////////////////////////////////////////////////////////
-// Code
-//////////////////////////////////////////////////////////////////////////
+#if defined(WIN32)
 BOOL WINAPI DllMain(HINSTANCE, DWORD, LPVOID) {
 	return TRUE;
 }
+
+static inline bool create_process(const char *cmd_line, HANDLE stdin_handle,
+	HANDLE stdout_handle, HANDLE *process) {
+	PROCESS_INFORMATION pi = { 0 };
+	wchar_t *cmd_line_w = NULL;
+	STARTUPINFOW si = { 0 };
+	bool success = false;
+
+	si.cb = sizeof(si);
+	si.dwFlags = STARTF_USESTDHANDLES;
+	si.hStdInput = stdin_handle;
+	si.hStdOutput = stdout_handle;
+
+	os_utf8_to_wcs_ptr(cmd_line, 0, &cmd_line_w);
+	if (cmd_line_w) {
+		success = !!CreateProcessW(NULL, cmd_line_w, NULL, NULL, true,
+			CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
+
+		if (success) {
+			*process = pi.hProcess;
+			CloseHandle(pi.hThread);
+		}
+
+		bfree(cmd_line_w);
+	}
+
+	return success;
+}
+
+static bool create_pipe(HANDLE *input, HANDLE *output) {
+	SECURITY_ATTRIBUTES sa = { 0 };
+
+	sa.nLength = sizeof(sa);
+	sa.bInheritHandle = true;
+
+	if (!CreatePipe(input, output, &sa, 0)) {
+		return false;
+	}
+
+	return true;
+}
+#endif
 
 OBS_DECLARE_MODULE();
 OBS_MODULE_AUTHOR("Michael Fabian Dirks");
@@ -162,16 +204,83 @@ static void printDebugInfo(amf::AMFComponentPtr m_AMFEncoder) {
 }
 #endif
 
-/**
-* Required: Called when the module is loaded.  Use this function to load all
-* the sources/encoders/outputs/services for your module, or anything else that
-* may need loading.
-*
-* @return           Return true to continue loading the module, otherwise
-*                   false to indicate failure and unload the module
-*/
 MODULE_EXPORT bool obs_module_load(void) {
 	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Loading...");
+
+#ifdef _WIN32
+	// Out-of-process AMF Test
+	{
+		unsigned long returnCode = 0xFFFFFFFF;
+		HANDLE hProcess, hIn, hOut;
+		BPtr<char> path = obs_module_file("enc-amf-test" BIT_STR ".exe");
+
+		if (!create_pipe(&hIn, &hOut)) {
+			PLOG_ERROR("Failed to create pipes for AMF test.");
+			return false;
+		}
+		if (!SetHandleInformation(hIn, HANDLE_FLAG_INHERIT, false)
+			|| !SetHandleInformation(hOut, HANDLE_FLAG_INHERIT, false)) {
+			CloseHandle(hIn);
+			CloseHandle(hOut);
+			PLOG_ERROR("Failed to modify pipes for AMF test.");
+			return false;
+		};
+		if (!create_process(path, hIn, hOut, &hProcess)) {
+			CloseHandle(hIn);
+			CloseHandle(hOut);
+			PLOG_ERROR("Failed to start AMF test subprocess.");
+			return false;
+		}
+
+		std::vector<char> buf(1024);
+		DWORD bufread = 0;
+		while (ReadFile(hOut, buf.data(), 1024, &bufread, NULL)) {
+			PLOG_ERROR("%s", buf.data());
+		}
+
+		if (WaitForSingleObject(hProcess, 2000) == WAIT_OBJECT_0)
+			GetExitCodeProcess(hProcess, &returnCode);
+
+		CloseHandle(hProcess);
+		CloseHandle(hIn);
+		CloseHandle(hOut);
+
+		switch (returnCode) {
+			case STATUS_ACCESS_VIOLATION:
+			case STATUS_ARRAY_BOUNDS_EXCEEDED:
+			case STATUS_BREAKPOINT:
+			case STATUS_DATATYPE_MISALIGNMENT:
+			case STATUS_FLOAT_DENORMAL_OPERAND:
+			case STATUS_FLOAT_DIVIDE_BY_ZERO:
+			case STATUS_FLOAT_INEXACT_RESULT:
+			case STATUS_FLOAT_INVALID_OPERATION:
+			case STATUS_FLOAT_OVERFLOW:
+			case STATUS_FLOAT_STACK_CHECK:
+			case STATUS_FLOAT_UNDERFLOW:
+			case STATUS_GUARD_PAGE_VIOLATION:
+			case STATUS_ILLEGAL_INSTRUCTION:
+			case STATUS_IN_PAGE_ERROR:
+			case STATUS_INTEGER_DIVIDE_BY_ZERO:
+			case STATUS_INTEGER_OVERFLOW:
+			case STATUS_INVALID_DISPOSITION:
+			case STATUS_INVALID_HANDLE:
+			case STATUS_NONCONTINUABLE_EXCEPTION:
+			case STATUS_PRIVILEGED_INSTRUCTION:
+			case STATUS_SINGLE_STEP:
+			case STATUS_STACK_OVERFLOW:
+			case STATUS_UNWIND_CONSOLIDATE:
+			default:
+				PLOG_ERROR("A critical error occured during AMF Testing.");
+				return false;
+			case 2:
+			case 1:
+				PLOG_ERROR("AMF Test failed due to one or more errors.");
+				return false;
+			case 0:
+				break;
+		}
+	}
+#endif
 
 	// AMF
 	try {
@@ -202,7 +311,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 	Plugin::Interface::H264Interface::encoder_register();
 	Plugin::Interface::H265Interface::encoder_register();
 
-	#ifdef _DEBUG
+#ifdef _DEBUG
 	{
 		PLOG_INFO("Dumping Parameter Information...");
 		const wchar_t* encoders[] = {
@@ -252,7 +361,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 		}
 
 	}
-	#endif
+#endif
 
 	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Loaded.");
 	return true;

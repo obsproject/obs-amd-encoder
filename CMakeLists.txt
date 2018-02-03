@@ -205,6 +205,7 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
 endif()
 
+# Main Project
 if(TARGET obs)
 	install_obs_plugin_with_data(enc-amf Resources)
 else()
@@ -213,7 +214,7 @@ else()
 		COMMAND ${CMAKE_COMMAND} -E copy_directory
 		"${PROJECT_SOURCE_DIR}/Resources/locale"
 		"${PROJECT_SOURCE_DIR}/#Build/data/obs-plugins/enc-amf/locale"
-	)	
+	)
 	add_custom_command(TARGET enc-amf POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy
 		"$<TARGET_FILE:enc-amf>"
@@ -225,3 +226,6 @@ else()
 		"${PROJECT_SOURCE_DIR}/#Build/obs-plugins/${BITS}bit/enc-amf.pdb"
 	)
 endif()
+
+# Sub Project
+add_subdirectory(amf-test)
