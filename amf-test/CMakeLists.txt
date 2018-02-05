@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.1.0)
 PROJECT(enc-amf-test)
 
 # All Warnings, Extra Warnings, Pedantic
@@ -87,15 +87,15 @@ set_target_properties(enc-amf-test
 
 if(TARGET obs)
 	install_obs_datatarget(enc-amf-test "obs-plugins/enc-amf")
-else()	
+else()
 	add_custom_command(TARGET enc-amf-test POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy
-		"$<TARGET_FILE>"
-		"${enc-amf_SOURCE_DIR}/#Build/data/obs-plugins/enc-amf/$<TARGET_FILE_NAME>"
+		"$<TARGET_FILE:enc-amf-test>"
+		"${enc-amf_SOURCE_DIR}/#Build/data/obs-plugins/enc-amf/$<TARGET_FILE_NAME:enc-amf-test>"
 	)
 	add_custom_command(TARGET enc-amf-test POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy
-		"$<TARGET_FILE_DIR>/enc-amf-test${BITS}.pdb"
-		"${enc-amf_SOURCE_DIR}/#Build/data/obs-plugins/enc-amf/enc-amf-test${BITS}.pdb"
+		"$<TARGET_PDB_FILE:enc-amf-test>"
+		"${enc-amf_SOURCE_DIR}/#Build/data/obs-plugins/enc-amf/$<TARGET_PDB_FILE_NAME:enc-amf-test>"
 	)
 endif()

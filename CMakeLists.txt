@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.1.0)
 PROJECT(enc-amf)
 
 ################################################################################
@@ -222,8 +222,8 @@ else()
 	)
 	add_custom_command(TARGET enc-amf POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy
-		"$<TARGET_FILE_DIR:enc-amf>/enc-amf.pdb"
-		"${PROJECT_SOURCE_DIR}/#Build/obs-plugins/${BITS}bit/enc-amf.pdb"
+		"$<TARGET_PDB_FILE:enc-amf>"
+		"${PROJECT_SOURCE_DIR}/#Build/obs-plugins/${BITS}bit/$<TARGET_PDB_FILE_NAME:enc-amf>"
 	)
 endif()
 
