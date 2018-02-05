@@ -248,7 +248,7 @@ Plugin::API::Direct3D11Instance::Direct3D11Instance(Direct3D11* api, Adapter ada
 				dxgiAdapter == NULL ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN,
 				NULL,
 				flags,
-				featureLevels + featureLevel, _countof(featureLevels) - featureLevel,
+				featureLevels + featureLevel, UINT(_countof(featureLevels) - featureLevel),
 				D3D11_SDK_VERSION,
 				&m_Device,
 				NULL,
