@@ -30,6 +30,9 @@ using namespace Plugin;
 using namespace Plugin::AMD;
 
 int main(int argc, char* argv[]) {
+	argc;
+	argv;
+
 #ifdef _WIN32
 	SetErrorMode(SEM_NOGPFAULTERRORBOX | SEM_FAILCRITICALERRORS);
 #endif
