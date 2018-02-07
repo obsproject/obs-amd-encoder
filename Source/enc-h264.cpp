@@ -594,11 +594,8 @@ static void obs_data_transfer_settings(obs_data_t * data) {
 			TRANSFER_INT("H265.IDRPeriod", P_PERIOD_IDR_H265);
 		case (((uint64_t)(2 & 0xFFFF) << 48ull) | ((uint64_t)(3 & 0xFFFF) << 32ull) | ((uint64_t)(0) & 0xFFFFFFFF)):
 			TRANSFER_INT(P_BITRATE_TARGET, "bitrate");
-			break;
-		case PLUGIN_VERSION_FULL:
-			obs_data_set_int(data, P_VERSION, PLUGIN_VERSION_FULL);
-			break;
 	}
+	obs_data_set_int(data, P_VERSION, PLUGIN_VERSION_FULL);
 }
 
 bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data) {
