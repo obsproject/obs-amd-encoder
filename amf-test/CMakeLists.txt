@@ -31,19 +31,19 @@ if(MSVC)
 	endif()
 	
 	# Use Static Linking instead of Dynamic Linking
-	string(REPLACE "/MD" "/MT" 
+	string(REPLACE "/MT" "/MD"
 		"CMAKE_C_FLAGS" 
 		"${CMAKE_C_FLAGS}")
-	string(REPLACE "/MD" "/MT" 
+	string(REPLACE "/MT" "/MD" 
 		"CMAKE_CXX_FLAGS" 
 		"${CMAKE_CXX_FLAGS}")
 	string(TOUPPER "${CMAKE_CONFIGURATION_TYPES}" UPPER_CONFIG_TYPES)
 	foreach(CONFIG_TYPE ${UPPER_CONFIG_TYPES})
-		string(REPLACE "/MD" "/MT" 
+		string(REPLACE "/MT" "/MD"
 			"CMAKE_C_FLAGS_${CONFIG_TYPE}" 
 			"${CMAKE_C_FLAGS_${CONFIG_TYPE}}")
 
-		string(REPLACE "/MD" "/MT" 
+		string(REPLACE "/MT" "/MD" 
 			"CMAKE_CXX_FLAGS_${CONFIG_TYPE}" 
 			"${CMAKE_CXX_FLAGS_${CONFIG_TYPE}}")
 	endforeach()  
