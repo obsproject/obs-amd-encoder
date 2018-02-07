@@ -46,7 +46,15 @@ if(MSVC)
 		string(REPLACE "/MT" "/MD" 
 			"CMAKE_CXX_FLAGS_${CONFIG_TYPE}" 
 			"${CMAKE_CXX_FLAGS_${CONFIG_TYPE}}")
-	endforeach()  
+	endforeach()
+	
+	# Enable Options
+	# /Gy (Function-Level Linking)
+	# /OPT:REF
+	# /OPT:NOICF	
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Gy")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Gy")
+	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /OPT:REF /OPT:NOICF")
 elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   # Update if necessary
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
