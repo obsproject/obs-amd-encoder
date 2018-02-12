@@ -98,7 +98,7 @@ endif()
 ################################################################################
 # Standalone and OBS Studio Build Data
 ################################################################################
-if(TARGET obs)
+if(TARGET libobs)
 	# OBS Studio Specific
 	
 	# Variables
@@ -214,7 +214,7 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 # Main Project
-if(TARGET obs)
+if(TARGET libobs)
 	install_obs_plugin_with_data(enc-amf Resources)
 else()
 	math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
