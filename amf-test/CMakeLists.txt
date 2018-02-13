@@ -93,7 +93,7 @@ set_target_properties(enc-amf-test
 	PROPERTIES
 		OUTPUT_NAME "enc-amf-test${BITS}")
 
-if(TARGET obs)
+if(TARGET libobs)
 	install_obs_datatarget(enc-amf-test "obs-plugins/enc-amf")
 else()
 	add_custom_command(TARGET enc-amf-test POST_BUILD
