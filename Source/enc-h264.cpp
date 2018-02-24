@@ -137,7 +137,6 @@ bool Plugin::Interface::H264Interface::encode(void *data, struct encoder_frame *
 
 void Plugin::Interface::H264Interface::get_defaults(obs_data_t *data) {
 #pragma region OBS - Enforce Streaming Service Restrictions
-	obs_data_set_default_int(data, "bitrate", 0);
 	obs_data_set_default_int(data, "keyint_sec", 0);
 	obs_data_set_default_string(data, "rate_control", "");
 	obs_data_set_default_string(data, "profile", "");
