@@ -1,9 +1,15 @@
-# 2.3.2 - Changes to the Blacklist, Out-of-Process AMF Capability testing and more
+# 2.3.3 - Changes to the Blacklist, Out-of-Process AMF Capability testing and more (Hotfix 1)
 The Blacklist introduced with 2.3.0 unfortunately had the side effect that all Windows 8 users were no longer able to use the plugin and had to downgrade. With this version, the blacklist is instead now a warning written into the log file. This is all thanks to @jp9000's work on moving the initial AMF Capability test into a different process, stopping broken drivers from crashing OBS Studio.
 
 Not only that, but a bunch of previously unidentified issues were fixed. H264 VBR should no longer limit the Peak Bitrate to the Target Bitrate, H265 encoding shouldn't get stuck anymore, some older Drivers may now work again with the plugin and Direct 3D 11.1 is now used if it is available.
 
+Hotfix: Configuration Version should now match the plugin version again.
+
 ## Changelog
+### 2.3.3 (Hotfix)
+* Fixed H264 Plugin not properly adjusting config version number.
+* Reduced subprocess 'amf-test' size, which is used to check for AMF compatibility.
+
 ### 2.3.2
 * Fixed a bunch of startup crashed by moving AMF Capability tests to another process, thanks @jp9000 for doing a lot of the work to make this happen.
 * Fixed the H265 encoder not stopping which was caused by 'Keyframe Interval' and 'GOP Size' being stuck at 0 internally.

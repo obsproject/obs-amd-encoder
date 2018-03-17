@@ -16,14 +16,11 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 cmake_minimum_required(VERSION 3.1.0)
-PROJECT(enc-amf)
+PROJECT(enc-amf VERSION 2.3.3)
 
 ################################################################################
 # Version
 ################################################################################
-SET(enc-amf_VERSION_MAJOR 2)
-SET(enc-amf_VERSION_MINOR 3)
-SET(enc-amf_VERSION_PATCH 2)
 configure_file(
 	"${PROJECT_SOURCE_DIR}/#Resources/package.in.bat"
 	"${PROJECT_SOURCE_DIR}/#Resources/package.bat"
