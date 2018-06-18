@@ -92,14 +92,22 @@ void Plugin::API::InitializeAPIs() {
 	// DirectX 11
 	#ifdef _WIN32
 	if (IsWindows8OrGreater()) {
-		s_APIInstances.insert(s_APIInstances.end(), std::make_shared<Direct3D11>());
+		try {
+			s_APIInstances.insert(s_APIInstances.end(), std::make_shared<Direct3D11>());
+		} catch (...) {
+			PLOG_WARNING("Direct3D 11 not supported.");
+		}
 	}
 	#endif
 
 	// DirectX 9
 	#ifdef _WIN32
 	if (IsWindowsXPOrGreater()) {
-		s_APIInstances.insert(s_APIInstances.end(), std::make_shared<Direct3D9>());
+		try {
+			s_APIInstances.insert(s_APIInstances.end(), std::make_shared<Direct3D9>());
+		} catch (...) {
+			PLOG_WARNING("Direct3D 9 not supported.");
+		}
 	}
 	#endif
 
