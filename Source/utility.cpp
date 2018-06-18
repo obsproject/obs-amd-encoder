@@ -319,13 +319,13 @@ const char* Utility::ProfileToString(Plugin::AMD::Profile v) {
 AMF_VIDEO_ENCODER_PROFILE_ENUM Utility::ProfileToAMFH264(Plugin::AMD::Profile v) {
 	switch (v) {
 		case Profile::ConstrainedBaseline:
-			return (AMF_VIDEO_ENCODER_PROFILE_ENUM)256;
+			return AMF_VIDEO_ENCODER_PROFILE_CONSTRAINED_BASELINE;
 		case Profile::Baseline:
 			return AMF_VIDEO_ENCODER_PROFILE_BASELINE;
 		case Profile::Main:
 			return AMF_VIDEO_ENCODER_PROFILE_MAIN;
 		case Profile::ConstrainedHigh:
-			return (AMF_VIDEO_ENCODER_PROFILE_ENUM)257;
+			return AMF_VIDEO_ENCODER_PROFILE_CONSTRAINED_HIGH;
 		case Profile::High:
 			return AMF_VIDEO_ENCODER_PROFILE_HIGH;
 	}
@@ -334,13 +334,13 @@ AMF_VIDEO_ENCODER_PROFILE_ENUM Utility::ProfileToAMFH264(Plugin::AMD::Profile v)
 Plugin::AMD::Profile Utility::ProfileFromAMFH264(AMF_VIDEO_ENCODER_PROFILE_ENUM v) {
 #pragma warning( disable: 4063 ) // Developer Note: I know better, Compiler.
 	switch (v) {
-		case (AMF_VIDEO_ENCODER_PROFILE_ENUM)256:
+		case AMF_VIDEO_ENCODER_PROFILE_CONSTRAINED_BASELINE:
 			return Profile::ConstrainedBaseline;
 		case AMF_VIDEO_ENCODER_PROFILE_BASELINE:
 			return Profile::Baseline;
 		case AMF_VIDEO_ENCODER_PROFILE_MAIN:
 			return Profile::Main;
-		case (AMF_VIDEO_ENCODER_PROFILE_ENUM)257:
+		case AMF_VIDEO_ENCODER_PROFILE_CONSTRAINED_HIGH:
 			return Profile::ConstrainedHigh;
 		case AMF_VIDEO_ENCODER_PROFILE_HIGH:
 			return Profile::High;
