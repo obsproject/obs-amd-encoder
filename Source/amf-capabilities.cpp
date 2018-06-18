@@ -51,31 +51,42 @@ Plugin::AMD::CapabilityManager::CapabilityManager() {
 
 	// Key order: API, Adapter, Codec
 	for (auto api : API::EnumerateAPIs()) {
+		PLOG_DEBUG("[Capability Manager] Testing %s API...", api->GetName().c_str());
 		for (auto adapter : api->EnumerateAdapters()) {
-			for (auto codec : { Codec::AVC/*, Codec::SVC*/, Codec::HEVC }) {
-				bool isSupported = false;
+			std::pair<Codec, bool> test_codecs[] = {
+				std::make_pair(Codec::AVC, false),
+				std::make_pair(Codec::HEVC, false),
+			};
+
+			for (auto& codec : test_codecs) {
 				try {
 					std::unique_ptr<AMD::Encoder> enc;
 
-					if (codec == Codec::AVC || codec == Codec::SVC) {
+					if (codec.first == Codec::AVC || codec.first == Codec::SVC) {
 						enc = std::make_unique<AMD::EncoderH264>(api, adapter);
-					}
-					if (codec == Codec::HEVC) {
+					} else if (codec.first == Codec::HEVC) {
 						enc = std::make_unique<AMD::EncoderH265>(api, adapter);
 					}
-					if (enc != nullptr)
-						isSupported = true;
+
+					if (enc != nullptr) {
+						codec.second = true;
+					}
 				} catch (const std::exception& e) {
-					PLOG_WARNING("%s", e.what());
+					PLOG_DEBUG("[Capability Manager] Testing %s Adapter '%s' with codec %s failed, reason: %s",
+						api->GetName().c_str(), adapter.Name.c_str(), Utility::CodecToString(codec.first), e.what());
 				}
 
-				PLOG_DEBUG("[Capability Manager] Testing %s Adapter '%s' with codec %s: %s.",
-					api->GetName().c_str(), adapter.Name.c_str(), Utility::CodecToString(codec),
-					isSupported ? "Supported" : "Not Supported");
-
-				std::tuple<API::Type, API::Adapter, AMD::Codec> key = std::make_tuple(api->GetType(), adapter, codec);
-				m_CapabilityMap[key] = isSupported;
+				std::tuple<API::Type, API::Adapter, AMD::Codec> key = std::make_tuple(api->GetType(), adapter, codec.first);
+				m_CapabilityMap[key] = codec.second;
 			}
+
+			PLOG_INFO("[Capability Manager] Testing %s Adapter '%s':\n"
+				"  %s: %s\n"
+				"  %s: %s\n",
+				api->GetName().c_str(),
+				adapter.Name.c_str(),
+				Utility::CodecToString(test_codecs[0].first), test_codecs[0].second ? "Supported" : "Not Supported",
+				Utility::CodecToString(test_codecs[1].first), test_codecs[1].second ? "Supported" : "Not Supported");
 		}
 	}
 }
