@@ -1309,13 +1309,13 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 	/// Static Properties
 	m_VideoEncoder->SetQualityPreset(static_cast<QualityPreset>(obs_data_get_int(data, P_QUALITYPRESET)));
 
-	/// Frame
-	m_VideoEncoder->SetResolution(std::make_pair(obsWidth, obsHeight));
-	m_VideoEncoder->SetFrameRate(std::make_pair(obsFPSnum, obsFPSden));
-
 	/// Profile & Level
 	m_VideoEncoder->SetProfile(static_cast<Profile>(obs_data_get_int(data, P_PROFILE)));
 	m_VideoEncoder->SetProfileLevel(static_cast<ProfileLevel>(obs_data_get_int(data, P_PROFILELEVEL)));
+
+	/// Frame
+	m_VideoEncoder->SetResolution(std::make_pair(obsWidth, obsHeight));
+	m_VideoEncoder->SetFrameRate(std::make_pair(obsFPSnum, obsFPSden));
 
 	try {
 		m_VideoEncoder->SetCodingType(static_cast<CodingType>(obs_data_get_int(data, P_CODINGTYPE)));

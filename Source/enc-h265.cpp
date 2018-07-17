@@ -904,15 +904,15 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 	//m_VideoEncoder->SetUsage(Usage::Transcoding);
 	m_VideoEncoder->SetQualityPreset(static_cast<QualityPreset>(obs_data_get_int(data, P_QUALITYPRESET)));
 
-	/// Frame
-	m_VideoEncoder->SetResolution(std::make_pair(obsWidth, obsHeight));
-	m_VideoEncoder->SetFrameRate(std::make_pair(obsFPSnum, obsFPSden));
-	///- Aspect Ratio
-
 	/// Profile & Level
 	m_VideoEncoder->SetProfile(static_cast<Profile>(obs_data_get_int(data, P_PROFILE)));
 	m_VideoEncoder->SetProfileLevel(static_cast<ProfileLevel>(obs_data_get_int(data, P_PROFILELEVEL)));
 	m_VideoEncoder->SetTier(static_cast<H265::Tier>(obs_data_get_int(data, P_TIER)));
+
+	/// Frame
+	m_VideoEncoder->SetResolution(std::make_pair(obsWidth, obsHeight));
+	m_VideoEncoder->SetFrameRate(std::make_pair(obsFPSnum, obsFPSden));
+	///- Aspect Ratio
 
 	try {
 		m_VideoEncoder->SetCodingType(static_cast<CodingType>(obs_data_get_int(data, P_CODINGTYPE)));
