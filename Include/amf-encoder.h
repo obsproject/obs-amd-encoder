@@ -18,6 +18,7 @@
  */
 
 #pragma once
+#include <inttypes.h>
 #include <vector>
 #include <queue>
 #include <thread>
@@ -28,6 +29,10 @@
 #include "amf.h"
 #include "api-base.h"
 #include "components/Component.h"
+#ifndef LITE_OBS
+#include <obs.h>
+#include <obs-encoder.h>
+#endif
 
 #define AMF_TIMESTAMP_ALLOCATE	L"TS_Allocate"
 #define AMF_TIME_ALLOCATE		L"T_Allocate"
@@ -42,6 +47,7 @@
 #define AMF_PRESENT_TIMESTAMP	L"PTS"
 
 #ifdef _DEBUG
+#ifndef LITE_OBS
 #define AMFTRACECALL { \
 	std::mbstate_t state = std::mbstate_t(); \
 	auto trace = AMF::Instance()->GetTrace(); \
@@ -54,6 +60,9 @@
 	trace->TraceW(buf.data(), __LINE__, AMF_TRACE_DEBUG, L"Trace", 1, L"Function: %s", buf2.data()); \
 	PLOG_DEBUG("<Trace> " __FUNCTION_NAME__); \
 };
+#else
+#define AMFTRACECALL ;
+#endif
 #else
 #define AMFTRACECALL ;
 #endif
@@ -231,6 +240,7 @@ namespace Plugin {
 			virtual void SetQualityPreset(QualityPreset v) = 0;
 			virtual QualityPreset GetQualityPreset() = 0;
 
+#ifndef LITE_OBS
 			#pragma region Frame
 			virtual std::pair<std::pair<uint32_t, uint32_t>, std::pair<uint32_t, uint32_t>> CapsResolution() = 0;
 			virtual void SetResolution(std::pair<uint32_t, uint32_t> v) = 0;
@@ -384,6 +394,8 @@ namespace Plugin {
 			int32_t AsyncSendLocalMain();
 			static int32_t AsyncRetrieveMain(Encoder* obj);
 			int32_t AsyncRetrieveLocalMain();
+
+#endif
 
 			protected:
 			// AMF Internals

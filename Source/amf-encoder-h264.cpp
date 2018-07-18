@@ -160,6 +160,7 @@ Plugin::AMD::QualityPreset Plugin::AMD::EncoderH264::GetQualityPreset() {
 	return Utility::QualityPresetFromAMFH264((AMF_VIDEO_ENCODER_QUALITY_PRESET_ENUM)e);
 }
 
+#ifndef LITE_OBS
 std::vector<Profile> Plugin::AMD::EncoderH264::CapsProfile() {
 	AMFTRACECALL;
 
@@ -1663,3 +1664,4 @@ void Plugin::AMD::EncoderH264::LogProperties() {
 		GetIntraRefreshNumOfStripes());
 	#pragma endregion Intra-Refresh
 }
+#endif

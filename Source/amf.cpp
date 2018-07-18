@@ -40,6 +40,7 @@ class CustomWriter : public amf::AMFTraceWriter {
 	public:
 
 	virtual void __cdecl Write(const wchar_t* scope, const wchar_t* message) override {
+#ifndef LITE_OBS
 		const wchar_t* realmsg = &(message[(33 + wcslen(scope) + 2)]); // Skip Time & Scope
 		size_t msgLen = wcslen(realmsg) - (sizeof(wchar_t));
 
@@ -47,6 +48,10 @@ class CustomWriter : public amf::AMFTraceWriter {
 			12, &(message[11]),
 			scope,
 			msgLen, realmsg);
+#else
+		scope;
+		message;
+#endif
 	}
 
 	virtual void __cdecl Flush() override {}

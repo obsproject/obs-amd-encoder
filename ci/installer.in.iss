@@ -21,8 +21,8 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={code:GetDirName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
-LicenseFile=..\LICENSE
-OutputDir=.\Output
+LicenseFile="@PROJECT_SOURCE_DIR@/LICENSE"
+OutputDir="@CMAKE_INSTALL_PREFIX@/../"
 OutputBaseFilename=AMD-Encoder-for-OBS-Studio.{#MyAppVersion}
 Compression=lzma
 SolidCompression=yes
@@ -34,7 +34,7 @@ VersionInfoDescription={#MyAppName} Setup
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "..\#Build\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "@CMAKE_INSTALL_PREFIX@/*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

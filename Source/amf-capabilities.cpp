@@ -74,6 +74,9 @@ Plugin::AMD::CapabilityManager::CapabilityManager() {
 				} catch (const std::exception& e) {
 					PLOG_DEBUG("[Capability Manager] Testing %s Adapter '%s' with codec %s failed, reason: %s",
 						api->GetName().c_str(), adapter.Name.c_str(), Utility::CodecToString(codec.first), e.what());
+#ifdef LITE_OBS
+					e;
+#endif
 				}
 
 				std::tuple<API::Type, API::Adapter, AMD::Codec> key = std::make_tuple(api->GetType(), adapter, codec.first);

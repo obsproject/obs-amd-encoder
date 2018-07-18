@@ -49,7 +49,8 @@ namespace Plugin {
 			virtual std::vector<QualityPreset> CapsQualityPreset() override;
 			virtual void SetQualityPreset(QualityPreset v) override;
 			virtual QualityPreset GetQualityPreset() override;
-
+			
+#ifndef LITE_OBS
 			virtual std::vector<Profile> CapsProfile() override;
 			virtual void SetProfile(Profile v) override;
 			virtual Profile GetProfile() override;
@@ -188,6 +189,7 @@ namespace Plugin {
 			virtual std::string HandleTypeOverride(amf::AMFSurfacePtr& d, uint64_t index) override;
 
 			AMF_VIDEO_ENCODER_PICTURE_TYPE_ENUM m_FrameSkipType = AMF_VIDEO_ENCODER_PICTURE_TYPE_NONE;
+#endif
 		};
 	}
 }

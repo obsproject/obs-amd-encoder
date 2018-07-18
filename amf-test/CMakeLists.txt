@@ -18,11 +18,12 @@
 cmake_minimum_required(VERSION 3.1.0)
 PROJECT(enc-amf-test)
 
+################################################################################
+# CMake / Compiler
+################################################################################
+
 # All Warnings, Extra Warnings, Pedantic
 if(MSVC)
-	# Hide Microsofts insecurities, as they are usually not cross-platform compatible changes.
-	add_definitions(-D_CRT_SECURE_NO_WARNINGS) 
-	
 	# Force to always compile with W4
 	if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
 		string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
@@ -30,44 +31,34 @@ if(MSVC)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
 	endif()
 	
-	# Use Static Linking instead of Dynamic Linking
-	string(REPLACE "/MT" "/MD"
-		"CMAKE_C_FLAGS" 
-		"${CMAKE_C_FLAGS}")
-	string(REPLACE "/MT" "/MD" 
-		"CMAKE_CXX_FLAGS" 
-		"${CMAKE_CXX_FLAGS}")
-	string(TOUPPER "${CMAKE_CONFIGURATION_TYPES}" UPPER_CONFIG_TYPES)
-	foreach(CONFIG_TYPE ${UPPER_CONFIG_TYPES})
-		string(REPLACE "/MT" "/MD"
-			"CMAKE_C_FLAGS_${CONFIG_TYPE}" 
-			"${CMAKE_C_FLAGS_${CONFIG_TYPE}}")
-
-		string(REPLACE "/MT" "/MD" 
-			"CMAKE_CXX_FLAGS_${CONFIG_TYPE}" 
-			"${CMAKE_CXX_FLAGS_${CONFIG_TYPE}}")
-	endforeach()
-	
-	# Enable Options
-	# /Gy (Function-Level Linking)
-	# /OPT:REF
-	# /OPT:NOICF	
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Gy")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Gy")
-	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /OPT:REF /OPT:NOICF")
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-  # Update if necessary
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
+	# Update if necessary
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
 endif()
 
 # Detect Architecture (Bitness)
 math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
 
+add_definitions(-DLITE_OBS)
+
+################################################################################
+# Options
+################################################################################
+
+# From Parent:
+#   OBS_STUDIO_DIR
+#   OBS_NATIVE
+#   OBS_PACKAGE
+#   AMF_SDK_DIR
+
+################################################################################
+# Dependencies
+################################################################################
+
 # Project
 add_executable(enc-amf-test
 	"${PROJECT_SOURCE_DIR}/main.cpp"
-	"${PROJECT_SOURCE_DIR}/libobs/obs-module.h"
-	"${PROJECT_SOURCE_DIR}/libobs/obs-module.c"
 	"${enc-amf_SOURCE_DIR}/Source/amf.cpp"
 	"${enc-amf_SOURCE_DIR}/Source/amf-capabilities.cpp"
 	"${enc-amf_SOURCE_DIR}/Source/amf-encoder.cpp"
@@ -87,23 +78,45 @@ add_executable(enc-amf-test
 	"${enc-amf_SOURCE_DIR}/Include/api-d3d11.h"
 	"${enc-amf_SOURCE_DIR}/Include/utility.h"
 )
-include_directories(enc-amf-test BEFORE ${PROJECT_SOURCE_DIR})	
-target_link_libraries(enc-amf-test ${enc-amf_LIBRARIES})
+target_include_directories(enc-amf-test
+	PUBLIC 
+		"${PROJECT_SOURCE_DIR}"
+		"${enc-amf_SOURCE_DIR}/Include"
+		"${enc-amf_BINARY_DIR}/Include"
+		"${enc-amf_SOURCE_DIR}/Source"
+		"${AMF_SDK_DIR}/amf/public/include"
+)
+IF(OBS_NATIVE)
+	target_include_directories(enc-amf-test
+		PUBLIC
+	)
+ELSEIF(OBS_PACKAGE)
+	target_include_directories(enc-amf-test
+		PUBLIC
+	)
+ELSE()
+	target_include_directories(enc-amf-test
+		PUBLIC
+	)
+ENDIF()
+
+IF(WIN32)
+	target_link_libraries(enc-amf-test
+		version
+		winmm
+	)
+ENDIF()
+
 set_target_properties(enc-amf-test
 	PROPERTIES
 		OUTPUT_NAME "enc-amf-test${BITS}")
 
-if(TARGET libobs)
+if(OBS_NATIVE)
 	install_obs_datatarget(enc-amf-test "obs-plugins/enc-amf")
 else()
-	add_custom_command(TARGET enc-amf-test POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy
-		"$<TARGET_FILE:enc-amf-test>"
-		"${enc-amf_SOURCE_DIR}/#Build/data/obs-plugins/enc-amf/$<TARGET_FILE_NAME:enc-amf-test>"
+	INSTALL(TARGETS enc-amf-test
+		RUNTIME DESTINATION "./data/obs-plugins/enc-amf/" COMPONENT Runtime
+		LIBRARY DESTINATION "./data/obs-plugins/enc-amf/" COMPONENT Runtime
 	)
-	add_custom_command(TARGET enc-amf-test POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy
-		"$<TARGET_PDB_FILE:enc-amf-test>"
-		"${enc-amf_SOURCE_DIR}/#Build/data/obs-plugins/enc-amf/$<TARGET_PDB_FILE_NAME:enc-amf-test>"
-	)
+	INSTALL(FILES $<TARGET_PDB_FILE:enc-amf-test> DESTINATION "./data/obs-plugins/enc-amf/" OPTIONAL)	
 endif()
