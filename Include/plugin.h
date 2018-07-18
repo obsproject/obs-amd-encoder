@@ -25,15 +25,21 @@
 
 #pragma warning (push)
 #pragma warning (disable: 4201)
-#include "libobs/obs-module.h"
-#include "libobs/util/platform.h"
+#ifndef LITE_OBS
+#include "obs-module.h"
+#include "util/base.h"
+#endif
 #pragma warning (pop)
 
  // Plugin
 #define PLUGIN_NAME				"AMD Advanced Media Framework"
 #include "Version.h"
 
+#ifndef LITE_OBS
 #define PLOG(level, ...)		blog(level, "[AMF] " __VA_ARGS__);
+#else
+#define PLOG(level, ...)		;
+#endif
 #define PLOG_ERROR(...)			PLOG(LOG_ERROR,   __VA_ARGS__)
 #define PLOG_WARNING(...)		PLOG(LOG_WARNING, __VA_ARGS__)
 #define PLOG_INFO(...)			PLOG(LOG_INFO,    __VA_ARGS__)

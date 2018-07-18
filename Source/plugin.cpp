@@ -25,9 +25,9 @@
 #include "enc-h264.h"
 #include "enc-h265.h"
 #include <sstream>
-#include <libobs/util/pipe.h>
-#include <libobs/util/platform.h>
-#include <libobs/util/util.hpp>
+#include <obs-module.h>
+#include <util/pipe.h>
+#include <util/platform.h>
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -212,10 +212,11 @@ MODULE_EXPORT bool obs_module_load(void) {
 	{
 		unsigned long returnCode = 0xFFFFFFFF;
 		HANDLE hProcess, hIn, hOut;
-		BPtr<char> path = obs_module_file("enc-amf-test" BIT_STR ".exe");
+		char * path = obs_module_file("enc-amf-test" BIT_STR ".exe");
 
 		if (!create_pipe(&hIn, &hOut)) {
 			PLOG_ERROR("Failed to create pipes for AMF test.");
+			bfree(path);
 			return false;
 		}
 		if (!SetHandleInformation(hIn, HANDLE_FLAG_INHERIT, false)
@@ -223,15 +224,18 @@ MODULE_EXPORT bool obs_module_load(void) {
 			CloseHandle(hIn);
 			CloseHandle(hOut);
 			PLOG_ERROR("Failed to modify pipes for AMF test.");
+			bfree(path);
 			return false;
 		};
 		if (!create_process(path, hIn, hOut, &hProcess)) {
 			CloseHandle(hIn);
 			CloseHandle(hOut);
 			PLOG_ERROR("Failed to start AMF test subprocess.");
+			bfree(path);
 			return false;
 		}
 
+		bfree(path);
 		std::vector<char> buf(1024);
 		DWORD bufread = 0;
 		while (ReadFile(hOut, buf.data(), 1024, &bufread, NULL)) {

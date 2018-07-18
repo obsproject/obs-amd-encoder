@@ -19,25 +19,90 @@ cmake_minimum_required(VERSION 3.1.0)
 PROJECT(enc-amf VERSION 2.4.0)
 
 ################################################################################
-# Version
+# CMake / Compiler
 ################################################################################
 configure_file(
-	"${PROJECT_SOURCE_DIR}/#Resources/package.in.bat"
-	"${PROJECT_SOURCE_DIR}/#Resources/package.bat"
+	"${PROJECT_SOURCE_DIR}/ci/installer.in.iss"
+	"${PROJECT_BINARY_DIR}/ci/installer.iss"
 )
-configure_file(
-	"${PROJECT_SOURCE_DIR}/#Resources/Installer.in.iss"
-	"${PROJECT_SOURCE_DIR}/#Resources/Installer.iss"
-)
+
 configure_file(
 	"${PROJECT_SOURCE_DIR}/Include/Version.h.in"
 	"${PROJECT_BINARY_DIR}/Include/Version.h"
 )
 
+# All Warnings, Extra Warnings, Pedantic
+if(MSVC)
+	# Force to always compile with W4
+	if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+		string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	else()
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+	endif()
+	
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+	# Update if necessary
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
+endif()
+
+math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
+
+################################################################################
+# Options
+################################################################################
+SET(AMF_SDK_DIR  "${PROJECT_SOURCE_DIR}/AMF/" CACHE PATH "AMD Advanced Media Framework SDK Directory")
+
+IF(TARGET libobs)
+	MESSAGE(STATUS "enc-amf: Using native obs-studio.")
+	SET(OBS_NATIVE TRUE)
+	OPTION(BUILD_AMD_ENCODER "Build AMD Encoder module" ON)
+	
+	if (NOT BUILD_AMD_ENCODER)
+		message(STATUS "Not building AMD Encoder")
+		return()
+	endif()
+ELSE()
+	SET(OBS_NATIVE FALSE)
+	SET(OBS_STUDIO_DIR "" CACHE PATH "OBS Studio Source/Package Directory")	
+ENDIF()
+
+################################################################################
+# Dependencies
+################################################################################
+
+# AMF SDK
+if(AMF_SDK_DIR STREQUAL "")
+	message(STATUS "AMF_SDK_DIR not set! enc-amf plugin disabled.")
+	return()
+endif()
+
+if(NOT EXISTS "${AMF_SDK_DIR}/amf/public/include/components/VideoEncoderVCE.h")
+	message(STATUS "AMF_SDK_DIR invalid! enc-amf plugin disabled.")
+	return()
+endif()
+
+# Detect OBS_STUDIO_DIR type
+IF(NOT OBS_NATIVE)
+	IF(EXISTS "${OBS_STUDIO_DIR}/libobs/obs-module.h")
+		MESSAGE(STATUS "enc-amf: Using referenced obs-studio.")
+		SET(OBS_PACKAGE FALSE)
+		SET(obsPath "${OBS_STUDIO_DIR}")
+		INCLUDE("${OBS_STUDIO_DIR}/cmake/external/Findlibobs.cmake")
+	ELSEIF(EXISTS "${OBS_STUDIO_DIR}/cmake/LibObs/LibObsConfig.cmake")
+		MESSAGE(STATUS "enc-amf: Using packaged obs-studio.")
+		SET(OBS_PACKAGE TRUE)
+		INCLUDE("${OBS_STUDIO_DIR}/cmake/LibObs/LibObsConfig.cmake")
+	ELSE()
+		MESSAGE("Failed to detect OBS_STUDIO_DIR type, verify that the following is path correct '${OBS_STUDIO_DIR}'.")
+		return()
+	ENDIF()
+ENDIF()
+
 ################################################################################
 # Code
 ################################################################################
-SET(enc-amf_HEADERS
+SET(PROJECT_HEADERS
 	"${PROJECT_SOURCE_DIR}/Include/amf.h"
 	"${PROJECT_SOURCE_DIR}/Include/amf-capabilities.h"
 	"${PROJECT_SOURCE_DIR}/Include/amf-encoder.h"
@@ -53,7 +118,7 @@ SET(enc-amf_HEADERS
 	"${PROJECT_SOURCE_DIR}/Include/strings.h"
 	"${PROJECT_BINARY_DIR}/Include/Version.h"
 )
-SET(enc-amf_SOURCES
+SET(PROJECT_SOURCES
 	"${PROJECT_SOURCE_DIR}/Source/amf.cpp"
 	"${PROJECT_SOURCE_DIR}/Source/amf-capabilities.cpp"
 	"${PROJECT_SOURCE_DIR}/Source/amf-encoder.cpp"
@@ -67,170 +132,104 @@ SET(enc-amf_SOURCES
 	"${PROJECT_SOURCE_DIR}/Source/utility.cpp"
 	"${PROJECT_SOURCE_DIR}/Source/plugin.cpp"
 )
-SET(enc-amf_DATA
+SET(PROJECT_DATA
 	"${PROJECT_SOURCE_DIR}/Resources/locale/en-US.ini"
 	"${PROJECT_SOURCE_DIR}/LICENSE"
 	"${PROJECT_SOURCE_DIR}/AUTHORS"
 )
-SET(enc-amf_LIBRARIES
+SET(PROJECT_LIBRARIES
 	version
 	winmm
 )
 
-# Source Grouping
-source_group("Data Files" FILES ${enc-amf_DATA})
-
-# Windows Only
 if (WIN32)
-	LIST(APPEND enc-amf_HEADERS
+	# Windows Only
+	LIST(APPEND PROJECT_HEADERS
 		"Include/api-d3d9.h"
 		"Include/api-d3d11.h"
 	)
-	LIST(APPEND enc-amf_SOURCES
+	LIST(APPEND PROJECT_SOURCES
 		"Source/api-d3d9.cpp"
 		"Source/api-d3d11.cpp"
 	)
 endif()
 
-################################################################################
-# Standalone and OBS Studio Build Data
-################################################################################
-if(TARGET libobs)
-	# OBS Studio Specific
-	
-	# Variables
-	OPTION(AMDAMF_Disable "Disable AMD Advanced Media Framework support" OFF)
-	SET(AMDAMF_SDKDir "${PROJECT_SOURCE_DIR}/AMF/" CACHE PATH "AMD Advanced Media Framework SDK Directory")
-
-	# Tests
-	if(AMDAMF_Disable)
-		message(STATUS "AMD AMF support disabled")
-		return()
-	endif()
-
-	if(AMDAMF_SDKDir STREQUAL "")
-		message(STATUS "AMDAMF_SDKDir not set!  enc-amf plugin disabled.")
-		return()
-	endif()
-
-	if(NOT EXISTS "${AMDAMF_SDKDir}/amf/public/include/components/VideoEncoderVCE.h")
-		message(STATUS "AMDAMF_SDKDir invalid!  enc-amf plugin disabled.")
-		return()
-	endif()
-	
-	# Directories
-	INCLUDE_DIRECTORIES(
-		"${CMAKE_SOURCE_DIR}"
-		"${PROJECT_BINARY_DIR}"
-		"${PROJECT_BINARY_DIR}/Include"
-		"${PROJECT_BINARY_DIR}/Source"
-		"${PROJECT_SOURCE_DIR}"
-		"${PROJECT_SOURCE_DIR}/Include"
-		"${PROJECT_SOURCE_DIR}/Source"
-		"${AMDAMF_SDKDir}/amf/public/include"
-	)
-	SET(LIBOBS_LIBRARIES libobs)
-else()
-	# Standlone Specific
-
-	# Variables
-	SET(PATH_AMDAMFSDK "${PROJECT_SOURCE_DIR}/AMF/" CACHE PATH "AMD Advanced Media Framework SDK Directory")
-	SET(PATH_OBSStudio "" CACHE PATH "OBS Studio Source Code Directory")
-	
-	# Tests
-	if(PATH_AMDAMFSDK STREQUAL "")
-		message(STATUS "PATH_AMDAMFSDK not set!")
-		return()
-	endif()
-
-	if(NOT EXISTS "${PATH_AMDAMFSDK}/amf/public/include/components/VideoEncoderVCE.h")
-		message(STATUS "PATH_AMDAMFSDK invalid!")
-		return()
-	endif()
-	
-	if(PATH_OBSStudio STREQUAL "")
-		message(STATUS "PATH_OBSStudio not set!")
-		return()
-	endif()
-
-	if(NOT EXISTS "${PATH_OBSStudio}/libobs/obs-module.h")
-		message(STATUS "PATH_OBSStudio invalid!")
-		return()
-	endif()
-	
-	# Find OBS Libraries
-	SET(obsPath "${PATH_OBSStudio}")
-	INCLUDE("${PATH_OBSStudio}/cmake/external/Findlibobs.cmake")
-	
-	# Compiling
-	INCLUDE_DIRECTORIES(
-		"${PROJECT_BINARY_DIR}"
-		"${PROJECT_BINARY_DIR}/Include"
-		"${PROJECT_BINARY_DIR}/Source"
-		"${PROJECT_SOURCE_DIR}"
-		"${PROJECT_SOURCE_DIR}/Include"
-		"${PROJECT_SOURCE_DIR}/Source"
-		"${PATH_AMDAMFSDK}/amf/public/include"
-		"${PATH_OBSStudio}/"
-	)
-	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-endif()
+# Source Grouping
+source_group("Data Files" FILES ${enc-amf_DATA})
 
 ################################################################################
-# Build
+# Target
 ################################################################################
+
 ADD_LIBRARY(enc-amf MODULE
-	${enc-amf_HEADERS}
-	${enc-amf_SOURCES}
-	${enc-amf_DATA}
+	${PROJECT_HEADERS}
+	${PROJECT_SOURCES}
+	${PROJECT_DATA}
 )
+
+# Include Directories
+TARGET_INCLUDE_DIRECTORIES(enc-amf
+	PUBLIC
+		"${PROJECT_BINARY_DIR}/Include"
+		"${PROJECT_SOURCE_DIR}/Include"
+		"${AMF_SDK_DIR}/amf/public/include"
+	PRIVATE
+		"${PROJECT_BINARY_DIR}/Source"
+		"${PROJECT_SOURCE_DIR}/Source"
+		"${PROJECT_BINARY_DIR}"
+		"${PROJECT_SOURCE_DIR}"
+		"${CMAKE_SOURCE_DIR}"
+)
+IF(OBS_NATIVE)
+	TARGET_LINK_LIBRARIES(enc-amf
+		libobs
+	)
+ELSEIF(OBS_PACKAGE)
+	TARGET_INCLUDE_DIRECTORIES(enc-amf
+		PRIVATE
+			"${OBS_STUDIO_DIR}/include"
+	)
+	TARGET_LINK_LIBRARIES(enc-amf
+		libobs
+	)
+ELSE()
+	TARGET_INCLUDE_DIRECTORIES(enc-amf
+		PRIVATE
+			"${OBS_STUDIO_DIR}/libobs"
+	)
+	TARGET_LINK_LIBRARIES(enc-amf
+		"${LIBOBS_LIB}"
+	)
+ENDIF()
+
+# Link Libraries
 TARGET_LINK_LIBRARIES(enc-amf
-	${LIBOBS_LIBRARIES}
-	${enc-amf_LIBRARIES}
+	"${PROJECT_LIBRARIES}"
 )
 
-# All Warnings, Extra Warnings, Pedantic
-if(MSVC)
-	# Force to always compile with W4
-	if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
-		string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-	else()
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
-	endif()
+################################################################################
+# Installation
+################################################################################
 
-	# Enable Options
-	# /Gy (Function-Level Linking)
-	# /OPT:REF
-	# /OPT:NOICF	
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Gy")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Gy")
-	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /OPT:REF /OPT:NOICF")
-elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-	# Update if necessary
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
-endif()
-
-# Main Project
-if(TARGET libobs)
+IF(OBS_NATIVE)
 	install_obs_plugin_with_data(enc-amf Resources)
-else()
-	math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
-	add_custom_command(TARGET enc-amf POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy_directory
-		"${PROJECT_SOURCE_DIR}/Resources/locale"
-		"${PROJECT_SOURCE_DIR}/#Build/data/obs-plugins/enc-amf/locale"
+ELSE()
+	INSTALL(TARGETS enc-amf
+		RUNTIME DESTINATION "./obs-plugins/${BITS}bit/" COMPONENT Runtime
+		LIBRARY DESTINATION "./obs-plugins/${BITS}bit/" COMPONENT Runtime
 	)
-	add_custom_command(TARGET enc-amf POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy
-		"$<TARGET_FILE:enc-amf>"
-		"${PROJECT_SOURCE_DIR}/#Build/obs-plugins/${BITS}bit/$<TARGET_FILE_NAME:enc-amf>"
+	INSTALL(FILES $<TARGET_PDB_FILE:enc-amf> DESTINATION "./obs-plugins/${BITS}bit/" OPTIONAL)
+	
+	INSTALL(
+		DIRECTORY "${PROJECT_SOURCE_DIR}/Resources/"
+		DESTINATION "./data/obs-plugins/enc-amf/"
 	)
-	add_custom_command(TARGET enc-amf POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy
-		"$<TARGET_PDB_FILE:enc-amf>"
-		"${PROJECT_SOURCE_DIR}/#Build/obs-plugins/${BITS}bit/$<TARGET_PDB_FILE_NAME:enc-amf>"
-	)
-endif()
+ENDIF()
+
+################################################################################
+# Child Projects
+################################################################################
 
 # Sub Project
 add_subdirectory(amf-test)
+

@@ -23,7 +23,6 @@
 #include "components/VideoEncoderVCE.h"
 #include "components/VideoEncoderHEVC.h"
 #include <thread>
-#include "libobs/util/threading.h"
 
 using namespace Plugin;
 using namespace Plugin::AMD;
@@ -320,6 +319,7 @@ bool Plugin::AMD::Encoder::IsDebug() {
 	return m_Debug;
 }
 
+#ifndef LITE_OBS
 void Plugin::AMD::Encoder::UpdateFrameRateValues() {
 	// 1			Second
 	// 1000			Millisecond
@@ -1041,7 +1041,6 @@ bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encod
 }
 
 int32_t Plugin::AMD::Encoder::AsyncSendMain(Encoder* obj) {
-	os_set_thread_name("AMF Asynchronous Queue Sender");
 	return obj->AsyncSendLocalMain();
 }
 
@@ -1097,7 +1096,6 @@ int32_t Plugin::AMD::Encoder::AsyncSendLocalMain() {
 }
 
 int32_t Plugin::AMD::Encoder::AsyncRetrieveMain(Encoder* obj) {
-	os_set_thread_name("AMF Asynchronous Queue Retriever");
 	return obj->AsyncRetrieveLocalMain();
 }
 
@@ -1159,3 +1157,4 @@ int32_t Plugin::AMD::Encoder::AsyncRetrieveLocalMain() {
 	}
 	return 0;
 }
+#endif

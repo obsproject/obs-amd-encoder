@@ -148,6 +148,7 @@ Plugin::AMD::QualityPreset Plugin::AMD::EncoderH265::GetQualityPreset() {
 	return Utility::QualityPresetFromAMFH265((AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_ENUM)e);
 }
 
+#ifndef LITE_OBS
 std::pair<std::pair<uint32_t, uint32_t>, std::pair<uint32_t, uint32_t>> Plugin::AMD::EncoderH265::CapsResolution() {
 	AMFTRACECALL;
 
@@ -1683,3 +1684,4 @@ void Plugin::AMD::EncoderH265::LogProperties() {
 		GetInputQueueSize());
 	#pragma endregion Experimental
 }
+#endif

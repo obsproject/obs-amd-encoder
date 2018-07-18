@@ -59,6 +59,7 @@ namespace Plugin {
 			virtual void SetQualityPreset(QualityPreset v) override;
 			virtual QualityPreset GetQualityPreset() override;
 
+#ifndef LITE_OBS
 			virtual std::pair<std::pair<uint32_t, uint32_t>, std::pair<uint32_t, uint32_t>> CapsResolution() override;
 			virtual void SetResolution(std::pair<uint32_t, uint32_t> v) override;
 			virtual std::pair<uint32_t, uint32_t> GetResolution() override;
@@ -211,6 +212,7 @@ namespace Plugin {
 			// HevcMaxNumOfTemporalLayers/HevcNumOfTemporalLayers/HevcTemporalLayerSelect - Only supports QP_I/P?
 			// BPicturesPattern (replaced by merge mode?)
 			// HevcMaxMBPerSec (PCI-E bandwidth, min/max)
+#endif
 		};
 	}
 }
