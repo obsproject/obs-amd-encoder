@@ -682,7 +682,13 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t* pro
 			TEMP_LIMIT_DROPDOWN(CapsCodingType, AMD::CodingType, P_CODINGTYPE);
 			TEMP_LIMIT_SLIDER(CapsMaximumReferenceFrames, P_MAXIMUMREFERENCEFRAMES);
 			TEMP_LIMIT_DROPDOWN(CapsRateControlMethod, AMD::RateControlMethod, P_RATECONTROLMETHOD);
-			TEMP_LIMIT_DROPDOWN(CapsPrePassMode, AMD::PrePassMode, P_PREPASSMODE);
+			try {
+				TEMP_LIMIT_DROPDOWN(CapsPrePassMode, AMD::PrePassMode, P_PREPASSMODE);
+				obs_property_set_enabled(obs_properties_get(props, P_PREPASSMODE), true);
+			} catch (...) {
+				obs_property_set_enabled(obs_properties_get(props, P_PREPASSMODE), false);
+			}
+
 			TEMP_LIMIT_SLIDER_BITRATE(CapsTargetBitrate, "bitrate");
 			TEMP_LIMIT_SLIDER_BITRATE(CapsPeakBitrate, P_BITRATE_PEAK);
 			TEMP_LIMIT_SLIDER_BITRATE(CapsVBVBufferSize, P_VBVBUFFER_SIZE);
@@ -1411,6 +1417,9 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data)
 		}
 		try {
 			m_VideoEncoder->SetPrePassMode(PrePassMode::Disabled);
+		} catch (...) {
+		}
+		try {
 			m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled(false);
 		} catch (...) {
 		}
@@ -1421,6 +1430,9 @@ bool Plugin::Interface::H264Interface::update(obs_data_t* data)
 		m_VideoEncoder->SetPeakBitrate(static_cast<uint32_t>(obs_data_get_int(data, P_BITRATE_PEAK) * 1000));
 		try {
 			m_VideoEncoder->SetPrePassMode(static_cast<PrePassMode>(obs_data_get_int(data, P_PREPASSMODE)));
+		} catch (...) {
+		}
+		try {
 			m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled(!!obs_data_get_int(data, P_VBAQ));
 		} catch (...) {
 		}
