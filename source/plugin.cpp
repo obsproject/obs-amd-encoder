@@ -1,6 +1,6 @@
 /*
  * A Plugin that integrates the AMD AMF encoder into OBS Studio
- * Copyright (C) 2016 - 2017 Michael Fabian Dirks
+ * Copyright (C) 2016 - 2018 Michael Fabian Dirks
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,44 +18,45 @@
  */
 
 #pragma once
-#include "plugin.h"
-#include "api-base.h"
-#include "amf.h"
-#include "amf-capabilities.h"
-#include "enc-h264.h"
-#include "enc-h265.h"
-#include <sstream>
 #include <obs-module.h>
+#include <sstream>
 #include <util/pipe.h>
 #include <util/platform.h>
-#ifdef _WIN32
+#include "amf-capabilities.h"
+#include "amf.h"
+#include "api-base.h"
+#include "enc-h264.h"
+#include "enc-h265.h"
+#include "plugin.h"
+
+#if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #endif
 
 using namespace Plugin;
 using namespace Plugin::AMD;
 
-#if defined(WIN32)
-BOOL WINAPI DllMain(HINSTANCE, DWORD, LPVOID) {
+#if defined(_WIN32) || defined(_WIN64)
+BOOL WINAPI DllMain(HINSTANCE, DWORD, LPVOID)
+{
 	return TRUE;
 }
 
-static inline bool create_process(const char *cmd_line, HANDLE stdin_handle,
-	HANDLE stdout_handle, HANDLE *process) {
-	PROCESS_INFORMATION pi = { 0 };
-	wchar_t *cmd_line_w = NULL;
-	STARTUPINFOW si = { 0 };
-	bool success = false;
+static inline bool create_process(const char* cmd_line, HANDLE stdin_handle, HANDLE stdout_handle, HANDLE* process)
+{
+	PROCESS_INFORMATION pi         = {0};
+	wchar_t*            cmd_line_w = NULL;
+	STARTUPINFOW        si         = {0};
+	bool                success    = false;
 
-	si.cb = sizeof(si);
-	si.dwFlags = STARTF_USESTDHANDLES;
-	si.hStdInput = stdin_handle;
+	si.cb         = sizeof(si);
+	si.dwFlags    = STARTF_USESTDHANDLES;
+	si.hStdInput  = stdin_handle;
 	si.hStdOutput = stdout_handle;
 
 	os_utf8_to_wcs_ptr(cmd_line, 0, &cmd_line_w);
 	if (cmd_line_w) {
-		success = !!CreateProcessW(NULL, cmd_line_w, NULL, NULL, true,
-			CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
+		success = !!CreateProcessW(NULL, cmd_line_w, NULL, NULL, true, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
 
 		if (success) {
 			*process = pi.hProcess;
@@ -68,10 +69,11 @@ static inline bool create_process(const char *cmd_line, HANDLE stdin_handle,
 	return success;
 }
 
-static bool create_pipe(HANDLE *input, HANDLE *output) {
-	SECURITY_ATTRIBUTES sa = { 0 };
+static bool create_pipe(HANDLE* input, HANDLE* output)
+{
+	SECURITY_ATTRIBUTES sa = {0};
 
-	sa.nLength = sizeof(sa);
+	sa.nLength        = sizeof(sa);
 	sa.bInheritHandle = true;
 
 	if (!CreatePipe(input, output, &sa, 0)) {
@@ -87,97 +89,76 @@ OBS_MODULE_AUTHOR("Michael Fabian Dirks");
 OBS_MODULE_USE_DEFAULT_LOCALE("enc-amf", "en-US");
 
 #ifdef _DEBUG
-#include "components/VideoEncoderVCE.h"
-#include "components/VideoEncoderHEVC.h"
 #include "components/VideoConverter.h"
+#include "components/VideoEncoderHEVC.h"
+#include "components/VideoEncoderVCE.h"
 
-static std::string fastPrintVariant(const char* text, amf::AMFVariantStruct variant) {
+static std::string fastPrintVariant(const char* text, amf::AMFVariantStruct variant)
+{
 	std::vector<char> buf(1024);
 	switch (variant.type) {
-		case amf::AMF_VARIANT_EMPTY:
-			snprintf(buf.data(), buf.size(), "%s%s", text, "Empty");
-			break;
-		case amf::AMF_VARIANT_BOOL:
-			snprintf(buf.data(), buf.size(), "%s%s", text, variant.boolValue ? "true" : "false");
-			break;
-		case amf::AMF_VARIANT_INT64:
-			snprintf(buf.data(), buf.size(), "%s%lld", text, variant.int64Value);
-			break;
-		case amf::AMF_VARIANT_DOUBLE:
-			snprintf(buf.data(), buf.size(), "%s%f", text, variant.doubleValue);
-			break;
-		case amf::AMF_VARIANT_RECT:
-			snprintf(buf.data(), buf.size(), "%s[%ld,%ld,%ld,%ld]", text,
-				variant.rectValue.top, variant.rectValue.left,
-				variant.rectValue.bottom, variant.rectValue.right);
-			break;
-		case amf::AMF_VARIANT_SIZE:
-			snprintf(buf.data(), buf.size(), "%s%ldx%ld", text,
-				variant.sizeValue.width, variant.sizeValue.height);
-			break;
-		case amf::AMF_VARIANT_POINT:
-			snprintf(buf.data(), buf.size(), "%s[%ld,%ld]", text,
-				variant.pointValue.x, variant.pointValue.y);
-			break;
-		case amf::AMF_VARIANT_RATE:
-			snprintf(buf.data(), buf.size(), "%s%ld/%ld", text,
-				variant.rateValue.num, variant.rateValue.den);
-			break;
-		case amf::AMF_VARIANT_RATIO:
-			snprintf(buf.data(), buf.size(), "%s%ld:%ld", text,
-				variant.ratioValue.num, variant.ratioValue.den);
-			break;
-		case amf::AMF_VARIANT_COLOR:
-			snprintf(buf.data(), buf.size(), "%s(%d,%d,%d,%d)", text,
-				variant.colorValue.r,
-				variant.colorValue.g,
-				variant.colorValue.b,
-				variant.colorValue.a);
-			break;
-		case amf::AMF_VARIANT_STRING:
-			snprintf(buf.data(), buf.size(), "%s'%s'", text,
-				variant.stringValue);
-			break;
-		case amf::AMF_VARIANT_WSTRING:
-			snprintf(buf.data(), buf.size(), "%s'%ls'", text,
-				variant.wstringValue);
-			break;
+	case amf::AMF_VARIANT_EMPTY:
+		snprintf(buf.data(), buf.size(), "%s%s", text, "Empty");
+		break;
+	case amf::AMF_VARIANT_BOOL:
+		snprintf(buf.data(), buf.size(), "%s%s", text, variant.boolValue ? "true" : "false");
+		break;
+	case amf::AMF_VARIANT_INT64:
+		snprintf(buf.data(), buf.size(), "%s%lld", text, variant.int64Value);
+		break;
+	case amf::AMF_VARIANT_DOUBLE:
+		snprintf(buf.data(), buf.size(), "%s%f", text, variant.doubleValue);
+		break;
+	case amf::AMF_VARIANT_RECT:
+		snprintf(buf.data(), buf.size(), "%s[%ld,%ld,%ld,%ld]", text, variant.rectValue.top, variant.rectValue.left,
+				 variant.rectValue.bottom, variant.rectValue.right);
+		break;
+	case amf::AMF_VARIANT_SIZE:
+		snprintf(buf.data(), buf.size(), "%s%ldx%ld", text, variant.sizeValue.width, variant.sizeValue.height);
+		break;
+	case amf::AMF_VARIANT_POINT:
+		snprintf(buf.data(), buf.size(), "%s[%ld,%ld]", text, variant.pointValue.x, variant.pointValue.y);
+		break;
+	case amf::AMF_VARIANT_RATE:
+		snprintf(buf.data(), buf.size(), "%s%ld/%ld", text, variant.rateValue.num, variant.rateValue.den);
+		break;
+	case amf::AMF_VARIANT_RATIO:
+		snprintf(buf.data(), buf.size(), "%s%ld:%ld", text, variant.ratioValue.num, variant.ratioValue.den);
+		break;
+	case amf::AMF_VARIANT_COLOR:
+		snprintf(buf.data(), buf.size(), "%s(%d,%d,%d,%d)", text, variant.colorValue.r, variant.colorValue.g,
+				 variant.colorValue.b, variant.colorValue.a);
+		break;
+	case amf::AMF_VARIANT_STRING:
+		snprintf(buf.data(), buf.size(), "%s'%s'", text, variant.stringValue);
+		break;
+	case amf::AMF_VARIANT_WSTRING:
+		snprintf(buf.data(), buf.size(), "%s'%ls'", text, variant.wstringValue);
+		break;
 	}
 	return std::string(buf.data());
 };
 
-static void printDebugInfo(amf::AMFComponentPtr m_AMFEncoder) {
+static void printDebugInfo(amf::AMFComponentPtr m_AMFEncoder)
+{
 	amf::AMFPropertyInfo* pInfo;
-	size_t propCount = m_AMFEncoder->GetPropertyCount();
+	size_t                propCount = m_AMFEncoder->GetPropertyCount();
 	//PLOG_INFO("-- Internal AMF Encoder Properties --");
 	for (size_t propIndex = 0; propIndex < propCount; propIndex++) {
-		static const char* typeToString[] = {
-			"Empty",
-			"Boolean",
-			"Int64",
-			"Double",
-			"Rect",
-			"Size",
-			"Point",
-			"Rate",
-			"Ratio",
-			"Color",
-			"String",
-			"WString",
-			"Interface"
-		};
+		static const char* typeToString[] = {"Empty", "Boolean", "Int64", "Double", "Rect",    "Size",     "Point",
+											 "Rate",  "Ratio",   "Color", "String", "WString", "Interface"};
 
-		AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(propIndex, (const amf::AMFPropertyInfo**) &pInfo);
+		AMF_RESULT res = m_AMFEncoder->GetPropertyInfo(propIndex, (const amf::AMFPropertyInfo**)&pInfo);
 		if (res != AMF_OK)
 			continue;
 
 		amf::AMFVariantStruct curStruct = amf::AMFVariantStruct();
 		m_AMFEncoder->GetProperty(pInfo->name, &curStruct);
 
-		auto vcur = fastPrintVariant("Current: ", curStruct);
-		auto vdef = fastPrintVariant("Default: ", pInfo->defaultValue);
-		auto vmin = fastPrintVariant("Minimum: ", pInfo->minValue);
-		auto vmax = fastPrintVariant("Maximum: ", pInfo->maxValue);
+		auto              vcur = fastPrintVariant("Current: ", curStruct);
+		auto              vdef = fastPrintVariant("Default: ", pInfo->defaultValue);
+		auto              vmin = fastPrintVariant("Minimum: ", pInfo->minValue);
+		auto              vmax = fastPrintVariant("Maximum: ", pInfo->maxValue);
 		std::stringstream venum;
 		if (pInfo->pEnumDescription) {
 			const amf::AMFEnumDescriptionEntry* pEnumEntry = pInfo->pEnumDescription;
@@ -188,31 +169,27 @@ static void printDebugInfo(amf::AMFComponentPtr m_AMFEncoder) {
 			}
 		}
 
-		PLOG_INFO("%ls(Description: %ls, Type: %s, Index %d, Content Type: %d, Access: %s%s%s, Values: {%s, %s, %s, %s%s%s})",
-			pInfo->name,
-			pInfo->desc,
-			typeToString[pInfo->type],
-			propIndex,
-			pInfo->contentType,
+		PLOG_INFO(
+			"%ls(Description: %ls, Type: %s, Index %d, Content Type: %d, Access: %s%s%s, Values: {%s, %s, %s, %s%s%s})",
+			pInfo->name, pInfo->desc, typeToString[pInfo->type], propIndex, pInfo->contentType,
 			(pInfo->accessType & amf::AMF_PROPERTY_ACCESS_READ) ? "R" : "",
 			(pInfo->accessType & amf::AMF_PROPERTY_ACCESS_WRITE) ? "W" : "",
-			(pInfo->accessType & amf::AMF_PROPERTY_ACCESS_WRITE_RUNTIME) ? "X" : "",
-			vcur.c_str(), vdef.c_str(), vmin.c_str(), vmax.c_str(),
-			(venum.str().length() > 0) ? ", Enum: " : "", venum.str().c_str()
-		);
+			(pInfo->accessType & amf::AMF_PROPERTY_ACCESS_WRITE_RUNTIME) ? "X" : "", vcur.c_str(), vdef.c_str(),
+			vmin.c_str(), vmax.c_str(), (venum.str().length() > 0) ? ", Enum: " : "", venum.str().c_str());
 	}
 }
 #endif
 
-MODULE_EXPORT bool obs_module_load(void) {
+MODULE_EXPORT bool obs_module_load(void)
+{
 	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Loading...");
 
 #ifdef _WIN32
 	// Out-of-process AMF Test
 	{
 		unsigned long returnCode = 0xFFFFFFFF;
-		HANDLE hProcess, hIn, hOut;
-		char * path = obs_module_file("enc-amf-test" BIT_STR ".exe");
+		HANDLE        hProcess, hIn, hOut;
+		char*         path = obs_module_file("enc-amf-test" BIT_STR ".exe");
 
 		if (!create_pipe(&hIn, &hOut)) {
 			PLOG_ERROR("Failed to create pipes for AMF test.");
@@ -237,7 +214,7 @@ MODULE_EXPORT bool obs_module_load(void) {
 
 		bfree(path);
 		std::vector<char> buf(1024);
-		DWORD bufread = 0;
+		DWORD             bufread = 0;
 		while (ReadFile(hOut, buf.data(), 1024, &bufread, NULL)) {
 			PLOG_ERROR("%s", buf.data());
 		}
@@ -250,38 +227,38 @@ MODULE_EXPORT bool obs_module_load(void) {
 		CloseHandle(hOut);
 
 		switch (returnCode) {
-			case STATUS_ACCESS_VIOLATION:
-			case STATUS_ARRAY_BOUNDS_EXCEEDED:
-			case STATUS_BREAKPOINT:
-			case STATUS_DATATYPE_MISALIGNMENT:
-			case STATUS_FLOAT_DENORMAL_OPERAND:
-			case STATUS_FLOAT_DIVIDE_BY_ZERO:
-			case STATUS_FLOAT_INEXACT_RESULT:
-			case STATUS_FLOAT_INVALID_OPERATION:
-			case STATUS_FLOAT_OVERFLOW:
-			case STATUS_FLOAT_STACK_CHECK:
-			case STATUS_FLOAT_UNDERFLOW:
-			case STATUS_GUARD_PAGE_VIOLATION:
-			case STATUS_ILLEGAL_INSTRUCTION:
-			case STATUS_IN_PAGE_ERROR:
-			case STATUS_INTEGER_DIVIDE_BY_ZERO:
-			case STATUS_INTEGER_OVERFLOW:
-			case STATUS_INVALID_DISPOSITION:
-			case STATUS_INVALID_HANDLE:
-			case STATUS_NONCONTINUABLE_EXCEPTION:
-			case STATUS_PRIVILEGED_INSTRUCTION:
-			case STATUS_SINGLE_STEP:
-			case STATUS_STACK_OVERFLOW:
-			case STATUS_UNWIND_CONSOLIDATE:
-			default:
-				PLOG_ERROR("A critical error occured during AMF Testing.");
-				return false;
-			case 2:
-			case 1:
-				PLOG_ERROR("AMF Test failed due to one or more errors.");
-				return false;
-			case 0:
-				break;
+		case STATUS_ACCESS_VIOLATION:
+		case STATUS_ARRAY_BOUNDS_EXCEEDED:
+		case STATUS_BREAKPOINT:
+		case STATUS_DATATYPE_MISALIGNMENT:
+		case STATUS_FLOAT_DENORMAL_OPERAND:
+		case STATUS_FLOAT_DIVIDE_BY_ZERO:
+		case STATUS_FLOAT_INEXACT_RESULT:
+		case STATUS_FLOAT_INVALID_OPERATION:
+		case STATUS_FLOAT_OVERFLOW:
+		case STATUS_FLOAT_STACK_CHECK:
+		case STATUS_FLOAT_UNDERFLOW:
+		case STATUS_GUARD_PAGE_VIOLATION:
+		case STATUS_ILLEGAL_INSTRUCTION:
+		case STATUS_IN_PAGE_ERROR:
+		case STATUS_INTEGER_DIVIDE_BY_ZERO:
+		case STATUS_INTEGER_OVERFLOW:
+		case STATUS_INVALID_DISPOSITION:
+		case STATUS_INVALID_HANDLE:
+		case STATUS_NONCONTINUABLE_EXCEPTION:
+		case STATUS_PRIVILEGED_INSTRUCTION:
+		case STATUS_SINGLE_STEP:
+		case STATUS_STACK_OVERFLOW:
+		case STATUS_UNWIND_CONSOLIDATE:
+		default:
+			PLOG_ERROR("A critical error occured during AMF Testing.");
+			return false;
+		case 2:
+		case 1:
+			PLOG_ERROR("AMF Test failed due to one or more errors.");
+			return false;
+		case 0:
+			break;
 		}
 	}
 #endif
@@ -318,12 +295,9 @@ MODULE_EXPORT bool obs_module_load(void) {
 #ifdef _DEBUG
 	{
 		PLOG_INFO("Dumping Parameter Information...");
-		const wchar_t* encoders[] = {
-			AMFVideoEncoderVCE_AVC,
-			AMFVideoEncoder_HEVC
-		};
-		auto m_AMF = AMF::Instance();
-		auto m_AMFFactory = m_AMF->GetFactory();
+		const wchar_t* encoders[]   = {AMFVideoEncoderVCE_AVC, AMFVideoEncoder_HEVC};
+		auto           m_AMF        = AMF::Instance();
+		auto           m_AMFFactory = m_AMF->GetFactory();
 		amf::AMFTrace* m_AMFTrace;
 		m_AMFFactory->GetTrace(&m_AMFTrace);
 		amf::AMFDebug* m_AMFDebug;
@@ -355,7 +329,8 @@ MODULE_EXPORT bool obs_module_load(void) {
 				m_AMFComponent->Init(amf::AMF_SURFACE_NV12, 1280, 720);
 				if (m_AMFFactory->CreateComponent(m_AMFContext, AMFVideoEncoderVCE_AVC, &m_AMFComponent2) == AMF_OK) {
 					PLOG_INFO("-- %s --", "Converter");
-					m_AMFComponent->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE, AMF_VIDEO_CONVERTER_COLOR_PROFILE_JPEG);
+					m_AMFComponent->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE,
+												AMF_VIDEO_CONVERTER_COLOR_PROFILE_JPEG);
 					printDebugInfo(m_AMFComponent);
 					m_AMFComponent2->Terminate();
 				}
@@ -363,7 +338,6 @@ MODULE_EXPORT bool obs_module_load(void) {
 			}
 			m_AMFContext->Terminate();
 		}
-
 	}
 #endif
 
@@ -372,19 +346,21 @@ MODULE_EXPORT bool obs_module_load(void) {
 }
 
 /** Optional: Called when the module is unloaded.  */
-MODULE_EXPORT void obs_module_unload(void) {
+MODULE_EXPORT void obs_module_unload(void)
+{
 	Plugin::AMD::CapabilityManager::Finalize();
 	Plugin::API::FinalizeAPIs();
 	Plugin::AMD::AMF::Finalize();
 }
 
 /** Optional: Returns the full name of the module */
-MODULE_EXPORT const char* obs_module_name() {
+MODULE_EXPORT const char* obs_module_name()
+{
 	return "AMD Media Framework Plugin";
 }
 
 /** Optional: Returns a description of the module */
-MODULE_EXPORT const char* obs_module_description() {
+MODULE_EXPORT const char* obs_module_description()
+{
 	return "AMD Media Framework Plugin";
 }
-

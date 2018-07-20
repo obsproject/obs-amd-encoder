@@ -1,6 +1,6 @@
 /*
  * A Plugin that integrates the AMD AMF encoder into OBS Studio
- * Copyright (C) 2016 - 2017 Michael Fabian Dirks
+ * Copyright (C) 2016 - 2018 Michael Fabian Dirks
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,28 +21,34 @@
 
 using namespace Plugin::API;
 
-std::string Plugin::API::Host::GetName() {
+std::string Plugin::API::Host::GetName()
+{
 	return "Host";
 }
 
-Plugin::API::Type Plugin::API::Host::GetType() {
+Plugin::API::Type Plugin::API::Host::GetType()
+{
 	return Type::Host;
 }
 
-std::vector<Adapter> Plugin::API::Host::EnumerateAdapters() {
+std::vector<Adapter> Plugin::API::Host::EnumerateAdapters()
+{
 	std::vector<Adapter> list;
 	list.push_back(Adapter(0, 0, "Default"));
 	return list;
 }
 
-std::shared_ptr<Instance> Plugin::API::Host::CreateInstance(Adapter adapter) {
+std::shared_ptr<Instance> Plugin::API::Host::CreateInstance(Adapter adapter)
+{
 	return std::make_unique<HostInstance>();
 }
 
-Plugin::API::Adapter Plugin::API::HostInstance::GetAdapter() {
+Plugin::API::Adapter Plugin::API::HostInstance::GetAdapter()
+{
 	return Adapter(0, 0, "Default");
 }
 
-void* Plugin::API::HostInstance::GetContext() {
+void* Plugin::API::HostInstance::GetContext()
+{
 	return nullptr;
 }

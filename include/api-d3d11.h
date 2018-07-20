@@ -1,6 +1,6 @@
 /*
  * A Plugin that integrates the AMD AMF encoder into OBS Studio
- * Copyright (C) 2016 - 2017 Michael Fabian Dirks
+ * Copyright (C) 2016 - 2018 Michael Fabian Dirks
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,26 +18,26 @@
  */
 
 #pragma once
-#include "api-base.h"
-#include <vector>
+#include <atlutil.h>
+#include <d3d11.h>
+#include <dxgi.h>
 #include <map>
 #include <mutex>
-#include <dxgi.h>
-#include <d3d11.h>
-#include <atlutil.h>
+#include <vector>
+#include "api-base.h"
 
 namespace Plugin {
 	namespace API {
 		class Direct3D11 : public IAPI {
 			friend class Direct3D11Instance;
-			public:
 
+			public:
 			Direct3D11();
 			~Direct3D11();
 
-			virtual std::string GetName() override;
-			virtual Type GetType() override;
-			virtual std::vector<Adapter> EnumerateAdapters() override;
+			virtual std::string               GetName() override;
+			virtual Type                      GetType() override;
+			virtual std::vector<Adapter>      EnumerateAdapters() override;
 			virtual std::shared_ptr<Instance> CreateInstance(Adapter adapter) override;
 
 			protected:
@@ -55,13 +55,13 @@ namespace Plugin {
 			~Direct3D11Instance();
 
 			virtual Adapter GetAdapter() override;
-			virtual void* GetContext() override;
+			virtual void*   GetContext() override;
 
 			private:
-			Direct3D11* m_API;
-			Adapter m_Adapter;
+			Direct3D11*          m_API;
+			Adapter              m_Adapter;
 			ID3D11DeviceContext* m_DeviceContext;
-			ID3D11Device* m_Device;
+			ID3D11Device*        m_Device;
 		};
-	}
-}
+	} // namespace API
+} // namespace Plugin

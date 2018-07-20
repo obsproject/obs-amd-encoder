@@ -1,6 +1,6 @@
 /*
  * A Plugin that integrates the AMD AMF encoder into OBS Studio
- * Copyright (C) 2016 - 2017 Michael Fabian Dirks
+ * Copyright (C) 2016 - 2018 Michael Fabian Dirks
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,16 +24,16 @@ namespace Plugin {
 	namespace API {
 		class Host : public IAPI {
 			public:
-			virtual std::string GetName() override;
-			virtual Type GetType() override;
-			virtual std::vector<Adapter> EnumerateAdapters() override;
+			virtual std::string               GetName() override;
+			virtual Type                      GetType() override;
+			virtual std::vector<Adapter>      EnumerateAdapters() override;
 			virtual std::shared_ptr<Instance> CreateInstance(Adapter adapter) override;
 		};
 
 		class HostInstance : public Instance {
 			public:
 			virtual Adapter GetAdapter() override;
-			virtual void* GetContext() override;
+			virtual void*   GetContext() override;
 		};
-	}
-}
+	} // namespace API
+} // namespace Plugin

@@ -17,23 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include "amf.h"
-#include "amf-capabilities.h"
-#include "api-base.h"
 #include <iostream>
+#include "amf-capabilities.h"
+#include "amf.h"
+#include "api-base.h"
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 #include "windows.h"
 #endif
 
 using namespace Plugin;
 using namespace Plugin::AMD;
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
 	argc;
 	argv;
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 	SetErrorMode(SEM_NOGPFAULTERRORBOX | SEM_FAILCRITICALERRORS);
 #endif
 

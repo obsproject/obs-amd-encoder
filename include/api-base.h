@@ -1,6 +1,6 @@
 /*
  * A Plugin that integrates the AMD AMF encoder into OBS Studio
- * Copyright (C) 2016 - 2017 Michael Fabian Dirks
+ * Copyright (C) 2016 - 2018 Michael Fabian Dirks
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,17 +18,14 @@
  */
 
 #pragma once
-#include "plugin.h"
-#include <vector>
 #include <map>
-#include <string.h>
 #include <memory>
+#include <string.h>
+#include <vector>
+#include "plugin.h"
 
 namespace Plugin {
 	namespace API {
-		/**
-		 *
-		 */
 		enum class Type : uint8_t {
 			Host,
 			Direct3D9,
@@ -38,22 +35,24 @@ namespace Plugin {
 
 		// An Adapter on an API
 		struct Adapter {
-			int32_t idLow, idHigh;
+			int32_t     idLow, idHigh;
 			std::string Name;
 
-			Adapter()
-				: idLow(0), idHigh(0), Name("Invalid Device") {}
+			Adapter() : idLow(0), idHigh(0), Name("Invalid Device") {}
 			Adapter(int32_t p_idLow, int32_t p_idHigh, std::string p_Name)
-				: idLow(p_idLow), idHigh(p_idHigh), Name(p_Name) {}
-			Adapter(Adapter const& o) {
-				idLow = o.idLow;
+				: idLow(p_idLow), idHigh(p_idHigh), Name(p_Name)
+			{}
+			Adapter(Adapter const& o)
+			{
+				idLow  = o.idLow;
 				idHigh = o.idHigh;
-				Name = o.Name;
+				Name   = o.Name;
 			}
-			void operator=(Adapter const& o) {
-				idLow = o.idLow;
+			void operator=(Adapter const& o)
+			{
+				idLow  = o.idLow;
 				idHigh = o.idHigh;
-				Name = o.Name;
+				Name   = o.Name;
 			}
 
 			friend bool operator<(const Plugin::API::Adapter& left, const Plugin::API::Adapter& right);
@@ -72,7 +71,7 @@ namespace Plugin {
 			virtual ~Instance();
 
 			virtual Adapter GetAdapter() = 0;
-			virtual void* GetContext() = 0;
+			virtual void*   GetContext() = 0;
 		};
 
 		// API Interface
@@ -82,24 +81,24 @@ namespace Plugin {
 			virtual ~IAPI();
 
 			virtual std::string GetName() = 0;
-			virtual Type GetType() = 0;
+			virtual Type        GetType() = 0;
 
 			virtual std::vector<Adapter> EnumerateAdapters() = 0;
-			Adapter GetAdapterById(int32_t idLow, int32_t idHigh);
-			Adapter GetAdapterByName(std::string name);
+			Adapter                      GetAdapterById(int32_t idLow, int32_t idHigh);
+			Adapter                      GetAdapterByName(std::string name);
 
 			virtual std::shared_ptr<Instance> CreateInstance(Adapter adapter) = 0;
 		};
 
 		// Static API Stuff
-		void InitializeAPIs();
-		void FinalizeAPIs();
-		size_t CountAPIs();
-		std::string GetAPIName(size_t index);
-		std::shared_ptr<IAPI> GetAPI(size_t index);
-		std::shared_ptr<IAPI> GetAPI(std::string name);
-		std::shared_ptr<IAPI> GetAPI(Type type);
+		void                               InitializeAPIs();
+		void                               FinalizeAPIs();
+		size_t                             CountAPIs();
+		std::string                        GetAPIName(size_t index);
+		std::shared_ptr<IAPI>              GetAPI(size_t index);
+		std::shared_ptr<IAPI>              GetAPI(std::string name);
+		std::shared_ptr<IAPI>              GetAPI(Type type);
 		std::vector<std::shared_ptr<IAPI>> EnumerateAPIs();
-		std::vector<std::string> EnumerateAPINames();
-	}
-}
+		std::vector<std::string>           EnumerateAPINames();
+	} // namespace API
+} // namespace Plugin

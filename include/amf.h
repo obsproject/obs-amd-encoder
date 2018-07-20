@@ -1,6 +1,6 @@
 /*
  * A Plugin that integrates the AMD AMF encoder into OBS Studio
- * Copyright (C) 2016 - 2017 Michael Fabian Dirks
+ * Copyright (C) 2016 - 2018 Michael Fabian Dirks
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,32 +18,23 @@
  */
 
 #pragma once
-//////////////////////////////////////////////////////////////////////////
-// Includes
-//////////////////////////////////////////////////////////////////////////
 #include <memory>
 #include <windows.h>
-
-// Plugin
 #include "plugin.h"
 
 // AMD AMF SDK
-#pragma warning( push )
-#pragma warning( disable: 4458 )
-#include "core\Factory.h"
+#pragma warning(push)
+#pragma warning(disable : 4458)
 #include "components\Component.h"
 #include "components\ComponentCaps.h"
 #include "components\VideoEncoderVCE.h"
-#pragma warning( pop )
-
-//////////////////////////////////////////////////////////////////////////
-// Code
-//////////////////////////////////////////////////////////////////////////
+#include "core\Factory.h"
+#pragma warning(pop)
 
 namespace Plugin {
 	namespace AMD {
 		class AMF {
-			#pragma region Singleton
+#pragma region Singleton
 			public:
 			static void Initialize();
 			static AMF* Instance();
@@ -56,12 +47,12 @@ namespace Plugin {
 			public: // Remove all Copy operators
 			AMF(AMF const&) = delete;
 			void operator=(AMF const&) = delete;
-			#pragma endregion Singleton
+#pragma endregion Singleton
 
 			public:
 			amf::AMFFactory* GetFactory();
-			amf::AMFTrace* GetTrace();
-			amf::AMFDebug* GetDebug();
+			amf::AMFTrace*   GetTrace();
+			amf::AMFDebug*   GetDebug();
 
 			void EnableDebugTrace(bool enable);
 
@@ -72,19 +63,19 @@ namespace Plugin {
 			uint32_t m_TimerPeriod; /// High-Precision Timer Accuracy (nanoseconds)
 
 			/// AMF Values
-			HMODULE m_AMFModule;
+			HMODULE  m_AMFModule;
 			uint64_t m_AMFVersion_Plugin;
 			uint64_t m_AMFVersion_Runtime;
 
 			/// AMF Functions
 			AMFQueryVersion_Fn AMFQueryVersion;
-			AMFInit_Fn AMFInit;
+			AMFInit_Fn         AMFInit;
 
 			/// AMF Objects
-			amf::AMFFactory* m_AMFFactory;
-			amf::AMFTrace* m_AMFTrace;
-			amf::AMFDebug* m_AMFDebug;
+			amf::AMFFactory*     m_AMFFactory;
+			amf::AMFTrace*       m_AMFTrace;
+			amf::AMFDebug*       m_AMFDebug;
 			amf::AMFTraceWriter* m_TraceWriter;
 		};
-	}
-}
+	} // namespace AMD
+} // namespace Plugin

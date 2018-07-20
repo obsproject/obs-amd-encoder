@@ -1,6 +1,6 @@
 /*
  * A Plugin that integrates the AMD AMF encoder into OBS Studio
- * Copyright (C) 2016 - 2017 Michael Fabian Dirks
+ * Copyright (C) 2016 - 2018 Michael Fabian Dirks
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,39 +18,28 @@
  */
 
 #pragma once
-//////////////////////////////////////////////////////////////////////////
-// Includes
-//////////////////////////////////////////////////////////////////////////
-#include <stdint.h>
 #include <inttypes.h>
-#include <vector>
 #include <list>
 #include <map>
+#include <stdint.h>
 #include <tuple>
-
-// Plugin
-#include "plugin.h"
-#include "amf.h"
-#include "amf-encoder.h"
+#include <vector>
 #include "amf-encoder-h264.h"
 #include "amf-encoder-h265.h"
+#include "amf-encoder.h"
+#include "amf.h"
 #include "api-base.h"
-
-// AMF
 #include "components\ComponentCaps.h"
-
-//////////////////////////////////////////////////////////////////////////
-// Code
-//////////////////////////////////////////////////////////////////////////
+#include "plugin.h"
 
 namespace Plugin {
 	namespace AMD {
 		class CapabilityManager {
-			#pragma region Singleton
+#pragma region Singleton
 			public:
-			static void Initialize();
+			static void               Initialize();
 			static CapabilityManager* Instance();
-			static void Finalize();
+			static void               Finalize();
 
 			private: // Private Initializer & Finalizer
 			CapabilityManager();
@@ -59,17 +48,14 @@ namespace Plugin {
 			public: // Remove all Copy operators
 			CapabilityManager(CapabilityManager const&) = delete;
 			void operator=(CapabilityManager const&) = delete;
-			#pragma endregion Singleton
+#pragma endregion Singleton
 
 			bool IsCodecSupported(AMD::Codec codec);
 			bool IsCodecSupportedByAPI(AMD::Codec codec, API::Type api);
 			bool IsCodecSupportedByAPIAdapter(AMD::Codec codec, API::Type api, API::Adapter adapter);
 
 			private:
-			std::map<
-				std::tuple<API::Type, API::Adapter, AMD::Codec>,
-				bool> m_CapabilityMap;
-
+			std::map<std::tuple<API::Type, API::Adapter, AMD::Codec>, bool> m_CapabilityMap;
 		};
-	}
-}
+	} // namespace AMD
+} // namespace Plugin

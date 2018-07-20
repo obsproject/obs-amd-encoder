@@ -1,6 +1,6 @@
 /*
  * A Plugin that integrates the AMD AMF encoder into OBS Studio
- * Copyright (C) 2016 - 2017 Michael Fabian Dirks
+ * Copyright (C) 2016 - 2018 Michael Fabian Dirks
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,23 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include "api-d3d9.h"
-#include <mutex>
 #include <list>
+#include <mutex>
+#include "api-d3d9.h"
 
 using namespace Plugin::API;
 
-Plugin::API::Direct3D9::Direct3D9() {
+Plugin::API::Direct3D9::Direct3D9()
+{
 	HRESULT hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &m_Direct3D9Ex);
 	if (FAILED(hr))
 		throw std::exception("<" __FUNCTION_NAME__ "> Failed to create D3D9Ex, error code %X.", hr);
 
-	std::list<LUID> enumeratedLUIDs;
+	std::list<LUID>        enumeratedLUIDs;
 	D3DADAPTER_IDENTIFIER9 adapterIdentifier;
 	for (size_t adapterIndex = 0;
-		!FAILED(m_Direct3D9Ex->GetAdapterIdentifier((UINT)adapterIndex, 0, &adapterIdentifier));
-		adapterIndex++) {
-
+		 !FAILED(m_Direct3D9Ex->GetAdapterIdentifier((UINT)adapterIndex, 0, &adapterIdentifier)); adapterIndex++) {
 		if (adapterIdentifier.VendorId != 0x1002 /* AMD */)
 			continue;
 
@@ -43,8 +42,7 @@ Plugin::API::Direct3D9::Direct3D9() {
 
 		bool enumerated = false;
 		for (LUID enumeratedLUID : enumeratedLUIDs) {
-			if ((enumeratedLUID.LowPart == adapterLUID.LowPart)
-				&& (enumeratedLUID.HighPart == adapterLUID.HighPart)) {
+			if ((enumeratedLUID.LowPart == adapterLUID.LowPart) && (enumeratedLUID.HighPart == adapterLUID.HighPart)) {
 				enumerated = true;
 				break;
 			}
@@ -55,39 +53,39 @@ Plugin::API::Direct3D9::Direct3D9() {
 			enumeratedLUIDs.push_back(adapterLUID);
 
 		std::vector<char> buf(1024);
-		snprintf(buf.data(), buf.size(), "%s [%s] (VEN_%04x/DEV_%04x/SUB_%04x/REV_%04x)",
-			adapterIdentifier.Description,
-			adapterIdentifier.DeviceName,
+		snprintf(buf.data(), buf.size(), "%s [%s] (VEN_%04x/DEV_%04x/SUB_%04x/REV_%04x)", adapterIdentifier.Description,
+				 adapterIdentifier.DeviceName,
 
-			adapterIdentifier.VendorId,
-			adapterIdentifier.DeviceId,
-			adapterIdentifier.SubSysId,
-			adapterIdentifier.Revision);
+				 adapterIdentifier.VendorId, adapterIdentifier.DeviceId, adapterIdentifier.SubSysId,
+				 adapterIdentifier.Revision);
 
-		m_Adapters.emplace_back(
-			Adapter(adapterLUID.LowPart, adapterLUID.HighPart,
-				std::string(buf.data())));
+		m_Adapters.emplace_back(Adapter(adapterLUID.LowPart, adapterLUID.HighPart, std::string(buf.data())));
 	}
 }
 
-Plugin::API::Direct3D9::~Direct3D9() {
+Plugin::API::Direct3D9::~Direct3D9()
+{
 	//m_InstanceMap.clear(); // Need to destroy IDirect3D9Device9Ex before IDirect3D9Ex.
 	m_Direct3D9Ex->Release();
 }
 
-std::string Plugin::API::Direct3D9::GetName() {
+std::string Plugin::API::Direct3D9::GetName()
+{
 	return std::string("Direct3D 9");
 }
 
-Plugin::API::Type Plugin::API::Direct3D9::GetType() {
+Plugin::API::Type Plugin::API::Direct3D9::GetType()
+{
 	return Type::Direct3D9;
 }
 
-std::vector<Adapter> Plugin::API::Direct3D9::EnumerateAdapters() {
+std::vector<Adapter> Plugin::API::Direct3D9::EnumerateAdapters()
+{
 	return m_Adapters;
 }
 
-std::shared_ptr<Instance> Plugin::API::Direct3D9::CreateInstance(Adapter adapter) {
+std::shared_ptr<Instance> Plugin::API::Direct3D9::CreateInstance(Adapter adapter)
+{
 	//std::pair<int32_t, int32_t> key = std::make_pair(adapter.idLow, adapter.idHigh);
 	//auto inst = m_InstanceMap.find(key);
 	//if (inst != m_InstanceMap.end())
@@ -98,16 +96,15 @@ std::shared_ptr<Instance> Plugin::API::Direct3D9::CreateInstance(Adapter adapter
 	return inst2;
 }
 
-Plugin::API::Direct3D9Instance::Direct3D9Instance(Direct3D9* api, Adapter adapter) {
-	this->m_API = api;
+Plugin::API::Direct3D9Instance::Direct3D9Instance(Direct3D9* api, Adapter adapter)
+{
+	this->m_API     = api;
 	this->m_Adapter = adapter;
 
-	size_t adapterNum = (size_t)-1;
+	size_t                 adapterNum = (size_t)-1;
 	D3DADAPTER_IDENTIFIER9 adapterIdentifier;
 	for (size_t adapterIndex = 0;
-		!FAILED(api->m_Direct3D9Ex->GetAdapterIdentifier((UINT)adapterIndex, 0, &adapterIdentifier));
-		adapterIndex++) {
-
+		 !FAILED(api->m_Direct3D9Ex->GetAdapterIdentifier((UINT)adapterIndex, 0, &adapterIdentifier)); adapterIndex++) {
 		if (adapterIdentifier.VendorId != 0x1002 /* AMD */)
 			continue;
 
@@ -126,40 +123,35 @@ Plugin::API::Direct3D9Instance::Direct3D9Instance(Direct3D9* api, Adapter adapte
 
 	D3DPRESENT_PARAMETERS presentParameters;
 	std::memset(&presentParameters, 0, sizeof(D3DPRESENT_PARAMETERS));
-	presentParameters.BackBufferWidth = 0;
-	presentParameters.BackBufferHeight = 0;
-	presentParameters.BackBufferFormat = D3DFMT_UNKNOWN;
-	presentParameters.Windowed = TRUE;
-	presentParameters.SwapEffect = D3DSWAPEFFECT_COPY;
-	presentParameters.hDeviceWindow = GetDesktopWindow();
-	presentParameters.Flags = D3DPRESENTFLAG_VIDEO;
+	presentParameters.BackBufferWidth      = 0;
+	presentParameters.BackBufferHeight     = 0;
+	presentParameters.BackBufferFormat     = D3DFMT_UNKNOWN;
+	presentParameters.Windowed             = TRUE;
+	presentParameters.SwapEffect           = D3DSWAPEFFECT_COPY;
+	presentParameters.hDeviceWindow        = GetDesktopWindow();
+	presentParameters.Flags                = D3DPRESENTFLAG_VIDEO;
 	presentParameters.PresentationInterval = D3DPRESENT_INTERVAL_DEFAULT;
 
-	D3DCAPS9    ddCaps;
+	D3DCAPS9 ddCaps;
 	std::memset(&ddCaps, 0, sizeof(ddCaps));
 	HRESULT hr = api->m_Direct3D9Ex->GetDeviceCaps((UINT)adapterNum, D3DDEVTYPE_HAL, &ddCaps);
 	if (FAILED(hr)) {
 		std::vector<char> buf(1024);
-		snprintf(buf.data(), buf.size(), "<" __FUNCTION_NAME__ "> Unable to query capabilities for D3D9 adapter, error code %X.", hr);
+		snprintf(buf.data(), buf.size(),
+				 "<" __FUNCTION_NAME__ "> Unable to query capabilities for D3D9 adapter, error code %X.", hr);
 		throw std::exception(buf.data());
 	}
 
-	DWORD       vp = 0;
+	DWORD vp = 0;
 	if (ddCaps.DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT) {
 		vp = D3DCREATE_HARDWARE_VERTEXPROCESSING;
 	} else {
 		vp = D3DCREATE_SOFTWARE_VERTEXPROCESSING;
 	}
 
-	hr = api->m_Direct3D9Ex->CreateDeviceEx(
-		(UINT)adapterNum,
-		D3DDEVTYPE_HAL,
-		presentParameters.hDeviceWindow,
-		vp | D3DCREATE_NOWINDOWCHANGES | D3DCREATE_MULTITHREADED,
-		&presentParameters,
-		NULL,
-		&m_Device
-	);
+	hr = api->m_Direct3D9Ex->CreateDeviceEx((UINT)adapterNum, D3DDEVTYPE_HAL, presentParameters.hDeviceWindow,
+											vp | D3DCREATE_NOWINDOWCHANGES | D3DCREATE_MULTITHREADED,
+											&presentParameters, NULL, &m_Device);
 	if (FAILED(hr)) {
 		std::vector<char> buf(1024);
 		snprintf(buf.data(), buf.size(), "<" __FUNCTION_NAME__ "> Unable to create D3D9 device, error code %X.", hr);
@@ -167,14 +159,16 @@ Plugin::API::Direct3D9Instance::Direct3D9Instance(Direct3D9* api, Adapter adapte
 	}
 }
 
-Plugin::API::Direct3D9Instance::~Direct3D9Instance() {
+Plugin::API::Direct3D9Instance::~Direct3D9Instance()
+{
 	//std::pair<int32_t, int32_t> key = std::make_pair(m_Adapter.idLow, m_Adapter.idHigh);
 	//m_API->m_InstanceMap.erase(key);
 
 	//m_Device->Release(); // Can't release/free on AMD hardware?
 }
 
-Plugin::API::Adapter Plugin::API::Direct3D9Instance::GetAdapter() {
+Plugin::API::Adapter Plugin::API::Direct3D9Instance::GetAdapter()
+{
 	/*if (pInstance == nullptr)
 		throw std::invalid_argument("instance");
 
@@ -201,6 +195,7 @@ Plugin::API::Adapter Plugin::API::Direct3D9Instance::GetAdapter() {
 	return m_Adapter;
 }
 
-void* Plugin::API::Direct3D9Instance::GetContext() {
+void* Plugin::API::Direct3D9Instance::GetContext()
+{
 	return m_Device;
 }

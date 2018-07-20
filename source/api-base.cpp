@@ -1,6 +1,6 @@
 /*
  * A Plugin that integrates the AMD AMF encoder into OBS Studio
- * Copyright (C) 2016 - 2017 Michael Fabian Dirks
+ * Copyright (C) 2016 - 2018 Michael Fabian Dirks
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,46 +17,51 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#pragma once
 #include "api-base.h"
-#include "api-d3d9.h"
 #include "api-d3d11.h"
+#include "api-d3d9.h"
 #include "api-host.h"
 #include "api-opengl.h"
 
 #if defined(_WIN32) || defined(_WIN64)
-#include <windows.h>
 #include <VersionHelpers.h>
+#include <windows.h>
 #endif
 
 using namespace Plugin::API;
 
-
 // An Adapter on an API
-bool Plugin::API::operator<(const Plugin::API::Adapter & left, const Plugin::API::Adapter & right) {
+bool Plugin::API::operator<(const Plugin::API::Adapter& left, const Plugin::API::Adapter& right)
+{
 	if (left == right)
 		return left.Name < right.Name;
 	else
-		return (((uint64_t)left.idLow + ((uint64_t)left.idHigh << 32)) < ((uint64_t)right.idLow + ((uint64_t)right.idHigh << 32)));
+		return (((uint64_t)left.idLow + ((uint64_t)left.idHigh << 32))
+				< ((uint64_t)right.idLow + ((uint64_t)right.idHigh << 32)));
 }
 
-bool Plugin::API::operator>(const Plugin::API::Adapter & left, const Plugin::API::Adapter & right) {
+bool Plugin::API::operator>(const Plugin::API::Adapter& left, const Plugin::API::Adapter& right)
+{
 	return right < left;
 }
 
-bool Plugin::API::operator<=(const Plugin::API::Adapter & left, const Plugin::API::Adapter & right) {
+bool Plugin::API::operator<=(const Plugin::API::Adapter& left, const Plugin::API::Adapter& right)
+{
 	return !(right < left);
 }
 
-bool Plugin::API::operator>=(const Plugin::API::Adapter & left, const Plugin::API::Adapter & right) {
+bool Plugin::API::operator>=(const Plugin::API::Adapter& left, const Plugin::API::Adapter& right)
+{
 	return !(left < right);
 }
 
-bool Plugin::API::operator==(const Plugin::API::Adapter & left, const Plugin::API::Adapter & right) {
+bool Plugin::API::operator==(const Plugin::API::Adapter& left, const Plugin::API::Adapter& right)
+{
 	return ((left.idLow == right.idLow) && (right.idHigh == right.idHigh));
 }
 
-bool Plugin::API::operator!=(const Plugin::API::Adapter & left, const Plugin::API::Adapter & right) {
+bool Plugin::API::operator!=(const Plugin::API::Adapter& left, const Plugin::API::Adapter& right)
+{
 	return !(left == right);
 }
 
@@ -70,7 +75,8 @@ Plugin::API::IAPI::IAPI() {}
 
 Plugin::API::IAPI::~IAPI() {}
 
-Plugin::API::Adapter Plugin::API::IAPI::GetAdapterById(int32_t idLow, int32_t idHigh) {
+Plugin::API::Adapter Plugin::API::IAPI::GetAdapterById(int32_t idLow, int32_t idHigh)
+{
 	for (auto adapter : EnumerateAdapters()) {
 		if ((adapter.idLow == idLow) && (adapter.idHigh == idHigh))
 			return adapter;
@@ -78,7 +84,8 @@ Plugin::API::Adapter Plugin::API::IAPI::GetAdapterById(int32_t idLow, int32_t id
 	return *(EnumerateAdapters().begin());
 }
 
-Plugin::API::Adapter Plugin::API::IAPI::GetAdapterByName(std::string name) {
+Plugin::API::Adapter Plugin::API::IAPI::GetAdapterByName(std::string name)
+{
 	for (auto adapter : EnumerateAdapters()) {
 		if (adapter.Name == name)
 			return adapter;
@@ -88,9 +95,10 @@ Plugin::API::Adapter Plugin::API::IAPI::GetAdapterByName(std::string name) {
 
 // Static API Stuff
 static std::vector<std::shared_ptr<IAPI>> s_APIInstances;
-void Plugin::API::InitializeAPIs() {
-	// DirectX 11
-	#ifdef _WIN32
+void                                      Plugin::API::InitializeAPIs()
+{
+// DirectX 11
+#ifdef _WIN32
 	if (IsWindows8OrGreater()) {
 		try {
 			s_APIInstances.insert(s_APIInstances.end(), std::make_shared<Direct3D11>());
@@ -98,10 +106,10 @@ void Plugin::API::InitializeAPIs() {
 			PLOG_WARNING("Direct3D 11 not supported.");
 		}
 	}
-	#endif
+#endif
 
-	// DirectX 9
-	#ifdef _WIN32
+// DirectX 9
+#ifdef _WIN32
 	if (IsWindowsXPOrGreater()) {
 		try {
 			s_APIInstances.insert(s_APIInstances.end(), std::make_shared<Direct3D9>());
@@ -109,7 +117,7 @@ void Plugin::API::InitializeAPIs() {
 			PLOG_WARNING("Direct3D 9 not supported.");
 		}
 	}
-	#endif
+#endif
 
 	// Mikhail says these are for compatibility only, not actually backends.
 	//// OpenGL
@@ -123,15 +131,18 @@ void Plugin::API::InitializeAPIs() {
 	//}
 }
 
-void Plugin::API::FinalizeAPIs() {
+void Plugin::API::FinalizeAPIs()
+{
 	s_APIInstances.clear();
 }
 
-size_t Plugin::API::CountAPIs() {
+size_t Plugin::API::CountAPIs()
+{
 	return s_APIInstances.size();
 }
 
-std::string Plugin::API::GetAPIName(size_t index) {
+std::string Plugin::API::GetAPIName(size_t index)
+{
 	auto indAPI = s_APIInstances.begin();
 	indAPI + index; // Advanced by x elements.
 
@@ -141,7 +152,8 @@ std::string Plugin::API::GetAPIName(size_t index) {
 	return indAPI->get()->GetName();
 }
 
-std::shared_ptr<IAPI> Plugin::API::GetAPI(size_t index) {
+std::shared_ptr<IAPI> Plugin::API::GetAPI(size_t index)
+{
 	auto indAPI = s_APIInstances.begin();
 	indAPI + index; // Advanced by x elements.
 
@@ -151,7 +163,8 @@ std::shared_ptr<IAPI> Plugin::API::GetAPI(size_t index) {
 	return *indAPI;
 }
 
-std::shared_ptr<IAPI> Plugin::API::GetAPI(std::string name) {
+std::shared_ptr<IAPI> Plugin::API::GetAPI(std::string name)
+{
 	for (auto api : s_APIInstances) {
 		if (name == api->GetName()) {
 			return api;
@@ -161,7 +174,8 @@ std::shared_ptr<IAPI> Plugin::API::GetAPI(std::string name) {
 	return *s_APIInstances.begin();
 }
 
-std::shared_ptr<IAPI> Plugin::API::GetAPI(Type type) {
+std::shared_ptr<IAPI> Plugin::API::GetAPI(Type type)
+{
 	for (auto api : s_APIInstances) {
 		if (type == api->GetType()) {
 			return api;
@@ -171,11 +185,13 @@ std::shared_ptr<IAPI> Plugin::API::GetAPI(Type type) {
 	return *s_APIInstances.begin();
 }
 
-std::vector<std::shared_ptr<IAPI>> Plugin::API::EnumerateAPIs() {
+std::vector<std::shared_ptr<IAPI>> Plugin::API::EnumerateAPIs()
+{
 	return std::vector<std::shared_ptr<IAPI>>(s_APIInstances);
 }
 
-std::vector<std::string> Plugin::API::EnumerateAPINames() {
+std::vector<std::string> Plugin::API::EnumerateAPINames()
+{
 	std::vector<std::string> names;
 	for (auto api : s_APIInstances) {
 		names.push_back(api->GetName());

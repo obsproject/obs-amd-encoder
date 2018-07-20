@@ -1,6 +1,6 @@
 /*
  * A Plugin that integrates the AMD AMF encoder into OBS Studio
- * Copyright (C) 2016 - 2017 Michael Fabian Dirks
+ * Copyright (C) 2016 - 2018 Michael Fabian Dirks
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,41 +23,41 @@
 #define NOMINMAX
 #define NOINOUT
 
-#pragma warning (push)
-#pragma warning (disable: 4201)
+#pragma warning(push)
+#pragma warning(disable : 4201)
 #ifndef LITE_OBS
 #include "obs-module.h"
 #include "util/base.h"
 #endif
-#pragma warning (pop)
+#pragma warning(pop)
 
- // Plugin
-#define PLUGIN_NAME				"AMD Advanced Media Framework"
+// Plugin
+#define PLUGIN_NAME "AMD Advanced Media Framework"
 #include "Version.h"
 
 #ifndef LITE_OBS
-#define PLOG(level, ...)		blog(level, "[AMF] " __VA_ARGS__);
+#define PLOG(level, ...) blog(level, "[AMF] " __VA_ARGS__);
 #else
-#define PLOG(level, ...)		;
+#define PLOG(level, ...) ;
 #endif
-#define PLOG_ERROR(...)			PLOG(LOG_ERROR,   __VA_ARGS__)
-#define PLOG_WARNING(...)		PLOG(LOG_WARNING, __VA_ARGS__)
-#define PLOG_INFO(...)			PLOG(LOG_INFO,    __VA_ARGS__)
-#define PLOG_DEBUG(...)			PLOG(LOG_DEBUG,   __VA_ARGS__)
+#define PLOG_ERROR(...) PLOG(LOG_ERROR, __VA_ARGS__)
+#define PLOG_WARNING(...) PLOG(LOG_WARNING, __VA_ARGS__)
+#define PLOG_INFO(...) PLOG(LOG_INFO, __VA_ARGS__)
+#define PLOG_DEBUG(...) PLOG(LOG_DEBUG, __VA_ARGS__)
 
 // Utility
 #define vstr(s) dstr(s)
 #define dstr(s) #s
 
-#define clamp(val,low,high) (val > high ? high : (val < low ? low : val))
+#define clamp(val, low, high) (val > high ? high : (val < low ? low : val))
 #ifdef max
 #undef max
 #endif
-#define max(val,high) (val > high ? val : high)
+#define max(val, high) (val > high ? val : high)
 #ifdef min
 #undef min
 #endif
-#define min(val,low ) (val < low  ? val  : low)
+#define min(val, low) (val < low ? val : low)
 
 #ifdef IN
 #undef IN
@@ -74,22 +74,24 @@
 #define BIT_STR "32"
 #endif
 
-#define QUICK_FORMAT_MESSAGE(var, ...) std::string var = ""; { \
-		std::vector<char> QUICK_FORMAT_MESSAGE_buf(1024); \
+#define QUICK_FORMAT_MESSAGE(var, ...)                                                           \
+	std::string var = "";                                                                        \
+	{                                                                                            \
+		std::vector<char> QUICK_FORMAT_MESSAGE_buf(1024);                                        \
 		snprintf(QUICK_FORMAT_MESSAGE_buf.data(), QUICK_FORMAT_MESSAGE_buf.size(), __VA_ARGS__); \
-		var = std::string(QUICK_FORMAT_MESSAGE_buf.data()); \
+		var = std::string(QUICK_FORMAT_MESSAGE_buf.data());                                      \
 	}
 
 #ifndef __FUNCTION_NAME__
-#if defined(_WIN32) || defined(_WIN64)   //WINDOWS
-#define __FUNCTION_NAME__   __FUNCTION__
-#else          //*NIX
-#define __FUNCTION_NAME__   __func__
+#if defined(_WIN32) || defined(_WIN64) //WINDOWS
+#define __FUNCTION_NAME__ __FUNCTION__
+#else //*NIX
+#define __FUNCTION_NAME__ __func__
 #endif
 #endif
 
 enum class Presets : int8_t {
-	None = -1,
+	None            = -1,
 	ResetToDefaults = 0,
 	Recording,
 	HighQuality,
@@ -99,9 +101,4 @@ enum class Presets : int8_t {
 	YouTube,
 };
 
-enum class ViewMode : uint8_t {
-	Basic,
-	Advanced,
-	Expert,
-	Master
-};
+enum class ViewMode : uint8_t { Basic, Advanced, Expert, Master };

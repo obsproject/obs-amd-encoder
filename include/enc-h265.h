@@ -1,6 +1,6 @@
 /*
  * A Plugin that integrates the AMD AMF encoder into OBS Studio
- * Copyright (C) 2016 - 2017 Michael Fabian Dirks
+ * Copyright (C) 2016 - 2018 Michael Fabian Dirks
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,30 +25,30 @@ namespace Plugin {
 	namespace Interface {
 		class H265Interface {
 			public:
-			static void encoder_register();
-			static const char* get_name(void* type_data);
-			static void get_defaults(obs_data_t *data);
+			static void              encoder_register();
+			static const char*       get_name(void* type_data);
+			static void              get_defaults(obs_data_t* data);
 			static obs_properties_t* get_properties(void* ptr);
 
-			static bool properties_modified(obs_properties_t *props, obs_property_t *, obs_data_t *data);
+			static bool properties_modified(obs_properties_t* props, obs_property_t*, obs_data_t* data);
 
 			static void* create(obs_data_t* settings, obs_encoder_t* encoder);
-			static void destroy(void* ptr);
-			static bool update(void *ptr, obs_data_t *data);
-			static bool encode(void *ptr, struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet);
-			static void get_video_info(void *ptr, struct video_scale_info *info);
-			static bool get_extra_data(void *ptr, uint8_t** extra_data, size_t* size);
+			static void  destroy(void* ptr);
+			static bool  update(void* ptr, obs_data_t* data);
+			static bool  encode(void* ptr, struct encoder_frame* frame, struct encoder_packet* packet,
+								bool* received_packet);
+			static void  get_video_info(void* ptr, struct video_scale_info* info);
+			static bool  get_extra_data(void* ptr, uint8_t** extra_data, size_t* size);
 
 			//////////////////////////////////////////////////////////////////////////
 			// Module Code
 			//////////////////////////////////////////////////////////////////////////
 			public:
-
 			H265Interface(obs_data_t* data, obs_encoder_t* encoder);
 			~H265Interface();
 
 			bool update(obs_data_t* data);
-			bool encode(struct encoder_frame * frame, struct encoder_packet * packet, bool * received_packet);
+			bool encode(struct encoder_frame* frame, struct encoder_packet* packet, bool* received_packet);
 			void get_video_info(struct video_scale_info* info);
 			bool get_extra_data(uint8_t** extra_data, size_t* size);
 
@@ -57,7 +57,7 @@ namespace Plugin {
 			//////////////////////////////////////////////////////////////////////////
 			private:
 			std::unique_ptr<Plugin::AMD::EncoderH265> m_VideoEncoder;
-			obs_encoder_t* m_Encoder;
+			obs_encoder_t*                            m_Encoder;
 		};
-	}
-}
+	} // namespace Interface
+} // namespace Plugin

@@ -1,6 +1,6 @@
 /*
  * A Plugin that integrates the AMD AMF encoder into OBS Studio
- * Copyright (C) 2016 - 2017 Michael Fabian Dirks
+ * Copyright (C) 2016 - 2018 Michael Fabian Dirks
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,37 +17,28 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-//////////////////////////////////////////////////////////////////////////
-// Includes
-//////////////////////////////////////////////////////////////////////////
-#include <vector>
 #include <mutex>
-
+#include <vector>
 #include "amf.h"
-#include "windows.h"
-
-// AMD AMF SDK
 #include "components\Component.h"
 #include "components\ComponentCaps.h"
 #include "components\VideoEncoderVCE.h"
 
-//////////////////////////////////////////////////////////////////////////
-// Code
-//////////////////////////////////////////////////////////////////////////
+#if defined(_WIN32) || defined(_WIN64)
+#include "windows.h"
+#endif
+
 using namespace Plugin::AMD;
 
 class CustomWriter : public amf::AMFTraceWriter {
 	public:
-
-	virtual void __cdecl Write(const wchar_t* scope, const wchar_t* message) override {
+	virtual void __cdecl Write(const wchar_t* scope, const wchar_t* message) override
+	{
 #ifndef LITE_OBS
 		const wchar_t* realmsg = &(message[(33 + wcslen(scope) + 2)]); // Skip Time & Scope
-		size_t msgLen = wcslen(realmsg) - (sizeof(wchar_t));
+		size_t         msgLen  = wcslen(realmsg) - (sizeof(wchar_t));
 
-		blog(LOG_DEBUG, "[AMF Runtime] [%.*ls][%ls] %.*ls",
-			12, &(message[11]),
-			scope,
-			msgLen, realmsg);
+		blog(LOG_DEBUG, "[AMF Runtime] [%.*ls][%ls] %.*ls", 12, &(message[11]), scope, msgLen, realmsg);
 #else
 		scope;
 		message;
@@ -57,21 +48,24 @@ class CustomWriter : public amf::AMFTraceWriter {
 	virtual void __cdecl Flush() override {}
 };
 
-#pragma region Singleton
-static AMF* __instance;
+#pragma region    Singleton
+static AMF*       __instance;
 static std::mutex __instance_mutex;
-void Plugin::AMD::AMF::Initialize() {
+void              Plugin::AMD::AMF::Initialize()
+{
 	const std::lock_guard<std::mutex> lock(__instance_mutex);
 	if (!__instance)
 		__instance = new AMF();
 }
 
-AMF* Plugin::AMD::AMF::Instance() {
+AMF* Plugin::AMD::AMF::Instance()
+{
 	const std::lock_guard<std::mutex> lock(__instance_mutex);
 	return __instance;
 }
 
-void Plugin::AMD::AMF::Finalize() {
+void Plugin::AMD::AMF::Finalize()
+{
 	const std::lock_guard<std::mutex> lock(__instance_mutex);
 	if (__instance)
 		delete __instance;
@@ -81,29 +75,30 @@ void Plugin::AMD::AMF::Finalize() {
 
 const wchar_t* loggername = L"OBSWriter";
 
-Plugin::AMD::AMF::AMF() {
+Plugin::AMD::AMF::AMF()
+{
 	AMF_RESULT res = AMF_OK;
 
-	#pragma region Null Class Members
-	m_TimerPeriod = 0;
-	m_AMFVersion_Plugin = AMF_FULL_VERSION;
+#pragma region Null Class Members
+	m_TimerPeriod        = 0;
+	m_AMFVersion_Plugin  = AMF_FULL_VERSION;
 	m_AMFVersion_Runtime = 0;
-	m_AMFModule = 0;
+	m_AMFModule          = 0;
 
-	m_AMFFactory = nullptr;
-	m_AMFTrace = nullptr;
-	m_AMFDebug = nullptr;
+	m_AMFFactory    = nullptr;
+	m_AMFTrace      = nullptr;
+	m_AMFDebug      = nullptr;
 	AMFQueryVersion = nullptr;
-	AMFInit = nullptr;
-	m_TraceWriter = nullptr;
-	m_TimerPeriod = 0;
-	#pragma endregion Null Class Members
+	AMFInit         = nullptr;
+	m_TraceWriter   = nullptr;
+	m_TimerPeriod   = 0;
+#pragma endregion Null Class Members
 
-	#ifdef _WIN32
+#ifdef _WIN32
 	std::vector<char> verbuf;
-	void* pProductVersion = nullptr;
-	uint32_t lProductVersionSize = 0;
-	#endif
+	void*             pProductVersion     = nullptr;
+	uint32_t          lProductVersionSize = 0;
+#endif
 
 	// Initialize AMF Library
 	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Initializing...");
@@ -111,16 +106,14 @@ Plugin::AMD::AMF::AMF() {
 	// Load AMF Runtime Library
 	m_AMFModule = LoadLibraryW(AMF_DLL_NAME);
 	if (!m_AMFModule) {
-		QUICK_FORMAT_MESSAGE(msg, "Unable to load '%ls', error code %ld.",
-			AMF_DLL_NAME,
-			GetLastError());
+		QUICK_FORMAT_MESSAGE(msg, "Unable to load '%ls', error code %ld.", AMF_DLL_NAME, GetLastError());
 		throw std::exception(msg.data());
 	} else {
 		PLOG_DEBUG("<" __FUNCTION_NAME__ "> Loaded '%ls'.", AMF_DLL_NAME);
 	}
 
-	// Windows: Get Product Version for Driver Matching
-	#ifdef _WIN32
+// Windows: Get Product Version for Driver Matching
+#ifdef _WIN32
 	{
 		verbuf.resize(GetFileVersionInfoSizeW(AMF_DLL_NAME, nullptr) * 2);
 		GetFileVersionInfoW(AMF_DLL_NAME, 0, (DWORD)verbuf.size(), verbuf.data());
@@ -131,41 +124,36 @@ Plugin::AMD::AMF::AMF() {
 		struct LANGANDCODEPAGE {
 			WORD wLanguage;
 			WORD wCodePage;
-		} *lpTranslate;
+		} * lpTranslate;
 		UINT cbTranslate = sizeof(LANGANDCODEPAGE);
 
 		VerQueryValueA(pBlock, "\\VarFileInfo\\Translation", (LPVOID*)&lpTranslate, &cbTranslate);
 
 		std::vector<char> buf(1024);
-		snprintf(buf.data(), buf.size(), "%s%04x%04x%s",
-			"\\StringFileInfo\\",
-			lpTranslate[0].wLanguage,
-			lpTranslate[0].wCodePage,
-			"\\ProductVersion");
+		snprintf(buf.data(), buf.size(), "%s%04x%04x%s", "\\StringFileInfo\\", lpTranslate[0].wLanguage,
+				 lpTranslate[0].wCodePage, "\\ProductVersion");
 
 		// Retrieve file description for language and code page "i".
 		VerQueryValueA(pBlock, buf.data(), &pProductVersion, &lProductVersionSize);
 	}
-	#endif _WIN32
+#endif _WIN32
 
 	// Query Runtime Version
 	AMFQueryVersion = (AMFQueryVersion_Fn)GetProcAddress(m_AMFModule, AMF_QUERY_VERSION_FUNCTION_NAME);
 	if (!AMFQueryVersion) {
 		QUICK_FORMAT_MESSAGE(msg, "Incompatible AMF Runtime (could not find '%s'), error code %ld.",
-			AMF_QUERY_VERSION_FUNCTION_NAME,
-			GetLastError());
+							 AMF_QUERY_VERSION_FUNCTION_NAME, GetLastError());
 		throw std::exception(msg.data());
 	} else {
 		res = AMFQueryVersion(&m_AMFVersion_Runtime);
 		if (res != AMF_OK) {
-			QUICK_FORMAT_MESSAGE(msg, "Querying Version failed, error code %ld.",
-				res);
+			QUICK_FORMAT_MESSAGE(msg, "Querying Version failed, error code %ld.", res);
 			throw std::exception(msg.data());
 		}
 	}
 
 	/// Blacklist Drivers with older SDK.
-	if (m_AMFVersion_Runtime < AMF_MAKE_FULL_VERSION(1,4,6,0)) {
+	if (m_AMFVersion_Runtime < AMF_MAKE_FULL_VERSION(1, 4, 6, 0)) {
 		PLOG_WARNING("The AMF Runtime is very old and unsupported, consider updating your drivers.");
 	}
 
@@ -173,14 +161,12 @@ Plugin::AMD::AMF::AMF() {
 	AMFInit = (AMFInit_Fn)GetProcAddress(m_AMFModule, AMF_INIT_FUNCTION_NAME);
 	if (!AMFInit) {
 		QUICK_FORMAT_MESSAGE(msg, "Incompatible AMF Runtime (could not find '%s'), error code %ld.",
-			AMF_QUERY_VERSION_FUNCTION_NAME,
-			GetLastError());
+							 AMF_QUERY_VERSION_FUNCTION_NAME, GetLastError());
 		throw std::exception(msg.data());
 	} else {
 		res = AMFInit(m_AMFVersion_Runtime, &m_AMFFactory);
 		if (res != AMF_OK) {
-			QUICK_FORMAT_MESSAGE(msg, "Initializing AMF Library failed, error code %ld.",
-				res);
+			QUICK_FORMAT_MESSAGE(msg, "Initializing AMF Library failed, error code %ld.", res);
 			throw std::exception(msg.data());
 		}
 	}
@@ -189,51 +175,43 @@ Plugin::AMD::AMF::AMF() {
 	/// Retrieve Trace Object.
 	res = m_AMFFactory->GetTrace(&m_AMFTrace);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(msg, "Retrieving AMF Trace class failed, error code %ld.",
-			res);
+		QUICK_FORMAT_MESSAGE(msg, "Retrieving AMF Trace class failed, error code %ld.", res);
 		throw std::exception(msg.data());
 	}
 
 	/// Retrieve Debug Object.
 	res = m_AMFFactory->GetDebug(&m_AMFDebug);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(msg, "Retrieving AMF Debug class failed, error code %ld.",
-			res);
+		QUICK_FORMAT_MESSAGE(msg, "Retrieving AMF Debug class failed, error code %ld.", res);
 		throw std::exception(msg.data());
 	}
 
-	/// Register Trace Writer and disable Debug Tracing.
-	#ifndef _WIN64
-		// Older drivers crash due to using the wrong calling standard.
+/// Register Trace Writer and disable Debug Tracing.
+#ifndef _WIN64
+	// Older drivers crash due to using the wrong calling standard.
 	if (m_AMFVersion_Runtime >= AMF_MAKE_FULL_VERSION(1, 4, 4, 0)) {
-		#endif
+#endif
 		m_TraceWriter = new CustomWriter();
 		m_AMFTrace->RegisterWriter(loggername, m_TraceWriter, true);
-		#ifndef _WIN64
+#ifndef _WIN64
 	}
-	#endif
+#endif
 	this->EnableDebugTrace(false);
 
 	// Log success
-	PLOG_INFO("Version %d.%d.%d loaded (Compiled: %d.%d.%d.%d, Runtime: %d.%d.%d.%d, Library: %.*s).",
-		PLUGIN_VERSION_MAJOR,
-		PLUGIN_VERSION_MINOR,
-		PLUGIN_VERSION_PATCH,
-		(uint16_t)((m_AMFVersion_Plugin >> 48ull) & 0xFFFF),
-		(uint16_t)((m_AMFVersion_Plugin >> 32ull) & 0xFFFF),
-		(uint16_t)((m_AMFVersion_Plugin >> 16ull) & 0xFFFF),
-		(uint16_t)((m_AMFVersion_Plugin & 0xFFFF)),
-		(uint16_t)((m_AMFVersion_Runtime >> 48ull) & 0xFFFF),
-		(uint16_t)((m_AMFVersion_Runtime >> 32ull) & 0xFFFF),
-		(uint16_t)((m_AMFVersion_Runtime >> 16ull) & 0xFFFF),
-		(uint16_t)((m_AMFVersion_Runtime & 0xFFFF)),
-		lProductVersionSize, pProductVersion
-	);
+	PLOG_INFO(
+		"Version %d.%d.%d loaded (Compiled: %d.%d.%d.%d, Runtime: %d.%d.%d.%d, Library: %.*s).", PLUGIN_VERSION_MAJOR,
+		PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH, (uint16_t)((m_AMFVersion_Plugin >> 48ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Plugin >> 32ull) & 0xFFFF), (uint16_t)((m_AMFVersion_Plugin >> 16ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Plugin & 0xFFFF)), (uint16_t)((m_AMFVersion_Runtime >> 48ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Runtime >> 32ull) & 0xFFFF), (uint16_t)((m_AMFVersion_Runtime >> 16ull) & 0xFFFF),
+		(uint16_t)((m_AMFVersion_Runtime & 0xFFFF)), lProductVersionSize, pProductVersion);
 
 	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Initialized.");
 }
 
-Plugin::AMD::AMF::~AMF() {
+Plugin::AMD::AMF::~AMF()
+{
 	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Finalizing.");
 	if (m_AMFModule) {
 		if (m_TraceWriter) {
@@ -247,39 +225,43 @@ Plugin::AMD::AMF::~AMF() {
 	}
 	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Finalized.");
 
-	#pragma region Null Class Members
-	m_TimerPeriod = 0;
-	m_AMFVersion_Plugin = 0;
+#pragma region Null Class Members
+	m_TimerPeriod        = 0;
+	m_AMFVersion_Plugin  = 0;
 	m_AMFVersion_Runtime = 0;
-	m_AMFModule = 0;
+	m_AMFModule          = 0;
 
-	m_AMFFactory = nullptr;
-	m_AMFTrace = nullptr;
-	m_AMFDebug = nullptr;
+	m_AMFFactory    = nullptr;
+	m_AMFTrace      = nullptr;
+	m_AMFDebug      = nullptr;
 	AMFQueryVersion = nullptr;
-	AMFInit = nullptr;
-	#pragma endregion Null Class Members
+	AMFInit         = nullptr;
+#pragma endregion Null Class Members
 }
 
-amf::AMFFactory* Plugin::AMD::AMF::GetFactory() {
+amf::AMFFactory* Plugin::AMD::AMF::GetFactory()
+{
 	return m_AMFFactory;
 }
 
-amf::AMFTrace* Plugin::AMD::AMF::GetTrace() {
+amf::AMFTrace* Plugin::AMD::AMF::GetTrace()
+{
 	return m_AMFTrace;
 }
 
-amf::AMFDebug* Plugin::AMD::AMF::GetDebug() {
+amf::AMFDebug* Plugin::AMD::AMF::GetDebug()
+{
 	return m_AMFDebug;
 }
 
-void Plugin::AMD::AMF::EnableDebugTrace(bool enable) {
+void Plugin::AMD::AMF::EnableDebugTrace(bool enable)
+{
 	if (!m_AMFTrace)
 		throw std::exception("<" __FUNCTION_NAME__ "> called without a AMFTrace object!");
 	if (!m_AMFDebug)
 		throw std::exception("<" __FUNCTION_NAME__ "> called without a AMFDebug object!");
 
-	#ifndef _WIN64
+#ifndef _WIN64
 	// Older drivers crash due to using the wrong calling standard.
 	if (m_AMFVersion_Runtime < AMF_MAKE_FULL_VERSION(1, 4, 4, 0)) {
 		m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, false);
@@ -294,7 +276,7 @@ void Plugin::AMD::AMF::EnableDebugTrace(bool enable) {
 		m_AMFTrace->SetGlobalLevel(AMF_TRACE_NOLOG);
 		return;
 	}
-	#endif
+#endif
 
 	// Console
 	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, false);
@@ -305,11 +287,11 @@ void Plugin::AMD::AMF::EnableDebugTrace(bool enable) {
 	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_FILE, AMF_TRACE_NOLOG);
 	m_AMFTrace->SetPath(L"C:\\AMFTrace.log");
 
-	// Debug Output
-	#ifdef _DEBUG
+// Debug Output
+#ifdef _DEBUG
 	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, true);
 	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, AMF_TRACE_TEST);
-	#else
+#else
 	m_AMFTrace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, false);
 	m_AMFTrace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, AMF_TRACE_NOLOG);
 #endif
@@ -322,10 +304,12 @@ void Plugin::AMD::AMF::EnableDebugTrace(bool enable) {
 	m_AMFTrace->SetWriterLevel(L"OBSWriter", loglevel);
 }
 
-uint64_t Plugin::AMD::AMF::GetPluginVersion() {
+uint64_t Plugin::AMD::AMF::GetPluginVersion()
+{
 	return m_AMFVersion_Plugin;
 }
 
-uint64_t Plugin::AMD::AMF::GetRuntimeVersion() {
+uint64_t Plugin::AMD::AMF::GetRuntimeVersion()
+{
 	return m_AMFVersion_Runtime;
 }
