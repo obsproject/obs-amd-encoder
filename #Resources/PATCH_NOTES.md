@@ -1,7 +1,13 @@
-# 2.4.0 - Stability Improvements
+# 2.4.1 - Stability Improvements
 A new version, but it's merely a few stability improvements. A crash on missing D3D11 or D3D9 has been fixed, capability testing always writes supported GPUs to the log file and the H264 and H265 encoder now follow the specification of the codec and set Profile, Level and Tier before Resolution and Frame Rate - which might actually improve support for higher resolution and frame rate capture.
 
+Hotfix 1: Additional stability improvements by fixing a crash with a very old driver.
+
 ## Changelog
+### 2.4.1 (Hotfix 1)
+* Refactored CMake build configuration for CI support, allowing for people to test [bleeding-edge builds](https://ci.appveyor.com/project/Xaymar/obs-studio-amf-encoder-plugin).
+* Fixed a crash caused by very old drivers that predate H265 support.
+
 ### 2.4.0
 * Updated AMF SDK to 1.4.7.0.
 * Fixed a crash in api::base if Direct3D 9 or Direct3D 11 was not found.
