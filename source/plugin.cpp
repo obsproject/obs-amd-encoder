@@ -18,16 +18,20 @@
  */
 
 #pragma once
-#include <obs-module.h>
 #include <sstream>
-#include <util/pipe.h>
-#include <util/platform.h>
 #include "amf-capabilities.h"
 #include "amf.h"
 #include "api-base.h"
 #include "enc-h264.h"
 #include "enc-h265.h"
 #include "plugin.h"
+
+#pragma warning(push)
+#pragma warning(disable : 4201)
+#include <obs-module.h>
+#include <util/pipe.h>
+#include <util/platform.h>
+#pragma warning(pop)
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
