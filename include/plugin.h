@@ -20,9 +20,6 @@
 #pragma once
 #include <inttypes.h>
 
-#define NOMINMAX
-#define NOINOUT
-
 #pragma warning(push)
 #pragma warning(disable : 4201)
 #ifndef LITE_OBS

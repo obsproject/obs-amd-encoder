@@ -43,7 +43,7 @@ math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
 add_definitions(-DLITE_OBS)
 
 ################################################################################
-# Options
+# Configuration
 ################################################################################
 
 # From Parent:
@@ -51,6 +51,53 @@ add_definitions(-DLITE_OBS)
 #   OBS_NATIVE
 #   OBS_PACKAGE
 #   AMF_SDK_DIR
+
+IF(WIN32)	
+	# windows.h
+	add_definitions(-DWIN32_LEAN_AND_MEAN)
+	add_definitions(-DNOGPICAPMASKS)
+	add_definitions(-DNOVIRTUALKEYCODES)
+	#add_definitions(-DNOWINMESSAGES)
+	add_definitions(-DNOWINSTYLES)
+	add_definitions(-DNOSYSMETRICS)
+	add_definitions(-DNOMENUS)
+	add_definitions(-DNOICONS)
+	add_definitions(-DNOKEYSTATES)
+	add_definitions(-DNOSYSCOMMANDS)
+	add_definitions(-DNORASTEROPS)
+	add_definitions(-DNOSHOWWINDOW)
+	add_definitions(-DNOATOM)
+	add_definitions(-DNOCLIPBOARD)
+	add_definitions(-DNOCOLOR)
+	add_definitions(-DNOCTLMGR)
+	add_definitions(-DNODRAWTEXT)
+	#add_definitions(-DNOGDI)
+	add_definitions(-DNOKERNEL)
+	#add_definitions(-DNOUSER)
+	#add_definitions(-DNONLS)
+	add_definitions(-DNOMB)
+	add_definitions(-DNOMEMMGR)
+	add_definitions(-DNOMETAFILE)
+	add_definitions(-DNOMINMAX)
+	#add_definitions(-DNOMSG)
+	add_definitions(-DNOOPENFILE)
+	add_definitions(-DNOSCROLL)
+	add_definitions(-DNOSERVICE)
+	add_definitions(-DNOSOUND)
+	#add_definitions(-DNOTEXTMETRIC)
+	add_definitions(-DNOWH)
+	add_definitions(-DNOWINOFFSETS)
+	add_definitions(-DNOCOMM)
+	add_definitions(-DNOKANJI)
+	add_definitions(-DNOHELP)
+	add_definitions(-DNOPROFILER)
+	add_definitions(-DNODEFERWINDOWPOS)
+	add_definitions(-DNOMCX)
+	add_definitions(-DNOIME)
+	add_definitions(-DNOMDI)
+	add_definitions(-DNOINOUT)
+ENDIF()
+
 
 ################################################################################
 # Dependencies
