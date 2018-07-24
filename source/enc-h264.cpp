@@ -1317,7 +1317,8 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 
 	/// Profile & Level
 	m_VideoEncoder->SetProfile(static_cast<Profile>(obs_data_get_int(data, P_PROFILE)));
-	m_VideoEncoder->SetProfileLevel(static_cast<ProfileLevel>(obs_data_get_int(data, P_PROFILELEVEL)));
+	m_VideoEncoder->SetProfileLevel(static_cast<ProfileLevel>(obs_data_get_int(data, P_PROFILELEVEL)),
+									std::make_pair(obsWidth, obsHeight), std::make_pair(obsFPSnum, obsFPSden));
 
 	/// Frame
 	m_VideoEncoder->SetResolution(std::make_pair(obsWidth, obsHeight));

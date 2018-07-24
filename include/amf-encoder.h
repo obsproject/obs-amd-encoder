@@ -253,9 +253,11 @@ namespace Plugin {
 			virtual void                 SetProfile(Profile v) = 0;
 			virtual Profile              GetProfile()          = 0;
 
-			virtual std::vector<ProfileLevel> CapsProfileLevel()              = 0;
-			virtual void                      SetProfileLevel(ProfileLevel v) = 0;
-			virtual ProfileLevel              GetProfileLevel()               = 0;
+			virtual std::vector<ProfileLevel> CapsProfileLevel()                               = 0;
+			virtual void                      SetProfileLevel(ProfileLevel v)                  = 0;
+			virtual void                      SetProfileLevel(ProfileLevel v, std::pair<uint32_t, uint32_t> r,
+															  std::pair<uint32_t, uint32_t> h) = 0;
+			virtual ProfileLevel              GetProfileLevel()                                = 0;
 #pragma endregion Profile
 
 			virtual std::vector<CodingType> CapsCodingType()            = 0;

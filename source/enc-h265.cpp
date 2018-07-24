@@ -897,7 +897,8 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 
 	/// Profile & Level
 	m_VideoEncoder->SetProfile(static_cast<Profile>(obs_data_get_int(data, P_PROFILE)));
-	m_VideoEncoder->SetProfileLevel(static_cast<ProfileLevel>(obs_data_get_int(data, P_PROFILELEVEL)));
+	m_VideoEncoder->SetProfileLevel(static_cast<ProfileLevel>(obs_data_get_int(data, P_PROFILELEVEL)),
+									std::make_pair(obsWidth, obsHeight), std::make_pair(obsFPSnum, obsFPSden));
 	m_VideoEncoder->SetTier(static_cast<H265::Tier>(obs_data_get_int(data, P_TIER)));
 
 	/// Frame

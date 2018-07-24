@@ -56,6 +56,8 @@ namespace Plugin {
 
 			virtual std::vector<ProfileLevel> CapsProfileLevel() override;
 			virtual void                      SetProfileLevel(ProfileLevel v) override;
+			virtual void                      SetProfileLevel(ProfileLevel v, std::pair<uint32_t, uint32_t> r,
+															  std::pair<uint32_t, uint32_t> h) override;
 			virtual ProfileLevel              GetProfileLevel() override;
 
 			virtual std::pair<uint64_t, uint64_t> CapsMaximumReferenceFrames() override;

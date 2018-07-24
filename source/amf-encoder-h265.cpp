@@ -324,10 +324,25 @@ std::vector<ProfileLevel> Plugin::AMD::EncoderH265::CapsProfileLevel()
 void Plugin::AMD::EncoderH265::SetProfileLevel(ProfileLevel v)
 {
 	AMFTRACECALL;
-	;
 
 	if (v == ProfileLevel::Automatic)
 		v = Utility::H265ProfileLevel(m_Resolution, m_FrameRate);
+
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_PROFILE_LEVEL, ((int64_t)v) * 3);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <" __FUNCTION_NAME__ "> Failed to set to %lld, error %ls (code %d)",
+							 m_UniqueId, (int64_t)v, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.c_str());
+	}
+}
+
+void Plugin::AMD::EncoderH265::SetProfileLevel(ProfileLevel v, std::pair<uint32_t, uint32_t> r,
+											   std::pair<uint32_t, uint32_t> h)
+{
+	AMFTRACECALL;
+
+	if (v == ProfileLevel::Automatic)
+		v = Utility::H265ProfileLevel(r, h);
 
 	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_PROFILE_LEVEL, ((int64_t)v) * 3);
 	if (res != AMF_OK) {
