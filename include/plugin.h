@@ -25,6 +25,7 @@
 #ifndef LITE_OBS
 #include "obs-module.h"
 #include "util/base.h"
+#include "util/platform.h"
 #endif
 #pragma warning(pop)
 
