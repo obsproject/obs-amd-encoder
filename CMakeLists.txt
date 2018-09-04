@@ -117,11 +117,23 @@ Set(${PropertyPrefix}OBS_NATIVE FALSE CACHE BOOL "Use native obs-studio build" F
 Set(${PropertyPrefix}OBS_REFERENCE FALSE CACHE BOOL "Use referenced obs-studio build" FORCE)
 Set(${PropertyPrefix}OBS_PACKAGE FALSE CACHE BOOL "Use packaged obs-studio build" FORCE)
 Set(${PropertyPrefix}OBS_DOWNLOAD FALSE CACHE BOOL "Use downloaded obs-studio build" FORCE)
-Set(${PropertyPrefix}OBS_STUDIO_DIR "" CACHE PATH "OBS Studio Source/Package Directory")
-Set(${PropertyPrefix}OBS_DOWNLOAD_VERSION "22.0.2" CACHE STRING "OBS Studio Version to download")
 MARK_AS_ADVANCED(FORCE OBS_NATIVE OBS_PACKAGE OBS_REFERENCE OBS_DOWNLOAD)
 
+If(TARGET libobs)
+	Message(STATUS "${PROJECT_NAME}: Using native obs-studio.")
+	CacheSet(${PropertyPrefix}OBS_NATIVE TRUE)	
+Else()
+	Set(${PropertyPrefix}OBS_STUDIO_DIR "" CACHE PATH "OBS Studio Source/Package Directory")
+	Set(${PropertyPrefix}OBS_DOWNLOAD_VERSION "22.0.2" CACHE STRING "OBS Studio Version to download")
+EndIf()
+
 Set(AMF_SDK_DIR  "${PROJECT_SOURCE_DIR}/AMF/" CACHE PATH "AMD Advanced Media Framework SDK Directory")
+
+If(NOT ${PropertyPrefix}OBS_NATIVE)
+	Set(CMAKE_PACKAGE_PREFIX "${CMAKE_BINARY_DIR}" CACHE PATH "Path for generated archives.")
+	Set(CMAKE_PACKAGE_NAME "${PROJECT_NAME}" CACHE STRING "Name for the generated archives.")
+	Set(CMAKE_PACKAGE_SUFFIX_OVERRIDE "" CACHE STRING "Override for the suffix.")
+EndIf()
 
 ################################################################################
 # Dependencies
@@ -378,6 +390,27 @@ Else()
 	INSTALL(
 		DIRECTORY "${PROJECT_SOURCE_DIR}/resources/"
 		DESTINATION "./data/obs-plugins/${PROJECT_NAME}/"
+	)
+	
+	If("${CMAKE_PACKAGE_SUFFIX_OVERRIDE}" STREQUAL "")
+		Set(PackageFullName "${CMAKE_PACKAGE_PREFIX}/${CMAKE_PACKAGE_NAME}-${PROJECT_VERSION}")
+	Else()
+		Set(PackageFullName "${CMAKE_PACKAGE_PREFIX}/${CMAKE_PACKAGE_NAME}-${CMAKE_PACKAGE_SUFFIX_OVERRIDE}")
+	EndIf()
+	
+	Add_Custom_Target(
+		PACKAGE_7Z
+		${CMAKE_COMMAND} -E tar cfv "${PackageFullName}.7z" --format=7zip --
+			"${CMAKE_INSTALL_PREFIX}/obs-plugins"
+			"${CMAKE_INSTALL_PREFIX}/data"
+		WORKING_DIRECTORY "${CMAKE_INSTALL_PREFIX}"
+	)
+	Add_Custom_Target(
+		PACKAGE_ZIP
+		${CMAKE_COMMAND} -E tar cfv "${PackageFullName}.zip" --format=zip --
+			"${CMAKE_INSTALL_PREFIX}/obs-plugins"
+			"${CMAKE_INSTALL_PREFIX}/data"
+		WORKING_DIRECTORY "${CMAKE_INSTALL_PREFIX}"
 	)
 EndIf()
 
