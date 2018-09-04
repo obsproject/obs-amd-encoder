@@ -1,15 +1,5 @@
 git submodule update --init --force --recursive
 
-IF "%APPVEYOR_REPO_TAG%"=="true" (
-  SET "PACKAGE_NAME=%PACKAGE_PREFIX%-%APPVEYOR_REPO_TAG_NAME%"
-) ELSE (
-	IF "%APPVEYOR_PULL_REQUEST_NUMBER%"=="" (
-		SET "PACKAGE_NAME=%PACKAGE_PREFIX%-%APPVEYOR_REPO_BRANCH%-%APPVEYOR_BUILD_NUMBER%"
-	) ELSE (
-		SET "PACKAGE_NAME=%PACKAGE_PREFIX%-%APPVEYOR_PULL_REQUEST_NUMBER%-%APPVEYOR_BUILD_NUMBER%"
-	)
-)
-
 IF EXIST inno.exe (
 	curl -kL "%INNOSETUP_URL%" -f --retry 5 -o inno.exe -z inno.exe
 ) else (
