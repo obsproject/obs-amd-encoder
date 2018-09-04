@@ -15,260 +15,371 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-cmake_minimum_required(VERSION 3.1.0)
-PROJECT(enc-amf VERSION 2.4.2)
+# CMake Setup
+CMake_Minimum_Required(VERSION 3.1.0)
+Include("cmake/util.cmake")
+Include("cmake/DownloadProject.cmake")
+
+# Automatic Versioning
+Set(VERSION_MAJOR 2)
+Set(VERSION_MINOR 4)
+Set(VERSION_PATCH 2)
+Set(VERSION_TWEAK 0)
+If(EXISTS "${CMAKE_CURRENT_LIST_DIR}/.git")
+	Set(GIT_RESULT "")
+	Set(GIT_OUTPUT "")
+	EXECUTE_PROCESS(
+		COMMAND git rev-list --count --topo-order ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}..HEAD
+		WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+		RESULT_VARIABLE GIT_RESULT
+		OUTPUT_VARIABLE GIT_OUTPUT
+		OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE ERROR_QUIET
+	)
+	If(GIT_RESULT EQUAL 0)
+		Set(VERSION_TWEAK ${GIT_OUTPUT})
+	EndIf()
+EndIf()
+
+# Define Project
+PROJECT(
+	enc-amf
+	VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${VERSION_TWEAK}
+	DESCRIPTION ""
+	HOMEPAGE_URL "https://www.xaymar.com/portfolio/plugin-amf-encoder-for-obs-studio/"
+)
 
 ################################################################################
 # CMake / Compiler
 ################################################################################
-configure_file(
+
+# Detect Build Type
+If("${CMAKE_SOURCE_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
+	Set(PropertyPrefix "")
+Else()
+	Set(PropertyPrefix "${PROJECT_NAME}_")
+EndIf()
+
+# Detect Architecture
+math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
+IF("${BITS}" STREQUAL "32")
+	SET(ARCH "x86")
+Else()
+	SET(ARCH "x64")
+ENDIF()
+
+# Configure Installer script
+Configure_File(
 	"${PROJECT_SOURCE_DIR}/ci/installer.in.iss"
 	"${PROJECT_BINARY_DIR}/ci/installer.iss"
 )
 
-configure_file(
-	"${PROJECT_SOURCE_DIR}/Include/Version.h.in"
-	"${PROJECT_BINARY_DIR}/Include/Version.h"
+# Configure Version Header
+Configure_File(
+	"${PROJECT_SOURCE_DIR}/include/version.h.in"
+	"${PROJECT_BINARY_DIR}/include/version.h"
 )
 
+# Windows Specific Resource Definition
+If(WIN32)
+	Set(PROJECT_PRODUCT_NAME "OBS Studio AMD Encoder")
+	Set(PROJECT_COMPANY_NAME "Xaymar")
+	Set(PROJECT_COPYRIGHT "Xaymar © 2016 - 2018")
+	Set(PROJECT_LEGAL_TRADEMARKS_1 "Advanced Micro Devices, AMD, AMD Ryzen, Ryzen, AMD Radeon and Radeon are Trademarks of Advanced Micro Devices.")
+	Set(PROJECT_LEGAL_TRADEMARKS_2 "")
+	Set(PROJECT_DESCRIPTION "AMD Encoder integration for OBS Studio")
+		
+	Configure_File(
+		"${PROJECT_SOURCE_DIR}/cmake/version.rc.in"
+		"${PROJECT_BINARY_DIR}/cmake/version.rc"
+		@ONLY
+	)	
+EndIf()
+
 # All Warnings, Extra Warnings, Pedantic
-if(MSVC)
+If(MSVC)
 	# Force to always compile with W4
-	if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
-		string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-	else()
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
-	endif()
-	
-	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-	# Update if necessary
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
-endif()
+	If(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+		String(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	Else()
+		Set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+	EndIf()
+ElseIf(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+	# Update If necessary
+	Set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
+EndIf()
 
 math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
 
 ################################################################################
 # Options
 ################################################################################
-SET(AMF_SDK_DIR  "${PROJECT_SOURCE_DIR}/AMF/" CACHE PATH "AMD Advanced Media Framework SDK Directory")
+Set(${PropertyPrefix}OBS_NATIVE FALSE CACHE BOOL "Use native obs-studio build" FORCE)
+Set(${PropertyPrefix}OBS_REFERENCE FALSE CACHE BOOL "Use referenced obs-studio build" FORCE)
+Set(${PropertyPrefix}OBS_PACKAGE FALSE CACHE BOOL "Use packaged obs-studio build" FORCE)
+Set(${PropertyPrefix}OBS_DOWNLOAD FALSE CACHE BOOL "Use downloaded obs-studio build" FORCE)
+Set(${PropertyPrefix}OBS_STUDIO_DIR "" CACHE PATH "OBS Studio Source/Package Directory")
+Set(${PropertyPrefix}OBS_DOWNLOAD_VERSION "22.0.2" CACHE STRING "OBS Studio Version to download")
+MARK_AS_ADVANCED(FORCE OBS_NATIVE OBS_PACKAGE OBS_REFERENCE OBS_DOWNLOAD)
 
-IF(TARGET libobs)
-	MESSAGE(STATUS "enc-amf: Using native obs-studio.")
-	SET(OBS_NATIVE TRUE)
-	OPTION(BUILD_AMD_ENCODER "Build AMD Encoder module" ON)
-	
-	if (NOT BUILD_AMD_ENCODER)
-		message(STATUS "Not building AMD Encoder")
-		return()
-	endif()
-ELSE()
-	SET(OBS_NATIVE FALSE)
-	SET(OBS_STUDIO_DIR "" CACHE PATH "OBS Studio Source/Package Directory")	
-ENDIF()
+Set(AMF_SDK_DIR  "${PROJECT_SOURCE_DIR}/AMF/" CACHE PATH "AMD Advanced Media Framework SDK Directory")
 
 ################################################################################
 # Dependencies
 ################################################################################
 
 # AMF SDK
-if(AMF_SDK_DIR STREQUAL "")
-	message(STATUS "AMF_SDK_DIR not set! enc-amf plugin disabled.")
-	return()
-endif()
+If(AMF_SDK_DIR STREQUAL "")
+	Message(STATUS "AMF_SDK_DIR not set! ${PROJECT_NAME} plugin disabled.")
+	Return()
+EndIf()
 
-if(NOT EXISTS "${AMF_SDK_DIR}/amf/public/include/components/VideoEncoderVCE.h")
-	message(STATUS "AMF_SDK_DIR invalid! enc-amf plugin disabled.")
-	return()
-endif()
+If(NOT EXISTS "${AMF_SDK_DIR}/amf/public/include/components/VideoEncoderVCE.h")
+	Message(STATUS "AMF_SDK_DIR invalid! ${PROJECT_NAME} plugin disabled.")
+	Return()
+EndIf()
 
-# Detect OBS_STUDIO_DIR type
-IF(NOT OBS_NATIVE)
-	IF(EXISTS "${OBS_STUDIO_DIR}/libobs/obs-module.h")
-		MESSAGE(STATUS "enc-amf: Using referenced obs-studio.")
-		SET(OBS_PACKAGE FALSE)
-		SET(obsPath "${OBS_STUDIO_DIR}")
-		INCLUDE("${OBS_STUDIO_DIR}/cmake/external/Findlibobs.cmake")
-	ELSEIF(EXISTS "${OBS_STUDIO_DIR}/cmake/LibObs/LibObsConfig.cmake")
-		MESSAGE(STATUS "enc-amf: Using packaged obs-studio.")
-		SET(OBS_PACKAGE TRUE)
-		INCLUDE("${OBS_STUDIO_DIR}/cmake/LibObs/LibObsConfig.cmake")
-	ELSE()
-		MESSAGE("Failed to detect OBS_STUDIO_DIR type, verify that the following is path correct '${OBS_STUDIO_DIR}'.")
-		return()
-	ENDIF()
-ENDIF()
+# Detect OBS Studio Type
+If(TARGET libobs)
+	Message(STATUS "${PROJECT_NAME}: Using native obs-studio.")
+	CacheSet(${PropertyPrefix}OBS_NATIVE TRUE)	
+Else()
+	CacheSet(${PropertyPrefix}OBS_NATIVE FALSE)
+	IF(EXISTS "${OBS_STUDIO_DIR}/cmake/LibObs/LibObsConfig.cmake")
+		Message(STATUS "${PROJECT_NAME}: Using packaged obs-studio.")
+		CacheSet(${PropertyPrefix}OBS_PACKAGE TRUE)
+	ElseIf(EXISTS "${OBS_STUDIO_DIR}/libobs/obs-module.h")
+		Message(STATUS "${PROJECT_NAME}: Using referenced obs-studio.")
+		CacheSet(${PropertyPrefix}OBS_REFERENCE TRUE)
+	Else()
+		Message(STATUS "${PROJECT_NAME}: No OBS Studio detected, using downloadable prebuilt binaries.")
+		CacheSet(${PropertyPrefix}OBS_DOWNLOAD TRUE)
+		Set(${PropertyPrefix}OBS_DOWNLOAD_URL "https://github.com/Xaymar/obs-studio/releases/download/${OBS_DOWNLOAD_VERSION}/obs-studio-${ARCH}-vs2017.7z")
+	EndIf()
+EndIf()
+
+If(${PropertyPrefix}OBS_NATIVE)
+	Option(BUILD_AMD_ENCODER "Build AMD Encoder module" ON)	
+	If (NOT BUILD_AMD_ENCODER)
+		Message(STATUS "Not building AMD Encoder")
+		Return()
+	EndIf()
+ElseIf(${PropertyPrefix}OBS_PACKAGE)
+	Include("${OBS_STUDIO_DIR}/cmake/LibObs/LibObsConfig.cmake")
+ElseIf(${PropertyPrefix}OBS_REFERENCE)
+	Set(obsPath "${OBS_STUDIO_DIR}")
+	Include("${OBS_STUDIO_DIR}/cmake/external/Findlibobs.cmake")
+ElseIf(${PropertyPrefix}OBS_DOWNLOAD)
+	download_project(
+		PROJ libobs
+		URL ${OBS_DOWNLOAD_URL}
+		UPDATE_DISCONNECTED 1
+	)
+	INCLUDE("${libobs_SOURCE_DIR}/cmake/LibObs/LibObsConfig.cmake")
+Else()
+	Message(CRITICAL "Impossible case reached, very system stability.")
+	Return()
+EndIf()
 
 ################################################################################
 # Code
 ################################################################################
-SET(PROJECT_HEADERS
-	"${PROJECT_SOURCE_DIR}/Include/amf.h"
-	"${PROJECT_SOURCE_DIR}/Include/amf-capabilities.h"
-	"${PROJECT_SOURCE_DIR}/Include/amf-encoder.h"
-	"${PROJECT_SOURCE_DIR}/Include/amf-encoder-h264.h"
-	"${PROJECT_SOURCE_DIR}/Include/enc-h264.h"
-	"${PROJECT_SOURCE_DIR}/Include/amf-encoder-h265.h"
-	"${PROJECT_SOURCE_DIR}/Include/enc-h265.h"
-	"${PROJECT_SOURCE_DIR}/Include/api-base.h"
-	"${PROJECT_SOURCE_DIR}/Include/api-host.h"
-	"${PROJECT_SOURCE_DIR}/Include/api-opengl.h"
-	"${PROJECT_SOURCE_DIR}/Include/utility.h"
-	"${PROJECT_SOURCE_DIR}/Include/plugin.h"
-	"${PROJECT_SOURCE_DIR}/Include/strings.h"
-	"${PROJECT_BINARY_DIR}/Include/Version.h"
+Set(PROJECT_HEADERS
+	"${PROJECT_SOURCE_DIR}/include/amf.h"
+	"${PROJECT_SOURCE_DIR}/include/amf-capabilities.h"
+	"${PROJECT_SOURCE_DIR}/include/amf-encoder.h"
+	"${PROJECT_SOURCE_DIR}/include/amf-encoder-h264.h"
+	"${PROJECT_SOURCE_DIR}/include/enc-h264.h"
+	"${PROJECT_SOURCE_DIR}/include/amf-encoder-h265.h"
+	"${PROJECT_SOURCE_DIR}/include/enc-h265.h"
+	"${PROJECT_SOURCE_DIR}/include/api-base.h"
+	"${PROJECT_SOURCE_DIR}/include/api-host.h"
+	"${PROJECT_SOURCE_DIR}/include/api-opengl.h"
+	"${PROJECT_SOURCE_DIR}/include/utility.h"
+	"${PROJECT_SOURCE_DIR}/include/plugin.h"
+	"${PROJECT_SOURCE_DIR}/include/strings.h"
+	"${PROJECT_BINARY_DIR}/include/version.h"
 )
-SET(PROJECT_SOURCES
-	"${PROJECT_SOURCE_DIR}/Source/amf.cpp"
-	"${PROJECT_SOURCE_DIR}/Source/amf-capabilities.cpp"
-	"${PROJECT_SOURCE_DIR}/Source/amf-encoder.cpp"
-	"${PROJECT_SOURCE_DIR}/Source/amf-encoder-h264.cpp"
-	"${PROJECT_SOURCE_DIR}/Source/enc-h264.cpp"
-	"${PROJECT_SOURCE_DIR}/Source/amf-encoder-h265.cpp"
-	"${PROJECT_SOURCE_DIR}/Source/enc-h265.cpp"
-	"${PROJECT_SOURCE_DIR}/Source/api-base.cpp"
-	"${PROJECT_SOURCE_DIR}/Source/api-host.cpp"
-	"${PROJECT_SOURCE_DIR}/Source/api-opengl.cpp"
-	"${PROJECT_SOURCE_DIR}/Source/utility.cpp"
-	"${PROJECT_SOURCE_DIR}/Source/plugin.cpp"
+Set(PROJECT_SOURCES
+	"${PROJECT_SOURCE_DIR}/source/amf.cpp"
+	"${PROJECT_SOURCE_DIR}/source/amf-capabilities.cpp"
+	"${PROJECT_SOURCE_DIR}/source/amf-encoder.cpp"
+	"${PROJECT_SOURCE_DIR}/source/amf-encoder-h264.cpp"
+	"${PROJECT_SOURCE_DIR}/source/enc-h264.cpp"
+	"${PROJECT_SOURCE_DIR}/source/amf-encoder-h265.cpp"
+	"${PROJECT_SOURCE_DIR}/source/enc-h265.cpp"
+	"${PROJECT_SOURCE_DIR}/source/api-base.cpp"
+	"${PROJECT_SOURCE_DIR}/source/api-host.cpp"
+	"${PROJECT_SOURCE_DIR}/source/api-opengl.cpp"
+	"${PROJECT_SOURCE_DIR}/source/utility.cpp"
+	"${PROJECT_SOURCE_DIR}/source/plugin.cpp"
 )
-SET(PROJECT_DATA
-	"${PROJECT_SOURCE_DIR}/Resources/locale/en-US.ini"
+Set(PROJECT_DATA
+	"${PROJECT_SOURCE_DIR}/resources/locale/en-US.ini"
 	"${PROJECT_SOURCE_DIR}/LICENSE"
 	"${PROJECT_SOURCE_DIR}/AUTHORS"
 )
-SET(PROJECT_LIBRARIES
+Set(PROJECT_LIBRARIES
 	version
 	winmm
 )
 
-if (WIN32)
-	# Windows Only
+If(WIN32) # Windows Only
 	LIST(APPEND PROJECT_HEADERS
-		"Include/api-d3d9.h"
-		"Include/api-d3d11.h"
+		"include/api-d3d9.h"
+		"include/api-d3d11.h"
 	)
 	LIST(APPEND PROJECT_SOURCES
-		"Source/api-d3d9.cpp"
-		"Source/api-d3d11.cpp"
+		"source/api-d3d9.cpp"
+		"source/api-d3d11.cpp"
+		"${PROJECT_BINARY_DIR}/cmake/version.rc"
 	)
-	
-	# windows.h
-	add_definitions(-DWIN32_LEAN_AND_MEAN)
-	add_definitions(-DNOGPICAPMASKS)
-	add_definitions(-DNOVIRTUALKEYCODES)
-	#add_definitions(-DNOWINMESSAGES)
-	add_definitions(-DNOWINSTYLES)
-	add_definitions(-DNOSYSMETRICS)
-	add_definitions(-DNOMENUS)
-	add_definitions(-DNOICONS)
-	add_definitions(-DNOKEYSTATES)
-	add_definitions(-DNOSYSCOMMANDS)
-	add_definitions(-DNORASTEROPS)
-	add_definitions(-DNOSHOWWINDOW)
-	add_definitions(-DNOATOM)
-	add_definitions(-DNOCLIPBOARD)
-	add_definitions(-DNOCOLOR)
-	add_definitions(-DNOCTLMGR)
-	add_definitions(-DNODRAWTEXT)
-	#add_definitions(-DNOGDI)
-	add_definitions(-DNOKERNEL)
-	#add_definitions(-DNOUSER)
-	#add_definitions(-DNONLS)
-	add_definitions(-DNOMB)
-	add_definitions(-DNOMEMMGR)
-	add_definitions(-DNOMETAFILE)
-	add_definitions(-DNOMINMAX)
-	#add_definitions(-DNOMSG)
-	add_definitions(-DNOOPENFILE)
-	add_definitions(-DNOSCROLL)
-	add_definitions(-DNOSERVICE)
-	add_definitions(-DNOSOUND)
-	#add_definitions(-DNOTEXTMETRIC)
-	add_definitions(-DNOWH)
-	add_definitions(-DNOWINOFFSETS)
-	add_definitions(-DNOCOMM)
-	add_definitions(-DNOKANJI)
-	add_definitions(-DNOHELP)
-	add_definitions(-DNOPROFILER)
-	add_definitions(-DNODEFERWINDOWPOS)
-	add_definitions(-DNOMCX)
-	add_definitions(-DNOIME)
-	add_definitions(-DNOMDI)
-	add_definitions(-DNOINOUT)
-endif()
+EndIf()
 
 # Source Grouping
-source_group("Data Files" FILES ${enc-amf_DATA})
+Source_Group("Data Files" FILES ${enc-amf_DATA})
 
 ################################################################################
 # Target
 ################################################################################
 
-ADD_LIBRARY(enc-amf MODULE
+Add_Library(${PROJECT_NAME} MODULE
 	${PROJECT_HEADERS}
 	${PROJECT_SOURCES}
 	${PROJECT_DATA}
 )
 
 # Include Directories
-TARGET_INCLUDE_DIRECTORIES(enc-amf
+Target_Include_Directories(${PROJECT_NAME}
 	PUBLIC
-		"${PROJECT_BINARY_DIR}/Include"
-		"${PROJECT_SOURCE_DIR}/Include"
+		"${PROJECT_BINARY_DIR}/include"
+		"${PROJECT_SOURCE_DIR}/include"
 		"${AMF_SDK_DIR}/amf/public/include"
 	PRIVATE
-		"${PROJECT_BINARY_DIR}/Source"
-		"${PROJECT_SOURCE_DIR}/Source"
+		"${PROJECT_BINARY_DIR}/source"
+		"${PROJECT_SOURCE_DIR}/source"
 		"${PROJECT_BINARY_DIR}"
 		"${PROJECT_SOURCE_DIR}"
 		"${CMAKE_SOURCE_DIR}"
 )
-IF(OBS_NATIVE)
-	TARGET_LINK_LIBRARIES(enc-amf
+
+# OBS Studio
+If(${PropertyPrefix}OBS_NATIVE)
+	Target_Link_Libraries(${PROJECT_NAME}
 		libobs
 	)
-ELSEIF(OBS_PACKAGE)
-	TARGET_INCLUDE_DIRECTORIES(enc-amf
-		PRIVATE
-			"${OBS_STUDIO_DIR}/include"
-	)
-	TARGET_LINK_LIBRARIES(enc-amf
-		libobs
-	)
-ELSE()
-	TARGET_INCLUDE_DIRECTORIES(enc-amf
+ElseIf(${PropertyPrefix}OBS_REFERENCE)
+	Target_Include_Directories(${PROJECT_NAME}
 		PRIVATE
 			"${OBS_STUDIO_DIR}/libobs"
 	)
-	TARGET_LINK_LIBRARIES(enc-amf
+	Target_Link_Libraries(${PROJECT_NAME}
 		"${LIBOBS_LIB}"
 	)
-ENDIF()
+ElseIf(${PropertyPrefix}OBS_PACKAGE)
+	Target_Include_Directories(${PROJECT_NAME}
+		PRIVATE
+			"${OBS_STUDIO_DIR}/include"
+	)
+	Target_Link_Libraries(${PROJECT_NAME}
+		libobs
+	)
+ElseIf(${PropertyPrefix}OBS_DOWNLOAD)
+	Target_Link_Libraries(${PROJECT_NAME}
+		libobs
+	)
+EndIf()
 
 # Link Libraries
-TARGET_LINK_LIBRARIES(enc-amf
+Target_Link_Libraries(${PROJECT_NAME}
 	"${PROJECT_LIBRARIES}"
 )
+
+# Definitions
+If (WIN32)
+	Target_Compile_Definitions(${PROJECT_NAME}
+		PRIVATE
+			_CRT_SECURE_NO_WARNINGS
+			# windows.h
+			WIN32_LEAN_AND_MEAN
+			NOGPICAPMASKS
+			NOVIRTUALKEYCODES
+			#NOWINMESSAGES
+			NOWINSTYLES
+			NOSYSMETRICS
+			NOMENUS
+			NOICONS
+			NOKEYSTATES
+			NOSYSCOMMANDS
+			NORASTEROPS
+			NOSHOWWINDOW
+			NOATOM
+			NOCLIPBOARD
+			NOCOLOR
+			NOCTLMGR
+			NODRAWTEXT
+			#NOGDI
+			NOKERNEL
+			#NOUSER
+			#NONLS
+			NOMB
+			NOMEMMGR
+			NOMETAFILE
+			NOMINMAX
+			#NOMSG
+			NOOPENFILE
+			NOSCROLL
+			NOSERVICE
+			NOSOUND
+			#NOTEXTMETRIC
+			NOWH
+			NOWINOFFSETS
+			NOCOMM
+			NOKANJI
+			NOHELP
+			NOPROFILER
+			NODEFERWINDOWPOS
+			NOMCX
+			NOIME
+			NOMDI
+			NOINOUT
+	)
+EndIf()
+
+# File Version
+If(WIN32)
+	Set_Target_Properties(
+		${PROJECT_NAME}
+		PROPERTIES
+		VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK}
+		SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK}
+	)
+Else()
+	Set_Target_Properties(
+		${PROJECT_NAME}
+		PROPERTIES
+		VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK}
+		SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK}
+	)
+EndIf()
 
 ################################################################################
 # Installation
 ################################################################################
 
-IF(OBS_NATIVE)
-	install_obs_plugin_with_data(enc-amf Resources)
-ELSE()
-	INSTALL(TARGETS enc-amf
+If(${PropertyPrefix}OBS_NATIVE)
+	install_obs_plugin_with_data(${PROJECT_NAME} resources)
+Else()
+	INSTALL(TARGETS ${PROJECT_NAME}
 		RUNTIME DESTINATION "./obs-plugins/${BITS}bit/" COMPONENT Runtime
 		LIBRARY DESTINATION "./obs-plugins/${BITS}bit/" COMPONENT Runtime
 	)
-	INSTALL(FILES $<TARGET_PDB_FILE:enc-amf> DESTINATION "./obs-plugins/${BITS}bit/" OPTIONAL)
+	INSTALL(FILES $<TARGET_PDB_FILE:${PROJECT_NAME}> DESTINATION "./obs-plugins/${BITS}bit/" OPTIONAL)
 	
 	INSTALL(
-		DIRECTORY "${PROJECT_SOURCE_DIR}/Resources/"
-		DESTINATION "./data/obs-plugins/enc-amf/"
+		DIRECTORY "${PROJECT_SOURCE_DIR}/resources/"
+		DESTINATION "./data/obs-plugins/${PROJECT_NAME}/"
 	)
-ENDIF()
+EndIf()
 
 ################################################################################
 # Child Projects
@@ -276,4 +387,3 @@ ENDIF()
 
 # Sub Project
 add_subdirectory(amf-test)
-
