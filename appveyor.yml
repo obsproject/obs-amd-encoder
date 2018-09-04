@@ -23,16 +23,12 @@ after_build:
 - cmd: ci/appveyor-package.bat
 
 cache:
-  - obs32.7z
-  - obs64.7z
   - inno.exe
 
 artifacts:
-  - path: build/$(PACKAGE_NAME).zip
-    name: $(PACKAGE_NAME).zip
-  - path: build/$(PACKAGE_NAME).7z
-    name: $(PACKAGE_NAME).7z
-  - path: build/*.exe
+  - path: build/obs-amd-encoder-*.zip
+  - path: build/obs-amd-encoder-*.7z
+  - path: build/obs-amd-encoder-*.exe
 
 deploy:
   - provider: GitHub
