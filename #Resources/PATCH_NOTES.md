@@ -1,10 +1,17 @@
-# 2.4.2 - Stability Improvements
+# 2.4.3 - Stability Improvements
 A new version, but it's merely a few stability improvements. A crash on missing D3D11 or D3D9 has been fixed, capability testing always writes supported GPUs to the log file and the H264 and H265 encoder now follow the specification of the codec and set Profile, Level and Tier before Resolution and Frame Rate - which might actually improve support for higher resolution and frame rate capture.
 
 Hotfix 1: Additional stability improvements by fixing a crash with a very old driver.
 Hotfix 2: Fix a bug introduced in 2.4.0.
+Hotfix 3: Updated locale files to most recent OBS version.
 
 ## Changelog
+### 2.4.3 (CMake Improvements)
+* Updated locale files to CrowdIn build 2018-08-18.
+* Updated the CMake and CI scripts to improve automatic build process.
+* Updated the CMake scripts to make it easier to build the project.
+* Added support for file versioning on Windows and other platforms.
+
 ### 2.4.2 (Hotfix 2)
 * Fix Profile Level being stuck at 1.0 in both H264 and H265.
 
