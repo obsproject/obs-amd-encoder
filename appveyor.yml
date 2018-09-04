@@ -10,12 +10,6 @@ version: '{build}-{branch}'
 
 environment:
   CMAKE_SYSTEM_VERSION: 10.0.17134.0
-  OBS_STUDIO_32_URL: https://github.com/Xaymar/obs-studio/releases/download/21.1.2/obs-studio-x86-vs2017.7z
-  OBS_STUDIO_64_URL: https://github.com/Xaymar/obs-studio/releases/download/21.1.2/obs-studio-x64-vs2017.7z
-  OBS_STUDIO_32_FILE: obs32.7z
-  OBS_STUDIO_64_FILE: obs64.7z
-  OBS_STUDIO_32: obs-studio-x86-vs2017
-  OBS_STUDIO_64: obs-studio-x64-vs2017
   PACKAGE_PREFIX: amd-encoder-for-obs-studio
   INNOSETUP_URL: http://www.jrsoftware.org/download.php/is-unicode.exe
 

@@ -1,19 +1,5 @@
 git submodule update --init --force --recursive
 
-IF EXIST "%OBS_STUDIO_32_FILE%" (
-	curl -kL "%OBS_STUDIO_32_URL%" -f --retry 5 -o "%OBS_STUDIO_32_FILE%" -z "%OBS_STUDIO_32_FILE%"
-) ELSE (
-	curl -kL "%OBS_STUDIO_32_URL%" -f --retry 5 -o "%OBS_STUDIO_32_FILE%"
-)
-7z x -y "%OBS_STUDIO_32_FILE%" -o. > nul
-
-IF EXIST "%OBS_STUDIO_64_FILE%" (
-	curl -kL "%OBS_STUDIO_64_URL%" -f --retry 5 -o "%OBS_STUDIO_64_FILE%" -z "%OBS_STUDIO_64_FILE%"
-) ELSE (
-	curl -kL "%OBS_STUDIO_64_URL%" -f --retry 5 -o "%OBS_STUDIO_64_FILE%"
-)
-7z x -y "%OBS_STUDIO_64_FILE%" -o. > nul
-
 IF "%APPVEYOR_REPO_TAG%"=="true" (
   SET "PACKAGE_NAME=%PACKAGE_PREFIX%-%APPVEYOR_REPO_TAG_NAME%"
 ) ELSE (
