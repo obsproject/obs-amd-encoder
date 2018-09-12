@@ -17,7 +17,7 @@ pipeline {
         }
         stage('64-Bit') {
           steps {
-            cmake(installation: 'default', arguments: '-H. -B"build/64" -G"Visual Studio 15 2017" -DCMAKE_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}" -DCMAKE_PACKAGE_PREFIX="${CMAKE_PACKAGE_PREFIX}" -DCMAKE_PACKAGE_NAME="${CMAKE_PACKAGE_NAME}"')
+            cmake(installation: 'default', arguments: '-H. -B"build/64" -G"Visual Studio 15 2017 Win64" -T"host=x64" -DCMAKE_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}" -DCMAKE_PACKAGE_PREFIX="${CMAKE_PACKAGE_PREFIX}" -DCMAKE_PACKAGE_NAME="${CMAKE_PACKAGE_NAME}"')
           }
         }
       }
