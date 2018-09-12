@@ -377,13 +377,20 @@ EndIf()
 If(${PropertyPrefix}OBS_NATIVE)
 	install_obs_plugin_with_data(${PROJECT_NAME} resources)
 Else()
-	INSTALL(TARGETS ${PROJECT_NAME}
+	Install(
+		TARGETS ${PROJECT_NAME}
 		RUNTIME DESTINATION "./obs-plugins/${BITS}bit/" COMPONENT Runtime
 		LIBRARY DESTINATION "./obs-plugins/${BITS}bit/" COMPONENT Runtime
 	)
-	INSTALL(FILES $<TARGET_PDB_FILE:${PROJECT_NAME}> DESTINATION "./obs-plugins/${BITS}bit/" OPTIONAL)
+	IF(MSVC)
+		Install(
+			FILES $<TARGET_PDB_FILE:${PROJECT_NAME}>
+			DESTINATION "./obs-plugins/${BITS}bit/"
+			OPTIONAL
+		)
+	ENDIF()
 	
-	INSTALL(
+	Install(
 		DIRECTORY "${PROJECT_SOURCE_DIR}/resources/"
 		DESTINATION "./data/obs-plugins/${PROJECT_NAME}/"
 	)
@@ -415,4 +422,4 @@ EndIf()
 ################################################################################
 
 # Sub Project
-add_subdirectory(amf-test)
+Add_SubDirectory(amf-test)
