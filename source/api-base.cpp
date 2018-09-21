@@ -75,7 +75,7 @@ Plugin::API::IAPI::IAPI() {}
 
 Plugin::API::IAPI::~IAPI() {}
 
-Plugin::API::Adapter Plugin::API::IAPI::GetAdapterById(int32_t idLow, int32_t idHigh)
+Plugin::API::Adapter Plugin::API::IAPI::GetAdapterById(const int32_t idLow, const int32_t idHigh)
 {
 	for (auto adapter : EnumerateAdapters()) {
 		if ((adapter.idLow == idLow) && (adapter.idHigh == idHigh))
@@ -84,7 +84,7 @@ Plugin::API::Adapter Plugin::API::IAPI::GetAdapterById(int32_t idLow, int32_t id
 	return *(EnumerateAdapters().begin());
 }
 
-Plugin::API::Adapter Plugin::API::IAPI::GetAdapterByName(std::string name)
+Plugin::API::Adapter Plugin::API::IAPI::GetAdapterByName(const std::string& name)
 {
 	for (auto adapter : EnumerateAdapters()) {
 		if (adapter.Name == name)
@@ -163,7 +163,7 @@ std::shared_ptr<IAPI> Plugin::API::GetAPI(size_t index)
 	return *indAPI;
 }
 
-std::shared_ptr<IAPI> Plugin::API::GetAPI(std::string name)
+std::shared_ptr<IAPI> Plugin::API::GetAPI(const std::string& name)
 {
 	for (auto api : s_APIInstances) {
 		if (name == api->GetName()) {

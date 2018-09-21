@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include "api-d3d11.h"
 #include <mutex>
 #include <sstream>
 #include <stdlib.h>
-#include "api-d3d11.h"
 
 using namespace Plugin::API;
 
@@ -187,12 +187,8 @@ Plugin::API::Type Plugin::API::Direct3D11::GetType()
 }
 
 Plugin::API::Direct3D11Instance::Direct3D11Instance(Direct3D11* api, Adapter adapter)
+	: m_API(api), m_Adapter(adapter), m_Device(nullptr), m_DeviceContext(nullptr)
 {
-	m_API           = api;
-	m_Adapter       = adapter;
-	m_Device        = nullptr;
-	m_DeviceContext = nullptr;
-
 	LUID adapterLUID;
 	adapterLUID.LowPart  = adapter.idLow;
 	adapterLUID.HighPart = adapter.idHigh;

@@ -39,15 +39,10 @@ namespace Plugin {
 			std::string Name;
 
 			Adapter() : idLow(0), idHigh(0), Name("Invalid Device") {}
-			Adapter(int32_t p_idLow, int32_t p_idHigh, std::string p_Name)
+			Adapter(const int32_t p_idLow, const int32_t p_idHigh, const std::string& p_Name)
 				: idLow(p_idLow), idHigh(p_idHigh), Name(p_Name)
 			{}
-			Adapter(Adapter const& o)
-			{
-				idLow  = o.idLow;
-				idHigh = o.idHigh;
-				Name   = o.Name;
-			}
+			Adapter(Adapter const& o) : Name(o.Name), idLow(o.idLow), idHigh(o.idHigh) {}
 			void operator=(Adapter const& o)
 			{
 				idLow  = o.idLow;
@@ -84,8 +79,8 @@ namespace Plugin {
 			virtual Type        GetType() = 0;
 
 			virtual std::vector<Adapter> EnumerateAdapters() = 0;
-			Adapter                      GetAdapterById(int32_t idLow, int32_t idHigh);
-			Adapter                      GetAdapterByName(std::string name);
+			Adapter                      GetAdapterById(const int32_t idLow, const int32_t idHigh);
+			Adapter                      GetAdapterByName(const std::string& name);
 
 			virtual std::shared_ptr<Instance> CreateInstance(Adapter adapter) = 0;
 		};
@@ -96,7 +91,7 @@ namespace Plugin {
 		size_t                             CountAPIs();
 		std::string                        GetAPIName(size_t index);
 		std::shared_ptr<IAPI>              GetAPI(size_t index);
-		std::shared_ptr<IAPI>              GetAPI(std::string name);
+		std::shared_ptr<IAPI>              GetAPI(const std::string& name);
 		std::shared_ptr<IAPI>              GetAPI(Type type);
 		std::vector<std::shared_ptr<IAPI>> EnumerateAPIs();
 		std::vector<std::string>           EnumerateAPINames();

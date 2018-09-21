@@ -147,7 +147,7 @@ Plugin::AMD::AMF::AMF()
 	} else {
 		res = AMFQueryVersion(&m_AMFVersion_Runtime);
 		if (res != AMF_OK) {
-			QUICK_FORMAT_MESSAGE(msg, "Querying Version failed, error code %ld.", res);
+			QUICK_FORMAT_MESSAGE(msg, "Querying Version failed, error code %d.", res);
 			throw std::exception(msg.data());
 		}
 	}
@@ -166,7 +166,7 @@ Plugin::AMD::AMF::AMF()
 	} else {
 		res = AMFInit(m_AMFVersion_Runtime, &m_AMFFactory);
 		if (res != AMF_OK) {
-			QUICK_FORMAT_MESSAGE(msg, "Initializing AMF Library failed, error code %ld.", res);
+			QUICK_FORMAT_MESSAGE(msg, "Initializing AMF Library failed, error code %d.", res);
 			throw std::exception(msg.data());
 		}
 	}
@@ -175,14 +175,14 @@ Plugin::AMD::AMF::AMF()
 	/// Retrieve Trace Object.
 	res = m_AMFFactory->GetTrace(&m_AMFTrace);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(msg, "Retrieving AMF Trace class failed, error code %ld.", res);
+		QUICK_FORMAT_MESSAGE(msg, "Retrieving AMF Trace class failed, error code %d.", res);
 		throw std::exception(msg.data());
 	}
 
 	/// Retrieve Debug Object.
 	res = m_AMFFactory->GetDebug(&m_AMFDebug);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(msg, "Retrieving AMF Debug class failed, error code %ld.", res);
+		QUICK_FORMAT_MESSAGE(msg, "Retrieving AMF Debug class failed, error code %d.", res);
 		throw std::exception(msg.data());
 	}
 

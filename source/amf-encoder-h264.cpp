@@ -27,9 +27,11 @@ using namespace Plugin;
 using namespace Plugin::AMD;
 using namespace Utility;
 
-Plugin::AMD::EncoderH264::EncoderH264(std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter,
-									  bool useOpenCLSubmission, bool useOpenCLConversion, ColorFormat colorFormat,
-									  ColorSpace colorSpace, bool fullRangeColor, bool useAsyncQueue,
+Plugin::AMD::EncoderH264::EncoderH264(std::shared_ptr<API::IAPI> videoAPI, const API::Adapter& videoAdapter,
+									  bool useOpenCLSubmission, bool useOpenCLConversion,
+ ColorFormat colorFormat,
+									  ColorSpace colorSpace, bool fullRangeColor,
+ bool useAsyncQueue,
 									  size_t asyncQueueSize)
 	: Encoder(Codec::AVC, videoAPI, videoAdapter, useOpenCLSubmission, useOpenCLConversion, colorFormat, colorSpace,
 			  fullRangeColor, useAsyncQueue, asyncQueueSize)

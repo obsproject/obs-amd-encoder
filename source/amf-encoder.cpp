@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <thread>
 #include "amf-encoder.h"
+#include <thread>
 #include "components/VideoConverter.h"
 #include "components/VideoEncoderHEVC.h"
 #include "components/VideoEncoderVCE.h"
@@ -27,7 +27,7 @@
 using namespace Plugin;
 using namespace Plugin::AMD;
 
-Plugin::AMD::Encoder::Encoder(Codec codec, std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter,
+Plugin::AMD::Encoder::Encoder(Codec codec, std::shared_ptr<API::IAPI> videoAPI, const API::Adapter& videoAdapter,
 							  bool useOpenCLSubmission, bool useOpenCLConversion, ColorFormat colorFormat,
 							  ColorSpace colorSpace, bool fullRangeColor, bool multiThreading, size_t queueSize)
 {
@@ -110,7 +110,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec, std::shared_ptr<API::IAPI> videoAPI, 
 	// Create Context for Conversion and Encoding
 	AMF_RESULT res = m_AMFFactory->CreateContext(&m_AMFContext);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Creating a AMF Context failed, error %ls (code %d).", m_UniqueId,
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Creating a AMF Context failed, error %ls (code %d).", m_UniqueId,
 							 m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.c_str());
 	}
@@ -143,7 +143,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec, std::shared_ptr<API::IAPI> videoAPI, 
 		break;
 	}
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Initializing %s API with Adapter '%s' failed, error %ls (code %d).",
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Initializing %s API with Adapter '%s' failed, error %ls (code %d).",
 							 m_UniqueId, m_API->GetName().c_str(), m_APIAdapter.Name.c_str(),
 							 m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.c_str());
@@ -160,7 +160,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec, std::shared_ptr<API::IAPI> videoAPI, 
 				m_OpenCLSubmission = false;
 				m_OpenCLConversion = false;
 
-				QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Retrieving Compute object failed, error %ls (code %d)",
+				QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Retrieving Compute object failed, error %ls (code %d)",
 									 m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 				PLOG_WARNING("%s", errMsg.data());
 			}
@@ -169,7 +169,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec, std::shared_ptr<API::IAPI> videoAPI, 
 			m_OpenCLSubmission = false;
 			m_OpenCLConversion = false;
 
-			QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Initialising OpenCL failed, error %ls (code %d)", m_UniqueId,
+			QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Initialising OpenCL failed, error %ls (code %d)", m_UniqueId,
 								 m_AMF->GetTrace()->GetResultText(res), res);
 			PLOG_WARNING("%s", errMsg.data());
 		}
@@ -178,26 +178,26 @@ Plugin::AMD::Encoder::Encoder(Codec codec, std::shared_ptr<API::IAPI> videoAPI, 
 	// Create Converter
 	res = m_AMFFactory->CreateComponent(m_AMFContext, AMFVideoConverter, &m_AMFConverter);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Creating frame converter component failed, error %ls (code %d)",
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Creating frame converter component failed, error %ls (code %d)",
 							 m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.c_str());
 	}
 	res = m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_MEMORY_TYPE, amf::AMF_MEMORY_UNKNOWN);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Unable to set converter memory type, error %ls (code %d)", m_UniqueId,
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Unable to set converter memory type, error %ls (code %d)", m_UniqueId,
 							 m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.c_str());
 	}
 	res = m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_OUTPUT_FORMAT, amf::AMF_SURFACE_NV12);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Unable to set converter output format, error %ls (code %d)",
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Unable to set converter output format, error %ls (code %d)",
 							 m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.c_str());
 	}
 	res =
 		m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE, Utility::ColorSpaceToAMFConverter(m_ColorSpace));
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Unable to set convertor color profile, error %ls (code %d)",
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Unable to set convertor color profile, error %ls (code %d)",
 							 m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.c_str());
 	}
@@ -205,13 +205,13 @@ Plugin::AMD::Encoder::Encoder(Codec codec, std::shared_ptr<API::IAPI> videoAPI, 
 	// Create Encoder
 	res = m_AMFFactory->CreateComponent(m_AMFContext, Utility::CodecToAMF(codec), &m_AMFEncoder);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Unable to create %s encoder, error %ls (code %d)", m_UniqueId,
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Unable to create %s encoder, error %ls (code %d)", m_UniqueId,
 							 Utility::CodecToString(codec), m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.c_str());
 	}
 
 	// Show complete initialization in log.
-	QUICK_FORMAT_MESSAGE(notice, "<Id: %lld> Initialized.", m_UniqueId);
+	QUICK_FORMAT_MESSAGE(notice, "<Id: %llu> Initialized.", m_UniqueId);
 	PLOG_DEBUG("%s", notice.data());
 }
 
@@ -244,7 +244,7 @@ Plugin::AMD::Encoder::~Encoder()
 	m_AMF = nullptr;
 
 	// Show complete initialization in log.
-	QUICK_FORMAT_MESSAGE(notice, "<Id: %lld> Finalized.", m_UniqueId);
+	QUICK_FORMAT_MESSAGE(notice, "<Id: %llu> Finalized.", m_UniqueId);
 	PLOG_DEBUG("%s", notice.c_str());
 }
 
@@ -423,14 +423,14 @@ void Plugin::AMD::Encoder::Start()
 
 	res = m_AMFConverter->Init(Utility::ColorFormatToAMF(m_ColorFormat), m_Resolution.first, m_Resolution.second);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Unable to initalize converter, error %ls (code %d)", m_UniqueId,
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Unable to initalize converter, error %ls (code %d)", m_UniqueId,
 							 m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.c_str());
 	}
 
 	res = m_AMFEncoder->Init(amf::AMF_SURFACE_NV12, m_Resolution.first, m_Resolution.second);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Failed to initialize encoder, error %ls (code %d)", m_UniqueId,
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Failed to initialize encoder, error %ls (code %d)", m_UniqueId,
 							 m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.c_str());
 	}
@@ -458,7 +458,7 @@ void Plugin::AMD::Encoder::Restart()
 
 	AMF_RESULT res = m_AMFEncoder->ReInit(m_Resolution.first, m_Resolution.second);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Could not re-initialize encoder, error %ls (code %d)", m_UniqueId,
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Could not re-initialize encoder, error %ls (code %d)", m_UniqueId,
 							 m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.c_str());
 	}
@@ -612,7 +612,7 @@ bool Plugin::AMD::Encoder::EncodeAllocate(OUT amf::AMFSurfacePtr& surface)
 										 m_Resolution.second, &surface);
 	}
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Unable to allocate Surface, error %ls (code %d)", m_UniqueId,
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Unable to allocate Surface, error %ls (code %d)", m_UniqueId,
 							 m_AMF->GetTrace()->GetResultText(res), res);
 		PLOG_ERROR("%s", errMsg.data());
 		return false;
@@ -642,7 +642,7 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struc
 		res = surface->Convert(amf::AMF_MEMORY_OPENCL);
 		if (res != AMF_OK) {
 			QUICK_FORMAT_MESSAGE(errMsg,
-								 "<Id: %lld> [Store] Conversion of Surface to OpenCL failed, error %ls (code %d)",
+								 "<Id: %llu> [Store] Conversion of Surface to OpenCL failed, error %ls (code %d)",
 								 m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 			PLOG_WARNING("%s", errMsg.data());
 			return false;
@@ -663,7 +663,7 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struc
 												  surface->GetPlaneAt(i), false);
 			if (res != AMF_OK) {
 				QUICK_FORMAT_MESSAGE(errMsg,
-									 "<Id: %lld> [Store] Unable to copy plane %d with OpenCL, error %ls (code %d)",
+									 "<Id: %llu> [Store] Unable to copy plane %d with OpenCL, error %ls (code %d)",
 									 m_UniqueId, i, m_AMF->GetTrace()->GetResultText(res), res);
 				PLOG_WARNING("%s", errMsg.data());
 				return false;
@@ -682,7 +682,7 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struc
 	if (m_OpenCLSubmission) {
 		res = m_AMFCompute->FinishQueue();
 		if (res != AMF_OK) {
-			QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> [Store] Failed to finish OpenCL queue, error %ls (code %d)",
+			QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> [Store] Failed to finish OpenCL queue, error %ls (code %d)",
 								 m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 			PLOG_WARNING("%s", errMsg.data());
 			return false;
@@ -691,7 +691,7 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struc
 	}
 	res = surface->Convert(m_AMFMemoryType);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> [Store] Conversion of Surface failed, error %ls (code %d)", m_UniqueId,
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> [Store] Conversion of Surface failed, error %ls (code %d)", m_UniqueId,
 							 m_AMF->GetTrace()->GetResultText(res), res);
 		PLOG_WARNING("%s", errMsg.data());
 		return false;
@@ -718,7 +718,7 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struc
 	surface->SetProperty(AMF_TIME_STORE, pf_time);
 
 	if (m_Debug) {
-		PLOG_DEBUG("<Id: %lld> EncodeStore: PTS(%8lld) DTS(%8lld) TS(%16lld) Duration(%16lld) Type(%s)", m_UniqueId,
+		PLOG_DEBUG("<Id: %llu> EncodeStore: PTS(%8lld) DTS(%8lld) TS(%16lld) Duration(%16lld) Type(%s)", m_UniqueId,
 				   frame->pts, frame->pts, surface->GetPts(), surface->GetDuration(), printableType.c_str());
 	}
 
@@ -736,7 +736,7 @@ bool Plugin::AMD::Encoder::EncodeConvert(IN amf::AMFSurfacePtr& surface, OUT amf
 		res = surface->Convert(amf::AMF_MEMORY_OPENCL);
 		if (res != AMF_OK) {
 			QUICK_FORMAT_MESSAGE(errMsg,
-								 "<Id: %lld> [Convert] Conversion of Surface to OpenCL failed, error %ls (code %d)",
+								 "<Id: %llu> [Convert] Conversion of Surface to OpenCL failed, error %ls (code %d)",
 								 m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 			PLOG_WARNING("%s", errMsg.data());
 			return false;
@@ -744,14 +744,14 @@ bool Plugin::AMD::Encoder::EncodeConvert(IN amf::AMFSurfacePtr& surface, OUT amf
 	}
 	res = m_AMFConverter->SubmitInput(surface);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> [Convert] Submit to converter failed, error %ls (code %d)", m_UniqueId,
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> [Convert] Submit to converter failed, error %ls (code %d)", m_UniqueId,
 							 m_AMF->GetTrace()->GetResultText(res), res);
 		PLOG_WARNING("%s", errMsg.data());
 		return false;
 	}
 	res = m_AMFConverter->QueryOutput(&data);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> [Convert] Querying output from converter failed, error %ls (code %d)",
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> [Convert] Querying output from converter failed, error %ls (code %d)",
 							 m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 		PLOG_WARNING("%s", errMsg.data());
 		return false;
@@ -759,7 +759,7 @@ bool Plugin::AMD::Encoder::EncodeConvert(IN amf::AMFSurfacePtr& surface, OUT amf
 	if (m_OpenCLConversion) {
 		res = surface->Convert(m_AMFMemoryType);
 		if (res != AMF_OK) {
-			QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> [Convert] Conversion of Surface failed, error %ls (code %d)",
+			QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> [Convert] Conversion of Surface failed, error %ls (code %d)",
 								 m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 			PLOG_WARNING("%s", errMsg.data());
 			return false;
@@ -820,7 +820,7 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 
 				AMF_RESULT res = m_AMFEncoder->SubmitInput(data);
 				if (m_Debug) {
-					QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> [Main/Submit] SubmitInput returned %ls (code %d).",
+					QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> [Main/Submit] SubmitInput returned %ls (code %d).",
 										 m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 					PLOG_WARNING("%s", errMsg.c_str());
 				}
@@ -831,12 +831,12 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 				} else if (res == AMF_INPUT_FULL) {
 					if (m_InitialFramesSent == false) {
 						QUICK_FORMAT_MESSAGE(
-							errMsg, "<Id: %lld> Queue Size is too large, starting to query for packets...", m_UniqueId);
+							errMsg, "<Id: %llu> Queue Size is too large, starting to query for packets...", m_UniqueId);
 						PLOG_ERROR("%s", errMsg.data());
 						m_InitialFramesSent = true;
 					}
 				} else {
-					QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> [Main] Submitting Surface failed, error %ls (code %d)",
+					QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> [Main] Submitting Surface failed, error %ls (code %d)",
 										 m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 					PLOG_ERROR("%s", errMsg.data());
 					return false;
@@ -861,7 +861,7 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 			} else {
 				AMF_RESULT res = m_AMFEncoder->QueryOutput(&packet);
 				if (m_Debug) {
-					QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> [Main/Query] QueryOutput returned %ls (code %d).",
+					QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> [Main/Query] QueryOutput returned %ls (code %d).",
 										 m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 					PLOG_WARNING("%s", errMsg.c_str());
 				}
@@ -882,7 +882,7 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 					if (!m_InitialPacketRetrieved)
 						packetRetrieved = true;
 				} else if (res != AMF_REPEAT) {
-					QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> [Main] Retrieving Packet failed, error %ls (code %d)",
+					QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> [Main] Retrieving Packet failed, error %ls (code %d)",
 										 m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 					PLOG_ERROR("%s", errMsg.data());
 					return false;
@@ -894,15 +894,15 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 			std::this_thread::sleep_for(m_SubmitQueryWaitTimer);
 	}
 	if (!frameSubmitted) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Input Queue is full, encoder is overloaded!", m_UniqueId);
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Input Queue is full, encoder is overloaded!", m_UniqueId);
 		PLOG_WARNING("%s", errMsg.data());
 	}
 	if (!m_InitialPacketRetrieved) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Waiting for initial frame...", m_UniqueId);
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Waiting for initial frame...", m_UniqueId);
 		PLOG_DEBUG("%s", errMsg.data());
 	}
 	if (m_InitialPacketRetrieved && !packetRetrieved) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> No output Packet, encoder is overloaded!", m_UniqueId);
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> No output Packet, encoder is overloaded!", m_UniqueId);
 		PLOG_WARNING("%s", errMsg.data());
 	}
 	if (m_SubmittedFrameCount >= (m_TimestampOffset + m_QueueSize))
@@ -1035,7 +1035,7 @@ int32_t Plugin::AMD::Encoder::AsyncSendLocalMain()
 
 		AMF_RESULT res = m_AMFEncoder->SubmitInput(own->data);
 		if (m_Debug) {
-			QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> [Main/Submit] SubmitInput returned %ls (code %d).", m_UniqueId,
+			QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> [Main/Submit] SubmitInput returned %ls (code %d).", m_UniqueId,
 								 m_AMF->GetTrace()->GetResultText(res), res);
 			PLOG_WARNING("%s", errMsg.c_str());
 		}
@@ -1045,13 +1045,13 @@ int32_t Plugin::AMD::Encoder::AsyncSendLocalMain()
 			m_SubmittedFrameCount++;
 		} else if (res == AMF_INPUT_FULL) {
 			if (m_InitialFramesSent == false) {
-				QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Queue Size is too large, starting to query for packets...",
+				QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Queue Size is too large, starting to query for packets...",
 									 m_UniqueId);
 				PLOG_ERROR("%s", errMsg.data());
 				m_InitialFramesSent = true;
 			}
 		} else {
-			QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Submitting Surface failed, error %ls (code %d)", m_UniqueId,
+			QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Submitting Surface failed, error %ls (code %d)", m_UniqueId,
 								 m_AMF->GetTrace()->GetResultText(res), res);
 			PLOG_ERROR("%s", errMsg.data());
 			return -1;
@@ -1084,7 +1084,7 @@ int32_t Plugin::AMD::Encoder::AsyncRetrieveLocalMain()
 		amf::AMFDataPtr packet;
 		AMF_RESULT      res = m_AMFEncoder->QueryOutput(&packet);
 		if (m_Debug) {
-			QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> [Main/Query] QueryOutput returned %ls (code %d).", m_UniqueId,
+			QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> [Main/Query] QueryOutput returned %ls (code %d).", m_UniqueId,
 								 m_AMF->GetTrace()->GetResultText(res), res);
 			PLOG_WARNING("%s", errMsg.c_str());
 		}
@@ -1111,7 +1111,7 @@ int32_t Plugin::AMD::Encoder::AsyncRetrieveLocalMain()
 					m_AsyncSend->condvar.notify_all();
 			}
 		} else {
-			QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> Retrieving Packet failed, error %ls (code %d)", m_UniqueId,
+			QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Retrieving Packet failed, error %ls (code %d)", m_UniqueId,
 								 m_AMF->GetTrace()->GetResultText(res), res);
 			PLOG_ERROR("%s", errMsg.data());
 			return -1;

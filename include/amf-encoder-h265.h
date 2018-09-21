@@ -42,9 +42,11 @@ namespace Plugin {
 
 		class EncoderH265 : public Encoder {
 			public:
-			EncoderH265(std::shared_ptr<API::IAPI> videoAPI, API::Adapter videoAdapter = API::Adapter::Adapter(),
-						bool useOpenCLSubmission = false, bool useOpenCLConversion = false,
-						ColorFormat colorFormat = ColorFormat::NV12, ColorSpace colorSpace = ColorSpace::BT709,
+			EncoderH265(std::shared_ptr<API::IAPI> videoAPI, const API::Adapter& videoAdapter,
+						bool useOpenCLSubmission = false,
+ bool useOpenCLConversion = false,
+						ColorFormat colorFormat = ColorFormat::NV12,
+ ColorSpace colorSpace = ColorSpace::BT709,
 						bool fullRangeColor = false, bool useAsyncQueue = false, size_t asyncQueueSize = 0);
 			virtual ~EncoderH265();
 

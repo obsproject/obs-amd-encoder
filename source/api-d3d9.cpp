@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include "api-d3d9.h"
 #include <list>
 #include <mutex>
-#include "api-d3d9.h"
 
 using namespace Plugin::API;
 
@@ -96,11 +96,8 @@ std::shared_ptr<Instance> Plugin::API::Direct3D9::CreateInstance(Adapter adapter
 	return inst2;
 }
 
-Plugin::API::Direct3D9Instance::Direct3D9Instance(Direct3D9* api, Adapter adapter)
+Plugin::API::Direct3D9Instance::Direct3D9Instance(Direct3D9* api, Adapter adapter) : m_API(api), m_Adapter(adapter)
 {
-	this->m_API     = api;
-	this->m_Adapter = adapter;
-
 	size_t                 adapterNum = (size_t)-1;
 	D3DADAPTER_IDENTIFIER9 adapterIdentifier;
 	for (size_t adapterIndex = 0;
