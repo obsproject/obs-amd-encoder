@@ -19,6 +19,7 @@
 CMake_Minimum_Required(VERSION 3.1.0)
 Include("cmake/util.cmake")
 Include("cmake/DownloadProject.cmake")
+Include("cmake/cppcheck.cmake")
 
 # Automatic Versioning
 Set(VERSION_MAJOR 2)
@@ -368,6 +369,24 @@ Else()
 		VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK}
 		SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK}
 	)
+EndIf()
+
+# CPPCheck
+If(NOT ${PropertyPrefix}OBS_NATIVE)
+	SET(excludes )
+	LIST(APPEND excludes "${PROJECT_SOURCE_DIR}/AMF")
+	If(${PropertyPrefix}OBS_REFERENCE)
+		LIST(APPEND excludes "${OBS_STUDIO_DIR}/libobs")
+	ElseIf(${PropertyPrefix}OBS_PACKAGE)
+		LIST(APPEND excludes "${OBS_STUDIO_DIR}/libobs")
+	ElseIf(${PropertyPrefix}OBS_DOWNLOAD)
+		LIST(APPEND excludes "${libobs_SOURCE_DIR}")
+	EndIf()
+
+	CppCheck(
+		EXCLUDE ${excludes}
+	)
+	CppCheck_Add_Project(${PROJECT_NAME})
 EndIf()
 
 ################################################################################
