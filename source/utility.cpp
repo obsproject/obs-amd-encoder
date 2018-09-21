@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "utility.h"
 #include <map>
 #include <sstream>
 #include "amf-encoder-h264.h"
@@ -28,7 +29,6 @@
 #include "components/VideoConverter.h"
 #include "components/VideoEncoderHEVC.h"
 #include "components/VideoEncoderVCE.h"
-#include "utility.h"
 
 using namespace Plugin::AMD;
 

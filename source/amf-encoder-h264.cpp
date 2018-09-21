@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <inttypes.h>
 #include "amf-encoder-h264.h"
+#include <inttypes.h>
 #include "utility.h"
 
 #define PREFIX "[H264]<Id: %lld> "
@@ -28,10 +28,8 @@ using namespace Plugin::AMD;
 using namespace Utility;
 
 Plugin::AMD::EncoderH264::EncoderH264(std::shared_ptr<API::IAPI> videoAPI, const API::Adapter& videoAdapter,
-									  bool useOpenCLSubmission, bool useOpenCLConversion,
- ColorFormat colorFormat,
-									  ColorSpace colorSpace, bool fullRangeColor,
- bool useAsyncQueue,
+									  bool useOpenCLSubmission, bool useOpenCLConversion, ColorFormat colorFormat,
+									  ColorSpace colorSpace, bool fullRangeColor, bool useAsyncQueue,
 									  size_t asyncQueueSize)
 	: Encoder(Codec::AVC, videoAPI, videoAdapter, useOpenCLSubmission, useOpenCLConversion, colorFormat, colorSpace,
 			  fullRangeColor, useAsyncQueue, asyncQueueSize)

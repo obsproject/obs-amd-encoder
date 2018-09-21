@@ -183,8 +183,7 @@ namespace Plugin {
 		class Encoder {
 			protected:
 			Encoder(Codec codec, std::shared_ptr<API::IAPI> videoAPI, const API::Adapter& videoAdapter,
-					bool useOpenCLSubmission, bool useOpenCLConversion, ColorFormat colorFormat,
- ColorSpace colorSpace,
+					bool useOpenCLSubmission, bool useOpenCLConversion, ColorFormat colorFormat, ColorSpace colorSpace,
 					bool fullRangeColor, bool multiThreaded, size_t queueSize);
 
 			public:

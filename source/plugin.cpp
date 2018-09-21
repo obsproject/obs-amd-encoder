@@ -18,13 +18,13 @@
  */
 
 #pragma once
+#include "plugin.h"
 #include <sstream>
 #include "amf-capabilities.h"
 #include "amf.h"
 #include "api-base.h"
 #include "enc-h264.h"
 #include "enc-h265.h"
-#include "plugin.h"
 
 #pragma warning(push)
 #pragma warning(disable : 4201)

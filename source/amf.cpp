@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include "amf.h"
 #include <mutex>
 #include <vector>
-#include "amf.h"
 #include "components\Component.h"
 #include "components\ComponentCaps.h"
 #include "components\VideoEncoderVCE.h"
