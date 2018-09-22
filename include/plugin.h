@@ -19,6 +19,7 @@
 
 #pragma once
 #include <inttypes.h>
+#include "version.h"
 
 #ifndef LITE_OBS
 #pragma warning(push)
@@ -33,7 +34,6 @@ extern "C" {
 
 // Plugin
 #define PLUGIN_NAME "AMD Advanced Media Framework"
-#include "Version.h"
 
 #ifndef LITE_OBS
 #define PLOG(level, ...) blog(level, "[AMF] " __VA_ARGS__);
