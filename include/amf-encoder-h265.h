@@ -19,8 +19,9 @@
 
 #pragma once
 #include "amf-encoder.h"
-#include "components/VideoEncoderHEVC.h"
 #include "plugin.h"
+
+#include <components/VideoEncoderHEVC.h>
 
 namespace Plugin {
 	namespace AMD {

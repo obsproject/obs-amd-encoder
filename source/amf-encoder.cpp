@@ -18,11 +18,13 @@
  */
 
 #include "amf-encoder.h"
+#include <cinttypes>
 #include <thread>
-#include "components/VideoConverter.h"
-#include "components/VideoEncoderHEVC.h"
-#include "components/VideoEncoderVCE.h"
 #include "utility.h"
+
+#include <components/VideoConverter.h>
+#include <components/VideoEncoderHEVC.h>
+#include <components/VideoEncoderVCE.h>
 
 using namespace Plugin;
 using namespace Plugin::AMD;

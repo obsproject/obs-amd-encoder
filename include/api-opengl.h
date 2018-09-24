@@ -20,10 +20,12 @@
 #pragma once
 #include "api-base.h"
 
+extern "C" {
 #ifdef _WIN32
 #include <windows.h>
 #endif
 #include <gl/GL.h>
+}
 
 namespace Plugin {
 	namespace API {

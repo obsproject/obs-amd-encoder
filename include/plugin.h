@@ -20,14 +20,16 @@
 #pragma once
 #include <inttypes.h>
 
+#ifndef LITE_OBS
 #pragma warning(push)
 #pragma warning(disable : 4201)
-#ifndef LITE_OBS
-#include "obs-module.h"
-#include "util/base.h"
-#include "util/platform.h"
-#endif
+extern "C" {
+#include <obs-module.h>
+#include <util/base.h>
+#include <util/platform.h>
+}
 #pragma warning(pop)
+#endif
 
 // Plugin
 #define PLUGIN_NAME "AMD Advanced Media Framework"

@@ -20,12 +20,15 @@
 #include "amf.h"
 #include <mutex>
 #include <vector>
-#include "components\Component.h"
-#include "components\ComponentCaps.h"
-#include "components\VideoEncoderVCE.h"
+
+#include <components\Component.h>
+#include <components\ComponentCaps.h>
+#include <components\VideoEncoderVCE.h>
 
 #if defined(_WIN32) || defined(_WIN64)
-#include "windows.h"
+extern "C" {
+#include <windows.h>
+}
 #endif
 
 using namespace Plugin::AMD;

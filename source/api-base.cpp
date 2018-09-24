@@ -18,14 +18,17 @@
  */
 
 #include "api-base.h"
+#include <cinttypes>
 #include "api-d3d11.h"
 #include "api-d3d9.h"
 #include "api-host.h"
 #include "api-opengl.h"
 
 #if defined(_WIN32) || defined(_WIN64)
+extern "C" {
 #include <VersionHelpers.h>
 #include <windows.h>
+}
 #endif
 
 using namespace Plugin::API;

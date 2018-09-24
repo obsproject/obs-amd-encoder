@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include "amf-capabilities.h"
-#include "utility.h"
+#include "amf-capabilities.hpp"
+#include "utility.hpp"
 
 using namespace Plugin;
 using namespace Plugin::AMD;

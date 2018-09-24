@@ -18,10 +18,9 @@
  */
 
 #pragma once
-#include <inttypes.h>
+#include <cinttypes>
 #include <list>
 #include <map>
-#include <stdint.h>
 #include <tuple>
 #include <vector>
 #include "amf-encoder-h264.h"
@@ -29,8 +28,9 @@
 #include "amf-encoder.h"
 #include "amf.h"
 #include "api-base.h"
-#include "components\ComponentCaps.h"
 #include "plugin.h"
+
+#include <components\ComponentCaps.h>
 
 namespace Plugin {
 	namespace AMD {

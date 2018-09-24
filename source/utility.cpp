@@ -26,9 +26,10 @@
 #include "amf-encoder-h265.h"
 #include "amf-encoder.h"
 #include "amf.h"
-#include "components/VideoConverter.h"
-#include "components/VideoEncoderHEVC.h"
-#include "components/VideoEncoderVCE.h"
+
+#include <components/VideoConverter.h>
+#include <components/VideoEncoderHEVC.h>
+#include <components/VideoEncoderVCE.h>
 
 using namespace Plugin::AMD;
 

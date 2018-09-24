@@ -19,20 +19,26 @@
 
 #pragma once
 #include <chrono>
+#include <cinttypes>
 #include <condition_variable>
-#include <inttypes.h>
 #include <mutex>
 #include <queue>
 #include <thread>
 #include <vector>
 #include "amf.h"
 #include "api-base.h"
-#include "components/Component.h"
 #include "plugin.h"
 
+#include <components/Component.h>
+
 #ifndef LITE_OBS
+#pragma warning(push)
+#pragma warning(disable : 4201)
+extern "C" {
 #include <obs-encoder.h>
 #include <obs.h>
+}
+#pragma warning(pop)
 #endif
 
 #define AMF_TIMESTAMP_ALLOCATE L"TS_Allocate"

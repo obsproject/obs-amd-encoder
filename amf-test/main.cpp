@@ -23,7 +23,9 @@
 #include "api-base.h"
 
 #if defined(_WIN32) || defined(_WIN64)
-#include "windows.h"
+extern "C" {
+#include <windows.h>
+}
 #endif
 
 using namespace Plugin;

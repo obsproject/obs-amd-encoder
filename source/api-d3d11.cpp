@@ -18,9 +18,9 @@
  */
 
 #include "api-d3d11.h"
+#include <cinttypes>
 #include <mutex>
 #include <sstream>
-#include <stdlib.h>
 
 using namespace Plugin::API;
 

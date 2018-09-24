@@ -20,6 +20,7 @@
 #include "api-d3d9.h"
 #include <list>
 #include <mutex>
+#include <cinttypes>
 
 using namespace Plugin::API;
 

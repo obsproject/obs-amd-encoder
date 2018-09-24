@@ -18,7 +18,7 @@
  */
 
 #include "amf-encoder-h265.h"
-#include <inttypes.h>
+#include <cinttypes>
 #include "utility.h"
 
 #define PREFIX "[H265]<Id: %lld> "

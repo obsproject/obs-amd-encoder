@@ -19,17 +19,21 @@
 
 #pragma once
 #include <memory>
-#include <windows.h>
 #include "plugin.h"
 
-// AMD AMF SDK
 #pragma warning(push)
 #pragma warning(disable : 4458)
-#include "components\Component.h"
-#include "components\ComponentCaps.h"
-#include "components\VideoEncoderVCE.h"
-#include "core\Factory.h"
+#include <components\Component.h>
+#include <components\ComponentCaps.h>
+#include <components\VideoEncoderVCE.h>
+#include <core\Factory.h>
 #pragma warning(pop)
+
+#if defined(WIN32) || defined(WIN64)
+extern "C" {
+#include <windows.h>
+}
+#endif
 
 namespace Plugin {
 	namespace AMD {

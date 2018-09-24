@@ -28,14 +28,15 @@
 
 #pragma warning(push)
 #pragma warning(disable : 4201)
+extern "C" {
 #include <obs-module.h>
 #include <util/pipe.h>
 #include <util/platform.h>
-#pragma warning(pop)
-
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #endif
+}
+#pragma warning(pop)
 
 using namespace Plugin;
 using namespace Plugin::AMD;
@@ -360,11 +361,11 @@ MODULE_EXPORT void obs_module_unload(void)
 /** Optional: Returns the full name of the module */
 MODULE_EXPORT const char* obs_module_name()
 {
-	return "AMD Media Framework Plugin";
+	return "AMD Advanced Media Framework Plugin";
 }
 
 /** Optional: Returns a description of the module */
 MODULE_EXPORT const char* obs_module_description()
 {
-	return "AMD Media Framework Plugin";
+	return "AMD Advanced Media Framework Plugin";
 }
