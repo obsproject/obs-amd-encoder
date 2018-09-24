@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include "api-opengl.h"
+#include "api-opengl.hpp"
 #include <vector>
 
 using namespace Plugin::API;

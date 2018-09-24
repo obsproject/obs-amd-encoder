@@ -19,13 +19,13 @@
 
 #pragma once
 
-#include "utility.h"
+#include "utility.hpp"
 #include <map>
 #include <sstream>
-#include "amf-encoder-h264.h"
-#include "amf-encoder-h265.h"
-#include "amf-encoder.h"
-#include "amf.h"
+#include "amf-encoder-h264.hpp"
+#include "amf-encoder-h265.hpp"
+#include "amf-encoder.hpp"
+#include "amf.hpp"
 
 #include <components/VideoConverter.h>
 #include <components/VideoEncoderHEVC.h>

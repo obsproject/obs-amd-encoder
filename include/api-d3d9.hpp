@@ -19,21 +19,22 @@
 
 #pragma once
 #include <atlutil.h>
-#include <d3d11.h>
-#include <dxgi.h>
-#include <map>
-#include <mutex>
-#include <vector>
-#include "api-base.h"
+#include <d3d9.h>
+#include "api-base.hpp"
+
+#ifdef _DEBUG
+#define D3D_DEBUG_INFO
+#endif
+#pragma comment(lib, "d3d9.lib")
 
 namespace Plugin {
 	namespace API {
-		class Direct3D11 : public IAPI {
-			friend class Direct3D11Instance;
+		class Direct3D9 : public IAPI {
+			friend class Direct3D9Instance;
 
 			public:
-			Direct3D11();
-			~Direct3D11();
+			Direct3D9();
+			~Direct3D9();
 
 			virtual std::string               GetName() override;
 			virtual Type                      GetType() override;
@@ -41,27 +42,25 @@ namespace Plugin {
 			virtual std::shared_ptr<Instance> CreateInstance(Adapter adapter) override;
 
 			protected:
-			ATL::CComPtr<IDXGIFactory1> m_DXGIFactory;
-			//std::mutex m_InstanceMapMutex;
+			IDirect3D9Ex* m_Direct3D9Ex;
 			//std::map<std::pair<int32_t, int32_t>, std::shared_ptr<Instance>> m_InstanceMap;
 
 			private:
-			std::vector<Adapter> m_AdapterList;
+			std::vector<Adapter> m_Adapters;
 		};
 
-		class Direct3D11Instance : public Instance {
+		class Direct3D9Instance : public Instance {
 			public:
-			Direct3D11Instance(Direct3D11* api, Adapter adapter);
-			~Direct3D11Instance();
+			Direct3D9Instance(Direct3D9* api, Adapter adapter);
+			~Direct3D9Instance();
 
 			virtual Adapter GetAdapter() override;
 			virtual void*   GetContext() override;
 
 			private:
-			Direct3D11*          m_API;
-			Adapter              m_Adapter;
-			ID3D11DeviceContext* m_DeviceContext;
-			ID3D11Device*        m_Device;
+			Direct3D9*          m_API;
+			Adapter             m_Adapter;
+			IDirect3DDevice9Ex* m_Device;
 		};
 	} // namespace API
 } // namespace Plugin

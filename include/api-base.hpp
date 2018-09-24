@@ -22,7 +22,7 @@
 #include <memory>
 #include <string.h>
 #include <vector>
-#include "plugin.h"
+#include "plugin.hpp"
 
 namespace Plugin {
 	namespace API {

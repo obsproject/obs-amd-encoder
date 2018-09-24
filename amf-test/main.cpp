@@ -18,9 +18,9 @@
  */
 
 #include <iostream>
-#include "amf-capabilities.h"
-#include "amf.h"
-#include "api-base.h"
+#include "amf-capabilities.hpp"
+#include "amf.hpp"
+#include "api-base.hpp"
 
 #if defined(_WIN32) || defined(_WIN64)
 extern "C" {

@@ -18,8 +18,8 @@
  */
 
 #pragma once
-#include "plugin.h"
-#include "utility.h"
+#include "plugin.hpp"
+#include "utility.hpp"
 
 #define P_TRANSLATE(x) Utility::obs_module_text_multi(x)
 #define P_DESC(x) x ".Description"

@@ -19,7 +19,7 @@
 
 #pragma once
 #include <inttypes.h>
-#include "version.h"
+#include "version.hpp"
 
 #ifndef LITE_OBS
 #pragma warning(push)

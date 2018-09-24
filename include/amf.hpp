@@ -19,21 +19,18 @@
 
 #pragma once
 #include <memory>
-#include "plugin.h"
+#include "plugin.hpp"
 
-#pragma warning(push)
-#pragma warning(disable : 4458)
 #include <components\Component.h>
 #include <components\ComponentCaps.h>
 #include <components\VideoEncoderVCE.h>
 #include <core\Factory.h>
-#pragma warning(pop)
 
-#if defined(WIN32) || defined(WIN64)
 extern "C" {
+#if defined(WIN32) || defined(WIN64)
 #include <windows.h>
-}
 #endif
+}
 
 namespace Plugin {
 	namespace AMD {

@@ -25,9 +25,9 @@
 #include <queue>
 #include <thread>
 #include <vector>
-#include "amf.h"
-#include "api-base.h"
-#include "plugin.h"
+#include "amf.hpp"
+#include "api-base.hpp"
+#include "plugin.hpp"
 
 #include <components/Component.h>
 

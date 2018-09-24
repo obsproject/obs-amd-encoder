@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include "api-base.h"
+#include "api-base.hpp"
 #include <cinttypes>
-#include "api-d3d11.h"
-#include "api-d3d9.h"
-#include "api-host.h"
-#include "api-opengl.h"
+#include "api-d3d11.hpp"
+#include "api-d3d9.hpp"
+#include "api-host.hpp"
+#include "api-opengl.hpp"
 
 #if defined(_WIN32) || defined(_WIN64)
 extern "C" {

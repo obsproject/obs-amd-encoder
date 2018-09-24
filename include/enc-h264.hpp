@@ -18,36 +18,36 @@
  */
 
 #pragma once
-#include "amf-encoder-h265.h"
-#include "plugin.h"
+#include "amf-encoder-h264.hpp"
+#include "plugin.hpp"
 
 namespace Plugin {
 	namespace Interface {
-		class H265Interface {
+		class H264Interface {
 			public:
 			static void              encoder_register();
 			static const char*       get_name(void* type_data);
-			static void              get_defaults(obs_data_t* data);
-			static obs_properties_t* get_properties(void* ptr);
+			static void              get_defaults(obs_data_t* settings);
+			static obs_properties_t* get_properties(void* data);
 
 			static bool properties_modified(obs_properties_t* props, obs_property_t*, obs_data_t* data);
 
 			static void* create(obs_data_t* settings, obs_encoder_t* encoder);
-			static void  destroy(void* ptr);
-			static bool  update(void* ptr, obs_data_t* data);
-			static bool  encode(void* ptr, struct encoder_frame* frame, struct encoder_packet* packet,
+			static void  destroy(void* data);
+			static bool  update(void* data, obs_data_t* settings);
+			static bool  encode(void* data, struct encoder_frame* frame, struct encoder_packet* packet,
 								bool* received_packet);
-			static void  get_video_info(void* ptr, struct video_scale_info* info);
-			static bool  get_extra_data(void* ptr, uint8_t** extra_data, size_t* size);
+			static void  get_video_info(void* data, struct video_scale_info* info);
+			static bool  get_extra_data(void* data, uint8_t** extra_data, size_t* size);
 
 			//////////////////////////////////////////////////////////////////////////
 			// Module Code
 			//////////////////////////////////////////////////////////////////////////
 			public:
-			H265Interface(obs_data_t* data, obs_encoder_t* encoder);
-			~H265Interface();
+			H264Interface(obs_data_t* settings, obs_encoder_t* encoder);
+			~H264Interface();
 
-			bool update(obs_data_t* data);
+			bool update(obs_data_t* settings);
 			bool encode(struct encoder_frame* frame, struct encoder_packet* packet, bool* received_packet);
 			void get_video_info(struct video_scale_info* info);
 			bool get_extra_data(uint8_t** extra_data, size_t* size);
@@ -56,7 +56,7 @@ namespace Plugin {
 			// Storage
 			//////////////////////////////////////////////////////////////////////////
 			private:
-			std::unique_ptr<Plugin::AMD::EncoderH265> m_VideoEncoder;
+			std::unique_ptr<Plugin::AMD::EncoderH264> m_VideoEncoder;
 			obs_encoder_t*                            m_Encoder;
 		};
 	} // namespace Interface

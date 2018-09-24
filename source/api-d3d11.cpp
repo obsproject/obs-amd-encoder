@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include "api-d3d11.h"
-#include <cinttypes>
+#include "api-d3d11.hpp"
 #include <mutex>
 #include <sstream>
+#include <cinttypes>
 
 using namespace Plugin::API;
 

@@ -18,8 +18,8 @@
  */
 
 #pragma once
-#include "amf-encoder.h"
-#include "plugin.h"
+#include "amf-encoder.hpp"
+#include "plugin.hpp"
 
 #include <components/VideoEncoderVCE.h>
 

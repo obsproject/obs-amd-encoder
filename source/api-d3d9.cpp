@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include "api-d3d9.h"
+#include "api-d3d9.hpp"
 #include <list>
 #include <mutex>
 #include <cinttypes>

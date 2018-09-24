@@ -18,22 +18,50 @@
  */
 
 #pragma once
-#include "api-base.h"
+#include <atlutil.h>
+#include <d3d11.h>
+#include <dxgi.h>
+#include <map>
+#include <mutex>
+#include <vector>
+#include "api-base.hpp"
 
 namespace Plugin {
 	namespace API {
-		class Host : public IAPI {
+		class Direct3D11 : public IAPI {
+			friend class Direct3D11Instance;
+
 			public:
+			Direct3D11();
+			~Direct3D11();
+
 			virtual std::string               GetName() override;
 			virtual Type                      GetType() override;
 			virtual std::vector<Adapter>      EnumerateAdapters() override;
 			virtual std::shared_ptr<Instance> CreateInstance(Adapter adapter) override;
+
+			protected:
+			ATL::CComPtr<IDXGIFactory1> m_DXGIFactory;
+			//std::mutex m_InstanceMapMutex;
+			//std::map<std::pair<int32_t, int32_t>, std::shared_ptr<Instance>> m_InstanceMap;
+
+			private:
+			std::vector<Adapter> m_AdapterList;
 		};
 
-		class HostInstance : public Instance {
+		class Direct3D11Instance : public Instance {
 			public:
+			Direct3D11Instance(Direct3D11* api, Adapter adapter);
+			~Direct3D11Instance();
+
 			virtual Adapter GetAdapter() override;
 			virtual void*   GetContext() override;
+
+			private:
+			Direct3D11*          m_API;
+			Adapter              m_Adapter;
+			ID3D11DeviceContext* m_DeviceContext;
+			ID3D11Device*        m_Device;
 		};
 	} // namespace API
 } // namespace Plugin

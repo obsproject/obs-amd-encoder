@@ -23,12 +23,12 @@
 #include <map>
 #include <tuple>
 #include <vector>
-#include "amf-encoder-h264.h"
-#include "amf-encoder-h265.h"
-#include "amf-encoder.h"
-#include "amf.h"
-#include "api-base.h"
-#include "plugin.h"
+#include "amf-encoder-h264.hpp"
+#include "amf-encoder-h265.hpp"
+#include "amf-encoder.hpp"
+#include "amf.hpp"
+#include "api-base.hpp"
+#include "plugin.hpp"
 
 #include <components\ComponentCaps.h>
 

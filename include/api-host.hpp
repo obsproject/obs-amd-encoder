@@ -18,38 +18,22 @@
  */
 
 #pragma once
-#include "api-base.h"
-
-extern "C" {
-#ifdef _WIN32
-#include <windows.h>
-#endif
-#include <gl/GL.h>
-}
+#include "api-base.hpp"
 
 namespace Plugin {
 	namespace API {
-		class OpenGL : public IAPI {
+		class Host : public IAPI {
 			public:
-			OpenGL();
-			~OpenGL();
-
 			virtual std::string               GetName() override;
 			virtual Type                      GetType() override;
 			virtual std::vector<Adapter>      EnumerateAdapters() override;
 			virtual std::shared_ptr<Instance> CreateInstance(Adapter adapter) override;
 		};
 
-		class OpenGLInstance : public Instance {
+		class HostInstance : public Instance {
 			public:
-			OpenGLInstance();
-			~OpenGLInstance();
-
 			virtual Adapter GetAdapter() override;
 			virtual void*   GetContext() override;
-
-			private:
-			Adapter adapter;
 		};
 	} // namespace API
 } // namespace Plugin

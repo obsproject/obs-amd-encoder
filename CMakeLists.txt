@@ -87,8 +87,8 @@ Configure_File(
 
 # Configure Version Header
 Configure_File(
-	"${PROJECT_SOURCE_DIR}/include/version.h.in"
-	"${PROJECT_BINARY_DIR}/include/version.h"
+	"${PROJECT_SOURCE_DIR}/include/version.hpp.in"
+	"${PROJECT_BINARY_DIR}/include/version.hpp"
 )
 
 # Windows Specific Resource Definition
@@ -205,20 +205,20 @@ EndIf()
 # Code
 ################################################################################
 Set(PROJECT_HEADERS
-	"${PROJECT_SOURCE_DIR}/include/amf.h"
-	"${PROJECT_SOURCE_DIR}/include/amf-capabilities.h"
-	"${PROJECT_SOURCE_DIR}/include/amf-encoder.h"
-	"${PROJECT_SOURCE_DIR}/include/amf-encoder-h264.h"
-	"${PROJECT_SOURCE_DIR}/include/enc-h264.h"
-	"${PROJECT_SOURCE_DIR}/include/amf-encoder-h265.h"
-	"${PROJECT_SOURCE_DIR}/include/enc-h265.h"
-	"${PROJECT_SOURCE_DIR}/include/api-base.h"
-	"${PROJECT_SOURCE_DIR}/include/api-host.h"
-	"${PROJECT_SOURCE_DIR}/include/api-opengl.h"
-	"${PROJECT_SOURCE_DIR}/include/utility.h"
-	"${PROJECT_SOURCE_DIR}/include/plugin.h"
-	"${PROJECT_SOURCE_DIR}/include/strings.h"
-	"${PROJECT_BINARY_DIR}/include/version.h"
+	"${PROJECT_SOURCE_DIR}/include/amf.hpp"
+	"${PROJECT_SOURCE_DIR}/include/amf-capabilities.hpp"
+	"${PROJECT_SOURCE_DIR}/include/amf-encoder.hpp"
+	"${PROJECT_SOURCE_DIR}/include/amf-encoder-h264.hpp"
+	"${PROJECT_SOURCE_DIR}/include/enc-h264.hpp"
+	"${PROJECT_SOURCE_DIR}/include/amf-encoder-h265.hpp"
+	"${PROJECT_SOURCE_DIR}/include/enc-h265.hpp"
+	"${PROJECT_SOURCE_DIR}/include/api-base.hpp"
+	"${PROJECT_SOURCE_DIR}/include/api-host.hpp"
+	"${PROJECT_SOURCE_DIR}/include/api-opengl.hpp"
+	"${PROJECT_SOURCE_DIR}/include/utility.hpp"
+	"${PROJECT_SOURCE_DIR}/include/plugin.hpp"
+	"${PROJECT_SOURCE_DIR}/include/strings.hpp"
+	"${PROJECT_BINARY_DIR}/include/version.hpp"
 )
 Set(PROJECT_SOURCES
 	"${PROJECT_SOURCE_DIR}/source/amf.cpp"
@@ -245,8 +245,8 @@ Set(PROJECT_LIBRARIES
 
 If(WIN32) # Windows Only
 	LIST(APPEND PROJECT_HEADERS
-		"include/api-d3d9.h"
-		"include/api-d3d11.h"
+		"include/api-d3d9.hpp"
+		"include/api-d3d11.hpp"
 	)
 	LIST(APPEND PROJECT_SOURCES
 		"source/api-d3d9.cpp"

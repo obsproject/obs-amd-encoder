@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include "amf-encoder.h"
+#include "amf-encoder.hpp"
 #include <cinttypes>
 #include <thread>
-#include "utility.h"
+#include "utility.hpp"
 
 #include <components/VideoConverter.h>
 #include <components/VideoEncoderHEVC.h>

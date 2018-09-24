@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include "enc-h264.h"
-#include "amf-capabilities.h"
-#include "amf-encoder-h264.h"
-#include "strings.h"
-#include "utility.h"
+#include "enc-h264.hpp"
+#include "amf-capabilities.hpp"
+#include "amf-encoder-h264.hpp"
+#include "strings.hpp"
+#include "utility.hpp"
 
 #define PREFIX "[H264/AVC]"
 

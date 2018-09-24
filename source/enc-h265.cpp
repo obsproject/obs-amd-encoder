@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include "enc-h265.h"
-#include "amf-capabilities.h"
-#include "amf-encoder-h265.h"
-#include "amf-encoder.h"
-#include "strings.h"
-#include "utility.h"
+#include "enc-h265.hpp"
+#include "amf-capabilities.hpp"
+#include "amf-encoder-h265.hpp"
+#include "amf-encoder.hpp"
+#include "strings.hpp"
+#include "utility.hpp"
 
 #define PREFIX "[H265/HEVC]"
 

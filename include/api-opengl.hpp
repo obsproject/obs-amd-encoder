@@ -18,49 +18,38 @@
  */
 
 #pragma once
-#include <atlutil.h>
-#include <d3d9.h>
-#include "api-base.h"
+#include "api-base.hpp"
 
-#ifdef _DEBUG
-#define D3D_DEBUG_INFO
+extern "C" {
+#ifdef _WIN32
+#include <windows.h>
 #endif
-#pragma comment(lib, "d3d9.lib")
+#include <gl/GL.h>
+}
 
 namespace Plugin {
 	namespace API {
-		class Direct3D9 : public IAPI {
-			friend class Direct3D9Instance;
-
+		class OpenGL : public IAPI {
 			public:
-			Direct3D9();
-			~Direct3D9();
+			OpenGL();
+			~OpenGL();
 
 			virtual std::string               GetName() override;
 			virtual Type                      GetType() override;
 			virtual std::vector<Adapter>      EnumerateAdapters() override;
 			virtual std::shared_ptr<Instance> CreateInstance(Adapter adapter) override;
-
-			protected:
-			IDirect3D9Ex* m_Direct3D9Ex;
-			//std::map<std::pair<int32_t, int32_t>, std::shared_ptr<Instance>> m_InstanceMap;
-
-			private:
-			std::vector<Adapter> m_Adapters;
 		};
 
-		class Direct3D9Instance : public Instance {
+		class OpenGLInstance : public Instance {
 			public:
-			Direct3D9Instance(Direct3D9* api, Adapter adapter);
-			~Direct3D9Instance();
+			OpenGLInstance();
+			~OpenGLInstance();
 
 			virtual Adapter GetAdapter() override;
 			virtual void*   GetContext() override;
 
 			private:
-			Direct3D9*          m_API;
-			Adapter             m_Adapter;
-			IDirect3DDevice9Ex* m_Device;
+			Adapter adapter;
 		};
 	} // namespace API
 } // namespace Plugin

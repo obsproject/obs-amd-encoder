@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include "amf-encoder-h264.h"
+#include "amf-encoder-h264.hpp"
 #include <cinttypes>
-#include "utility.h"
+#include "utility.hpp"
 
 #define PREFIX "[H264]<Id: %lld> "
 
