@@ -56,8 +56,6 @@ EndIf()
 PROJECT(
 	enc-amf
 	VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${VERSION_TWEAK}
-	DESCRIPTION ""
-	HOMEPAGE_URL "https://www.xaymar.com/portfolio/plugin-amf-encoder-for-obs-studio/"
 )
 
 ################################################################################
@@ -94,12 +92,13 @@ Configure_File(
 # Windows Specific Resource Definition
 If(WIN32)
 	Set(PROJECT_PRODUCT_NAME "OBS Studio AMD Encoder")
+	Set(PROJECT_DESCRIPTION "")
 	Set(PROJECT_COMPANY_NAME "Xaymar")
 	Set(PROJECT_COPYRIGHT "Xaymar © 2016 - 2018")
 	Set(PROJECT_LEGAL_TRADEMARKS_1 "Advanced Micro Devices, AMD, AMD Ryzen, Ryzen, AMD Radeon and Radeon are Trademarks of Advanced Micro Devices.")
 	Set(PROJECT_LEGAL_TRADEMARKS_2 "")
 	Set(PROJECT_DESCRIPTION "AMD Encoder integration for OBS Studio")
-		
+	
 	Configure_File(
 		"${PROJECT_SOURCE_DIR}/cmake/version.rc.in"
 		"${PROJECT_BINARY_DIR}/cmake/version.rc"
