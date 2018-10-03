@@ -18,8 +18,6 @@
 # CMake Setup
 CMake_Minimum_Required(VERSION 3.1.0)
 Include("cmake/util.cmake")
-Include("cmake/DownloadProject.cmake")
-Include("cmake/cppcheck.cmake")
 
 # Automatic Versioning
 Set(VERSION_MAJOR 2)
@@ -177,6 +175,15 @@ Else()
 	EndIf()
 EndIf()
 
+# CMake Modules
+If(${PropertyPrefix}OBS_DOWNLOAD)
+	Include("cmake/DownloadProject.cmake")
+EndIf()
+If(NOT ${PropertyPrefix}OBS_NATIVE)
+	Include("cmake/cppcheck.cmake")
+EndIf()
+
+# Load OBS Studio
 If(${PropertyPrefix}OBS_NATIVE)
 	Option(BUILD_AMD_ENCODER "Build AMD Encoder module" ON)	
 	If (NOT BUILD_AMD_ENCODER)
@@ -199,6 +206,7 @@ Else()
 	Message(CRITICAL "Impossible case reached, very system stability.")
 	Return()
 EndIf()
+
 
 ################################################################################
 # Code
