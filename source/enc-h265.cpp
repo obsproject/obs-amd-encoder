@@ -892,8 +892,12 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 		(size_t)obs_data_get_int(data, P_QUEUESIZE));
 
 	/// Static Properties
-	//m_VideoEncoder->SetUsage(Usage::Transcoding);
+	m_VideoEncoder->SetUsage(Plugin::AMD::Usage::Transcoding);
 	m_VideoEncoder->SetQualityPreset(static_cast<QualityPreset>(obs_data_get_int(data, P_QUALITYPRESET)));
+
+	/// Frame
+	m_VideoEncoder->SetResolution(std::make_pair(obsWidth, obsHeight));
+	m_VideoEncoder->SetFrameRate(std::make_pair(obsFPSnum, obsFPSden));
 
 	/// Profile & Level
 	m_VideoEncoder->SetProfile(static_cast<Profile>(obs_data_get_int(data, P_PROFILE)));
@@ -901,9 +905,6 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 									std::make_pair(obsWidth, obsHeight), std::make_pair(obsFPSnum, obsFPSden));
 	m_VideoEncoder->SetTier(static_cast<H265::Tier>(obs_data_get_int(data, P_TIER)));
 
-	/// Frame
-	m_VideoEncoder->SetResolution(std::make_pair(obsWidth, obsHeight));
-	m_VideoEncoder->SetFrameRate(std::make_pair(obsFPSnum, obsFPSden));
 	///- Aspect Ratio
 
 	try {
