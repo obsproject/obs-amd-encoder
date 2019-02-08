@@ -48,8 +48,8 @@ add_definitions(-DLITE_OBS)
 
 # From Parent:
 #   OBS_STUDIO_DIR
-#   OBS_NATIVE
-#   OBS_PACKAGE
+#   ${PropertyPrefix}OBS_NATIVE
+#   ${PropertyPrefix}OBS_PACKAGE
 #   AMF_SDK_DIR
 
 IF(WIN32)	
@@ -133,11 +133,11 @@ target_include_directories(enc-amf-test
 		"${enc-amf_SOURCE_DIR}/source"
 		"${AMF_SDK_DIR}/amf/public/include"
 )
-IF(OBS_NATIVE)
+IF(${PropertyPrefix}OBS_NATIVE)
 	target_include_directories(enc-amf-test
 		PUBLIC
 	)
-ELSEIF(OBS_PACKAGE)
+ELSEIF(${PropertyPrefix}OBS_PACKAGE)
 	target_include_directories(enc-amf-test
 		PUBLIC
 	)
@@ -158,7 +158,7 @@ set_target_properties(enc-amf-test
 	PROPERTIES
 		OUTPUT_NAME "enc-amf-test${BITS}")
 
-if(OBS_NATIVE)
+if(${PropertyPrefix}OBS_NATIVE)
 	install_obs_datatarget(enc-amf-test "obs-plugins/enc-amf")
 else()
 	INSTALL(TARGETS enc-amf-test

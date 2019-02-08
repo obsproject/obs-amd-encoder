@@ -126,7 +126,11 @@ Set(${PropertyPrefix}OBS_NATIVE FALSE CACHE BOOL "Use native obs-studio build" F
 Set(${PropertyPrefix}OBS_REFERENCE FALSE CACHE BOOL "Use referenced obs-studio build" FORCE)
 Set(${PropertyPrefix}OBS_PACKAGE FALSE CACHE BOOL "Use packaged obs-studio build" FORCE)
 Set(${PropertyPrefix}OBS_DOWNLOAD FALSE CACHE BOOL "Use downloaded obs-studio build" FORCE)
-MARK_AS_ADVANCED(FORCE OBS_NATIVE OBS_PACKAGE OBS_REFERENCE OBS_DOWNLOAD)
+MARK_AS_ADVANCED(FORCE
+	${PropertyPrefix}OBS_NATIVE
+	${PropertyPrefix}OBS_PACKAGE
+	${PropertyPrefix}OBS_REFERENCE
+	${PropertyPrefix}OBS_DOWNLOAD)
 
 If(NOT TARGET libobs)
 	Set(${PropertyPrefix}OBS_STUDIO_DIR "" CACHE PATH "OBS Studio Source/Package Directory")
