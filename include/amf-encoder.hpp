@@ -66,7 +66,7 @@ extern "C" {
 		std::vector<wchar_t> buf2(std::mbsrtowcs(NULL, &fname, 0, &state) + 1);                          \
 		std::mbsrtowcs(buf2.data(), &fname, buf2.size(), &state);                                        \
 		trace->TraceW(buf.data(), __LINE__, AMF_TRACE_DEBUG, L"Trace", 1, L"Function: %s", buf2.data()); \
-		PLOG_DEBUG("<Trace> " __FUNCTION_NAME__);                                                        \
+		PLOG_DEBUG("<Trace> %s", __FUNCTION_NAME__);                                                     \
 	};
 #else
 #define AMFTRACECALL ;

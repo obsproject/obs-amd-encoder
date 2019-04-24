@@ -541,7 +541,7 @@ void Plugin::AMD::Encoder::GetVideoInfo(struct video_scale_info* info)
 	AMFTRACECALL;
 
 	if (!m_AMFContext || !m_AMFEncoder)
-		throw std::exception("<" __FUNCTION_NAME__ "> Called while not initialized.");
+		throw std::exception("Called while not initialized.");
 
 	switch (m_ColorFormat) {
 	// 4:2:0 Formats
@@ -580,7 +580,7 @@ bool Plugin::AMD::Encoder::GetExtraData(uint8_t** extra_data, size_t* size)
 	AMFTRACECALL;
 
 	if (!m_AMFContext || !m_AMFEncoder)
-		throw std::exception("<" __FUNCTION_NAME__ "> Called while not initialized.");
+		throw std::exception("Called while not initialized.");
 
 	amf::AMFVariant var;
 	AMF_RESULT      res = GetExtraDataInternal(&var);

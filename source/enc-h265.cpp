@@ -830,7 +830,7 @@ void* Plugin::Interface::H265Interface::create(obs_data_t* data, obs_encoder_t* 
 
 Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t* encoder)
 {
-	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Initializing...");
+	PLOG_DEBUG("<%s> Initializing...", __FUNCTION_NAME__);
 
 	m_Encoder = encoder;
 
@@ -1023,7 +1023,7 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 	// Dynamic Properties (Can be changed during Encoding)
 	this->update(data);
 
-	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Complete.");
+	PLOG_DEBUG("<%s> Complete.", __FUNCTION_NAME__);
 }
 
 void Plugin::Interface::H265Interface::destroy(void* ptr)
@@ -1034,12 +1034,12 @@ void Plugin::Interface::H265Interface::destroy(void* ptr)
 
 Plugin::Interface::H265Interface::~H265Interface()
 {
-	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Finalizing...");
+	PLOG_DEBUG("<%s> Finalizing...", __FUNCTION_NAME__);
 	if (m_VideoEncoder) {
 		m_VideoEncoder->Stop();
 		m_VideoEncoder = nullptr;
 	}
-	PLOG_DEBUG("<" __FUNCTION_NAME__ "> Complete.");
+	PLOG_DEBUG("<%s> Complete.", __FUNCTION_NAME__);
 }
 
 bool Plugin::Interface::H265Interface::update(void* ptr, obs_data_t* settings)
