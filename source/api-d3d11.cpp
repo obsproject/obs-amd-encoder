@@ -134,8 +134,11 @@ Plugin::API::Direct3D11::Direct3D11()
 {
 	auto    dxgiInst = SingletonDXGI::GetInstance();
 	HRESULT hr       = dxgiInst->CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&m_DXGIFactory);
-	if (FAILED(hr))
-		throw std::exception("<" __FUNCTION_NAME__ "> Unable to create DXGI, error code %X.", hr);
+	if (FAILED(hr)) {
+		std::vector<char> buf(1024);
+		snprintf(buf.data(), buf.size(), "<%s> Unable to create DXGI, error code %X.", __FUNCTION_NAME__, hr);
+		throw std::exception(buf.data());
+	}
 
 	// Enumerate Adapters
 	IDXGIAdapter1* dxgiAdapter = nullptr;
@@ -236,15 +239,14 @@ Plugin::API::Direct3D11Instance::Direct3D11Instance(Direct3D11* api, Adapter ada
 			if (SUCCEEDED(hr)) {
 				break;
 			} else {
-				PLOG_DEBUG("<" __FUNCTION_NAME__
-						   "> Unable to create D3D11 device, error code %X (mode %lld, level %lld).",
-						   hr, enabledFlags, featureLevel);
+				PLOG_DEBUG("<%s> Unable to create D3D11 device, error code %X (mode %lld, level %lld).",
+						   __FUNCTION_NAME__, hr, enabledFlags, featureLevel);
 			}
 		}
 	}
 	if (FAILED(hr)) {
 		std::vector<char> buf(1024);
-		snprintf(buf.data(), buf.size(), "<" __FUNCTION_NAME__ "> Unable to create D3D11 device, error code %X.", hr);
+		snprintf(buf.data(), buf.size(), "<%s> Unable to create D3D11 device, error code %X.", __FUNCTION_NAME__, hr);
 		throw std::exception(buf.data());
 	}
 }
