@@ -108,6 +108,9 @@ namespace Plugin {
 			virtual void SetVarianceBasedAdaptiveQuantizationEnabled(bool v) override;
 			virtual bool IsVarianceBasedAdaptiveQuantizationEnabled() override;
 
+			virtual void SetHighMotionQualityBoost(bool v);
+			virtual bool GetHighMotionQualityBoost();
+
 			/// VBV Buffer
 			virtual std::pair<uint64_t, uint64_t> CapsVBVBufferSize() override;
 			virtual void                          SetVBVBufferSize(uint64_t v) override;

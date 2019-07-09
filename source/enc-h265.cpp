@@ -106,6 +106,7 @@ void Plugin::Interface::H265Interface::get_defaults(obs_data_t* data)
 	obs_data_set_default_int(data, P_FRAMESKIPPING, 0);
 	obs_data_set_default_int(data, P_VBAQ, 0);
 	obs_data_set_default_int(data, P_ENFORCEHRD, 1);
+	obs_data_set_default_int(data, P_HIGHMOTIONQUALITYBOOST, -1);
 
 	// VBV Buffer
 	obs_data_set_int(data, ("last" P_VBVBUFFER), -1);
@@ -320,6 +321,15 @@ obs_properties_t* Plugin::Interface::H265Interface::get_properties(void* data)
 	obs_property_list_add_int(p, P_TRANSLATE(P_UTIL_SWITCH_DISABLED), 0);
 	obs_property_list_add_int(p, P_TRANSLATE(P_UTIL_SWITCH_ENABLED), 1);
 #pragma endregion Enforce Hyptothetical Reference Decoder Restrictions
+
+	{ // High Motion Quality Boost
+		p = obs_properties_add_list(props, P_HIGHMOTIONQUALITYBOOST, P_TRANSLATE(P_HIGHMOTIONQUALITYBOOST),
+									OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+		obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_HIGHMOTIONQUALITYBOOST)));
+		obs_property_list_add_int(p, P_TRANSLATE(P_UTIL_DEFAULT), -1);
+		obs_property_list_add_int(p, P_TRANSLATE(P_UTIL_SWITCH_DISABLED), 0);
+		obs_property_list_add_int(p, P_TRANSLATE(P_UTIL_SWITCH_ENABLED), 1);
+	}
 
 	// VBV Buffer
 #pragma region VBV Buffer Mode
@@ -621,6 +631,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t* pro
 		std::make_pair(P_FRAMESKIPPING_BEHAVIOUR, ViewMode::Master),
 		//std::make_pair(P_VBAQ, ViewMode::Expert),
 		std::make_pair(P_ENFORCEHRD, ViewMode::Expert),
+		std::make_pair(P_HIGHMOTIONQUALITYBOOST, ViewMode::Advanced),
 		// ----------- VBV Buffer
 		std::make_pair(P_VBVBUFFER, ViewMode::Advanced),
 		//std::make_pair(P_VBVBUFFER_STRICTNESS, ViewMode::Advanced),
@@ -790,6 +801,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t* pro
 			P_VBVBUFFER_INITIALFULLNESS,
 			P_PREPASSMODE,
 			P_VBAQ,
+			P_HIGHMOTIONQUALITYBOOST,
 
 			/// Picture Control
 			P_GOP_SIZE,
@@ -930,6 +942,13 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 	} else {
 		m_VideoEncoder->SetPrePassMode(PrePassMode::Disabled);
 		m_VideoEncoder->SetVarianceBasedAdaptiveQuantizationEnabled(false);
+	}
+	try {
+		int64_t v = obs_data_get_int(data, P_HIGHMOTIONQUALITYBOOST);
+		if (v >= 0) {
+			m_VideoEncoder->SetHighMotionQualityBoost(!!v);
+		}
+	} catch (...) {
 	}
 
 	// Picture Control

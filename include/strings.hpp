@@ -90,6 +90,7 @@
 #define P_FRAMESKIPPING_KEEPNTH "FrameSkipping.KeepNth"
 #define P_VBAQ "VBAQ"
 #define P_ENFORCEHRD "EnforceHRD"
+#define P_HIGHMOTIONQUALITYBOOST "HighMotionQualityBoost"
 
 // VBV Buffer
 #define P_VBVBUFFER "VBVBuffer"

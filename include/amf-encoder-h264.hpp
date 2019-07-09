@@ -83,6 +83,9 @@ namespace Plugin {
 			virtual void                          SetMaximumLongTermReferenceFrames(uint32_t v) override;
 			virtual uint32_t                      GetMaximumLongTermReferenceFrames() override;
 
+			virtual void SetHighMotionQualityBoost(bool v);
+			virtual bool GetHighMotionQualityBoost();
+
 			// Properties - Dynamic
 			virtual std::vector<RateControlMethod> CapsRateControlMethod() override;
 			virtual void                           SetRateControlMethod(RateControlMethod v) override;

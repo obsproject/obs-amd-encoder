@@ -684,6 +684,33 @@ bool Plugin::AMD::EncoderH265::IsVarianceBasedAdaptiveQuantizationEnabled()
 	return e;
 }
 
+void Plugin::AMD::EncoderH265::SetHighMotionQualityBoost(bool v)
+{
+	AMFTRACECALL;
+
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_HIGH_MOTION_QUALITY_BOOST_ENABLE, v);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <%s> Failed to set to %s, error %ls (code %d)",
+							 m_UniqueId, __FUNCTION_NAME__, v ? "Enabled" : "Disabled", m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.c_str());
+	}
+}
+
+bool Plugin::AMD::EncoderH265::GetHighMotionQualityBoost()
+{
+	AMFTRACECALL;
+
+	bool e;
+
+	AMF_RESULT res = m_AMFEncoder->GetProperty(AMF_VIDEO_ENCODER_HEVC_HIGH_MOTION_QUALITY_BOOST_ENABLE, &e);
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %lld> <%s> Failed to retrieve value, error %ls (code %d)",
+							 m_UniqueId, __FUNCTION_NAME__, m_AMF->GetTrace()->GetResultText(res), res);
+		throw std::exception(errMsg.c_str());
+	}
+	return e;
+}
+
 /// VBV Buffer
 std::pair<uint64_t, uint64_t> Plugin::AMD::EncoderH265::CapsVBVBufferSize()
 {
