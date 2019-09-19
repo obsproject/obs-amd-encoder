@@ -355,13 +355,13 @@ obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data)
 	obs_property_list_add_int(p, P_TRANSLATE(P_UTIL_SWITCH_ENABLED), 1);
 #pragma endregion VBAQ
 
-#pragma region Enforce Hyptothetical Reference Decoder Restrictions
+#pragma region Enforce Hypothetical Reference Decoder Restrictions
 	p = obs_properties_add_list(props, P_ENFORCEHRD, P_TRANSLATE(P_ENFORCEHRD), OBS_COMBO_TYPE_LIST,
 								OBS_COMBO_FORMAT_INT);
 	obs_property_set_long_description(p, P_TRANSLATE(P_DESC(P_ENFORCEHRD)));
 	obs_property_list_add_int(p, P_TRANSLATE(P_UTIL_SWITCH_DISABLED), 0);
 	obs_property_list_add_int(p, P_TRANSLATE(P_UTIL_SWITCH_ENABLED), 1);
-#pragma endregion Enforce Hyptothetical Reference Decoder Restrictions
+#pragma endregion Enforce Hypothetical Reference Decoder Restrictions
 
 	{ // High Motion Quality Boost
 		p = obs_properties_add_list(props, P_HIGHMOTIONQUALITYBOOST, P_TRANSLATE(P_HIGHMOTIONQUALITYBOOST),
@@ -711,7 +711,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t* pro
 				}
 			}
 		} catch (const std::exception& e) {
-			PLOG_ERROR("Exception occured while updating capabilities: %s", e.what());
+			PLOG_ERROR("Exception occurred while updating capabilities: %s", e.what());
 		}
 	}
 #pragma endregion Video API& Adapter
