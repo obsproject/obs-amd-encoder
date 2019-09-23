@@ -49,7 +49,7 @@ extern "C" {
 #define vstr(s) dstr(s)
 #define dstr(s) #s
 
-#define clamp(val, low, high) (val > high ? high : (val < low ? low : val))
+#define amf_clamp(val, low, high) (val > high ? high : (val < low ? low : val))
 #ifdef max
 #undef max
 #endif
