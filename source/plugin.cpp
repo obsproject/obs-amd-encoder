@@ -256,7 +256,7 @@ MODULE_EXPORT bool obs_module_load(void)
 		case STATUS_STACK_OVERFLOW:
 		case STATUS_UNWIND_CONSOLIDATE:
 		default:
-			PLOG_ERROR("A critical error occured during AMF Testing.");
+			PLOG_ERROR("A critical error occurred during AMF Testing.");
 			return false;
 		case 2:
 		case 1:

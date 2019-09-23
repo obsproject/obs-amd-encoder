@@ -199,7 +199,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec, std::shared_ptr<API::IAPI> videoAPI, 
 	res =
 		m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_COLOR_PROFILE, Utility::ColorSpaceToAMFConverter(m_ColorSpace));
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Unable to set convertor color profile, error %ls (code %d)",
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Unable to set converter color profile, error %ls (code %d)",
 							 m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.c_str());
 	}
@@ -425,7 +425,7 @@ void Plugin::AMD::Encoder::Start()
 
 	res = m_AMFConverter->Init(Utility::ColorFormatToAMF(m_ColorFormat), m_Resolution.first, m_Resolution.second);
 	if (res != AMF_OK) {
-		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Unable to initalize converter, error %ls (code %d)", m_UniqueId,
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Unable to initialize converter, error %ls (code %d)", m_UniqueId,
 							 m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.c_str());
 	}
