@@ -1132,7 +1132,7 @@ void Plugin::AMD::EncoderH264::SetIDRPeriod(uint32_t v)
 {
 	AMFTRACECALL;
 
-	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, (int64_t)clamp(v, 1, 1000000));
+	AMF_RESULT res = m_AMFEncoder->SetProperty(AMF_VIDEO_ENCODER_IDR_PERIOD, (int64_t)amf_clamp(v, 1, 1000000));
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, PREFIX "<%s> Failed to set to %ld, error %ls (code %d)",
 							 m_UniqueId, __FUNCTION_NAME__, v, m_AMF->GetTrace()->GetResultText(res), res);
