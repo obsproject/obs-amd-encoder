@@ -358,7 +358,7 @@ void Plugin::AMD::Encoder::SetVBVBufferStrictness(double_t v)
 	// 0% = looseBitrate, 50% = targetBitrate, 100% = strictBitrate
 	v                 = amf_clamp(v, 0.0, 1.0);
 	double_t aFadeVal = amf_clamp(v * 2.0, 0.0, 1.0);       // 0 - 0.5
-	double_t bFadeVal = amf_clamp(v * 2.0 - 1.0, 0.0, 0.0); // 0.5 - 1.0
+	double_t bFadeVal = amf_clamp(v * 2.0 - 1.0, 0.0, 1.0); // 0.5 - 1.0
 
 	double_t aFade = (looseBitrate * (1.0 - aFadeVal)) + (targetBitrate * aFadeVal);
 	double_t bFade = (aFade * (1.0 - bFadeVal)) + (strictBitrate * bFadeVal);
