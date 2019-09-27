@@ -87,6 +87,14 @@ Configure_File(
 	"${PROJECT_BINARY_DIR}/include/version.hpp"
 )
 
+# AGS
+If(WIN32)
+	find_package(AGS REQUIRED)
+	include_directories(${AGS_INCLUDE_DIRS})
+else()
+	unset(AGS_LIBRARIES)
+endif()
+
 # Windows Specific Resource Definition
 If(WIN32)
 	Set(PROJECT_PRODUCT_NAME "OBS Studio AMD Encoder")
@@ -297,6 +305,7 @@ Target_Include_Directories(${PROJECT_NAME}
 If(${PropertyPrefix}OBS_NATIVE)
 	Target_Link_Libraries(${PROJECT_NAME}
 		libobs
+		${AGS_LIBRARIES}
 	)
 ElseIf(${PropertyPrefix}OBS_REFERENCE)
 	Target_Include_Directories(${PROJECT_NAME}

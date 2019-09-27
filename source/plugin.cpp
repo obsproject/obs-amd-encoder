@@ -34,6 +34,7 @@ extern "C" {
 #include <util/platform.h>
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
+#include <amd_ags.h>
 #endif
 }
 #pragma warning(pop)
@@ -190,6 +191,36 @@ MODULE_EXPORT bool obs_module_load(void)
 	PLOG_DEBUG("<%s> Loading...", __FUNCTION_NAME__);
 
 #ifdef _WIN32
+	// Driver version check
+	{
+		AGSContext* context;
+		AGSGPUInfo  info;
+		if (agsInit(&context, nullptr, &info) != AGS_SUCCESS) {
+			PLOG_INFO("Could not initialize AGS for AMD GPU");
+			return false;
+		}
+
+		constexpr unsigned           minimum_major   = 19;
+		constexpr unsigned           minimum_minor   = 7;
+		constexpr unsigned           minimum_patch   = 1;
+		constexpr unsigned           minimum_version = AGS_MAKE_VERSION(minimum_major, minimum_minor, minimum_patch);
+		const AGSDriverVersionResult result = agsCheckDriverVersion(info.radeonSoftwareVersion, minimum_version);
+
+		if (result == AGS_SOFTWAREVERSIONCHECK_UNDEFINED) {
+			PLOG_ERROR("Could not determine the driver version: %s", info.radeonSoftwareVersion);
+		} else if (result == AGS_SOFTWAREVERSIONCHECK_OLDER) {
+			PLOG_ERROR("Driver %s is older than the %u.%u.%u required version.", info.radeonSoftwareVersion,
+					   minimum_major, minimum_minor, minimum_patch);
+		}
+
+		if (agsDeInit(context) != AGS_SUCCESS) {
+			PLOG_ERROR("Failed to cleanup AGS Library.");
+		}
+
+		if (result != AGS_SOFTWAREVERSIONCHECK_OK)
+			return false;
+	}
+
 	// Out-of-process AMF Test
 	{
 		unsigned long returnCode = 0xFFFFFFFF;
