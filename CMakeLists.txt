@@ -131,28 +131,25 @@ math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
 ################################################################################
 # Options
 ################################################################################
-Set(${PropertyPrefix}OBS_NATIVE FALSE CACHE BOOL "Use native obs-studio build" FORCE)
-Set(${PropertyPrefix}OBS_REFERENCE FALSE CACHE BOOL "Use referenced obs-studio build" FORCE)
-Set(${PropertyPrefix}OBS_PACKAGE FALSE CACHE BOOL "Use packaged obs-studio build" FORCE)
-Set(${PropertyPrefix}OBS_DOWNLOAD FALSE CACHE BOOL "Use downloaded obs-studio build" FORCE)
-MARK_AS_ADVANCED(FORCE
-	${PropertyPrefix}OBS_NATIVE
-	${PropertyPrefix}OBS_PACKAGE
-	${PropertyPrefix}OBS_REFERENCE
-	${PropertyPrefix}OBS_DOWNLOAD)
+set(${PropertyPrefix}OBS_NATIVE FALSE CACHE BOOL "Use native obs-studio build" FORCE)
+set(${PropertyPrefix}OBS_REFERENCE FALSE CACHE BOOL "Use referenced obs-studio build" FORCE)
+set(${PropertyPrefix}OBS_PACKAGE FALSE CACHE BOOL "Use packaged obs-studio build" FORCE)
+set(${PropertyPrefix}OBS_DOWNLOAD FALSE CACHE BOOL "Use downloaded obs-studio build" FORCE)
+mark_as_advanced(FORCE OBS_NATIVE OBS_PACKAGE OBS_REFERENCE OBS_DOWNLOAD)
 
-If(NOT TARGET libobs)
-	Set(${PropertyPrefix}OBS_STUDIO_DIR "" CACHE PATH "OBS Studio Source/Package Directory")
-	Set(${PropertyPrefix}OBS_DOWNLOAD_VERSION "22.0.2" CACHE STRING "OBS Studio Version to download")
-EndIf()
+if(NOT TARGET libobs)
+	set(${PropertyPrefix}OBS_STUDIO_DIR "" CACHE PATH "OBS Studio Source/Package Directory")
+	set(${PropertyPrefix}OBS_DOWNLOAD_VERSION "24.0.1-ci" CACHE STRING "OBS Studio Version to download")
+endif()
+
+if(NOT ${PropertyPrefix}OBS_NATIVE)
+	set(${PropertyPrefix}OBS_DEPENDENCIES_DIR "" CACHE PATH "Path to OBS Dependencies")
+	set(CMAKE_PACKAGE_PREFIX "${CMAKE_BINARY_DIR}" CACHE PATH "Path for generated archives.")
+	set(CMAKE_PACKAGE_NAME "${PROJECT_NAME}" CACHE STRING "Name for the generated archives.")
+	set(CMAKE_PACKAGE_SUFFIX_OVERRIDE "" CACHE STRING "Override for the suffix.")
+endif()
 
 Set(AMF_SDK_DIR "${PROJECT_SOURCE_DIR}/AMF/" CACHE PATH "AMD Advanced Media Framework SDK Directory")
-
-If(NOT ${PropertyPrefix}OBS_NATIVE)
-	Set(CMAKE_PACKAGE_PREFIX "${CMAKE_BINARY_DIR}" CACHE PATH "Path for generated archives.")
-	Set(CMAKE_PACKAGE_NAME "${PROJECT_NAME}" CACHE STRING "Name for the generated archives.")
-	Set(CMAKE_PACKAGE_SUFFIX_OVERRIDE "" CACHE STRING "Override for the suffix.")
-EndIf()
 
 ################################################################################
 # Dependencies
@@ -188,6 +185,12 @@ Else()
 	EndIf()
 EndIf()
 
+If(NOT ${PropertyPrefix}OBS_NATIVE)
+	Set(CMAKE_PACKAGE_PREFIX "${CMAKE_BINARY_DIR}" CACHE PATH "Path for generated archives.")
+	Set(CMAKE_PACKAGE_NAME "${PROJECT_NAME}" CACHE STRING "Name for the generated archives.")
+	Set(CMAKE_PACKAGE_SUFFIX_OVERRIDE "" CACHE STRING "Override for the suffix.")
+EndIf()
+
 # CMake Modules
 If(${PropertyPrefix}OBS_DOWNLOAD)
 	Include("cmake/DownloadProject.cmake")
@@ -219,7 +222,6 @@ Else()
 	Message(CRITICAL "Impossible case reached, very system stability.")
 	Return()
 EndIf()
-
 
 ################################################################################
 # Code
