@@ -21,8 +21,8 @@ Include("cmake/util.cmake")
 
 # Automatic Versioning
 Set(VERSION_MAJOR 2)
-Set(VERSION_MINOR 5)
-Set(VERSION_PATCH 2)
+Set(VERSION_MINOR 6)
+Set(VERSION_PATCH 0)
 Set(VERSION_TWEAK 0)
 Set(PROJECT_COMMIT "N/A")
 If(EXISTS "${CMAKE_CURRENT_LIST_DIR}/.git")
