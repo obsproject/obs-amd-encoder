@@ -47,7 +47,7 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD, LPVOID)
 	return TRUE;
 }
 
-static inline bool create_process(const char* cmd_line, HANDLE stdin_handle, HANDLE stdout_handle, HANDLE* process)
+static inline bool create_process(const char* cmd_line, HANDLE stdout_handle, HANDLE* process)
 {
 	PROCESS_INFORMATION pi         = {0};
 	wchar_t*            cmd_line_w = NULL;
@@ -56,8 +56,9 @@ static inline bool create_process(const char* cmd_line, HANDLE stdin_handle, HAN
 
 	si.cb         = sizeof(si);
 	si.dwFlags    = STARTF_USESTDHANDLES;
-	si.hStdInput  = stdin_handle;
+	si.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
 	si.hStdOutput = stdout_handle;
+	si.hStdError  = GetStdHandle(STD_ERROR_HANDLE);
 
 	os_utf8_to_wcs_ptr(cmd_line, 0, &cmd_line_w);
 	if (cmd_line_w) {
@@ -193,43 +194,45 @@ MODULE_EXPORT bool obs_module_load(void)
 	// Out-of-process AMF Test
 	{
 		unsigned long returnCode = 0xFFFFFFFF;
-		HANDLE        hProcess, hIn, hOut;
+		HANDLE        hProcess, hRead, hReadImp, hOut;
 		char*         path = obs_module_file("enc-amf-test" BIT_STR ".exe");
 
-		if (!create_pipe(&hIn, &hOut)) {
+		if (!create_pipe(&hReadImp, &hOut)) {
 			PLOG_ERROR("Failed to create pipes for AMF test.");
 			bfree(path);
 			return false;
 		}
-		if (!SetHandleInformation(hIn, HANDLE_FLAG_INHERIT, false)
-			|| !SetHandleInformation(hOut, HANDLE_FLAG_INHERIT, false)) {
-			CloseHandle(hIn);
+		if (!DuplicateHandle(GetCurrentProcess(), hReadImp, GetCurrentProcess(), &hRead, 0, FALSE,
+							 DUPLICATE_SAME_ACCESS)) {
+			CloseHandle(hReadImp);
 			CloseHandle(hOut);
 			PLOG_ERROR("Failed to modify pipes for AMF test.");
 			bfree(path);
 			return false;
 		};
-		if (!create_process(path, hIn, hOut, &hProcess)) {
-			CloseHandle(hIn);
+		CloseHandle(hReadImp);
+		if (!create_process(path, hOut, &hProcess)) {
+			CloseHandle(hRead);
 			CloseHandle(hOut);
 			PLOG_ERROR("Failed to start AMF test subprocess.");
 			bfree(path);
 			return false;
 		}
 
+		CloseHandle(hOut);
 		bfree(path);
-		std::vector<char> buf(1024);
-		DWORD             bufread = 0;
-		while (ReadFile(hOut, buf.data(), 1024, &bufread, NULL)) {
-			PLOG_ERROR("%s", buf.data());
+
+		char  buf[1024];
+		DWORD bufread = 0;
+		while (ReadFile(hRead, buf, sizeof(buf), &bufread, NULL)) {
+			blog(LOG_ERROR, "%.*s", bufread, buf);
 		}
 
 		if (WaitForSingleObject(hProcess, 2000) == WAIT_OBJECT_0)
 			GetExitCodeProcess(hProcess, &returnCode);
 
 		CloseHandle(hProcess);
-		CloseHandle(hIn);
-		CloseHandle(hOut);
+		CloseHandle(hRead);
 
 		switch (returnCode) {
 		case STATUS_ACCESS_VIOLATION:

@@ -36,11 +36,12 @@ extern "C" {
 #define PLUGIN_NAME "AMD Advanced Media Framework"
 
 #ifndef LITE_OBS
-#define PLOG(level, ...) blog(level, "[AMF] " __VA_ARGS__);
+#define PLOG(level, ...) blog(level, "[AMF] " __VA_ARGS__)
+#define PLOG_ERROR(format, ...) PLOG(LOG_ERROR, format, __VA_ARGS__)
 #else
-#define PLOG(level, ...) ;
+#define PLOG(...) (void)0
+#define PLOG_ERROR(format, ...) printf("[AMF] " format "\n", __VA_ARGS__)
 #endif
-#define PLOG_ERROR(...) PLOG(LOG_ERROR, __VA_ARGS__)
 #define PLOG_WARNING(...) PLOG(LOG_WARNING, __VA_ARGS__)
 #define PLOG_INFO(...) PLOG(LOG_INFO, __VA_ARGS__)
 #define PLOG_DEBUG(...) PLOG(LOG_DEBUG, __VA_ARGS__)

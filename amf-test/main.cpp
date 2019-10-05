@@ -48,11 +48,13 @@ int main(int argc, char* argv[])
 		API::FinalizeAPIs();
 		AMF::Finalize();
 		return 0;
-	} catch (std::exception ex) {
-		std::cout << ex.what() << std::endl;
+	} catch (std::exception& ex) {
+		printf("[AMF] %s", ex.what());
+		fflush(NULL);
 		return 1;
 	} catch (...) {
-		std::cout << "Unknown Error" << std::endl;
+		printf("[AMF] Unknown Error");
+		fflush(NULL);
 		return 2;
 	}
 }
