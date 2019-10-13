@@ -131,7 +131,7 @@ target_include_directories(enc-amf-test
 		"${enc-amf_SOURCE_DIR}/include"
 		"${enc-amf_BINARY_DIR}/include"
 		"${enc-amf_SOURCE_DIR}/source"
-		"${AMF_SDK_DIR}/amf/public/include"
+		"${enc-amf_SOURCE_DIR}/AMF/amf/public/include"
 )
 IF(${PropertyPrefix}OBS_NATIVE)
 	target_include_directories(enc-amf-test
