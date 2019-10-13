@@ -26,19 +26,19 @@ namespace Plugin {
 		class H264Interface {
 			public:
 			static void              encoder_register();
-			static const char*       get_name(void* type_data);
-			static void              get_defaults(obs_data_t* settings);
-			static obs_properties_t* get_properties(void* data);
+			static const char*       get_name(void* type_data) noexcept;
+			static void              get_defaults(obs_data_t* settings) noexcept;
+			static obs_properties_t* get_properties(void* data) noexcept;
 
-			static bool properties_modified(obs_properties_t* props, obs_property_t*, obs_data_t* data);
+			static bool properties_modified(obs_properties_t* props, obs_property_t*, obs_data_t* data) noexcept;
 
-			static void* create(obs_data_t* settings, obs_encoder_t* encoder);
-			static void  destroy(void* data);
-			static bool  update(void* data, obs_data_t* settings);
+			static void* create(obs_data_t* settings, obs_encoder_t* encoder) noexcept;
+			static void  destroy(void* data) noexcept;
+			static bool  update(void* data, obs_data_t* settings) noexcept;
 			static bool  encode(void* data, struct encoder_frame* frame, struct encoder_packet* packet,
-								bool* received_packet);
-			static void  get_video_info(void* data, struct video_scale_info* info);
-			static bool  get_extra_data(void* data, uint8_t** extra_data, size_t* size);
+								bool* received_packet) noexcept;
+			static void  get_video_info(void* data, struct video_scale_info* info) noexcept;
+			static bool  get_extra_data(void* data, uint8_t** extra_data, size_t* size) noexcept;
 
 			//////////////////////////////////////////////////////////////////////////
 			// Module Code

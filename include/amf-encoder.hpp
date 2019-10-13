@@ -53,28 +53,6 @@ extern "C" {
 
 #define AMF_PRESENT_TIMESTAMP L"PTS"
 
-#ifdef _DEBUG
-#ifndef LITE_OBS
-#define AMFTRACECALL                                                                                     \
-	{                                                                                                    \
-		std::mbstate_t       state = std::mbstate_t();                                                   \
-		auto                 trace = AMF::Instance()->GetTrace();                                        \
-		const char*          file  = __FILE__;                                                           \
-		const char*          fname = __FUNCTION_NAME__;                                                  \
-		std::vector<wchar_t> buf(std::mbsrtowcs(NULL, &file, 0, &state) + 1);                            \
-		std::mbsrtowcs(buf.data(), &file, buf.size(), &state);                                           \
-		std::vector<wchar_t> buf2(std::mbsrtowcs(NULL, &fname, 0, &state) + 1);                          \
-		std::mbsrtowcs(buf2.data(), &fname, buf2.size(), &state);                                        \
-		trace->TraceW(buf.data(), __LINE__, AMF_TRACE_DEBUG, L"Trace", 1, L"Function: %s", buf2.data()); \
-		PLOG_DEBUG("<Trace> %s", __FUNCTION_NAME__);                                                     \
-	};
-#else
-#define AMFTRACECALL ;
-#endif
-#else
-#define AMFTRACECALL ;
-#endif
-
 namespace Plugin {
 	namespace AMD {
 		// Initialization Parameters
@@ -469,7 +447,7 @@ namespace Plugin {
 				std::thread worker;
 				bool        shutdown;
 				// Semaphore
-				size_t                  wakeupcount;
+				size_t                  wakeupcount = 0;
 				std::condition_variable condvar;
 				std::mutex              mutex;
 				// Data

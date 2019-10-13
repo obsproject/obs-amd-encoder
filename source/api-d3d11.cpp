@@ -18,9 +18,9 @@
  */
 
 #include "api-d3d11.hpp"
+#include <cinttypes>
 #include <mutex>
 #include <sstream>
-#include <cinttypes>
 
 using namespace Plugin::API;
 
@@ -51,6 +51,9 @@ class SingletonDXGI {
 
 	HRESULT CreateDXGIFactory(REFIID riid, _Out_ void** ppFactory)
 	{
+		if (ppFactory)
+			*ppFactory = nullptr;
+
 		if (hModule == 0)
 			return S_FALSE;
 
@@ -64,6 +67,9 @@ class SingletonDXGI {
 	}
 	HRESULT CreateDXGIFactory1(REFIID riid, _Out_ void** ppFactory)
 	{
+		if (ppFactory)
+			*ppFactory = nullptr;
+
 		if (hModule == 0)
 			return S_FALSE;
 
@@ -111,6 +117,12 @@ class SingletonD3D11 {
 									 _Out_opt_ D3D_FEATURE_LEVEL* pFeatureLevel,
 									 _Out_opt_ ID3D11DeviceContext** ppImmediateContext)
 	{
+		if (ppDevice)
+			*ppDevice = nullptr;
+		pFeatureLevel = nullptr;
+		if (ppImmediateContext)
+			*ppImmediateContext = nullptr;
+
 		if (hModule == 0)
 			return S_FALSE;
 

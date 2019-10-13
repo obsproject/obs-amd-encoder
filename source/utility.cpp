@@ -22,6 +22,7 @@
 #include "utility.hpp"
 #include <map>
 #include <sstream>
+#include "amf-capabilities.hpp"
 #include "amf-encoder-h264.hpp"
 #include "amf-encoder-h265.hpp"
 #include "amf-encoder.hpp"
@@ -95,6 +96,37 @@ const char* Utility::obs_module_text_multi(const char* key, uint8_t depth)
 	return key;
 #endif
 }
+
+#ifndef LITE_OBS
+void Utility::fill_api_list(obs_property_t* property, Plugin::AMD::Codec codec)
+{
+	obs_property_list_clear(property);
+
+	auto cm = Plugin::AMD::CapabilityManager::Instance();
+
+	for (auto api : Plugin::API::EnumerateAPIs()) {
+		if (cm->IsCodecSupportedByAPI(codec, api->GetType()))
+			obs_property_list_add_string(property, api->GetName().c_str(), api->GetName().c_str());
+	}
+}
+
+void Utility::fill_device_list(obs_property_t* property, std::string api_name, Plugin::AMD::Codec codec)
+{
+	obs_property_list_clear(property);
+
+	auto api = Plugin::API::GetAPI(api_name);
+	auto cm  = Plugin::AMD::CapabilityManager::Instance();
+
+	for (auto adapter : api->EnumerateAdapters()) {
+		union {
+			int32_t id[2];
+			int64_t v;
+		} adapterid = {adapter.idLow, adapter.idHigh};
+		if (cm->IsCodecSupportedByAPIAdapter(codec, api->GetType(), adapter))
+			obs_property_list_add_int(property, adapter.Name.c_str(), adapterid.v);
+	}
+}
+#endif
 
 // Codec
 const char* Utility::CodecToString(Plugin::AMD::Codec v)

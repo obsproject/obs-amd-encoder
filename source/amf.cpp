@@ -35,15 +35,11 @@ using namespace Plugin::AMD;
 
 class CustomWriter : public amf::AMFTraceWriter {
 	public:
-	virtual void __cdecl Write(const wchar_t* scope, const wchar_t* message) override
+	virtual void __cdecl Write(const wchar_t*, const wchar_t* message) override
 	{
 #ifndef LITE_OBS
-		const wchar_t* realmsg = &(message[(33 + wcslen(scope) + 2)]); // Skip Time & Scope
-		size_t         msgLen  = wcslen(realmsg) - (sizeof(wchar_t));
-
-		blog(LOG_DEBUG, "[AMF Runtime] [%.*ls][%ls] %.*ls", 12, &(message[11]), scope, msgLen, realmsg);
+		blog(LOG_DEBUG, "[AMF] %.*ls", wcsnlen_s(message, 65535), message);
 #else
-		scope;
 		message;
 #endif
 	}
@@ -118,7 +114,7 @@ Plugin::AMD::AMF::AMF()
 // Windows: Get Product Version for Driver Matching
 #ifdef _WIN32
 	{
-		verbuf.resize(GetFileVersionInfoSizeW(AMF_DLL_NAME, nullptr) * 2);
+		verbuf.resize(static_cast<size_t>(GetFileVersionInfoSizeW(AMF_DLL_NAME, nullptr)) * 2);
 		GetFileVersionInfoW(AMF_DLL_NAME, 0, (DWORD)verbuf.size(), verbuf.data());
 
 		void* pBlock = verbuf.data();

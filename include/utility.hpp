@@ -27,9 +27,20 @@
 #include "components/VideoEncoderHEVC.h"
 #include "components/VideoEncoderVCE.h"
 
+#ifndef LITE_OBS
+extern "C" {
+#include "obs-properties.h"
+}
+#endif
+
 namespace Utility {
 	uint64_t    GetUniqueIdentifier();
 	const char* obs_module_text_multi(const char* val, uint8_t depth = (uint8_t)1);
+
+#ifndef LITE_OBS
+	void fill_api_list(obs_property_t* property, Plugin::AMD::Codec codec);
+	void fill_device_list(obs_property_t* property, std::string api_name, Plugin::AMD::Codec codec);
+#endif
 
 	// Codec
 	const char*    CodecToString(Plugin::AMD::Codec v);
@@ -105,13 +116,9 @@ namespace Utility {
 	//////////////////////////////////////////////////////////////////////////
 	// Threading Specific
 	//////////////////////////////////////////////////////////////////////////
-
 #if (defined _WIN32) || (defined _WIN64)
 	void SetThreadName(uint32_t dwThreadID, const char* threadName);
-	void SetThreadName(const char* threadName);
-	void SetThreadName(std::thread* pthread, const char* threadName);
-#else
-	void SetThreadName(std::thread* pthread, const char* threadName);
-	void SetThreadName(const char* threadName);
 #endif
+	void SetThreadName(std::thread* pthread, const char* threadName);
+	void SetThreadName(const char* threadName);
 } // namespace Utility

@@ -328,8 +328,6 @@ void Plugin::AMD::Encoder::UpdateFrameRateValues()
 
 void Plugin::AMD::Encoder::SetVBVBufferStrictness(double_t v)
 {
-	AMFTRACECALL;
-
 	auto     bitrateCaps  = CapsVBVBufferSize();
 	uint64_t looseBitrate = bitrateCaps.second, targetBitrate = 0, strictBitrate = bitrateCaps.first;
 
@@ -419,8 +417,6 @@ bool Plugin::AMD::Encoder::GetFrameSkippingBehaviour()
 
 void Plugin::AMD::Encoder::Start()
 {
-	AMFTRACECALL;
-
 	AMF_RESULT res;
 
 	res = m_AMFConverter->Init(Utility::ColorFormatToAMF(m_ColorFormat), m_Resolution.first, m_Resolution.second);
@@ -456,8 +452,6 @@ void Plugin::AMD::Encoder::Start()
 
 void Plugin::AMD::Encoder::Restart()
 {
-	AMFTRACECALL;
-
 	AMF_RESULT res = m_AMFEncoder->ReInit(m_Resolution.first, m_Resolution.second);
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Could not re-initialize encoder, error %ls (code %d)", m_UniqueId,
@@ -468,8 +462,6 @@ void Plugin::AMD::Encoder::Restart()
 
 void Plugin::AMD::Encoder::Stop()
 {
-	AMFTRACECALL;
-
 	if (!m_Started)
 		throw std::logic_error("Can't stop an encoder that isn't running!");
 
@@ -505,15 +497,11 @@ void Plugin::AMD::Encoder::Stop()
 
 bool Plugin::AMD::Encoder::IsStarted()
 {
-	AMFTRACECALL;
-
 	return m_Started;
 }
 
 bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_packet* packet, bool* received_packet)
 {
-	AMFTRACECALL;
-
 	if (!m_Started)
 		return false;
 
@@ -538,8 +526,6 @@ bool Plugin::AMD::Encoder::Encode(struct encoder_frame* frame, struct encoder_pa
 
 void Plugin::AMD::Encoder::GetVideoInfo(struct video_scale_info* info)
 {
-	AMFTRACECALL;
-
 	if (!m_AMFContext || !m_AMFEncoder)
 		throw std::exception("Called while not initialized.");
 
@@ -577,8 +563,6 @@ void Plugin::AMD::Encoder::GetVideoInfo(struct video_scale_info* info)
 
 bool Plugin::AMD::Encoder::GetExtraData(uint8_t** extra_data, size_t* size)
 {
-	AMFTRACECALL;
-
 	if (!m_AMFContext || !m_AMFEncoder)
 		throw std::exception("Called while not initialized.");
 
@@ -599,8 +583,6 @@ bool Plugin::AMD::Encoder::GetExtraData(uint8_t** extra_data, size_t* size)
 
 bool Plugin::AMD::Encoder::EncodeAllocate(OUT amf::AMFSurfacePtr& surface)
 {
-	AMFTRACECALL;
-
 	AMF_RESULT res;
 	auto       clk_start = std::chrono::high_resolution_clock::now();
 
@@ -633,8 +615,6 @@ bool Plugin::AMD::Encoder::EncodeAllocate(OUT amf::AMFSurfacePtr& surface)
 
 bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struct encoder_frame* frame)
 {
-	AMFTRACECALL;
-
 	AMF_RESULT                  res;
 	amf::AMFComputeSyncPointPtr pSyncPoint;
 	auto                        clk_start = std::chrono::high_resolution_clock::now();
@@ -729,8 +709,6 @@ bool Plugin::AMD::Encoder::EncodeStore(OUT amf::AMFSurfacePtr& surface, IN struc
 
 bool Plugin::AMD::Encoder::EncodeConvert(IN amf::AMFSurfacePtr& surface, OUT amf::AMFDataPtr& data)
 {
-	AMFTRACECALL;
-
 	AMF_RESULT res;
 	auto       clk_start = std::chrono::high_resolution_clock::now();
 
@@ -780,8 +758,6 @@ bool Plugin::AMD::Encoder::EncodeConvert(IN amf::AMFSurfacePtr& surface, OUT amf
 
 bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFDataPtr& packet)
 {
-	AMFTRACECALL;
-
 	bool frameSubmitted = false, packetRetrieved = false;
 
 	bool keepLooping = true;
@@ -915,8 +891,6 @@ bool Plugin::AMD::Encoder::EncodeMain(IN amf::AMFDataPtr& data, OUT amf::AMFData
 bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encoder_packet* packet,
 									  OUT bool* received_packet)
 {
-	AMFTRACECALL;
-
 	if (data == nullptr)
 		return true;
 
