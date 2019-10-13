@@ -149,22 +149,9 @@ if(NOT ${PropertyPrefix}OBS_NATIVE)
 	set(CMAKE_PACKAGE_SUFFIX_OVERRIDE "" CACHE STRING "Override for the suffix.")
 endif()
 
-Set(AMF_SDK_DIR "${PROJECT_SOURCE_DIR}/AMF/" CACHE PATH "AMD Advanced Media Framework SDK Directory")
-
 ################################################################################
 # Dependencies
 ################################################################################
-
-# AMF SDK
-If(AMF_SDK_DIR STREQUAL "")
-	Message(STATUS "AMF_SDK_DIR not set! ${PROJECT_NAME} plugin disabled.")
-	Return()
-EndIf()
-
-If(NOT EXISTS "${AMF_SDK_DIR}/amf/public/include/components/VideoEncoderVCE.h")
-	Message(STATUS "AMF_SDK_DIR invalid! ${PROJECT_NAME} plugin disabled.")
-	Return()
-EndIf()
 
 # Detect OBS Studio Type
 if(TARGET libobs)
@@ -299,7 +286,7 @@ Target_Include_Directories(${PROJECT_NAME}
 	PUBLIC
 		"${PROJECT_BINARY_DIR}/include"
 		"${PROJECT_SOURCE_DIR}/include"
-		"${AMF_SDK_DIR}/amf/public/include"
+		"${PROJECT_SOURCE_DIR}/AMF/amf/public/include"
 	PRIVATE
 		"${PROJECT_BINARY_DIR}/source"
 		"${PROJECT_SOURCE_DIR}/source"
