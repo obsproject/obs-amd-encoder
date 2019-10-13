@@ -18,9 +18,9 @@
  */
 
 #include "api-d3d9.hpp"
+#include <cinttypes>
 #include <list>
 #include <mutex>
-#include <cinttypes>
 
 using namespace Plugin::API;
 
@@ -100,7 +100,8 @@ std::shared_ptr<Instance> Plugin::API::Direct3D9::CreateInstance(Adapter adapter
 	return inst2;
 }
 
-Plugin::API::Direct3D9Instance::Direct3D9Instance(Direct3D9* api, Adapter adapter) : m_API(api), m_Adapter(adapter)
+Plugin::API::Direct3D9Instance::Direct3D9Instance(Direct3D9* api, Adapter adapter)
+	: m_API(api), m_Adapter(adapter), m_Device(nullptr)
 {
 	size_t                 adapterNum = (size_t)-1;
 	D3DADAPTER_IDENTIFIER9 adapterIdentifier;
@@ -138,8 +139,8 @@ Plugin::API::Direct3D9Instance::Direct3D9Instance(Direct3D9* api, Adapter adapte
 	HRESULT hr = api->m_Direct3D9Ex->GetDeviceCaps((UINT)adapterNum, D3DDEVTYPE_HAL, &ddCaps);
 	if (FAILED(hr)) {
 		std::vector<char> buf(1024);
-		snprintf(buf.data(), buf.size(),
-				 "<%s> Unable to query capabilities for D3D9 adapter, error code %X.", __FUNCTION_NAME__, hr);
+		snprintf(buf.data(), buf.size(), "<%s> Unable to query capabilities for D3D9 adapter, error code %X.",
+				 __FUNCTION_NAME__, hr);
 		throw std::exception(buf.data());
 	}
 
