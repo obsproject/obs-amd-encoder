@@ -146,24 +146,18 @@ size_t Plugin::API::CountAPIs()
 
 std::string Plugin::API::GetAPIName(size_t index)
 {
-	auto indAPI = s_APIInstances.begin();
-	indAPI + index; // Advanced by x elements.
-
-	if (indAPI == s_APIInstances.end())
+	if (index >= s_APIInstances.size())
 		throw std::exception("Invalid API Index");
 
-	return indAPI->get()->GetName();
+	return s_APIInstances[index].get()->GetName();
 }
 
 std::shared_ptr<IAPI> Plugin::API::GetAPI(size_t index)
 {
-	auto indAPI = s_APIInstances.begin();
-	indAPI + index; // Advanced by x elements.
-
-	if (indAPI == s_APIInstances.end())
+	if (index >= s_APIInstances.size())
 		throw std::exception("Invalid API Index");
 
-	return *indAPI;
+	return s_APIInstances[index];
 }
 
 std::shared_ptr<IAPI> Plugin::API::GetAPI(const std::string& name)
