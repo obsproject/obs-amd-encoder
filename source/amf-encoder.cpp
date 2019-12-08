@@ -907,7 +907,7 @@ bool Plugin::AMD::Encoder::EncodeLoad(IN amf::AMFDataPtr& data, OUT struct encod
 	PacketPriorityAndKeyframe(data, packet);
 	packet->size = pBuffer->GetSize();
 	if (m_PacketDataBuffer.size() < packet->size) {
-		size_t newBufferSize = (size_t)exp2(ceil(log2(packet->size)));
+		size_t newBufferSize = (size_t)exp2(ceil(log2((double)packet->size)));
 		//AMF_LOG_DEBUG("Packet Buffer was resized to %d byte from %d byte.", newBufferSize, m_PacketDataBuffer.size());
 		m_PacketDataBuffer.resize(newBufferSize);
 	}

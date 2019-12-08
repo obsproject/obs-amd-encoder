@@ -105,7 +105,7 @@ void                                      Plugin::API::InitializeAPIs()
 		// DirectX 11
 		try {
 			s_APIInstances.insert(s_APIInstances.end(), std::make_shared<Direct3D11>());
-		} catch (const std::exception& ex) {
+		} catch (const std::exception& PLOG_VAR(ex)) {
 			PLOG_WARNING("Direct3D 11 is not supported due to error: %s", ex.what());
 		} catch (...) {
 			PLOG_WARNING("Direct3D 11 not supported.");
@@ -114,7 +114,7 @@ void                                      Plugin::API::InitializeAPIs()
 		// Direct3D 9
 		try {
 			s_APIInstances.insert(s_APIInstances.end(), std::make_shared<Direct3D9>());
-		} catch (const std::exception& ex) {
+		} catch (const std::exception& PLOG_VAR(ex)) {
 			PLOG_WARNING("Direct3D 9 is not supported due to error: %s", ex.what());
 		} catch (...) {
 			PLOG_WARNING("Direct3D 9 not supported.");
