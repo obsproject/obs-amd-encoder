@@ -203,6 +203,13 @@ Plugin::AMD::Encoder::Encoder(Codec codec, std::shared_ptr<API::IAPI> videoAPI, 
 							 m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
 		throw std::exception(errMsg.c_str());
 	}
+	res = m_AMFConverter->SetProperty(AMF_VIDEO_CONVERTER_TRANSFER_CHARACTERISTIC,
+									  Utility::ColorSpaceToTransferCharacteristic(m_ColorSpace));
+	if (res != AMF_OK) {
+		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Unable to set converter transfer characteristic, error %ls (code %d)",
+							 m_UniqueId, m_AMF->GetTrace()->GetResultText(res), res);
+		PLOG_WARNING("%s", errMsg.c_str());
+	}
 
 	// Create Encoder
 	res = m_AMFFactory->CreateComponent(m_AMFContext, Utility::CodecToAMF(codec), &m_AMFEncoder);

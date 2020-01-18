@@ -53,6 +53,7 @@ namespace Utility {
 	// Color Space
 	const char*                            ColorSpaceToString(Plugin::AMD::ColorSpace v);
 	AMF_VIDEO_CONVERTER_COLOR_PROFILE_ENUM ColorSpaceToAMFConverter(Plugin::AMD::ColorSpace v);
+	AMF_COLOR_TRANSFER_CHARACTERISTIC_ENUM ColorSpaceToTransferCharacteristic(Plugin::AMD::ColorSpace v);
 
 	// Usage
 	const char*                       UsageToString(Plugin::AMD::Usage v);
