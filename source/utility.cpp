@@ -204,6 +204,8 @@ const char* Utility::ColorSpaceToString(Plugin::AMD::ColorSpace v)
 		return "709";
 	case ColorSpace::BT2020:
 		return "2020";
+	case ColorSpace::SRGB:
+		return "sRGB";
 	}
 	throw std::runtime_error("Invalid Parameter");
 }
@@ -215,9 +217,25 @@ Utility::ColorSpaceToAMFConverter(Plugin::AMD::ColorSpace v)
 	case ColorSpace::BT601:
 		return AMF_VIDEO_CONVERTER_COLOR_PROFILE_601;
 	case ColorSpace::BT709:
+	case ColorSpace::SRGB:
 		return AMF_VIDEO_CONVERTER_COLOR_PROFILE_709;
 	case ColorSpace::BT2020:
 		return AMF_VIDEO_CONVERTER_COLOR_PROFILE_2020;
+	}
+	throw std::runtime_error("Invalid Parameter");
+}
+
+AMF_COLOR_TRANSFER_CHARACTERISTIC_ENUM Utility::ColorSpaceToTransferCharacteristic(Plugin::AMD::ColorSpace v)
+{
+	switch (v) {
+	case ColorSpace::BT601:
+		return AMF_COLOR_TRANSFER_CHARACTERISTIC_SMPTE170M;
+	case ColorSpace::BT709:
+		return AMF_COLOR_TRANSFER_CHARACTERISTIC_BT709;
+	case ColorSpace::BT2020:
+		return AMF_COLOR_TRANSFER_CHARACTERISTIC_BT2020_10;
+	case ColorSpace::SRGB:
+		return AMF_COLOR_TRANSFER_CHARACTERISTIC_IEC61966_2_1;
 	}
 	throw std::runtime_error("Invalid Parameter");
 }
