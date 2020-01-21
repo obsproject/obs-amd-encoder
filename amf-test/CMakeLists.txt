@@ -167,3 +167,8 @@ else()
 	)
 	INSTALL(FILES $<TARGET_PDB_FILE:enc-amf-test> DESTINATION "./data/obs-plugins/enc-amf/" OPTIONAL)	
 endif()
+
+clang_format(
+	TARGETS ${PROJECT_NAME}
+	DEPENDENCY
+)

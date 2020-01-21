@@ -1445,7 +1445,7 @@ void Plugin::AMD::EncoderH265::LogProperties()
     PLOG_INFO(PREFIX "    Max. Reference Frames: %" PRIu16, m_UniqueId, (uint16_t)GetMaximumReferenceFrames());
     PLOG_INFO(PREFIX "    Max. Long-Term Reference Frames: %" PRIu16, m_UniqueId,
               (uint16_t)GetMaximumLongTermReferenceFrames());
-#pragma endregion Static
+#pragma endregion   Static
 #pragma region Rate Control
 	PLOG_INFO(PREFIX "  Rate Control:", m_UniqueId);
 	PLOG_INFO(PREFIX "    Method: %s", m_UniqueId, Utility::RateControlMethodToString(GetRateControlMethod()));
@@ -1475,7 +1475,7 @@ void Plugin::AMD::EncoderH265::LogProperties()
               IsVarianceBasedAdaptiveQuantizationEnabled() ? "Enabled" : "Disabled");
     PLOG_INFO(PREFIX "      Enforce Hypothetical Reference Decoder: %s", m_UniqueId,
               IsEnforceHRDEnabled() ? "Enabled" : "Disabled");
-#pragma endregion Flags
+#pragma endregion              Flags
 #pragma region Video Buffering Verifier
 	PLOG_INFO(PREFIX "    Video Buffering Verfier:", m_UniqueId);
 	PLOG_INFO(PREFIX "      Buffer Size: %" PRIu64 " bits", m_UniqueId, GetVBVBufferSize());

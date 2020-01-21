@@ -142,7 +142,8 @@ void Plugin::Interface::H265Interface::get_defaults(obs_data_t* data) noexcept
 	obs_data_set_default_int(data, P_VERSION, PLUGIN_VERSION_FULL);
 }
 
-obs_properties_t* Plugin::Interface::H265Interface::get_properties(void* data) noexcept try {
+obs_properties_t* Plugin::Interface::H265Interface::get_properties(void* data) noexcept
+try {
 	obs_properties* props = obs_properties_create();
 	obs_property_t* p;
 
@@ -466,7 +467,8 @@ static void obs_data_transfer_settings(obs_data_t* data)
 }
 
 bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t* props, obs_property_t*,
-														   obs_data_t*       data) noexcept try {
+														   obs_data_t*       data) noexcept
+try {
 	bool            result = false;
 	obs_property_t* p;
 
@@ -747,7 +749,7 @@ bool Plugin::Interface::H265Interface::properties_modified(obs_properties_t* pro
 		obs_data_unset_user_value(data, P_GOP_SIZE_MINIMUM);
 		obs_data_unset_user_value(data, P_GOP_SIZE_MAXIMUM);
 	}
-#pragma endregion GOP
+#pragma endregion      GOP
 #pragma endregion View Mode
 
 	// Permanently disable static properties while encoding.
@@ -1021,7 +1023,8 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 	PLOG_DEBUG("<%s> Complete.", __FUNCTION_NAME__);
 }
 
-void Plugin::Interface::H265Interface::destroy(void* ptr) noexcept try {
+void Plugin::Interface::H265Interface::destroy(void* ptr) noexcept
+try {
 	if (ptr)
 		delete static_cast<H265Interface*>(ptr);
 } catch (const std::exception& ex) {
@@ -1040,7 +1043,8 @@ Plugin::Interface::H265Interface::~H265Interface()
 	PLOG_DEBUG("<%s> Complete.", __FUNCTION_NAME__);
 }
 
-bool Plugin::Interface::H265Interface::update(void* ptr, obs_data_t* settings) noexcept try {
+bool Plugin::Interface::H265Interface::update(void* ptr, obs_data_t* settings) noexcept
+try {
 	if (ptr)
 		return static_cast<H265Interface*>(ptr)->update(settings);
 	return false;
@@ -1124,7 +1128,8 @@ bool Plugin::Interface::H265Interface::update(obs_data_t* data)
 }
 
 bool Plugin::Interface::H265Interface::encode(void* ptr, struct encoder_frame* frame, struct encoder_packet* packet,
-											  bool* received_packet) noexcept try {
+											  bool* received_packet) noexcept
+try {
 	if (ptr)
 		return static_cast<H265Interface*>(ptr)->encode(frame, packet, received_packet);
 	return false;
@@ -1152,7 +1157,8 @@ bool Plugin::Interface::H265Interface::encode(struct encoder_frame* frame, struc
 	return false;
 }
 
-void Plugin::Interface::H265Interface::get_video_info(void* ptr, struct video_scale_info* info) noexcept try {
+void Plugin::Interface::H265Interface::get_video_info(void* ptr, struct video_scale_info* info) noexcept
+try {
 	if (ptr)
 		static_cast<H265Interface*>(ptr)->get_video_info(info);
 } catch (const std::exception& ex) {
@@ -1166,7 +1172,8 @@ void Plugin::Interface::H265Interface::get_video_info(struct video_scale_info* i
 	m_VideoEncoder->GetVideoInfo(info);
 }
 
-bool Plugin::Interface::H265Interface::get_extra_data(void* ptr, uint8_t** extra_data, size_t* size) noexcept try {
+bool Plugin::Interface::H265Interface::get_extra_data(void* ptr, uint8_t** extra_data, size_t* size) noexcept
+try {
 	if (ptr)
 		return static_cast<H265Interface*>(ptr)->get_extra_data(extra_data, size);
 	return false;

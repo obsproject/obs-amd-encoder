@@ -63,7 +63,8 @@ const char* Plugin::Interface::H264Interface::get_name(void*) noexcept
 	return "H264/AVC Encoder (" PLUGIN_NAME ")";
 }
 
-void* Plugin::Interface::H264Interface::create(obs_data_t* settings, obs_encoder_t* encoder) noexcept try {
+void* Plugin::Interface::H264Interface::create(obs_data_t* settings, obs_encoder_t* encoder) noexcept
+try {
 	try {
 		return new Plugin::Interface::H264Interface(settings, encoder);
 	} catch (const std::exception& e) {
@@ -75,7 +76,8 @@ void* Plugin::Interface::H264Interface::create(obs_data_t* settings, obs_encoder
 	return nullptr;
 }
 
-void Plugin::Interface::H264Interface::destroy(void* data) noexcept try {
+void Plugin::Interface::H264Interface::destroy(void* data) noexcept
+try {
 	if (data)
 		delete static_cast<Plugin::Interface::H264Interface*>(data);
 } catch (const std::exception& ex) {
@@ -85,7 +87,8 @@ void Plugin::Interface::H264Interface::destroy(void* data) noexcept try {
 }
 
 bool Plugin::Interface::H264Interface::encode(void* data, struct encoder_frame* frame, struct encoder_packet* packet,
-											  bool* received_packet) noexcept try {
+											  bool* received_packet) noexcept
+try {
 	if (data)
 		return static_cast<Plugin::Interface::H264Interface*>(data)->encode(frame, packet, received_packet);
 	return false;
@@ -177,7 +180,8 @@ void Plugin::Interface::H264Interface::get_defaults(obs_data_t* data) noexcept
 	obs_data_set_default_int(data, P_VERSION, PLUGIN_VERSION_FULL);
 }
 
-obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) noexcept try {
+obs_properties_t* Plugin::Interface::H264Interface::get_properties(void* data) noexcept
+try {
 	obs_properties* props = obs_properties_create();
 	obs_property_t* p;
 
@@ -581,7 +585,8 @@ static void obs_data_transfer_settings(obs_data_t* data)
 }
 
 bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t* props, obs_property_t*,
-														   obs_data_t*       data) noexcept try {
+														   obs_data_t*       data) noexcept
+try {
 	bool            result = false;
 	obs_property_t* p;
 
@@ -1152,7 +1157,7 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t* pro
 		obs_data_unset_user_value(data, P_INTERVAL_BFRAME);
 	}
 #pragma endregion B - Frame Interval
-#pragma endregion View Mode
+#pragma endregion View      Mode
 
 	// Permanently disable static properties while encoding.
 	void* enc = obs_properties_get_param(props);
@@ -1220,7 +1225,8 @@ bool Plugin::Interface::H264Interface::properties_modified(obs_properties_t* pro
 	return false;
 }
 
-bool Plugin::Interface::H264Interface::update(void* data, obs_data_t* settings) noexcept try {
+bool Plugin::Interface::H264Interface::update(void* data, obs_data_t* settings) noexcept
+try {
 	if (data)
 		return static_cast<Plugin::Interface::H264Interface*>(data)->update(settings);
 	return false;
@@ -1232,7 +1238,8 @@ bool Plugin::Interface::H264Interface::update(void* data, obs_data_t* settings) 
 	return false;
 }
 
-void Plugin::Interface::H264Interface::get_video_info(void* data, struct video_scale_info* info) noexcept try {
+void Plugin::Interface::H264Interface::get_video_info(void* data, struct video_scale_info* info) noexcept
+try {
 	if (data)
 		return static_cast<Plugin::Interface::H264Interface*>(data)->get_video_info(info);
 } catch (const std::exception& ex) {
@@ -1241,7 +1248,8 @@ void Plugin::Interface::H264Interface::get_video_info(void* data, struct video_s
 	PLOG_ERROR("Unexpected unknown exception in %s.", __FUNCTION_NAME__);
 }
 
-bool Plugin::Interface::H264Interface::get_extra_data(void* data, uint8_t** extra_data, size_t* size) noexcept try {
+bool Plugin::Interface::H264Interface::get_extra_data(void* data, uint8_t** extra_data, size_t* size) noexcept
+try {
 	if (data)
 		return static_cast<Plugin::Interface::H264Interface*>(data)->get_extra_data(extra_data, size);
 	return false;
