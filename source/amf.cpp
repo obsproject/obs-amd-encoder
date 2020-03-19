@@ -217,7 +217,7 @@ Plugin::AMD::AMF::~AMF()
 		if (m_TraceWriter) {
 			if (m_AMFTrace)
 				m_AMFTrace->UnregisterWriter(loggername);
-			delete m_TraceWriter;
+			delete static_cast<CustomWriter*>(m_TraceWriter);
 			m_TraceWriter = nullptr;
 		}
 
