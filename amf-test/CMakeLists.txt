@@ -30,7 +30,7 @@ if(MSVC)
 	else()
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
 	endif()
-	
+
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 	# Update if necessary
@@ -52,7 +52,7 @@ add_definitions(-DLITE_OBS)
 #   ${PropertyPrefix}OBS_PACKAGE
 #   AMF_SDK_DIR
 
-IF(WIN32)	
+IF(WIN32)
 	# windows.h
 	add_definitions(-DWIN32_LEAN_AND_MEAN)
 	add_definitions(-DNOGPICAPMASKS)
@@ -126,7 +126,7 @@ add_executable(enc-amf-test
 	"${enc-amf_SOURCE_DIR}/include/utility.hpp"
 )
 target_include_directories(enc-amf-test
-	PUBLIC 
+	PUBLIC
 		"${PROJECT_SOURCE_DIR}"
 		"${enc-amf_SOURCE_DIR}/include"
 		"${enc-amf_BINARY_DIR}/include"
@@ -160,10 +160,11 @@ set_target_properties(enc-amf-test
 
 if(${PropertyPrefix}OBS_NATIVE)
 	install_obs_datatarget(enc-amf-test "obs-plugins/enc-amf")
+	Set_Target_Properties(enc-amf-test PROPERTIES FOLDER "plugins/enc-amf")
 else()
 	INSTALL(TARGETS enc-amf-test
 		RUNTIME DESTINATION "./data/obs-plugins/enc-amf/" COMPONENT Runtime
 		LIBRARY DESTINATION "./data/obs-plugins/enc-amf/" COMPONENT Runtime
 	)
-	INSTALL(FILES $<TARGET_PDB_FILE:enc-amf-test> DESTINATION "./data/obs-plugins/enc-amf/" OPTIONAL)	
+	INSTALL(FILES $<TARGET_PDB_FILE:enc-amf-test> DESTINATION "./data/obs-plugins/enc-amf/" OPTIONAL)
 endif()

@@ -96,12 +96,12 @@ If(WIN32)
 	Set(PROJECT_LEGAL_TRADEMARKS_1 "Advanced Micro Devices, AMD, AMD Ryzen, Ryzen, AMD Radeon and Radeon are Trademarks of Advanced Micro Devices.")
 	Set(PROJECT_LEGAL_TRADEMARKS_2 "")
 	Set(PROJECT_DESCRIPTION "AMD Encoder integration for OBS Studio")
-	
+
 	Configure_File(
 		"${PROJECT_SOURCE_DIR}/cmake/version.rc.in"
 		"${PROJECT_BINARY_DIR}/cmake/version.rc"
 		@ONLY
-	)	
+	)
 EndIf()
 
 # All Warnings, Extra Warnings, Pedantic
@@ -156,7 +156,7 @@ endif()
 # Detect OBS Studio Type
 if(TARGET libobs)
 	message(STATUS "${PROJECT_NAME}: Using native obs-studio.")
-	CacheSet(${PropertyPrefix}OBS_NATIVE TRUE)	
+	CacheSet(${PropertyPrefix}OBS_NATIVE TRUE)
 else()
 	CacheSet(${PropertyPrefix}OBS_NATIVE FALSE)
 	if(EXISTS "${OBS_STUDIO_DIR}/cmake/LibObs/LibObsConfig.cmake")
@@ -192,7 +192,7 @@ EndIf()
 
 # Load OBS Studio
 If(${PropertyPrefix}OBS_NATIVE)
-	Option(BUILD_AMD_ENCODER "Build AMD Encoder module" ON)	
+	Option(BUILD_AMD_ENCODER "Build AMD Encoder module" ON)
 	If (NOT BUILD_AMD_ENCODER)
 		Message(STATUS "Not building AMD Encoder")
 		Return()
@@ -280,6 +280,9 @@ Add_Library(${PROJECT_NAME} MODULE
 	${PROJECT_SOURCES}
 	${PROJECT_DATA}
 )
+If(${PropertyPrefix}OBS_NATIVE)
+	Set_Target_Properties(${PROJECT_NAME} PROPERTIES FOLDER "plugins/enc-amf")
+EndIf()
 
 # Include Directories
 Target_Include_Directories(${PROJECT_NAME}
@@ -432,18 +435,18 @@ Else()
 			OPTIONAL
 		)
 	ENDIF()
-	
+
 	Install(
 		DIRECTORY "${PROJECT_SOURCE_DIR}/resources/"
 		DESTINATION "./data/obs-plugins/${PROJECT_NAME}/"
 	)
-	
+
 	If("${CMAKE_PACKAGE_SUFFIX_OVERRIDE}" STREQUAL "")
 		Set(PackageFullName "${CMAKE_PACKAGE_PREFIX}/${CMAKE_PACKAGE_NAME}-${PROJECT_VERSION}")
 	Else()
 		Set(PackageFullName "${CMAKE_PACKAGE_PREFIX}/${CMAKE_PACKAGE_NAME}-${CMAKE_PACKAGE_SUFFIX_OVERRIDE}")
 	EndIf()
-	
+
 	Add_Custom_Target(
 		PACKAGE_7Z
 		${CMAKE_COMMAND} -E tar cfv "${PackageFullName}.7z" --format=7zip --
