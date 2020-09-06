@@ -1306,10 +1306,10 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 	}
 	ColorSpace colorSpace = ColorSpace::BT601;
 	switch (voi->colorspace) {
-	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_601:
 		colorSpace = ColorSpace::BT601;
 		break;
+	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_709:
 		colorSpace = ColorSpace::BT709;
 		break;
