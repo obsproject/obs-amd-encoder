@@ -58,7 +58,11 @@ std::vector<Usage> Plugin::AMD::EncoderH265::CapsUsage()
 
 	std::vector<Usage> ret;
 	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
-		ret.push_back(Utility::UsageFromAMFH265((AMF_VIDEO_ENCODER_HEVC_USAGE_ENUM)enm->value));
+		try {
+			ret.push_back(Utility::UsageFromAMFH265((AMF_VIDEO_ENCODER_HEVC_USAGE_ENUM)enm->value));
+		} catch (...) {
+			// ignore unknown enum entries
+		}
 	}
 	return ret;
 }
@@ -99,7 +103,11 @@ std::vector<QualityPreset> Plugin::AMD::EncoderH265::CapsQualityPreset()
 
 	std::vector<QualityPreset> ret;
 	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
-		ret.push_back(Utility::QualityPresetFromAMFH265((AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_ENUM)enm->value));
+		try {
+			ret.push_back(Utility::QualityPresetFromAMFH265((AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_ENUM)enm->value));
+		} catch (...) {
+			// ignore unknown enum entries
+		}
 	}
 	return ret;
 }
@@ -234,7 +242,11 @@ std::vector<Profile> Plugin::AMD::EncoderH265::CapsProfile()
 
 	std::vector<Profile> ret;
 	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
-		ret.push_back(Utility::ProfileFromAMFH265((AMF_VIDEO_ENCODER_HEVC_PROFILE_ENUM)enm->value));
+		try {
+			ret.push_back(Utility::ProfileFromAMFH265((AMF_VIDEO_ENCODER_HEVC_PROFILE_ENUM)enm->value));
+		} catch (...) {
+			// ignore unknown enum entries
+		}
 	}
 	return ret;
 }
@@ -275,7 +287,11 @@ std::vector<ProfileLevel> Plugin::AMD::EncoderH265::CapsProfileLevel()
 
 	std::vector<ProfileLevel> ret;
 	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
-		ret.push_back((ProfileLevel)(enm->value / 3));
+		try {
+			ret.push_back((ProfileLevel)(enm->value / 3));
+		} catch (...) {
+			// ignore unknown enum entries
+		}
 	}
 	return ret;
 }
@@ -337,7 +353,11 @@ std::vector<H265::Tier> Plugin::AMD::EncoderH265::CapsTier()
 
 	std::vector<H265::Tier> ret;
 	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
-		ret.push_back(Utility::TierFromAMFH265((AMF_VIDEO_ENCODER_HEVC_TIER_ENUM)enm->value));
+		try {
+			ret.push_back(Utility::TierFromAMFH265((AMF_VIDEO_ENCODER_HEVC_TIER_ENUM)enm->value));
+		} catch (...) {
+			// ignore unknown enum entries
+		}
 	}
 	return ret;
 }
@@ -413,7 +433,11 @@ std::vector<CodingType> Plugin::AMD::EncoderH265::CapsCodingType()
 
 	std::vector<CodingType> ret;
 	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
-		ret.push_back(Utility::CodingTypeFromAMFH265((AMF_VIDEO_ENCODER_CODING_ENUM)enm->value));
+		try {
+			ret.push_back(Utility::CodingTypeFromAMFH265((AMF_VIDEO_ENCODER_CODING_ENUM)enm->value));
+		} catch (...) {
+			// ignore unknown enum entries
+		}
 	}
 	return ret;
 }
@@ -490,8 +514,12 @@ std::vector<RateControlMethod> Plugin::AMD::EncoderH265::CapsRateControlMethod()
 
 	std::vector<RateControlMethod> ret;
 	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
-		ret.push_back(
+		try {
+			ret.push_back(
 			Utility::RateControlMethodFromAMFH265((AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_ENUM)enm->value));
+		} catch (...) {
+			// ignore unknown enum entries
+		}
 	}
 	return ret;
 }
@@ -690,7 +718,11 @@ std::vector<H265::GOPType> Plugin::AMD::EncoderH265::CapsGOPType()
 
 	std::vector<H265::GOPType> ret;
 	for (const amf::AMFEnumDescriptionEntry* enm = var->pEnumDescription; enm->name != nullptr; enm++) {
-		ret.push_back(Utility::GOPTypeFromAMFH265(enm->value));
+		try {
+			ret.push_back(Utility::GOPTypeFromAMFH265(enm->value));
+		} catch (...) {
+			// ignore unknown enum entries
+		}
 	}
 	return ret;
 }
