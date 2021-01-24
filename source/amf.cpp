@@ -47,7 +47,7 @@ class CustomWriter : public amf::AMFTraceWriter {
 	virtual void __cdecl Flush() override {}
 };
 
-#pragma region    Singleton
+#pragma region Singleton
 static AMF*       __instance;
 static std::mutex __instance_mutex;
 void              Plugin::AMD::AMF::Initialize()

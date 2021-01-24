@@ -343,7 +343,7 @@ namespace Plugin {
 			virtual void SetMotionEstimationHalfPixelEnabled(bool v) = 0;
 			virtual bool IsMotionEstimationHalfPixelEnabled()        = 0;
 #pragma endregion Motion Estimation
-#pragma endregion        Settings
+#pragma endregion Settings
 
 #pragma region Control
 			void Start();
