@@ -100,64 +100,38 @@ endif()
 
 math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
 
+# Detect OBS Studio Type
+if(TARGET libobs)
+	set(${PropertyPrefix}OBS_NATIVE TRUE)	
+else()
+	message(STATUS "${PROJECT_NAME}: Using downloaded libOBS...")
+	set(${PropertyPrefix}OBS_NATIVE FALSE)
+endif()
+
 ################################################################################
 # Options
 ################################################################################
-set(${PropertyPrefix}OBS_NATIVE FALSE CACHE BOOL "Use native obs-studio build" FORCE)
-set(${PropertyPrefix}OBS_REFERENCE FALSE CACHE BOOL "Use referenced obs-studio build" FORCE)
-set(${PropertyPrefix}OBS_PACKAGE FALSE CACHE BOOL "Use packaged obs-studio build" FORCE)
-set(${PropertyPrefix}OBS_DOWNLOAD FALSE CACHE BOOL "Use downloaded obs-studio build" FORCE)
-mark_as_advanced(FORCE OBS_NATIVE OBS_PACKAGE OBS_REFERENCE OBS_DOWNLOAD)
+if (NOT ${PropertyPrefix}OBS_NATIVE)
+	set(${PropertyPrefix}DOWNLOAD_OBS_VERSION "" CACHE STRING "(Optional) OBS Studio version to build against.")
+	set(${PropertyPrefix}DOWNLOAD_OBS_HASH_32 "" CACHE STRING "")
+	set(${PropertyPrefix}DOWNLOAD_OBS_HASH_64 "" CACHE STRING "")
+	mark_as_advanced(
+		${PropertyPrefix}DOWNLOAD_OBS_VERSION
+		${PropertyPrefix}DOWNLOAD_OBS_HASH_32
+		${PropertyPrefix}DOWNLOAD_OBS_HASH_64
+	)
 
-if(NOT TARGET libobs)
-	set(${PropertyPrefix}OBS_STUDIO_DIR "" CACHE PATH "OBS Studio Source/Package Directory")
-	set(${PropertyPrefix}OBS_DOWNLOAD_VERSION "24.0.1-ci" CACHE STRING "OBS Studio Version to download")
-endif()
-
-if(NOT ${PropertyPrefix}OBS_NATIVE)
-	set(${PropertyPrefix}OBS_DEPENDENCIES_DIR "" CACHE PATH "Path to OBS Dependencies")
-	set(CMAKE_PACKAGE_PREFIX "${CMAKE_BINARY_DIR}" CACHE PATH "Path for generated archives.")
-	set(CMAKE_PACKAGE_NAME "${PROJECT_NAME}" CACHE STRING "Name for the generated archives.")
-	set(CMAKE_PACKAGE_SUFFIX_OVERRIDE "" CACHE STRING "Override for the suffix.")
+	set(${PropertyPrefix}DOWNLOAD_OBSDEPS_VERSION "" CACHE STRING "(Optional) OBS Studio dependencies version to build against.")
+	set(${PropertyPrefix}DOWNLOAD_OBSDEPS_HASH "" CACHE STRING "")
+	mark_as_advanced(
+		${PropertyPrefix}DOWNLOAD_OBSDEPS_VERSION
+		${PropertyPrefix}DOWNLOAD_OBSDEPS_HASH
+	)
 endif()
 
 ################################################################################
 # Dependencies
 ################################################################################
-
-# Detect OBS Studio Type
-if(TARGET libobs)
-	message(STATUS "${PROJECT_NAME}: Using native obs-studio.")
-	CacheSet(${PropertyPrefix}OBS_NATIVE TRUE)	
-else()
-	CacheSet(${PropertyPrefix}OBS_NATIVE FALSE)
-	if(EXISTS "${OBS_STUDIO_DIR}/cmake/LibObs/LibObsConfig.cmake")
-		message(STATUS "${PROJECT_NAME}: Using packaged obs-studio.")
-		CacheSet(${PropertyPrefix}OBS_PACKAGE TRUE)
-	elseif(EXISTS "${OBS_STUDIO_DIR}/libobs/obs-module.h")
-		message(STATUS "${PROJECT_NAME}: Using referenced obs-studio.")
-		CacheSet(${PropertyPrefix}OBS_REFERENCE TRUE)
-	else()
-		message(STATUS "${PROJECT_NAME}: No OBS Studio detected, using downloadable prebuilt binaries.")
-		CacheSet(${PropertyPrefix}OBS_DOWNLOAD TRUE)
-		if (WIN32)
-			set(${PropertyPrefix}OBS_DOWNLOAD_URL "https://github.com/Xaymar/obs-studio/releases/download/${OBS_DOWNLOAD_VERSION}/obs-studio-${ARCH}-0.0.0.0-vs2017.7z")
-		elseif(UNIX)
-			set(${PropertyPrefix}OBS_DOWNLOAD_URL "https://github.com/Xaymar/obs-studio/releases/download/${OBS_DOWNLOAD_VERSION}/obs-studio-${ARCH}-0.0.0.0-gcc.7z")
-		endif()
-	endif()
-endif()
-
-if(NOT ${PropertyPrefix}OBS_NATIVE)
-	set(CMAKE_PACKAGE_PREFIX "${CMAKE_BINARY_DIR}" CACHE PATH "Path for generated archives.")
-	set(CMAKE_PACKAGE_NAME "${PROJECT_NAME}" CACHE STRING "Name for the generated archives.")
-	set(CMAKE_PACKAGE_SUFFIX_OVERRIDE "" CACHE STRING "Override for the suffix.")
-endif()
-
-# CMake Modules
-if(${PropertyPrefix}OBS_DOWNLOAD)
-	include("cmake/DownloadProject.cmake")
-endif()
 
 # Load OBS Studio
 if(${PropertyPrefix}OBS_NATIVE)
@@ -166,21 +140,51 @@ if(${PropertyPrefix}OBS_NATIVE)
 		message(STATUS "Not building AMD Encoder")
 		return()
 	endif()
-elseif(${PropertyPrefix}OBS_PACKAGE)
-	include("${OBS_STUDIO_DIR}/cmake/LibObs/LibObsConfig.cmake")
-elseif(${PropertyPrefix}OBS_REFERENCE)
-	set(obsPath "${OBS_STUDIO_DIR}")
-	include("${OBS_STUDIO_DIR}/cmake/external/Findlibobs.cmake")
-elseif(${PropertyPrefix}OBS_DOWNLOAD)
+else()
+	include("cmake/DownloadProject.cmake")
+	
+	# Consider setting these with CMAKE_SYSTEM_PROCESSOR in the future.
+	set(OBS_DOWNLOAD_OS "windows")
+	set(OBS_DOWNLOAD_BITS 64)
+	set(OBS_DOWNLOAD_ARCH "x64")
+
+	# Download libOBS
+	if(${PropertyPrefix}DOWNLOAD_OBS_VERSION)
+		set(_DOWNLOAD_OBS_VERSION ${PropertyPrefix}DOWNLOAD_OBS_VERSION)
+		set(_DOWNLOAD_OBS_HASH_32 ${PropertyPrefix}DOWNLOAD_OBS_HASH_32)
+		set(_DOWNLOAD_OBS_HASH_64 ${PropertyPrefix}DOWNLOAD_OBS_HASH_64)
+	else()
+		set(_DOWNLOAD_OBS_VERSION "26.0.2-ci")
+		if(WIN32)
+			set(_DOWNLOAD_OBS_HASH_32 "SHA512=468A999ECC8C826683E208B8758FBAE2FD3C9C034A73A147F6BE0F40B6E0AF0B0C9A99DFCB8D3A856206A26FC45F5F0A3B1FF781949B3EF68B765FECEB5CEB55")
+			set(_DOWNLOAD_OBS_HASH_64 "SHA512=571B4196DF5CFBD3A8E113C97C7890000C490DDF1C6747529DE0F06063F928E7488095775919017104DE7A693CCF51A7A82BD04BCE62D6B3F0ED1F74A5F32B32")
+		elseif(UNIX AND NOT APPLE)
+			set(_DOWNLOAD_OBS_HASH_32 "")
+			set(_DOWNLOAD_OBS_HASH_64 "SHA512=62EAD42890CEF953806F5780ED37304D6BD110F65D3ED83A88ADA462B0A0E46E9DEE477A76D456C444102EBA4F9F9A9EAAA299DCFDB2872233E2B35F775CCD0D")
+		elseif(APPLE)
+			set(_DOWNLOAD_OBS_HASH_32 "")
+			set(_DOWNLOAD_OBS_HASH_64 "SHA512=2A7E312666FAABF539740DAD8E30788DEB5882BE8D2FF062848741FD6F8C2077FB237CFB399634BC9C3DE38CF78B3043B1EAE92D833CE6A8B32F5E1EB92D6618")
+		else()
+			message(FATAL_ERROR "No prebuilt packages available for this operating system.")
+			return()
+		endif()
+	endif()
+
+	download_project(
+		PROJ libobs
+		URL "https://github.com/Xaymar/obs-studio/releases/download/${_DOWNLOAD_OBS_VERSION}/obs-studio-${OBS_DOWNLOAD_ARCH}-0.0.0.0-${OBS_DOWNLOAD_OS}-${OBS_DOWNLOAD_BITS}.7z"
+		URL_HASH "${_DOWNLOAD_OBS_HASH_${BITS}}"
+		DOWNLOAD_NAME "libobs.7z"
+		DOWNLOAD_NO_PROGRESS OFF
+		UPDATE_DISCONNECTED OFF
+	)
+
 	download_project(
 		PROJ libobs
 		URL ${OBS_DOWNLOAD_URL}
 		UPDATE_DISCONNECTED 1
 	)
 	include("${libobs_SOURCE_DIR}/cmake/LibObs/LibObsConfig.cmake")
-else()
-	message(CRITICAL "Impossible case reached, very system stability.")
-	return()
 endif()
 
 ################################################################################
@@ -268,31 +272,9 @@ target_include_directories(${PROJECT_NAME}
 )
 
 # OBS Studio
-if(${PropertyPrefix}OBS_NATIVE)
-	target_link_libraries(${PROJECT_NAME}
-		libobs
-	)
-elseif(${PropertyPrefix}OBS_REFERENCE)
-	Target_Include_Directories(${PROJECT_NAME}
-		PRIVATE
-			"${OBS_STUDIO_DIR}/libobs"
-	)
-	target_link_libraries(${PROJECT_NAME}
-		"${LIBOBS_LIB}"
-	)
-elseif(${PropertyPrefix}OBS_PACKAGE)
-	Target_Include_Directories(${PROJECT_NAME}
-		PRIVATE
-			"${OBS_STUDIO_DIR}/include"
-	)
-	target_link_libraries(${PROJECT_NAME}
-		libobs
-	)
-elseif(${PropertyPrefix}OBS_DOWNLOAD)
-	target_link_libraries(${PROJECT_NAME}
-		libobs
-	)
-endif()
+target_link_libraries(${PROJECT_NAME}
+	libobs
+)
 
 # Link Libraries
 target_link_libraries(${PROJECT_NAME}
