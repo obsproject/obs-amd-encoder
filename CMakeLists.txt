@@ -75,12 +75,6 @@ Else()
 	SET(ARCH "x64")
 ENDIF()
 
-# Configure Installer script
-Configure_File(
-	"${PROJECT_SOURCE_DIR}/ci/installer.in.iss"
-	"${PROJECT_BINARY_DIR}/ci/installer.iss"
-)
-
 # Configure Version Header
 Configure_File(
 	"${PROJECT_SOURCE_DIR}/include/version.hpp.in"
@@ -185,9 +179,6 @@ EndIf()
 # CMake Modules
 If(${PropertyPrefix}OBS_DOWNLOAD)
 	Include("cmake/DownloadProject.cmake")
-EndIf()
-If(NOT ${PropertyPrefix}OBS_NATIVE)
-	Include("cmake/cppcheck.cmake")
 EndIf()
 
 # Load OBS Studio
@@ -396,24 +387,6 @@ Else()
 		VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK}
 		SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK}
 	)
-EndIf()
-
-# CPPCheck
-If(NOT ${PropertyPrefix}OBS_NATIVE)
-	SET(excludes )
-	LIST(APPEND excludes "${PROJECT_SOURCE_DIR}/AMF")
-	If(${PropertyPrefix}OBS_REFERENCE)
-		LIST(APPEND excludes "${OBS_STUDIO_DIR}/libobs")
-	ElseIf(${PropertyPrefix}OBS_PACKAGE)
-		LIST(APPEND excludes "${OBS_STUDIO_DIR}/libobs")
-	ElseIf(${PropertyPrefix}OBS_DOWNLOAD)
-		LIST(APPEND excludes "${libobs_SOURCE_DIR}")
-	EndIf()
-
-	CppCheck(
-		EXCLUDE ${excludes}
-	)
-	CppCheck_Add_Project(${PROJECT_NAME})
 EndIf()
 
 ################################################################################
