@@ -16,42 +16,42 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 # CMake Setup
-CMake_Minimum_Required(VERSION 3.1.0)
-Include("cmake/util.cmake")
+cmake_minimum_required(VERSION 3.1.0)
+include("cmake/util.cmake")
 
 # Automatic Versioning
-Set(VERSION_MAJOR 2)
-Set(VERSION_MINOR 7)
-Set(VERSION_PATCH 0)
-Set(VERSION_TWEAK 0)
-Set(PROJECT_COMMIT "N/A")
-If(EXISTS "${CMAKE_CURRENT_LIST_DIR}/.git")
-	Set(GIT_RESULT "")
-	Set(GIT_OUTPUT "")
-	EXECUTE_PROCESS(
+set(VERSION_MAJOR 2)
+set(VERSION_MINOR 7)
+set(VERSION_PATCH 0)
+set(VERSION_TWEAK 0)
+set(PROJECT_COMMIT "N/A")
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/.git")
+	set(GIT_RESULT "")
+	set(GIT_OUTPUT "")
+	execute_process(
 		COMMAND git rev-list --count --topo-order ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}..HEAD
 		WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
 		RESULT_VARIABLE GIT_RESULT
 		OUTPUT_VARIABLE GIT_OUTPUT
 		OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE ERROR_QUIET
 	)
-	If(GIT_RESULT EQUAL 0)
-		Set(VERSION_TWEAK ${GIT_OUTPUT})
-	EndIf()
-	EXECUTE_PROCESS(
+	if(GIT_RESULT EQUAL 0)
+		set(VERSION_TWEAK ${GIT_OUTPUT})
+	endif()
+	execute_process(
 		COMMAND git rev-parse HEAD
 		WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
 		RESULT_VARIABLE GIT_RESULT
 		OUTPUT_VARIABLE GIT_OUTPUT
 		OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE ERROR_QUIET
 	)
-	If(GIT_RESULT EQUAL 0)
-		Set(PROJECT_COMMIT ${GIT_OUTPUT})
-	EndIf()
-EndIf()
+	if(GIT_RESULT EQUAL 0)
+		set(PROJECT_COMMIT ${GIT_OUTPUT})
+	endif()
+endif()
 
 # Define Project
-PROJECT(
+project(
 	enc-amf
 	VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${VERSION_TWEAK}
 )
@@ -61,42 +61,42 @@ PROJECT(
 ################################################################################
 
 # Detect Build Type
-If("${CMAKE_SOURCE_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
-	Set(PropertyPrefix "")
-Else()
-	Set(PropertyPrefix "${PROJECT_NAME}_")
-EndIf()
+if("${CMAKE_SOURCE_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
+	set(PropertyPrefix "")
+else()
+	set(PropertyPrefix "${PROJECT_NAME}_")
+endif()
 
 # Detect Architecture
 math(EXPR BITS "8*${CMAKE_SIZEOF_VOID_P}")
-IF("${BITS}" STREQUAL "32")
-	SET(ARCH "x86")
-Else()
-	SET(ARCH "x64")
-ENDIF()
+if("${BITS}" STREQUAL "32")
+	set(ARCH "x86")
+else()
+	set(ARCH "x64")
+endif()
 
 # Configure Version Header
-Configure_File(
+configure_file(
 	"${PROJECT_SOURCE_DIR}/include/version.hpp.in"
 	"${PROJECT_BINARY_DIR}/include/version.hpp"
 )
 
 # Windows Specific Resource Definition
-If(WIN32)
-	Set(PROJECT_PRODUCT_NAME "OBS Studio AMD Encoder")
-	Set(PROJECT_DESCRIPTION "")
-	Set(PROJECT_COMPANY_NAME "Xaymar")
-	Set(PROJECT_COPYRIGHT "Xaymar © 2016 - 2018")
-	Set(PROJECT_LEGAL_TRADEMARKS_1 "Advanced Micro Devices, AMD, AMD Ryzen, Ryzen, AMD Radeon and Radeon are Trademarks of Advanced Micro Devices.")
-	Set(PROJECT_LEGAL_TRADEMARKS_2 "")
-	Set(PROJECT_DESCRIPTION "AMD Encoder integration for OBS Studio")
-
-	Configure_File(
+if(WIN32)
+	set(PROJECT_PRODUCT_NAME "OBS Studio AMD Encoder")
+	set(PROJECT_DESCRIPTION "")
+	set(PROJECT_COMPANY_NAME "Xaymar")
+	set(PROJECT_COPYRIGHT "Xaymar © 2016 - 2018")
+	set(PROJECT_LEGAL_TRADEMARKS_1 "Advanced Micro Devices, AMD, AMD Ryzen, Ryzen, AMD Radeon and Radeon are Trademarks of Advanced Micro Devices.")
+	set(PROJECT_LEGAL_TRADEMARKS_2 "")
+	set(PROJECT_DESCRIPTION "AMD Encoder integration for OBS Studio")
+	
+	configure_file(
 		"${PROJECT_SOURCE_DIR}/cmake/version.rc.in"
 		"${PROJECT_BINARY_DIR}/cmake/version.rc"
 		@ONLY
-	)
-EndIf()
+	)	
+endif()
 
 # All Warnings, Extra Warnings, Pedantic
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -150,7 +150,7 @@ endif()
 # Detect OBS Studio Type
 if(TARGET libobs)
 	message(STATUS "${PROJECT_NAME}: Using native obs-studio.")
-	CacheSet(${PropertyPrefix}OBS_NATIVE TRUE)
+	CacheSet(${PropertyPrefix}OBS_NATIVE TRUE)	
 else()
 	CacheSet(${PropertyPrefix}OBS_NATIVE FALSE)
 	if(EXISTS "${OBS_STUDIO_DIR}/cmake/LibObs/LibObsConfig.cmake")
@@ -170,45 +170,45 @@ else()
 	endif()
 endif()
 
-If(NOT ${PropertyPrefix}OBS_NATIVE)
-	Set(CMAKE_PACKAGE_PREFIX "${CMAKE_BINARY_DIR}" CACHE PATH "Path for generated archives.")
-	Set(CMAKE_PACKAGE_NAME "${PROJECT_NAME}" CACHE STRING "Name for the generated archives.")
-	Set(CMAKE_PACKAGE_SUFFIX_OVERRIDE "" CACHE STRING "Override for the suffix.")
-EndIf()
+if(NOT ${PropertyPrefix}OBS_NATIVE)
+	set(CMAKE_PACKAGE_PREFIX "${CMAKE_BINARY_DIR}" CACHE PATH "Path for generated archives.")
+	set(CMAKE_PACKAGE_NAME "${PROJECT_NAME}" CACHE STRING "Name for the generated archives.")
+	set(CMAKE_PACKAGE_SUFFIX_OVERRIDE "" CACHE STRING "Override for the suffix.")
+endif()
 
 # CMake Modules
-If(${PropertyPrefix}OBS_DOWNLOAD)
-	Include("cmake/DownloadProject.cmake")
-EndIf()
+if(${PropertyPrefix}OBS_DOWNLOAD)
+	include("cmake/DownloadProject.cmake")
+endif()
 
 # Load OBS Studio
-If(${PropertyPrefix}OBS_NATIVE)
-	Option(BUILD_AMD_ENCODER "Build AMD Encoder module" ON)
-	If (NOT BUILD_AMD_ENCODER)
-		Message(STATUS "Not building AMD Encoder")
-		Return()
-	EndIf()
-ElseIf(${PropertyPrefix}OBS_PACKAGE)
-	Include("${OBS_STUDIO_DIR}/cmake/LibObs/LibObsConfig.cmake")
-ElseIf(${PropertyPrefix}OBS_REFERENCE)
-	Set(obsPath "${OBS_STUDIO_DIR}")
-	Include("${OBS_STUDIO_DIR}/cmake/external/Findlibobs.cmake")
-ElseIf(${PropertyPrefix}OBS_DOWNLOAD)
+if(${PropertyPrefix}OBS_NATIVE)
+	option(BUILD_AMD_ENCODER "Build AMD Encoder module" ON)	
+	if (NOT BUILD_AMD_ENCODER)
+		message(STATUS "Not building AMD Encoder")
+		return()
+	endif()
+elseif(${PropertyPrefix}OBS_PACKAGE)
+	include("${OBS_STUDIO_DIR}/cmake/LibObs/LibObsConfig.cmake")
+elseif(${PropertyPrefix}OBS_REFERENCE)
+	set(obsPath "${OBS_STUDIO_DIR}")
+	include("${OBS_STUDIO_DIR}/cmake/external/Findlibobs.cmake")
+elseif(${PropertyPrefix}OBS_DOWNLOAD)
 	download_project(
 		PROJ libobs
 		URL ${OBS_DOWNLOAD_URL}
 		UPDATE_DISCONNECTED 1
 	)
-	INCLUDE("${libobs_SOURCE_DIR}/cmake/LibObs/LibObsConfig.cmake")
-Else()
-	Message(CRITICAL "Impossible case reached, very system stability.")
-	Return()
-EndIf()
+	include("${libobs_SOURCE_DIR}/cmake/LibObs/LibObsConfig.cmake")
+else()
+	message(CRITICAL "Impossible case reached, very system stability.")
+	return()
+endif()
 
 ################################################################################
 # Code
 ################################################################################
-Set(PROJECT_HEADERS
+set(PROJECT_HEADERS
 	"${PROJECT_SOURCE_DIR}/include/amf.hpp"
 	"${PROJECT_SOURCE_DIR}/include/amf-capabilities.hpp"
 	"${PROJECT_SOURCE_DIR}/include/amf-encoder.hpp"
@@ -224,7 +224,7 @@ Set(PROJECT_HEADERS
 	"${PROJECT_SOURCE_DIR}/include/strings.hpp"
 	"${PROJECT_BINARY_DIR}/include/version.hpp"
 )
-Set(PROJECT_SOURCES
+set(PROJECT_SOURCES
 	"${PROJECT_SOURCE_DIR}/source/amf.cpp"
 	"${PROJECT_SOURCE_DIR}/source/amf-capabilities.cpp"
 	"${PROJECT_SOURCE_DIR}/source/amf-encoder.cpp"
@@ -238,45 +238,45 @@ Set(PROJECT_SOURCES
 	"${PROJECT_SOURCE_DIR}/source/utility.cpp"
 	"${PROJECT_SOURCE_DIR}/source/plugin.cpp"
 )
-Set(PROJECT_DATA
+set(PROJECT_DATA
 	"${PROJECT_SOURCE_DIR}/resources/locale/en-US.ini"
 	"${PROJECT_SOURCE_DIR}/LICENSE"
 )
-Set(PROJECT_LIBRARIES
+set(PROJECT_LIBRARIES
 	version
 	winmm
 )
 
-If(WIN32) # Windows Only
-	LIST(APPEND PROJECT_HEADERS
+if(WIN32) # Windows Only
+	list(APPEND PROJECT_HEADERS
 		"include/api-d3d9.hpp"
 		"include/api-d3d11.hpp"
 	)
-	LIST(APPEND PROJECT_SOURCES
+	list(APPEND PROJECT_SOURCES
 		"source/api-d3d9.cpp"
 		"source/api-d3d11.cpp"
 		"${PROJECT_BINARY_DIR}/cmake/version.rc"
 	)
-EndIf()
+endif()
 
 # Source Grouping
-Source_Group("Data Files" FILES ${enc-amf_DATA})
+source_group("Data Files" FILES ${enc-amf_DATA})
 
 ################################################################################
 # Target
 ################################################################################
 
-Add_Library(${PROJECT_NAME} MODULE
+add_library(${PROJECT_NAME} MODULE
 	${PROJECT_HEADERS}
 	${PROJECT_SOURCES}
 	${PROJECT_DATA}
 )
-If(${PropertyPrefix}OBS_NATIVE)
-	Set_Target_Properties(${PROJECT_NAME} PROPERTIES FOLDER "plugins/enc-amf")
-EndIf()
+if(${PropertyPrefix}OBS_NATIVE)
+	set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "plugins/enc-amf")
+endif()
 
 # Include Directories
-Target_Include_Directories(${PROJECT_NAME}
+target_include_directories(${PROJECT_NAME}
 	PUBLIC
 		"${PROJECT_BINARY_DIR}/include"
 		"${PROJECT_SOURCE_DIR}/include"
@@ -290,40 +290,40 @@ Target_Include_Directories(${PROJECT_NAME}
 )
 
 # OBS Studio
-If(${PropertyPrefix}OBS_NATIVE)
-	Target_Link_Libraries(${PROJECT_NAME}
+if(${PropertyPrefix}OBS_NATIVE)
+	target_link_libraries(${PROJECT_NAME}
 		libobs
 	)
-ElseIf(${PropertyPrefix}OBS_REFERENCE)
+elseif(${PropertyPrefix}OBS_REFERENCE)
 	Target_Include_Directories(${PROJECT_NAME}
 		PRIVATE
 			"${OBS_STUDIO_DIR}/libobs"
 	)
-	Target_Link_Libraries(${PROJECT_NAME}
+	target_link_libraries(${PROJECT_NAME}
 		"${LIBOBS_LIB}"
 	)
-ElseIf(${PropertyPrefix}OBS_PACKAGE)
+elseif(${PropertyPrefix}OBS_PACKAGE)
 	Target_Include_Directories(${PROJECT_NAME}
 		PRIVATE
 			"${OBS_STUDIO_DIR}/include"
 	)
-	Target_Link_Libraries(${PROJECT_NAME}
+	target_link_libraries(${PROJECT_NAME}
 		libobs
 	)
-ElseIf(${PropertyPrefix}OBS_DOWNLOAD)
-	Target_Link_Libraries(${PROJECT_NAME}
+elseif(${PropertyPrefix}OBS_DOWNLOAD)
+	target_link_libraries(${PROJECT_NAME}
 		libobs
 	)
-EndIf()
+endif()
 
 # Link Libraries
-Target_Link_Libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME}
 	"${PROJECT_LIBRARIES}"
 )
 
 # Definitions
-If (WIN32)
-	Target_Compile_Definitions(${PROJECT_NAME}
+if (WIN32)
+	target_compile_definitions(${PROJECT_NAME}
 		PRIVATE
 			_CRT_SECURE_NO_WARNINGS
 			# windows.h
@@ -370,75 +370,75 @@ If (WIN32)
 			NOMDI
 			NOINOUT
 	)
-EndIf()
+endif()
 
 # File Version
-If(WIN32)
-	Set_Target_Properties(
+if(WIN32)
+	set_target_properties(
 		${PROJECT_NAME}
 		PROPERTIES
 		VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK}
 		SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK}
 	)
-Else()
-	Set_Target_Properties(
+else()
+	set_target_properties(
 		${PROJECT_NAME}
 		PROPERTIES
 		VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK}
 		SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK}
 	)
-EndIf()
+endif()
 
 ################################################################################
 # Installation
 ################################################################################
 
-If(${PropertyPrefix}OBS_NATIVE)
+if(${PropertyPrefix}OBS_NATIVE)
 	install_obs_plugin_with_data(${PROJECT_NAME} resources)
-Else()
-	Install(
+else()
+	install(
 		TARGETS ${PROJECT_NAME}
 		RUNTIME DESTINATION "./obs-plugins/${BITS}bit/" COMPONENT Runtime
 		LIBRARY DESTINATION "./obs-plugins/${BITS}bit/" COMPONENT Runtime
 	)
-	IF(MSVC)
-		Install(
+	if(MSVC)
+		install(
 			FILES $<TARGET_PDB_FILE:${PROJECT_NAME}>
 			DESTINATION "./obs-plugins/${BITS}bit/"
 			OPTIONAL
 		)
-	ENDIF()
-
-	Install(
+	endif()
+	
+	install(
 		DIRECTORY "${PROJECT_SOURCE_DIR}/resources/"
 		DESTINATION "./data/obs-plugins/${PROJECT_NAME}/"
 	)
-
-	If("${CMAKE_PACKAGE_SUFFIX_OVERRIDE}" STREQUAL "")
-		Set(PackageFullName "${CMAKE_PACKAGE_PREFIX}/${CMAKE_PACKAGE_NAME}-${PROJECT_VERSION}")
-	Else()
-		Set(PackageFullName "${CMAKE_PACKAGE_PREFIX}/${CMAKE_PACKAGE_NAME}-${CMAKE_PACKAGE_SUFFIX_OVERRIDE}")
-	EndIf()
-
-	Add_Custom_Target(
+	
+	if("${CMAKE_PACKAGE_SUFFIX_OVERRIDE}" STREQUAL "")
+		set(PackageFullName "${CMAKE_PACKAGE_PREFIX}/${CMAKE_PACKAGE_NAME}-${PROJECT_VERSION}")
+	else()
+		set(PackageFullName "${CMAKE_PACKAGE_PREFIX}/${CMAKE_PACKAGE_NAME}-${CMAKE_PACKAGE_SUFFIX_OVERRIDE}")
+	endif()
+	
+	add_custom_target(
 		PACKAGE_7Z
 		${CMAKE_COMMAND} -E tar cfv "${PackageFullName}.7z" --format=7zip --
 			"${CMAKE_INSTALL_PREFIX}/obs-plugins"
 			"${CMAKE_INSTALL_PREFIX}/data"
 		WORKING_DIRECTORY "${CMAKE_INSTALL_PREFIX}"
 	)
-	Add_Custom_Target(
+	add_custom_target(
 		PACKAGE_ZIP
 		${CMAKE_COMMAND} -E tar cfv "${PackageFullName}.zip" --format=zip --
 			"${CMAKE_INSTALL_PREFIX}/obs-plugins"
 			"${CMAKE_INSTALL_PREFIX}/data"
 		WORKING_DIRECTORY "${CMAKE_INSTALL_PREFIX}"
 	)
-EndIf()
+endif()
 
 ################################################################################
 # Child Projects
 ################################################################################
 
 # Sub Project
-Add_SubDirectory(amf-test)
+add_subdirectory(amf-test)
