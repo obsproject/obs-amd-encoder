@@ -358,43 +358,32 @@ if(${PropertyPrefix}OBS_NATIVE)
 else()
 	install(
 		TARGETS ${PROJECT_NAME}
-		RUNTIME DESTINATION "./obs-plugins/${BITS}bit/" COMPONENT Runtime
-		LIBRARY DESTINATION "./obs-plugins/${BITS}bit/" COMPONENT Runtime
+		RUNTIME DESTINATION "obs-plugins/${BITS}bit/" COMPONENT Runtime
+		LIBRARY DESTINATION "obs-plugins/${BITS}bit/" COMPONENT Runtime
 	)
 	if(MSVC)
 		install(
 			FILES $<TARGET_PDB_FILE:${PROJECT_NAME}>
-			DESTINATION "./obs-plugins/${BITS}bit/"
+			DESTINATION "obs-plugins/${BITS}bit/"
 			OPTIONAL
 		)
 	endif()
 	
 	install(
 		DIRECTORY "${PROJECT_SOURCE_DIR}/resources/"
-		DESTINATION "./data/obs-plugins/${PROJECT_NAME}/"
-	)
-	
-	if("${CMAKE_PACKAGE_SUFFIX_OVERRIDE}" STREQUAL "")
-		set(PackageFullName "${CMAKE_PACKAGE_PREFIX}/${CMAKE_PACKAGE_NAME}-${PROJECT_VERSION}")
-	else()
-		set(PackageFullName "${CMAKE_PACKAGE_PREFIX}/${CMAKE_PACKAGE_NAME}-${CMAKE_PACKAGE_SUFFIX_OVERRIDE}")
-	endif()
-	
-	add_custom_target(
-		PACKAGE_7Z
-		${CMAKE_COMMAND} -E tar cfv "${PackageFullName}.7z" --format=7zip --
-			"${CMAKE_INSTALL_PREFIX}/obs-plugins"
-			"${CMAKE_INSTALL_PREFIX}/data"
-		WORKING_DIRECTORY "${CMAKE_INSTALL_PREFIX}"
-	)
-	add_custom_target(
-		PACKAGE_ZIP
-		${CMAKE_COMMAND} -E tar cfv "${PackageFullName}.zip" --format=zip --
-			"${CMAKE_INSTALL_PREFIX}/obs-plugins"
-			"${CMAKE_INSTALL_PREFIX}/data"
-		WORKING_DIRECTORY "${CMAKE_INSTALL_PREFIX}"
+		DESTINATION "data/obs-plugins/${PROJECT_NAME}/"
 	)
 endif()
+
+################################################################################
+# Packaging
+################################################################################
+
+set(CPACK_PACKAGE_NAME "obs-amd-encoder")
+set(CPACK_PACKAGE_VENDOR "The OBS Project")
+set(CPACK_PACKAGE_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${VERSION_TWEAK}")
+set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
+include(CPack)
 
 ################################################################################
 # Child Projects

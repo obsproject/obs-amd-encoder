@@ -44,7 +44,13 @@ jobs:
     - name: "Configure Project"
       shell: bash
       run: |
-        cmake -H. -B"build/temp" -DCMAKE_INSTALL_PREFIX="build/distrib" -DCMAKE_PACKAGE_NAME="obs-amd-encoder-${{ matrix.id }}" -DCMAKE_PACKAGE_PREFIX="${PWD}/build/package"
+        cmake -H. -B"build/temp" \
+          -DCMAKE_INSTALL_PREFIX="${PWD}/build/distrib" \
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+          -DCPACK_GENERATOR="7Z;ZIP;TGZ" \
+          -DCPACK_SOURCE_GENERATOR=OFF \
+          -DCPACK_OUTPUT_FILE_PREFIX="${PWD}/build/package" \
+          -DCPACK_SYSTEM_NAME="windows"
     - name: "Build Project"
       shell: bash
       run: |
@@ -52,9 +58,7 @@ jobs:
     - name: "Package Project"
       shell: bash
       run: |
-        mkdir build/package
-        cmake --build "build/temp" --config RelWithDebInfo --target PACKAGE_7Z
-        cmake --build "build/temp" --config RelWithDebInfo --target PACKAGE_ZIP
+        cmake --build "build/temp" --config RelWithDebInfo --target PACKAGE
     - name: "Upload Artifacts"
       uses: actions/upload-artifact@v1
       with:
