@@ -144,6 +144,9 @@ MODULE_EXPORT bool obs_module_load(void)
 			CloseHandle(hRead);
 
 			switch (returnCode) {
+			case STATUS_TIMEOUT:
+				PLOG_ERROR("AMF Test timed out.");
+				return false;
 			case STATUS_ACCESS_VIOLATION:
 			case STATUS_ARRAY_BOUNDS_EXCEEDED:
 			case STATUS_BREAKPOINT:
