@@ -31,6 +31,21 @@ extern "C" {
 using namespace Plugin;
 using namespace Plugin::AMD;
 
+#if defined(_WIN32) || defined(_WIN64)
+DWORD WINAPI TimeoutThread(LPVOID param)
+{
+	HANDLE hMainThread = (HANDLE)param;
+
+	DWORD ret = WaitForSingleObject(hMainThread, 2500);
+	if (ret == WAIT_TIMEOUT)
+		TerminateProcess(GetCurrentProcess(), STATUS_TIMEOUT);
+
+	CloseHandle(hMainThread);
+
+	return 0;
+}
+#endif
+
 int main(int argc, char* argv[])
 {
 	argc;
@@ -38,6 +53,15 @@ int main(int argc, char* argv[])
 
 #if defined(_WIN32) || defined(_WIN64)
 	SetErrorMode(SEM_NOGPFAULTERRORBOX | SEM_FAILCRITICALERRORS);
+
+	HANDLE hMainThread;
+	DuplicateHandle(GetCurrentProcess(), GetCurrentThread(), GetCurrentProcess(), &hMainThread, 0, FALSE,
+					DUPLICATE_SAME_ACCESS);
+
+	DWORD threadId;
+	HANDLE hThread;
+	hThread = CreateThread(NULL, 0, TimeoutThread, hMainThread, 0, &threadId);
+	CloseHandle(hThread);
 #endif
 
 	try {
