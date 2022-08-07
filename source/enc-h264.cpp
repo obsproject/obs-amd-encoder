@@ -37,6 +37,7 @@ void Plugin::Interface::H264Interface::encoder_register()
 	_oei.type  = OBS_ENCODER_VIDEO;
 	_oei.id    = "amd_amf_h264";
 	_oei.codec = "h264";
+	_oei.caps  = OBS_ENCODER_CAP_DEPRECATED;
 
 	_oei.get_name       = get_name;
 	_oei.get_defaults   = get_defaults;
