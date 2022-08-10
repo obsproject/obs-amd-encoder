@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include "enc-h264.hpp"
 #include "amf-capabilities.hpp"
 #include "amf-encoder-h264.hpp"
+#include "enc-h264.hpp"
 #include "strings.hpp"
 #include "utility.hpp"
 
@@ -37,6 +37,7 @@ void Plugin::Interface::H264Interface::encoder_register()
 	_oei.type  = OBS_ENCODER_VIDEO;
 	_oei.id    = "amd_amf_h264";
 	_oei.codec = "h264";
+	_oei.caps  = OBS_ENCODER_CAP_DEPRECATED;
 
 	_oei.get_name       = get_name;
 	_oei.get_defaults   = get_defaults;
@@ -1157,7 +1158,7 @@ try {
 		obs_data_unset_user_value(data, P_INTERVAL_BFRAME);
 	}
 #pragma endregion B - Frame Interval
-#pragma endregion View Mode
+#pragma endregion View      Mode
 
 	// Permanently disable static properties while encoding.
 	void* enc = obs_properties_get_param(props);

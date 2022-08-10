@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include "enc-h265.hpp"
 #include "amf-capabilities.hpp"
 #include "amf-encoder-h265.hpp"
 #include "amf-encoder.hpp"
+#include "enc-h265.hpp"
 #include "strings.hpp"
 #include "utility.hpp"
 
@@ -34,6 +34,7 @@ void Plugin::Interface::H265Interface::encoder_register()
 	_oei.type  = OBS_ENCODER_VIDEO;
 	_oei.id    = "amd_amf_h265";
 	_oei.codec = "hevc";
+	_oei.caps  = OBS_ENCODER_CAP_DEPRECATED;
 
 	_oei.get_name       = get_name;
 	_oei.get_defaults   = get_defaults;
@@ -749,7 +750,7 @@ try {
 		obs_data_unset_user_value(data, P_GOP_SIZE_MINIMUM);
 		obs_data_unset_user_value(data, P_GOP_SIZE_MAXIMUM);
 	}
-#pragma endregion GOP
+#pragma endregion      GOP
 #pragma endregion View Mode
 
 	// Permanently disable static properties while encoding.
