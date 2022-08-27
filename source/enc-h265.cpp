@@ -839,6 +839,8 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 	Plugin::AMD::AMF::Instance()->EnableDebugTrace(debug);
 
 	ColorFormat colorFormat = ColorFormat::NV12;
+#pragma warning(push)
+#pragma warning(disable : 4062)
 	switch (voi->format) {
 	case VIDEO_FORMAT_NV12:
 		colorFormat = ColorFormat::NV12;
@@ -872,6 +874,7 @@ Plugin::Interface::H265Interface::H265Interface(obs_data_t* data, obs_encoder_t*
 		colorSpace = ColorSpace::SRGB;
 		break;
 	}
+#pragma warning(pop)
 
 	auto api = API::GetAPI(obs_data_get_string(data, P_VIDEO_API));
 	union {

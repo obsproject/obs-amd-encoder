@@ -713,6 +713,8 @@ try {
 	if (preset != Presets::None)
 		result = true;
 
+#pragma warning(push)
+#pragma warning(disable : 4062)
 	switch (preset) {
 	case Presets::ResetToDefaults:
 #pragma region Default
@@ -1318,6 +1320,7 @@ Plugin::Interface::H264Interface::H264Interface(obs_data_t* data, obs_encoder_t*
 		colorSpace = ColorSpace::SRGB;
 		break;
 	}
+#pragma warning(pop)
 
 	auto api = API::GetAPI(obs_data_get_string(data, P_VIDEO_API));
 	union {

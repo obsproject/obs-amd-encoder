@@ -122,6 +122,8 @@ Plugin::AMD::Encoder::Encoder(Codec codec, std::shared_ptr<API::IAPI> videoAPI, 
 	case API::Type::Direct3D9:
 		break;
 	default:
+#pragma warning(push)
+#pragma warning(disable : 4062)
 		m_API = API::GetAPI(0);
 		switch (m_API->GetType()) {
 		case API::Type::Direct3D9:
@@ -144,6 +146,7 @@ Plugin::AMD::Encoder::Encoder(Codec codec, std::shared_ptr<API::IAPI> videoAPI, 
 		res             = m_AMFContext->InitDX11(m_APIDevice->GetContext());
 		break;
 	}
+#pragma warning(pop)
 	if (res != AMF_OK) {
 		QUICK_FORMAT_MESSAGE(errMsg, "<Id: %llu> Initializing %s API with Adapter '%s' failed, error %ls (code %d).",
 							 m_UniqueId, m_API->GetName().c_str(), m_APIAdapter.Name.c_str(),
