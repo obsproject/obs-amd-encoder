@@ -422,6 +422,8 @@ AMF_VIDEO_ENCODER_PROFILE_ENUM Utility::ProfileToAMFH264(Plugin::AMD::Profile v)
 Plugin::AMD::Profile Utility::ProfileFromAMFH264(AMF_VIDEO_ENCODER_PROFILE_ENUM v)
 {
 #pragma warning(disable : 4063) // Developer Note: I know better, Compiler.
+#pragma warning(push)
+#pragma warning(disable : 4062)
 	switch (v) {
 	case AMF_VIDEO_ENCODER_PROFILE_CONSTRAINED_BASELINE:
 		return Profile::ConstrainedBaseline;
@@ -629,6 +631,7 @@ Plugin::AMD::RateControlMethod Utility::RateControlMethodFromAMFH265(AMF_VIDEO_E
 	case AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR:
 		return RateControlMethod::LatencyConstrainedVariableBitrate;
 	}
+#pragma warning(pop)
 	throw std::runtime_error("Invalid Parameter");
 }
 
