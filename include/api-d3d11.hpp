@@ -18,7 +18,7 @@
  */
 
 #pragma once
-#include <atlutil.h>
+#include <atlcomcli.h>
 #include <d3d11.h>
 #include <dxgi.h>
 #include <map>

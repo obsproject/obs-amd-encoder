@@ -37,11 +37,11 @@ extern "C" {
 
 #ifndef LITE_OBS
 #define PLOG(level, ...) blog(level, "[AMF] " __VA_ARGS__)
-#define PLOG_ERROR(format, ...) PLOG(LOG_ERROR, format, __VA_ARGS__)
+#define PLOG_ERROR(format, ...) PLOG(LOG_ERROR, format, ##__VA_ARGS__)
 #define PLOG_VAR(var) var
 #else
 #define PLOG(...) (void)0
-#define PLOG_ERROR(format, ...) printf("[AMF] " format "\n", __VA_ARGS__)
+#define PLOG_ERROR(format, ...) printf("[AMF] " format "\n", ##__VA_ARGS__)
 #define PLOG_VAR(var)
 #endif
 #define PLOG_WARNING(...) PLOG(LOG_WARNING, __VA_ARGS__)

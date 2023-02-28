@@ -801,7 +801,7 @@ Plugin::AMD::ProfileLevel Utility::H265ProfileLevel(std::pair<uint32_t, uint32_t
 											  level(ProfileLevel::L52, levelRestriction(8912896, 1069547520)),
 											  level(ProfileLevel::L60, levelRestriction(35651584, 1069547520)),
 											  level(ProfileLevel::L61, levelRestriction(35651584, 2139095040)),
-											  level(ProfileLevel::L62, levelRestriction(35651584, 4278190080)),
+											  level(ProfileLevel::L62, levelRestriction(35651584, 4278190080u)),
 											  level((ProfileLevel)-1, levelRestriction(0, 0))};
 
 	uint32_t samples     = resolution.first * resolution.second;
