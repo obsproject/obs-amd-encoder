@@ -1,0 +1,24 @@
+1 VERSIONINFO
+FILEVERSION ${_VERSION_MAJOR},${_VERSION_MINOR},${_VERSION_PATCH},0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904B0"
+    BEGIN
+      VALUE "CompanyName", "Xaymar"
+      VALUE "FileDescription", "OBS Studio AMD Encoder"
+      VALUE "FileVersion", "${_VERSION_MAJOR}.${_VERSION_MINOR}.${_VERSION_PATCH}"
+      VALUE "ProductName", "OBS Studio AMD Encoder"
+      VALUE "ProductVersion", "${_VERSION_MAJOR}.${_VERSION_MINOR}.${_VERSION_PATCH}"
+      VALUE "Comments", "Advanced Micro Devices, AMD, AMD Ryzen, Ryzen, AMD Radeon and Radeon are Trademarks of Advanced Micro Devices."
+      VALUE "LegalCopyright", "Xaymar © 2016 - 2018"
+      VALUE "InternalName", "OBS Studio AMD Encoder"
+      VALUE "OriginalFilename", "OBS Studio AMD Encoder"
+    END
+  END
+
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0409, 0x04B0
+  END
+END
