@@ -16,7 +16,7 @@ include("cmake/util.cmake")
 
 # Automatic Versioning
 set(VERSION_MAJOR 2)
-set(VERSION_MINOR 7)
+set(VERSION_MINOR 8)
 set(VERSION_PATCH 0)
 set(VERSION_TWEAK 0)
 set(PROJECT_COMMIT "N/A")

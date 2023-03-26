@@ -41,7 +41,7 @@ target_include_directories(enc-amf PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include"
                                            "${CMAKE_CURRENT_SOURCE_DIR}/AMF/amf/public/include")
 
 set(_VERSION_MAJOR 2)
-set(_VERSION_MINOR 7)
+set(_VERSION_MINOR 8)
 set(_VERSION_PATCH 0)
 
 configure_file(include/version.hpp.in version.hpp)
