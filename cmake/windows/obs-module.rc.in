@@ -1,5 +1,5 @@
 1 VERSIONINFO
-FILEVERSION ${_VERSION_MAJOR},${_VERSION_MINOR},${_VERSION_PATCH},0
+FILEVERSION ${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},0
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
@@ -7,9 +7,9 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "Xaymar"
       VALUE "FileDescription", "OBS Studio AMD Encoder"
-      VALUE "FileVersion", "${_VERSION_MAJOR}.${_VERSION_MINOR}.${_VERSION_PATCH}"
+      VALUE "FileVersion", "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}"
       VALUE "ProductName", "OBS Studio AMD Encoder"
-      VALUE "ProductVersion", "${_VERSION_MAJOR}.${_VERSION_MINOR}.${_VERSION_PATCH}"
+      VALUE "ProductVersion", "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}"
       VALUE "Comments", "Advanced Micro Devices, AMD, AMD Ryzen, Ryzen, AMD Radeon and Radeon are Trademarks of Advanced Micro Devices."
       VALUE "LegalCopyright", "Xaymar © 2016 - 2018"
       VALUE "InternalName", "OBS Studio AMD Encoder"
