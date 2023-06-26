@@ -55,4 +55,83 @@ target_compile_options(enc-amf PRIVATE /wd4828)
 
 target_link_libraries(enc-amf PRIVATE OBS::libobs version winmm)
 
-set_target_properties_obs(enc-amf PROPERTIES PREFIX "" FOLDER plugins)
+set_target_properties_obs(enc-amf PROPERTIES PREFIX "" FOLDER plugins/enc-amf)
+
+add_executable(enc-amf-test)
+
+target_compile_definitions(
+  enc-amf-test
+  PRIVATE # cmake-format: sortable
+          LITE_OBS
+          NOATOM
+          NOCLIPBOARD
+          NOCOLOR
+          NOCOMM
+          NOCTLMGR
+          NODEFERWINDOWPOS
+          NODRAWTEXT
+          NOGPICAPMASKS
+          NOHELP
+          NOICONS
+          NOIME
+          NOINOUT
+          NOKANJI
+          NOKERNEL
+          NOKEYSTATES
+          NOMB
+          NOMCX
+          NOMDI
+          NOMEMMGR
+          NOMENUS
+          NOMETAFILE
+          NOMINMAX
+          NOOPENFILE
+          NOPROFILER
+          NORASTEROPS
+          NOSCROLL
+          NOSERVICE
+          NOSHOWWINDOW
+          NOSOUND
+          NOSYSCOMMANDS
+          NOSYSMETRICS
+          NOVIRTUALKEYCODES
+          NOWH
+          NOWINOFFSETS
+          NOWINSTYLES
+          WIN32_LEAN_AND_MEAN)
+
+target_sources(
+  enc-amf-test
+  PRIVATE amf-test/main.cpp
+          source/amf.cpp
+          source/amf-capabilities.cpp
+          source/amf-encoder.cpp
+          source/amf-encoder-h264.cpp
+          source/amf-encoder-h265.cpp
+          source/api-base.cpp
+          source/api-d3d9.cpp
+          source/api-d3d11.cpp
+          source/utility.cpp
+          include/amf.hpp
+          include/amf-capabilities.hpp
+          include/amf-encoder.hpp
+          include/amf-encoder-h264.hpp
+          include/amf-encoder-h265.hpp
+          include/api-base.hpp
+          include/api-d3d9.hpp
+          include/api-d3d11.hpp
+          include/utility.hpp)
+
+target_include_directories(enc-amf-test PRIVATE amf-test include "${CMAKE_CURRENT_BINARY_DIR}/include" source
+                                                AMF/amf/public/include)
+
+target_link_libraries(enc-amf-test version winmm)
+
+# cmake-format: off
+set_target_properties_obs(
+  enc-amf-test
+  PROPERTIES FOLDER plugins/enc-amf
+             OUTPUT_NAME enc-amf-test64)
+# cmake-format: on
+
+add_dependencies(enc-amf enc-amf-test)
