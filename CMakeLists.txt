@@ -40,6 +40,35 @@ target_sources(
 target_include_directories(enc-amf PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include"
                                            "${CMAKE_CURRENT_SOURCE_DIR}/AMF/amf/public/include")
 
+# Since the locale files are in "resources" instead of "data", handle locale files install/copy here.
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/resources")
+  file(GLOB_RECURSE data_files "${CMAKE_CURRENT_SOURCE_DIR}/resources/*")
+  foreach(data_file IN LISTS data_files)
+    cmake_path(RELATIVE_PATH data_file BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources/" OUTPUT_VARIABLE
+               relative_path)
+    cmake_path(GET relative_path PARENT_PATH relative_path)
+    target_sources(enc-amf PRIVATE "${data_file}")
+    source_group("Resources/${relative_path}" FILES "${data_file}")
+  endforeach()
+
+  set(target_destination "${OBS_DATA_DESTINATION}/obs-plugins/enc-amf")
+
+  install(
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources/"
+    DESTINATION "${target_destination}"
+    USE_SOURCE_PERMISSIONS
+    COMPONENT Runtime)
+
+  add_custom_command(
+    TARGET enc-amf
+    POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/resources"
+            "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
+    COMMENT "Copy enc-amf resources to data directory"
+    VERBATIM)
+endif()
+
 set(PROJECT_VERSION_MAJOR 2)
 set(PROJECT_VERSION_MINOR 8)
 set(PROJECT_VERSION_PATCH 0)
