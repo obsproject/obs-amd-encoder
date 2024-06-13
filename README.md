@@ -1,4 +1,9 @@
 # AMD Encoder for OBS Studio
+
+This encoder plugin is not maintained and is no longer distributed with builds of OBS Studio. This README is kept mostly as-is and may use verb tenses that are not accurate. This repository has been archived.
+
+## Description
+
 'obs-amd-encoder' is a plugin for [Open Broadcaster Software Studio](https://obsproject.com/) which adds support for native AMD Hardware encoding through the use of [AMDs Advanced Media Framework](https://github.com/GPUOpen-LibrariesAndSDKs/AMF). It offers a user-friendly UI integration for the complex settings that AMD AMF offers.
 
 This plugin is integrated in OBS Studio since Version 0.16.2. It replaced the older MFT (Media Foundation Transforms) based approach and performs much better compared to it. Many users have since then switched from software to hardware encoding on AMD machines as it is actually working at a decent performance now.
